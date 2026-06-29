@@ -32,7 +32,7 @@ Every lane declares its data-flow role with `kind:` — one of `canon`, `workspa
 ```yaml
 lanes:
   - { name: knowledge,  kind: canon }
-  - { name: notebook,   kind: workspace }
+  - { name: scratchpad,   kind: workspace }
   - { name: artifacts,  kind: machine }
   - { name: proposals,  kind: queue }
   - { name: raw,        kind: raw }
@@ -44,12 +44,12 @@ Rules: at most one `queue` lane, at most one `machine` lane, and (since `author`
 
 ### Renaming defaults
 
-`knowledge`, `notebook`, etc. have no privileged status in the code. Rename freely — a lane carries only its `kind:`:
+`knowledge`, `scratchpad`, etc. have no privileged status in the code. Rename freely — a lane carries only its `kind:`:
 
 ```yaml
 lanes:
   - { name: self,     kind: canon }      # was knowledge
-  - { name: scratch,  kind: workspace }  # was notebook
+  - { name: scratch,  kind: workspace }  # was scratchpad
   - { name: outputs,  kind: machine }    # was artifacts
   - { name: review,   kind: queue }      # was proposals
 ```
@@ -203,7 +203,7 @@ roles:
 
 lanes:
   - { name: knowledge,  kind: canon }
-  - { name: notebook,   kind: workspace, owner: agent }
+  - { name: scratchpad,   kind: workspace, owner: agent }
   - { name: artifacts,  kind: machine }
   - { name: proposals,  kind: queue }
   - { name: raw,        kind: raw }

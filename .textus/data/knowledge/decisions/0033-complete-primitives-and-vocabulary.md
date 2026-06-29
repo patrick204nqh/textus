@@ -132,7 +132,7 @@ describing the contents** (never a state-adjective, never the product's own word
 ```yaml
 zones:
   - { name: knowledge, kind: canon }                   # was: identity + working
-  - { name: notebook,  kind: workspace, owner: agent } # NEW — the agent's own lane
+  - { name: scratchpad,  kind: workspace, owner: agent } # NEW — the agent's own lane
   - { name: feeds,     kind: quarantine }              # was: intake
   - { name: proposals, kind: queue }                   # was: review
   - { name: artifacts, kind: derived }                 # was: output
@@ -143,7 +143,7 @@ roles:
 ```
 
 Reads as one sentence per actor: *automation **fetches** feeds and **builds** artifacts;
-the agent **keeps** a notebook and **proposes** changes; you **author** them into
+the agent **keeps** a scratchpad and **proposes** changes; you **author** them into
 knowledge.*
 
 ### 6. Zone descriptions become manifest data
@@ -196,7 +196,7 @@ describe.
 ## Open questions
 
 - **Human workspace.** Should `human` also get a `keep` lane by default, or is a personal
-  scratch a per-operator opt-in? (Deferred; the default ships only the agent `notebook`.)
+  scratch a per-operator opt-in? (Deferred; the default ships only the agent `scratchpad`.)
 - **Multiple workspaces of the same kind.** Two agents → two `workspace` zones, each
   `owner:`-scoped. Does the `owner_is`-style per-zone write check (ADR 0030 / 0031 open
   question) land here as the predicate that enforces `owner:`? (Sequenced with the

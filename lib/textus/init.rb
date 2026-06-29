@@ -3,7 +3,7 @@ require "pathname"
 
 module Textus
   module Init
-    ZONES = %w[knowledge notebook proposals artifacts raw].freeze
+    ZONES = %w[knowledge scratchpad proposals artifacts raw].freeze
 
     DEFAULT_MANIFEST = <<~YAML
       version: textus/4
@@ -13,13 +13,13 @@ module Textus
         - { name: automation, can: [converge] }
       lanes:
         - { name: knowledge, kind: canon,     desc: "the maintained source of truth (identity.* lives here)" }
-        - { name: notebook,  kind: workspace, owner: agent, desc: "the agent's own durable working notes" }
+        - { name: scratchpad,  kind: workspace, owner: agent, desc: "the agent's own durable working notes" }
         - { name: proposals, kind: queue,     desc: "changes awaiting your accept" }
         - { name: artifacts, kind: machine,   desc: "machine-maintained: external inputs (artifacts.feeds.*) + computed outputs (artifacts.derived.*)" }
       entries:
         - { key: knowledge.identity, path: data/knowledge/identity.md, lane: knowledge, schema: null, owner: human:self, kind: leaf }
         - { key: knowledge.notes,    path: data/knowledge/notes,       lane: knowledge, schema: null, owner: human:self, nested: true, kind: nested }
-        - { key: notebook.notes,     path: data/notebook/notes,        lane: notebook,  schema: null, owner: agent:self, nested: true, kind: nested }
+        - { key: scratchpad.notes,     path: data/scratchpad/notes,        lane: scratchpad,  schema: null, owner: agent:self, nested: true, kind: nested }
         - { key: proposals.notes,    path: data/proposals/notes,       lane: proposals, schema: null, owner: agent:self, nested: true, kind: nested }
         # A per-host snapshot, populated by a registered workflow. Nested so it
         # grows to a fleet — add leaves over SSH without renaming. tracked:false →

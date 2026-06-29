@@ -82,7 +82,7 @@ Core model elements:
 Default lane semantics:
 
 - `knowledge` (`canon`): authored truth
-- `notebook` (`workspace`): agent durable working memory
+- `scratchpad` (`workspace`): agent durable working memory
 - `proposals` (`queue`): staged transitions awaiting review
 - `artifacts` (`machine`): converged outputs/materialized data
 - `raw` (`raw`): write-once intake of external material

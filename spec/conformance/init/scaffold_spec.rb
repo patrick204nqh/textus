@@ -39,7 +39,7 @@ RSpec.describe "init scaffolds machine surfaces" do
       raw = YAML.safe_load(Textus::Init::DEFAULT_MANIFEST, aliases: false)
       kinds = raw["lanes"].to_h { |z| [z["name"], z["kind"]] }
       expect(kinds).to eq(
-        "knowledge" => "canon", "notebook" => "workspace",
+        "knowledge" => "canon", "scratchpad" => "workspace",
         "proposals" => "queue", "artifacts" => "machine"
       )
       expect { Textus::Manifest::Schema.validate!(raw) }.not_to raise_error

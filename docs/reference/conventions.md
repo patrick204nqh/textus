@@ -24,7 +24,7 @@ Recommended top-level layout — the spec allows alternatives, but this is what 
   templates/      # ERB templates for publish rendering
   data/
     knowledge/    # authored truth: identity, voice, decisions — author-holders write
-    notebook/     # agent's own durable lane (workspace) — keep-holders write
+    scratchpad/     # agent's own durable lane (workspace) — keep-holders write
     proposals/    # AI proposals awaiting accept (propose)
     artifacts/    # computed outputs produced by drain — never edit by hand
     raw/          # write-once external source material (ingest)

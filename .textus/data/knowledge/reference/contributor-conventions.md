@@ -51,7 +51,7 @@ All entry content lives under `.textus/data/`:
 ```
 .textus/data/
   knowledge/          # canon lane
-  notebook/           # workspace lane
+  scratchpad/           # workspace lane
   proposals/          # queue lane
   artifacts/
     intake/<step>/    # from: fetch entries

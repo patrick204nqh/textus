@@ -20,7 +20,7 @@ A textus store is a small **data-flow graph**. Information enters from outside, 
 ```mermaid
 flowchart LR
     human(["human"]) -->|author| knowledge["knowledge<br/>(canon)"]
-    agent(["agent"]) -->|keep| notebook["notebook<br/>(workspace)"]
+    agent(["agent"]) -->|keep| scratchpad["scratchpad<br/>(workspace)"]
     agent -->|propose| proposals["proposals<br/>(queue)"]
     human -->|ingest| raw["raw<br/>(intake)"]
     agent -->|ingest| raw
@@ -31,7 +31,7 @@ flowchart LR
     artifacts -->|publish| files["shipped files"]
 ```
 
-*Flow at a glance:* automation converges the `artifacts` machine lane — it produces computed outputs via `drain` and the workflow DSL (using `knowledge` as source); humans write `knowledge` directly (the `author` capability); agents maintain their own `notebook` (the `keep` capability) and `propose` into `proposals`; a human `accept` promotes proposals to `knowledge`; all three actors can `ingest` external source material into the write-once `raw` lane; automation publishes the produced data as shipped files (copied verbatim, or rendered through a per-target ERB template).
+*Flow at a glance:* automation converges the `artifacts` machine lane — it produces computed outputs via `drain` and the workflow DSL (using `knowledge` as source); humans write `knowledge` directly (the `author` capability); agents maintain their own `scratchpad` (the `keep` capability) and `propose` into `proposals`; a human `accept` promotes proposals to `knowledge`; all three actors can `ingest` external source material into the write-once `raw` lane; automation publishes the produced data as shipped files (copied verbatim, or rendered through a per-target ERB template).
 
 Two ideas do all the work:
 

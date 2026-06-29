@@ -14,7 +14,7 @@ roles:
 lanes:
   - name: knowledge
     kind: canon
-  - name: notebook
+  - name: scratchpad
     kind: workspace
     owner: agent              # optional, informational — agent's own lane
     desc: "agent's durable working memory; bytes climb to knowledge only via propose→accept"

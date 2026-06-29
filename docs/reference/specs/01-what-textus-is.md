@@ -11,7 +11,7 @@ You **shape your own memory structure** inside `.textus/`. The protocol manages 
 textus/4 names its concepts along six axes. Reviewers who internalize these can map any part of the spec to the right category:
 
 - **Actor** — who is interacting: roles such as `human`, `agent`, `automation`, each holding a set of capabilities (`propose`, `author`, `keep`, `converge`).
-- **Place** — where data lives: lanes such as `knowledge`, `notebook`, `raw`, `proposals`, `artifacts`.
+- **Place** — where data lives: lanes such as `knowledge`, `scratchpad`, `raw`, `proposals`, `artifacts`.
 - **Thing** — what is stored: entries, fields, keys.
 - **Operation** — how you act on things: RPC and CLI verbs (`get`, `put`, `drain`, `serve`, `ingest`, …).
 - **Event** — what gets fired after an operation: pub-sub events (`:entry_written`, `:entry_produced`, `:entry_published`, …).

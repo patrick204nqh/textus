@@ -57,7 +57,7 @@ You **shape your own memory structure** inside `.textus/`. The protocol manages 
 textus/4 names its concepts along six axes. Reviewers who internalize these can map any part of the spec to the right category:
 
 - **Actor** — who is interacting: roles such as `human`, `agent`, `automation`, each holding a set of capabilities (`propose`, `author`, `keep`, `converge`).
-- **Place** — where data lives: lanes such as `knowledge`, `notebook`, `raw`, `proposals`, `artifacts`.
+- **Place** — where data lives: lanes such as `knowledge`, `scratchpad`, `raw`, `proposals`, `artifacts`.
 - **Thing** — what is stored: entries, fields, keys.
 - **Operation** — how you act on things: RPC and CLI verbs (`get`, `put`, `drain`, `serve`, `ingest`, …).
 - **Event** — what gets fired after an operation: pub-sub events (`:entry_written`, `:entry_produced`, `:entry_published`, …).
@@ -111,7 +111,7 @@ The root is `.textus/` at the project working directory. A typical tree:
     sentinels/           # byte-copied publish bookkeeping (see §5.3)
   data/                  # ALL user content lives here
     knowledge/           # lane: knowledge (kind: canon — author-holders write)
-    notebook/            # lane: notebook (kind: workspace — keep-holders write; agent's own durable lane)
+    scratchpad/            # lane: scratchpad (kind: workspace — keep-holders write; agent's own durable lane)
     proposals/           # lane: proposals (kind: queue — propose-holders write)
     artifacts/           # lane: artifacts (kind: machine — converge-holders write)
     raw/                 # lane: raw (kind: raw — ingest-holders write; write-once)
@@ -149,7 +149,7 @@ roles:
 lanes:
   - name: knowledge
     kind: canon
-  - name: notebook
+  - name: scratchpad
     kind: workspace
     owner: agent              # optional, informational — agent's own lane
     desc: "agent's durable working memory; bytes climb to knowledge only via propose→accept"
@@ -241,7 +241,7 @@ Default scaffold — Setup-1 (roles `human=[author, propose, ingest]`, `agent=[p
 | Lane | `kind` | Required capability | Writable by (default) | Use case |
 |---|---|---|---|---|
 | `knowledge` | `canon` | `author` | `human` | Authored truth: identity, voice, decisions, network. |
-| `notebook` | `workspace` | `keep` | `agent` | Agent's own durable working memory. Bytes climb to `knowledge` only via propose→accept. |
+| `scratchpad` | `workspace` | `keep` | `agent` | Agent's own durable working memory. Bytes climb to `knowledge` only via propose→accept. |
 | `proposals` | `queue` | `propose` | `agent`, `human` | Proposals awaiting human review via `textus accept`. |
 | `artifacts` | `machine` | `converge` | `automation` | Computed outputs produced by `drain` via the workflow DSL. |
 | `raw` | `raw` | `ingest` | `human`, `agent`, `automation` | Write-once external source material: URL bookmarks, files, binary assets. |
@@ -425,7 +425,7 @@ The `raw` lane (`kind: raw`) is a write-once intake lane for external source mat
 
 **`access` field** — entries MAY carry `source.access: public | private` (field is `maintained_by: human`). Set `private` for sources not safe to reproduce publicly.
 
-**Notebook stub** — every ingest creates a `notebook.notes` stub with a backlink (`Ingested from raw.<key>`) so the agent or human can annotate the ingested material without touching the write-once record.
+**Notebook stub** — every ingest creates a `scratchpad.notes` stub with a backlink (`Ingested from raw.<key>`) so the agent or human can annotate the ingested material without touching the write-once record.
 
 **Example — URL bookmark:**
 
@@ -700,7 +700,7 @@ Every successful CLI response (`--output=json`) is a single JSON envelope:
 **Field rules:**
 - `protocol` MUST be the exact string `textus/4`.
 - `key` MUST be the canonical resolved key.
-- `lane` MUST be one of the lanes declared in the manifest (`knowledge`, `notebook`, `feeds`, `proposals`, `artifacts` in the default Setup-1 scaffold).
+- `lane` MUST be one of the lanes declared in the manifest (`knowledge`, `scratchpad`, `feeds`, `proposals`, `artifacts` in the default Setup-1 scaffold).
 - `path` MUST be an absolute filesystem path.
 - `format` MUST be one of `markdown`, `json`, `yaml`, `text` (§5.12). Absent envelopes are treated as `markdown` for back-compat.
 - `body` is the raw on-disk bytes as a UTF-8 string for every format.

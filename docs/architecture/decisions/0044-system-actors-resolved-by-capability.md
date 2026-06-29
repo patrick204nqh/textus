@@ -6,7 +6,7 @@
 
 ## Context
 
-ADR 0030 makes role names **arbitrary**: authority is derived from capabilities × zone-kind, and the docs promise it twice — "`knowledge`, `notebook`, etc. have no privileged status in the code. Rename freely" (`how-to/configuring-zones.md`), and the same for roles. The test for any role-name string literal in `lib/` is therefore: *if I rename this role in my manifest, does this code path still work?*
+ADR 0030 makes role names **arbitrary**: authority is derived from capabilities × zone-kind, and the docs promise it twice — "`knowledge`, `scratchpad`, etc. have no privileged status in the code. Rename freely" (`how-to/configuring-zones.md`), and the same for roles. The test for any role-name string literal in `lib/` is therefore: *if I rename this role in my manifest, does this code path still work?*
 
 A sweep of `lib/` for actor literals turns up three tiers. Only one is a defect.
 

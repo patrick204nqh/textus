@@ -21,7 +21,7 @@ Default scaffold — Setup-1 (roles `human=[author, propose, ingest]`, `agent=[p
 | Lane | `kind` | Required capability | Writable by (default) | Use case |
 |---|---|---|---|---|
 | `knowledge` | `canon` | `author` | `human` | Authored truth: identity, voice, decisions, network. |
-| `notebook` | `workspace` | `keep` | `agent` | Agent's own durable working memory. Bytes climb to `knowledge` only via propose→accept. |
+| `scratchpad` | `workspace` | `keep` | `agent` | Agent's own durable working memory. Bytes climb to `knowledge` only via propose→accept. |
 | `proposals` | `queue` | `propose` | `agent`, `human` | Proposals awaiting human review via `textus accept`. |
 | `artifacts` | `machine` | `converge` | `automation` | Computed outputs produced by `drain` via the workflow DSL. |
 | `raw` | `raw` | `ingest` | `human`, `agent`, `automation` | Write-once external source material: URL bookmarks, files, binary assets. |
@@ -205,7 +205,7 @@ The `raw` lane (`kind: raw`) is a write-once intake lane for external source mat
 
 **`access` field** — entries MAY carry `source.access: public | private` (field is `maintained_by: human`). Set `private` for sources not safe to reproduce publicly.
 
-**Notebook stub** — every ingest creates a `notebook.notes` stub with a backlink (`Ingested from raw.<key>`) so the agent or human can annotate the ingested material without touching the write-once record.
+**Notebook stub** — every ingest creates a `scratchpad.notes` stub with a backlink (`Ingested from raw.<key>`) so the agent or human can annotate the ingested material without touching the write-once record.
 
 **Example — URL bookmark:**
 

@@ -42,7 +42,7 @@ module TextusSpecHelpers
   # presets name their zone after its kind, so a `kind_zone:` override yields a
   # correctly-named lane (e.g. canon → "knowledge") rather than a mislabeled one.
   LANE_ZONE = {
-    "canon" => "knowledge", "workspace" => "notebook", "machine" => "feeds",
+    "canon" => "knowledge", "workspace" => "scratchpad", "machine" => "feeds",
     "queue" => "proposals"
   }.freeze
 

@@ -30,7 +30,7 @@ The other three — `WRITE_FLOW_TEMPLATES`, the `agent_protocol` recipes, and th
 catalog — still embed the retired instance names (`review.*`, `intake`, `identity/working`,
 `output`), so the **agent-facing boot envelope** can instruct an agent to write a zone the
 store no longer has. 0.33 also added the `keep` capability but no boot write-flow for it,
-silently dropping the agent's `notebook` guidance — the one lane 0.33 exists to deliver.
+silently dropping the agent's `scratchpad` guidance — the one lane 0.33 exists to deliver.
 
 ## Decision
 
@@ -42,7 +42,7 @@ silently dropping the agent's `notebook` guidance — the one lane 0.33 exists t
    `Policy#zones_of_kind(kind)` lookup backs kind-derived strings in `WRITE_FLOW_TEMPLATES`,
    the `agent_protocol` recipes, and (via the stable kind vocabulary) the CLI verb catalog.
    This completes the fragility fix ADR 0033 §6 began.
-3. **`keep`-holders get a `notebook` write-flow in `boot`.**
+3. **`keep`-holders get a `scratchpad` write-flow in `boot`.**
 4. **`pulse` derives the queue zone from `policy.queue_zone`** instead of the literal
    `"review"`. 0.33 renamed the default queue zone `review → proposals` but missed this read
    site, so `pulse`'s `pending_review` returns `[]` on every default 0.33 store — a shipped

@@ -22,7 +22,7 @@ module Textus
       Check::ProposalTargets,
       Check::GeneratorDrift,
       Check::RawAssetPaths,
-      Check::NotebookSources,
+      Check::ScratchpadSources,
       Check::StaleReviewedStamp,
     ].freeze
 

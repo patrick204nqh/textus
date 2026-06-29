@@ -60,7 +60,7 @@ roles:
 
 lanes:
   - { name: knowledge, kind: canon }      # author   — canonical truth
-  - { name: notebook,  kind: workspace }  # keep     — agent's own durable lane
+  - { name: scratchpad,  kind: workspace }  # keep     — agent's own durable lane
   - { name: proposals, kind: queue }      # propose  — proposals awaiting accept
   - { name: artifacts, kind: machine }    # converge — computed outputs + external inputs
 ```
@@ -74,7 +74,7 @@ lanes:
   .gitignore             # generated — ignores .state/ and any tracked:false entries
   data/                  # one dir per lane; kinds + capabilities are in the manifest above
     knowledge/           # e.g. identity (knowledge.identity.*), voice, decisions, notes
-    notebook/
+    scratchpad/
     proposals/
     artifacts/           # machine lane: computed outputs + external inputs
   .state/                  # disposable runtime state — gitignored, safe to delete (ADR 0038)
@@ -111,7 +111,7 @@ For a worked store — knowledge entries, a staged proposal, schemas, ERB templa
 - **Agent loop.** `textus boot` orients a fresh session; `textus pulse --since=N` is the per-turn heartbeat (changed entries, pending proposals, index etag for catalog drift detection). ([docs/how-to/agents-mcp.md](docs/how-to/agents-mcp.md))
 - **MCP surface.** The official `mcp` Ruby SDK drives the stdio JSON-RPC server; protocol version auto-negotiated up to `2025-11-25`. Wire textus into Claude Code, Cursor, or any MCP host in one config block.
 - **`textus doctor`.** Health checks across schemas, workflow registrations, keys, sentinels, and the audit log.
-- **`raw` lane and `ingest` verb.** Write-once intake lane for external URL bookmarks, files, and binary assets. Three source kinds (`url`/`file`/`asset`); daily key derivation; notebook stub per ingest. See "Intake and ingest" section below.
+- **`raw` lane and `ingest` verb.** Write-once intake lane for external URL bookmarks, files, and binary assets. Three source kinds (`url`/`file`/`asset`); daily key derivation; scratchpad stub per ingest. See "Intake and ingest" section below.
 
 ## CLI and lanes
 
@@ -185,8 +185,8 @@ textus ingest url agentskills-io-brainstorming \
 # see what landed in the raw lane
 textus list --lane=raw
 
-# a notebook stub was created alongside — annotate it
-textus get notebook.notes.raw
+# a scratchpad stub was created alongside — annotate it
+textus get scratchpad.notes.raw
 ```
 
 Stale produced entries are re-materialised by `drain`, not by reads — `get` is a pure read (ADR 0089).

@@ -5,7 +5,7 @@ roles:
   - { name: automation, can: [converge, ingest] }
 lanes:
   - { name: knowledge, kind: canon,     desc: "the maintained source of truth about the repo" }
-  - { name: notebook,  kind: workspace, owner: agent, desc: "the agent's own durable working notes" }
+  - { name: scratchpad,  kind: workspace, owner: agent, desc: "the agent's own durable scratchpad (working memory)" }
   - { name: proposals, kind: queue,     desc: "changes awaiting a human accept" }
   - { name: artifacts, kind: machine,   desc: "machine-maintained computed outputs" }
   - { name: raw,       kind: raw,       desc: "ingested external source material (write-once)" }
@@ -82,7 +82,7 @@ entries:
     source: { from: external, command: "true", sources: [] }
     publish:
       - { to: SPEC.md, template: docs/spec.erb }
-  - { key: notebook.notes,  lane: notebook,  owner: agent:self, nested: true, kind: nested }
+  - { key: scratchpad.notes,  lane: scratchpad,  owner: agent:self, nested: true, kind: nested }
   - { key: proposals.notes, lane: proposals, owner: agent:self, nested: true, kind: nested }
   - { key: raw, lane: raw, owner: agent:self, nested: true, kind: nested, format: yaml }
   # Boot artifact — pre-computed agent orientation (drain computes, boot reads)

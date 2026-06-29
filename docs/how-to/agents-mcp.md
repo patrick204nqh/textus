@@ -43,7 +43,7 @@ textus init
 ```
 
 You get a `.textus/` directory with five default zones (`knowledge`,
-`notebook`, `feeds`, `proposals`, `artifacts`), baseline schemas, and a
+`scratchpad`, `feeds`, `proposals`, `artifacts`), baseline schemas, and a
 starter manifest. Commit `.textus/` to git.
 
 ### 3. Wire the MCP server
@@ -107,7 +107,7 @@ call the `boot` MCP tool — it returns the manifest, your write
 authority, and the tool catalog. Call `pulse` once per turn to see
 what changed since you last looked.
 
-You keep your own working notes in `notebook/`, but you can't write to
+You keep your own working notes in `scratchpad/`, but you can't write to
 `knowledge/` directly. Use the `propose` tool to land a change in the
 `proposals/` queue; a human runs `textus accept` to promote it to
 `knowledge/`.
@@ -130,7 +130,7 @@ the boot/pulse protocol.
   manifest, **any hook, or any schema** makes the next tool call return
   `contract_drift`; re-run `boot` to re-orient (ADR 0074). The pulse envelope's
   fingerprint key is `contract_etag` (was `manifest_etag`).
-- **Role-gated writes:** the agent keeps its own `notebook/`, but
+- **Role-gated writes:** the agent keeps its own `scratchpad/`, but
   cannot write to `knowledge/` directly; to change canon it proposes
   to `proposals/`. You
   retain control over what becomes load-bearing. The connection acts

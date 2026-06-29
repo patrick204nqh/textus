@@ -27,7 +27,7 @@ Every successful CLI response (`--output=json`) is a single JSON envelope:
 **Field rules:**
 - `protocol` MUST be the exact string `textus/4`.
 - `key` MUST be the canonical resolved key.
-- `lane` MUST be one of the lanes declared in the manifest (`knowledge`, `notebook`, `feeds`, `proposals`, `artifacts` in the default Setup-1 scaffold).
+- `lane` MUST be one of the lanes declared in the manifest (`knowledge`, `scratchpad`, `feeds`, `proposals`, `artifacts` in the default Setup-1 scaffold).
 - `path` MUST be an absolute filesystem path.
 - `format` MUST be one of `markdown`, `json`, `yaml`, `text` (§5.12). Absent envelopes are treated as `markdown` for back-compat.
 - `body` is the raw on-disk bytes as a UTF-8 string for every format.

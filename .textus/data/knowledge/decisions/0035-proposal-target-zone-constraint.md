@@ -37,7 +37,7 @@ For `reject` they *never* coincide: folding would let **any proposer reject any 
 not a degenerate `zone_writable_by`. **The fold is rejected.**
 
 **The real gap.** Nothing constrains `proposal.target_key` to a canon zone. A proposer may
-write `target_key: notebook.x` (workspace) or `artifacts.x` (derived). `accept` then passes
+write `target_key: scratchpad.x` (workspace) or `artifacts.x` (derived). `accept` then passes
 that key to its guard and to a nested `put`/`delete` whose own `zone_writable_by` gate decides
 by the target's kind — producing incoherent outcomes:
 

@@ -119,13 +119,13 @@ RSpec.describe "Textus::Init with_agent profile" do
   end
 
   describe "agent-memory promise (ADR 0033)" do
-    it "lets the agent write its notebook without a human accept" do
+    it "lets the agent write its scratchpad without a human accept" do
       Dir.mktmpdir do |dir|
         dot = File.join(dir, ".textus")
         Textus::Init.run(dot)
         store = Textus::Store.new(dot)
-        store.with_role("agent").put("notebook.notes.s1", meta: { "name" => "s1" }, body: "remembered\n")
-        expect(store.with_role("agent").get("notebook.notes.s1").body).to eq("remembered\n")
+        store.with_role("agent").put("scratchpad.notes.s1", meta: { "name" => "s1" }, body: "remembered\n")
+        expect(store.with_role("agent").get("scratchpad.notes.s1").body).to eq("remembered\n")
       end
     end
   end

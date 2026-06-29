@@ -9,7 +9,7 @@ not edit by hand — edit the source under `.textus/data/` and run
 → Run `textus boot` for the catalog + write flows; `textus get artifacts.docs.index` for the docs map.
 → Write authority by zone:
     - **knowledge** (human) — the maintained source of truth about the repo
-    - **notebook** (agent) — the agent's own durable working notes
+    - **scratchpad** (agent) — the agent's own durable scratchpad (working memory)
     - **proposals** (human agent) — changes awaiting a human accept
     - **artifacts** (automation) — machine-maintained computed outputs
     - **raw** (human agent automation) — ingested external source material (write-once)

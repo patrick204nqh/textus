@@ -45,7 +45,7 @@ RSpec.describe Textus::Init do
     target = File.join(tmp, ".textus")
     Textus::Init.run(target)
     manifest = File.read(File.join(target, "manifest.yaml"))
-    %w[knowledge notebook proposals artifacts].each do |z|
+    %w[knowledge scratchpad proposals artifacts].each do |z|
       expect(manifest).to include("name: #{z}"), "manifest should declare zone #{z}"
       expect(File.directory?(File.join(target, "data", z))).to be(true), "data/#{z}/ should exist"
       expect(File.exist?(File.join(target, "data", z, ".gitkeep"))).to be true

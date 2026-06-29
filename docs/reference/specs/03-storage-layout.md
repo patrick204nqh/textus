@@ -13,7 +13,7 @@ The root is `.textus/` at the project working directory. A typical tree:
     sentinels/           # byte-copied publish bookkeeping (see §5.3)
   data/                  # ALL user content lives here
     knowledge/           # lane: knowledge (kind: canon — author-holders write)
-    notebook/            # lane: notebook (kind: workspace — keep-holders write; agent's own durable lane)
+    scratchpad/            # lane: scratchpad (kind: workspace — keep-holders write; agent's own durable lane)
     proposals/           # lane: proposals (kind: queue — propose-holders write)
     artifacts/           # lane: artifacts (kind: machine — converge-holders write)
     raw/                 # lane: raw (kind: raw — ingest-holders write; write-once)

@@ -17,7 +17,7 @@ flowchart LR
     end
 
     human -->|author| knowledge["knowledge<br/>(canon)"]
-    agent -->|keep| notebook["notebook<br/>(workspace)"]
+    agent -->|keep| scratchpad["scratchpad<br/>(workspace)"]
     agent -->|propose| proposals["proposals<br/>(queue)"]
     automation -->|drain| artifacts["artifacts<br/>(machine)"]
     human -->|ingest| raw["raw<br/>(intake)"]
@@ -46,7 +46,7 @@ The point of those lanes is to **build context you can trust**. Place each lane 
                        LOW TRUST                     HIGH TRUST
                       (unreviewed)                (authoritative)
               ┌──────────────────────────┬───────────────────────────────┐
-DURABLE       │  notebook                │  knowledge  ★ the goal        │
+DURABLE       │  scratchpad                │  knowledge  ★ the goal        │
 (kept)        │  agent's working truth   │  canon — a human authors      │
               │  durable, but low-trust  │  here · the context you ship  │
               ├──────────────────────────┼───────────────────────────────┤
@@ -62,11 +62,11 @@ Without coordination, they overwrite each other and nothing remembers why. textu
 
 ```
 knowledge/   author only            — who you are, what you decide, how you sound
-notebook/    keep only              — agent's own durable lane (bytes climb to knowledge only via propose→accept)
+scratchpad/    keep only              — agent's own durable lane (bytes climb to knowledge only via propose→accept)
 proposals/   propose (agent+human) — proposals waiting on a human accept
 artifacts/   converge only         — machine-maintained: computed outputs + external inputs
 ```
 
-An agent that tries to write directly into `knowledge/` gets `write_forbidden`. It writes to `proposals/` (to change authoritative content) or its own `notebook/` (for working memory). You accept the good proposals; textus promotes them, records the move, and audits both halves. Stable per-entry `uid:` means a reorganization doesn't break references. A monotonic audit cursor (`textus pulse --since=N`) means the next session — possibly a different agent, possibly a different model — picks up exactly where the last one left off.
+An agent that tries to write directly into `knowledge/` gets `write_forbidden`. It writes to `proposals/` (to change authoritative content) or its own `scratchpad/` (for working memory). You accept the good proposals; textus promotes them, records the move, and audits both halves. Stable per-entry `uid:` means a reorganization doesn't break references. A monotonic audit cursor (`textus pulse --since=N`) means the next session — possibly a different agent, possibly a different model — picks up exactly where the last one left off.
 
 That's the load-bearing claim: **coordination is a protocol invariant, not a library convenience.**

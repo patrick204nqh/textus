@@ -14,7 +14,7 @@ This is the configuration reference. For the wire protocol, see [`../../SPEC.md`
 ## Table of contents
 
 1. [Roles and capabilities — who is allowed to write](#roles-and-capabilities--who-is-allowed-to-write)
-2. [The five default lanes](#the-five-default-lanes) — `knowledge`, `notebook`, `artifacts`, `proposals`, `raw`
+2. [The five default lanes](#the-five-default-lanes) — `knowledge`, `scratchpad`, `artifacts`, `proposals`, `raw`
 3. [Defining entries](#defining-entries)
 4. [Enforcement — what `textus doctor` checks](#enforcement--what-textus-doctor-checks)
 
@@ -25,13 +25,13 @@ This is the configuration reference. For the wire protocol, see [`../../SPEC.md`
 A role is a name in the manifest that holds a set of **capabilities** — verbs from a closed five-element set. Write authority is *derived*: a role may write a lane iff it holds the capability the lane's kind requires (see [The five default lanes](#the-five-default-lanes)). **The current roles, their `can:` sets, and which lane-kinds each may write are declared in `manifest.yaml` under `roles:`** (run `textus boot` to see the resolved set). What each role represents:
 
 - **`human`** — a person at a terminal; the single trust anchor.
-- **`agent`** — an autonomous agent: stages proposals, maintains its own `notebook` workspace, and can ingest external URLs.
+- **`agent`** — an autonomous agent: stages proposals, maintains its own `scratchpad` workspace, and can ingest external URLs.
 - **`automation`** — scheduled or one-shot scripts: produce computed outputs in the `artifacts` machine lane via `drain`.
 
 What each of the five capabilities **means** (the capability ↔ lane-kind mapping is declared in `manifest.yaml`):
 
 - **`author`** (writes `canon`) — authoring canonical truth; the **single trust anchor** (at most one role holds it).
-- **`keep`** (writes `workspace`) — writing to an agent's own durable lane (`notebook`); bytes never auto-promote.
+- **`keep`** (writes `workspace`) — writing to an agent's own durable lane (`scratchpad`); bytes never auto-promote.
 - **`propose`** (writes `queue`) — staging a proposal awaiting promotion.
 - **`converge`** (writes `machine`) — keeping the machine lane current: producing computed outputs via `drain` and the workflow DSL.
 - **`ingest`** (writes `raw`) — write-once ingestion of external source material (URL bookmarks, files, binary assets).
@@ -63,7 +63,7 @@ roles:
 
 lanes:
   - { name: knowledge,  kind: canon }
-  - { name: notebook,   kind: workspace, owner: agent, desc: "agent's durable working memory" }
+  - { name: scratchpad,   kind: workspace, owner: agent, desc: "agent's durable working memory" }
   - { name: artifacts,  kind: machine }
   - { name: proposals,  kind: queue }
   - { name: raw,        kind: raw }
@@ -74,7 +74,7 @@ lanes:
 Write authority is **derived** — there is no `write_policy:`. Each lane declares only its `kind:`; the kind decides the required capability, and any role holding that capability may write. The kind→capability mapping is a **bijection** declared in `manifest.yaml`. What each default lane is *for*:
 
 - **`knowledge`** (`canon`, written by `human`) — authored truth: identity, voice, decisions. Long-lived.
-- **`notebook`** (`workspace`, written by `agent`) — the agent's own durable working memory. Bytes climb to `knowledge` only via propose→accept.
+- **`scratchpad`** (`workspace`, written by `agent`) — the agent's own durable working memory. Bytes climb to `knowledge` only via propose→accept.
 - **`artifacts`** (`machine`, written by `automation`) — computed outputs produced by `drain` and the workflow DSL. Never hand-edited.
 - **`proposals`** (`queue`, written by `agent` + `human`) — proposals awaiting human review via `textus accept`.
 - **`raw`** (`raw`, written by `human`, `agent`, `automation`) — write-once external source material: URL bookmarks, local files, binary assets. Each entry is immutable after creation.

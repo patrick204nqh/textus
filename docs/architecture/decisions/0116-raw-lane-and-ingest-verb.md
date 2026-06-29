@@ -20,7 +20,7 @@ The requirements:
    local path), asset (binary file copied to a managed directory).
 3. **Asset management** — binary files (screenshots, PDFs) should be copied into
    a project-scoped `assets/raw/` tree, not stored inline.
-4. **Notebook stubs** — each ingest creates a lightweight notebook.notes stub
+4. **Notebook stubs** — each ingest creates a lightweight scratchpad.notes stub
    linking back to the raw key, so the agent or human can annotate the ingested
    material without touching the write-once record.
 5. **Raw lane** — entries live under a `raw.*` key prefix on a `kind: raw`
@@ -62,7 +62,7 @@ The `call` method:
 - Writes a YAML-format raw entry with structured content (ingested_at,
   source, and kind-specific fields).
 - For asset kind, copies the source file into `assets/raw/YYYY/MM/DD/<zone>/`.
-- Creates a notebook.notes stub with a backlink in the body.
+- Creates a scratchpad.notes stub with a backlink in the body.
 - Returns the raw entry's uid.
 
 ### 4. Guarded surfaces
@@ -81,7 +81,7 @@ tracked by git before any ingest occurs.
 Two new doctor checks:
 - **`raw_asset_paths`** — scans all raw entries for `asset` references and
   reports missing files on disk.
-- **`notebook_sources`** — scans notebook entries for `Ingested from raw.`
+- **`scratchpad_sources`** — scans scratchpad entries for `Ingested from raw.`
   backlinks and reports dangling references to deleted raw entries.
 
 ## Consequences
@@ -101,7 +101,7 @@ Two new doctor checks:
 - **Inline binary assets in YAML.** Rejected: large binaries should not live in
   tracked data files. Copying to `assets/raw/` keeps the data directory lean
   and lets git manage the binaries independently.
-- **No notebook stub.** Rejected: without a stub the agent has no way to
-  discover or annotate ingested material through the notebook interface. The
+- **No scratchpad stub.** Rejected: without a stub the agent has no way to
+  discover or annotate ingested material through the scratchpad interface. The
   backlink pattern (`Ingested from raw.…`) is text-searchable and machine-
   parseable.

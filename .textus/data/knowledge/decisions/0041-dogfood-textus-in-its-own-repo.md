@@ -40,7 +40,7 @@ Two facts make the gap worth closing deliberately rather than by copy-paste:
 `.textus/` is committed (its `.run/` runtime tree stays git-ignored, ADR 0038).
 The store is shaped to dogfood the full build/publish path, mirroring
 `.textus/`: humans author `knowledge.project` + `knowledge.runbooks`
-(canon), the agent keeps durable `notebook` notes and `propose`s, automation
+(canon), the agent keeps durable `scratchpad` notes and `propose`s, automation
 `build`s an `artifacts.orientation` projection that publishes to `CLAUDE.md` and
 `AGENTS.md` at the repo root. The role/capability split is the standard one
 (ADR 0030): human `author`+`propose`, agent `propose`+`keep`, automation `build`.

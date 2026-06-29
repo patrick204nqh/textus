@@ -28,12 +28,12 @@
       "purpose": "the maintained source of truth about the repo"
     },
     {
-      "name": "notebook",
+      "name": "scratchpad",
       "writers": [
         "agent"
       ],
       "kind": "workspace",
-      "purpose": "the agent's own durable working notes"
+      "purpose": "the agent's own durable scratchpad (working memory)"
     },
     {
       "name": "proposals",
@@ -90,7 +90,7 @@
       "key_delete_prefix"
     ],
     "writable_lanes": [
-      "notebook",
+      "scratchpad",
       "proposals",
       "raw"
     ],
