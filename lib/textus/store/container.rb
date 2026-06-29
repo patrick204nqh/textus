@@ -39,7 +39,7 @@ module Textus
         self
       end
 
-      def self.build_full(infra, coord_seed)
+      def self.build(infra, coord_seed)
         coord = Coordination.new(
           manifest: coord_seed.manifest,
           workflows: coord_seed.workflows,

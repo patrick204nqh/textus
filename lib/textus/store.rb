@@ -137,7 +137,7 @@ module Textus
         pipeline: nil,
       )
 
-      Container.build_full(infra, coord_seed)
+      Container.build(infra, coord_seed)
     end
   end
 end
