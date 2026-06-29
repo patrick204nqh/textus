@@ -12,14 +12,6 @@ A `get` never triggers a re-produce — it is a pure read (ADR 0089).
 
 textus schedules **nothing** itself — it has no in-process runner by design (ADR 0078). The host owns the timer; `drain` is the verb it calls.
 
-## Preview first
-
-```bash
-textus drain --dry-run --as=automation
-```
-
-Reports `would_materialize`, `would_drop` / `would_archive`, and the health report without writing anything.
-
 ## Apply
 
 ```bash

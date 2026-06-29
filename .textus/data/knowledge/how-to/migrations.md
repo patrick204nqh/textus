@@ -1,72 +1,55 @@
 # Migrations
 
 > **How-to** · for operators · **read when** you need to restructure a store safely
-> **SSoT for** store-restructuring procedures (key rename, zone rename, bulk delete) · **reviewed** 2026-06 (v0.43)
+> **SSoT for** store-restructuring procedures (key rename, lane rename, bulk delete) · **reviewed** 2026-06 (v0.55)
 
 How to restructure a textus store safely.
 
 ## Bulk key rename
 
-Rename every leaf under one prefix to another:
+Rename every leaf key under one prefix to another. UIDs are preserved; one audit row per key.
 
 ```sh
-textus key mv --prefix old.prefix new.prefix --dry-run    # preview
-textus key mv --prefix old.prefix new.prefix              # apply
+textus key mv-prefix old.prefix new.prefix --dry-run   # preview
+textus key mv-prefix old.prefix new.prefix             # apply
 ```
-
-UIDs are preserved (it's a `mv` per file). One audit row per file.
 
 ## Bulk delete
 
-```sh
-textus key delete --prefix scratch --dry-run
-textus key delete --prefix scratch
-```
-
-## Rename a zone
-
-Refuses if the destination zone directory already exists.
+Delete every leaf key under a prefix.
 
 ```sh
-textus zone mv scratch sandbox --dry-run
-textus zone mv scratch sandbox
+textus key delete-prefix scratch --dry-run
+textus key delete-prefix scratch
 ```
 
-The manifest's `zones:` list and all `entries[].zone`/`key`/`path` are rewritten; `zones/<from>/` is moved to `zones/<to>/`.
+## Rename a lane
+
+Renames the manifest entry and moves the data directory. Refuses if the destination lane already exists.
+
+```sh
+textus data mv scratch sandbox --dry-run
+textus data mv scratch sandbox
+```
+
+## Rename a single key
+
+```sh
+textus key mv knowledge.old-name knowledge.new-name
+```
 
 ## Lint candidate rules
+
+Diff a candidate manifest's `rules:` block against the live manifest before applying. Returns `add_rule` / `remove_rule` / `change_rule` steps. No writes.
 
 ```sh
 textus rule lint --against=./manifest.candidate.yaml
 ```
 
-Diffs the candidate's `rules:` block against the live manifest. Returns `add_rule` / `remove_rule` / `change_rule` steps. No writes.
+## Schema field rename
 
-## Multi-op migration plans
-
-Pack multiple operations into one YAML file:
-
-```yaml
-# migration-2026-06.yaml
-version: 1
-operations:
-  - { op: key_mv_prefix, from_prefix: working.old, to_prefix: working.new }
-  - { op: zone_mv,       from: scratch,            to: sandbox }
-```
-
-```sh
-textus migrate ./migration-2026-06.yaml --dry-run
-textus migrate ./migration-2026-06.yaml
-```
-
-Supported ops: `key_mv_prefix`, `key_delete_prefix`, `zone_mv`.
-
-## Schema field rename (existing — see also)
-
-The per-schema `migrate` already exists and lives under the `schema` group:
+Rewrites `_meta` keys in every entry of a given schema family:
 
 ```sh
 textus schema migrate FAMILY --rename=OLD_FIELD:NEW_FIELD
 ```
-
-This rewrites `_meta` keys in every entry of that family.

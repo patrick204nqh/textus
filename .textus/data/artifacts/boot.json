@@ -73,8 +73,7 @@
       "pulse",
       "rule_explain",
       "schema_show",
-      "boot",
-      "jobs"
+      "boot"
     ],
     "write_verbs": [
       "put",

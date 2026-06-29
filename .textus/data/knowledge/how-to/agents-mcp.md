@@ -6,25 +6,17 @@ uid: e83bf3140722f215
 # Agents & MCP — wiring an agent to a store
 
 > **How-to** · for agent authors & integrators · **read when** you're wiring an AI agent to a store
-> **SSoT for** the Claude Code quickstart, context-store setup, and the agent boot → pulse loop · **reviewed** 2026-06 (v0.39)
+> **SSoT for** Claude Code quickstart, the boot → pulse session loop, and the propose → accept flow · **reviewed** 2026-06 (v0.55)
 
-How an AI agent reads from and writes to a textus store — a 5-minute Claude Code setup, what you get, and the operational loop you run each turn.
+How an AI agent reads from and writes to a textus store over MCP — setup, the session protocol, and the operational loop.
 
-For the wire protocol and full verb table, see [`../../SPEC.md`](../../SPEC.md).
+For the normative wire protocol and full verb table, see [`../../SPEC.md`](../../SPEC.md).
 
 > New here? Start with [Concepts](../explanation/concepts.md).
 
-## Table of contents
-
-1. [Quickstart: Claude Code (~5 minutes)](#quickstart-claude-code-5-minutes)
-2. [Context store](#context-store)
-3. [Recommended agent loop](#recommended-agent-loop)
-
 ---
-## Quickstart: Claude Code (~5 minutes)
 
-If you want Claude Code (or any MCP-aware agent) to read and write
-your project's context through textus, four steps. Should take ~5 minutes.
+## Quickstart: Claude Code (~5 minutes)
 
 ### 1. Install
 
@@ -34,39 +26,17 @@ gem install textus
 
 Requires Ruby ≥ 3.3. Verify with `textus --version`.
 
-### 2. Initialize the store in your project
-
-From your project root:
+### 2. Initialize the store
 
 ```sh
 textus init
 ```
 
-You get a `.textus/` directory with five default zones (`knowledge`,
-`scratchpad`, `feeds`, `proposals`, `artifacts`), baseline schemas, and a
-starter manifest. Commit `.textus/` to git.
+Creates `.textus/` with default lanes (`knowledge`, `scratchpad`, `artifacts`, `queue`, `raw`), baseline schemas, and a starter manifest. Commit `.textus/` to git.
 
 ### 3. Wire the MCP server
 
 Create `.mcp.json` at your project root:
-
-```json
-{
-  "mcpServers": {
-    "textus": {
-      "command": "textus",
-      "args": ["mcp", "serve"]
-    }
-  }
-}
-```
-
-**Pin the store root for subprocess launches.** The bare config above
-relies on textus discovering `.textus/` by walking up from the
-server's working directory. When Claude Code launches `textus mcp
-serve` as a subprocess, that cwd is not guaranteed to be your project
-root — so pin the store explicitly. Either pass `--root`, or set
-`TEXTUS_ROOT`:
 
 ```json
 {
@@ -79,150 +49,182 @@ root — so pin the store explicitly. Either pass `--root`, or set
 }
 ```
 
-Root resolution is `--root` flag → `TEXTUS_ROOT` env → upward
-`.textus` discovery — the same flag/env/discovery shape the role chain
-uses (see [ADR 0040](../architecture/decisions/0040-mcp-connection-role-and-two-channels.md)).
-The CLI (a human in the project directory) is fine relying on
-discovery; the agent channel should pin the root. Registering several
-server entries, each `--root`-ed at a different store, is how one agent
-talks to multiple textus stores.
+Pin `--root` explicitly. When Claude Code launches `textus mcp serve` as a subprocess its working directory is not guaranteed to be your project root, so upward `.textus/` discovery can miss. Role resolution is `--as` flag → `TEXTUS_ROLE` env → `.textus/role` file → transport default (`agent` over MCP). See [ADR 0040](../architecture/decisions/0040-mcp-connection-role-and-two-channels.md).
 
-That's it. When Claude Code opens your project, it launches
-`textus mcp serve` as a subprocess and the agent gets these tools:
-`boot`, `pulse`, `list`, `get`, `put`, `propose`, `drain`,
-`schema`, `rules` (plus maintenance tools). The agent
-calls them as MCP tools — no shell strings, no parsing. The MCP tool
-names are the same as the CLI verbs (see [ADR 0036](../architecture/decisions/0036-transports-as-pure-framings.md)); the full
-catalog with arguments is in [`SPEC.md`](../../SPEC.md) §9.
+To connect one agent to multiple stores, add a second entry with a different `--root`.
 
 ### 4. Tell Claude how to use it
 
-Add to your `CLAUDE.md` (or create one if you don't have it):
+Add to `CLAUDE.md`:
 
 ```markdown
 ## Context store
 
 This project uses textus for durable agent memory. On session start,
-call the `boot` MCP tool — it returns the manifest, your write
-authority, and the tool catalog. Call `pulse` once per turn to see
-what changed since you last looked.
+call the `boot` MCP tool — it returns your write authority, lane topology,
+and the verb catalog. Call `pulse` once per turn to see what changed.
 
-You keep your own working notes in `scratchpad/`, but you can't write to
-`knowledge/` directly. Use the `propose` tool to land a change in the
-`proposals/` queue; a human runs `textus accept` to promote it to
-`knowledge/`.
+Write your working notes to `scratchpad/`. Use `propose` to suggest
+changes to `knowledge/`; a human runs `textus accept` to promote them.
 ```
 
-That's the full integration. Claude Code reads `CLAUDE.md` on session
-start, sees the MCP tools advertised in the `.mcp.json`, and follows
-the boot/pulse protocol.
+---
 
-## Context store
+## Session protocol
 
-### What you get
+### `boot` — orient once per session
 
-- **`boot` once per session:** the agent knows your zone topology,
-  schemas, write authority, and verb catalog without you explaining
-  them in `CLAUDE.md`.
-- **`pulse` per turn:** the agent sees what files changed since its
-  last turn — no full re-read of the project.
-- **Contract drift covers the whole contract:** a mid-session edit to the
-  manifest, **any hook, or any schema** makes the next tool call return
-  `contract_drift`; re-run `boot` to re-orient (ADR 0074). The pulse envelope's
-  fingerprint key is `contract_etag` (was `manifest_etag`).
-- **Role-gated writes:** the agent keeps its own `scratchpad/`, but
-  cannot write to `knowledge/` directly; to change canon it proposes
-  to `proposals/`. You
-  retain control over what becomes load-bearing. The connection acts
-  as the `agent` role by default (ADR 0040); to run it with your own
-  authority instead, launch with `--as=human` (the gate then becomes
-  advisory).
-- **Audit log:** every write the agent makes is in
-  `.textus/audit.log`. You can replay or revert.
-- **Schema validation:** if you declare `_meta` field shapes per
-  entry family, every write is checked. No malformed entries
-  silently land.
+The first call every agent makes. Returns the full orientation contract:
 
-### Next steps
-
-- **For a worked end-to-end store** — the role gate (propose → accept),
-  build/publish (`CLAUDE.md` / `AGENTS.md` generated from knowledge
-  entries), schemas, templates, and a hook: `.textus/`.
-
-### Troubleshooting
-
-- **`textus mcp serve` exits immediately when Claude launches it:**
-  run it manually from your project root (`textus mcp serve` and type
-  `^C`); should print a JSON banner. If it errors, your `.textus/`
-  manifest has a problem — `textus doctor` will tell you which.
-- **`no .textus directory found` / wrong store when Claude launches
-  it:** the subprocess cwd isn't your project root, so upward
-  discovery missed (or found the wrong) `.textus/`. Pin it: add
-  `--root` to `args` or `TEXTUS_ROOT` to `env` in `.mcp.json` (see
-  step 3). It runs fine by hand because your shell's cwd *is* the
-  project root.
-- **Claude doesn't see the tools:** verify `.mcp.json` is at the
-  project root (not in a subdirectory) and Claude Code was launched
-  with the project open as the workspace.
-- **Agent writes are rejected with `write_forbidden`:** check
-  `textus boot | jq .agent_quickstart` — the `writable_zones` list
-  tells you which prefixes the agent can write. Anything outside
-  that is forbidden by design.
-
-## Recommended agent loop
-
-For Ruby embedders, `store.session(role:)` boots and returns a `Textus::Session` that
-tracks the cursor and propose_zone for you — no hand-rolled `since` variable needed
-(ADR 0036). The `advance_cursor` call returns a new immutable session value each turn.
-
-```ruby
-# Ruby embedder loop
-session = store.session(role: :agent)
-loop do
-  delta = store.as(session.role).pulse(since: session.cursor)
-  session = session.advance_cursor(delta["cursor"])
-  delta["changed"].each { |c| reload(c["key"]) }
-  # propose a change:
-  # store.as(:agent).put("#{session.propose_zone}.my-key", meta: {...}, body: "...")
-end
+```json
+{
+  "protocol": "textus/4",
+  "contract_etag": "sha256:abcd1234",
+  "store_root": "/path/to/.textus",
+  "lanes": [
+    { "name": "raw",        "kind": "raw",       "writers": ["human"] },
+    { "name": "knowledge",  "kind": "canon",      "writers": ["human"] },
+    { "name": "scratchpad", "kind": "workspace",  "writers": ["agent"] },
+    { "name": "queue",      "kind": "queue",      "writers": ["agent"] },
+    { "name": "artifacts",  "kind": "machine",    "writers": ["automation"] }
+  ],
+  "agent_quickstart": {
+    "read_verbs":     ["boot","get","list","pulse","where","deps","rdeps","schema_show"],
+    "write_verbs":    ["put","key_delete","key_mv","propose","accept","reject","enqueue"],
+    "writable_lanes": ["scratchpad", "queue"],
+    "propose_lane":   "queue",
+    "latest_seq":     42
+  },
+  "agent_protocol": {
+    "recipes": { "read": {...}, "write": {...}, "propose": {...}, "drain": {...} },
+    "role_resolution": { "roles": ["human","agent","automation"], ... }
+  }
+}
 ```
 
-The equivalent CLI / pseudocode loop:
+From this single call the agent learns:
+- Which lanes it can write directly (`writable_lanes`)
+- Its `propose_lane` — the queue lane proposals go into
+- Its cursor anchor (`latest_seq`) — the starting point for `pulse`
+- Its `contract_etag` — a hash of manifest + hooks + schemas
 
-```python
-# Pseudocode
-boot = run("textus boot --output=json")
-cursor = boot["agent_quickstart"]["latest_seq"]
-contract = boot  # cache the orientation for the session
+**`contract_etag` is the session guard.** Every non-read verb call checks that the live contract hash still matches. If a human edits the manifest, hooks, or a schema mid-session, the next write returns `contract_drift` (JSON-RPC `-32001`) and the agent must call `boot` again before writing. `boot` itself rebuilds the session — resets the cursor and re-derives the propose lane from the updated manifest.
 
-while session_active:
-    pulse = run(f"textus pulse --since={cursor}")
-    if pulse.get("code") == "cursor_expired":
-        boot = run("textus boot --output=json")
-        cursor = boot["agent_quickstart"]["latest_seq"]
-        continue
+### `pulse` — delta per turn
 
-    cursor = pulse["cursor"]
-    for change in pulse["changed"]:
-        # reload the agent's view of this key
-        envelope = run(f"textus get {change['key']}")
-        ...
+Call without arguments; the handler reads the per-role file cursor from disk:
 
-    if pulse["stale"]:
-        # decide whether to run drain (re-pulls stale refresh entries)
-        # or proceed with stale data — a get never refreshes (ADR 0089)
-        ...
-
-    # do work; propose changes by writing to the proposals zone
-    run(f"textus put proposals.proposal.x --as=agent --stdin", input=envelope_json)
+```json
+{
+  "cursor": 57,
+  "changed": [
+    { "key": "raw.articles.llm-patterns", "verb": "put", "seq": 53 }
+  ],
+  "pending_review": ["queue.decisions.feature-x"],
+  "contract_etag": "sha256:abcd1234",
+  "index_etag": "sha256:..."
+}
 ```
 
-For the conceptual framing of the two channels (boot vs pulse — what each is and why), see [Concepts](../explanation/concepts.md). For the exact transports, pulse fields, error codes, and lifecycle facts, see [`SPEC.md`](../../SPEC.md) §11.1.
+`changed` — entries written since the last pulse. `pending_review` — keys sitting in the queue lane waiting for human `accept`. After each `pulse` the server advances its in-memory cursor; the file cursor is also written to disk so it survives process restarts.
+
+---
+
+## The four recipes
+
+### Read
+
+```
+list(prefix: "knowledge.runbooks") → ["knowledge.runbooks.deploy", ...]
+get(key: "knowledge.runbooks.deploy") → { _meta: {...}, body: "...", sources: [...], ... }
+```
+
+`get` returns the envelope including `sources` — each source object now carries `suspended: true/false` computed by comparing the stored etag snapshot to the current on-disk etag of the referenced raw entry.
+
+### Write (direct — workspace lanes only)
+
+```
+schema_show(key: "scratchpad.notes.plan") → { fields: {...} }
+put(key: "scratchpad.notes.plan", _meta: { title: "Plan" }, body: "...")
+```
+
+`_meta.sources` can reference raw entries by key. textus snapshots their current etag at write time and surfaces `suspended: true` on future `get` calls if the source is later replaced.
+
+### Propose (canon changes go through the queue)
+
+The agent cannot write to `knowledge/` directly. It writes a proposal to the queue lane:
+
+```
+propose(key: "decisions.feature-x",
+        _meta: { proposal: { target_key: "knowledge.decisions.feature-x" } },
+        body: "...")
+→ writes queue.decisions.feature-x
+```
+
+A human then promotes it:
+
+```sh
+textus accept queue.decisions.feature-x
+```
+
+The proposal moves from the queue lane into `knowledge/`. `pulse` surfaces pending proposals in `pending_review` so the agent knows whether its proposals are still waiting.
+
+### Drain (keep machine lanes fresh)
+
+```
+pulse()                          # → changed includes stale raw entries
+drain(lane: "artifacts")         # → materialise + sweep
+```
+
+`drain` is a two-phase pass: materialize (re-run workflows for produced entries in scope) then sweep (apply retention rules). A `get` is a pure read and never triggers re-produce (ADR 0089).
+
+---
+
+## Role authority
+
+```
+                  write canon?  write workspace?  write queue?  write artifacts?
+human (author)        ✓              ✓               ✓               ✗
+agent (propose/keep)  ✗              ✓               ✓               ✗
+automation (converge) ✗              ✗               ✗               ✓
+```
+
+Authority is derived from the manifest's `roles:` capabilities and each lane's `kind:`. The connection defaults to `agent` over MCP (ADR 0040). Override with `--as=human` to run with your own authority; the gate then becomes advisory.
+
+---
+
+## Agent loop
+
+```
+── boot() ────────────────────────────────────────────────────────────
+← { contract_etag, writable_lanes, propose_lane, latest_seq: 42 }
+
+── [per turn] ────────────────────────────────────────────────────────
+── pulse() → { cursor: 57, changed: [...], pending_review: [...] }
+── list / get for anything in changed
+── put / propose based on work
+
+── [contract changes mid-session] ───────────────────────────────────
+── put() → contract_drift error (-32001)
+── boot() → { contract_etag: "sha256:new", latest_seq: 60 }
+── [resume writing]
+```
+
+---
+
+## Troubleshooting
+
+- **`textus mcp serve` exits immediately:** run it manually from your project root and type `^C`. If it errors, `textus doctor` will identify the manifest problem.
+- **`no .textus directory found`:** pin `--root` in `.mcp.json` — the subprocess cwd is not your project root (see step 3).
+- **Claude doesn't see the tools:** verify `.mcp.json` is at the project root, not a subdirectory, and Claude Code was launched with the project as workspace.
+- **Writes rejected with `write_forbidden`:** run `textus boot | jq .agent_quickstart` — `writable_lanes` lists what the agent can write directly. Anything outside that goes through `propose`.
+- **`contract_drift` on every write:** the manifest, a hook, or a schema was edited. Call `boot` to re-orient.
+
+---
 
 ## See also
 
-- [`../../SPEC.md`](../../SPEC.md) §8 envelope shape, §9 verb table, §11.1 agent integration
-- [`SPEC.md`](../../SPEC.md) §9 — full verb table and wire protocol
-- [ADR 0015](../architecture/decisions/0015-agent-gate-mcp.md) — the agent-gate decision and roadmap
-- [`../../.textus/`](../../.textus/) — worked store: role gate, build/publish, schemas, hook
-- [`../../.mcp.json`](../../.mcp.json) + [`../../.textus/`](../../.textus/) — textus's own self-development wiring: the same setup, but `bundle exec exe/textus` drives the working tree instead of the released gem ([ADR 0041](../architecture/decisions/0041-dogfood-textus-in-its-own-repo.md))
+- [`../../SPEC.md`](../../SPEC.md) — normative wire-protocol spec (§8 envelope, §9 verb table, §11 agent integration)
+- [ADR 0040](../architecture/decisions/0040-mcp-connection-role-and-two-channels.md) — MCP connection role and two-channel design
+- [ADR 0074](../architecture/decisions/0074-contract-etag-drift-guard.md) — contract-etag drift guard
+- [`../../.textus/`](../../.textus/) — textus's own self-development store (same setup with `bundle exec exe/textus`, ADR 0041)
