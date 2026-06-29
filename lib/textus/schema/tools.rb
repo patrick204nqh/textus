@@ -51,7 +51,7 @@ module Textus
         raise UsageError.new("schema migrate needs --rename=OLD:NEW or schema.evolution.migrate_from") if renames.empty?
 
         authority = accept_role_for(store)
-        ops = store.as(authority)
+        ops = store.with_role(authority)
         touched = []
         store.manifest.resolver.enumerate.each do |row|
           env = pure_get(store, authority, row[:key])
@@ -85,7 +85,7 @@ module Textus
       # Orchestrator-free read: schema tooling must never trigger a fetch
       # while inspecting/migrating entries (ADR 0062).
       def self.pure_get(store, role, key)
-        store.as(role).get(key)
+        store.with_role(role).get(key)
       end
 
       def self.load_schema(store, name)

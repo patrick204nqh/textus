@@ -62,7 +62,7 @@ RSpec.describe "Schema evolution" do
     it "migrate uses the declared author-capability role, not the literal human fallback" do
       store = store_with_roles
 
-      store.as("human").put(
+      store.with_role("human").put(
         "knowledge.note",
         meta: { "name" => "note", "headline" => "My Headline" },
         body: "body text",
@@ -72,7 +72,7 @@ RSpec.describe "Schema evolution" do
 
       expect(res["migrated"]).to include("knowledge.note")
 
-      env = store.as(Textus::Value::Role::DEFAULT).get("knowledge.note")
+      env = store.with_role(Textus::Value::Role::DEFAULT).get("knowledge.note")
       expect(env.meta).to have_key("title")
       expect(env.meta).not_to have_key("headline")
 
@@ -103,7 +103,7 @@ RSpec.describe "Schema evolution" do
 
     it "raises SchemaViolation listing the missing required field" do
       expect do
-        store.as("human").put(
+        store.with_role("human").put(
           "knowledge.network.org.bob",
           meta: { "name" => "bob", "org" => "acme" },
           body: "",

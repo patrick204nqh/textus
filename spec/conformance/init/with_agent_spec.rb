@@ -124,8 +124,8 @@ RSpec.describe "Textus::Init with_agent profile" do
         dot = File.join(dir, ".textus")
         Textus::Init.run(dot)
         store = Textus::Store.new(dot)
-        store.as("agent").put("notebook.notes.s1", meta: { "name" => "s1" }, body: "remembered\n")
-        expect(store.as("agent").get("notebook.notes.s1").body).to eq("remembered\n")
+        store.with_role("agent").put("notebook.notes.s1", meta: { "name" => "s1" }, body: "remembered\n")
+        expect(store.with_role("agent").get("notebook.notes.s1").body).to eq("remembered\n")
       end
     end
   end
@@ -137,12 +137,12 @@ RSpec.describe "Textus::Init with_agent profile" do
         Textus::Init.run(root, with_agent: true)
 
         store = Textus::Store.new(root)
-        store.as("human").put(
+        store.with_role("human").put(
           "knowledge.project",
           meta: { "name" => "project", "description" => "double-entry accounting service" },
           body: "",
         )
-        expect { store.as("automation").drain }.not_to raise_error
+        expect { store.with_role("automation").drain }.not_to raise_error
       end
     end
   end

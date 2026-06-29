@@ -60,10 +60,10 @@ RSpec.describe Textus::Store do
     end
   end
 
-  describe "#session" do
+  describe "#with_role" do
     it "returns a Store oriented at the latest cursor and the role's propose_lane" do
       store = described_class.new(root)
-      s = store.session(role: "agent")
+      s = store.with_role("agent")
       expect(s).to be_a(Textus::Store)
       expect(s.role).to eq("agent")
       expect(s.cursor).to eq(store.audit_log.latest_seq)

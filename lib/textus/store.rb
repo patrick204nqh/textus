@@ -73,14 +73,6 @@ module Textus
       )
     end
 
-    def as(role, dry_run: false, correlation_id: nil)
-      _rebuild(role:, dry_run:, correlation_id:)
-    end
-
-    def session(role:)
-      as(role)
-    end
-
     def method_missing(name, *args, **kwargs)
       spec = VerbRegistry.for(name)
       return super unless spec

@@ -26,7 +26,7 @@ RSpec.describe "boot verb dispatch" do
   end
 
   it "is reachable via the role-scoped facade" do
-    res = store.as("human").boot
+    res = store.with_role("human").boot
     expect(res["store_root"]).to eq(store.root)
   end
 end

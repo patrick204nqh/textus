@@ -55,29 +55,29 @@ RSpec.describe ":proposal_rejected event and store.reject" do
 
   it "rejects the proposal, returns result, and deletes the entry" do
     store = Textus::Store.new(root)
-    store.as("agent").put(
+    store.with_role("agent").put(
       "proposals.draft",
       meta: { "name" => "draft", "proposal" => { "target_key" => "identity.target", "action" => "put" } },
       body: "proposed body",
     )
-    result = store.as("human").reject("proposals.draft")
+    result = store.with_role("human").reject("proposals.draft")
     expect(result["rejected"]).to eq("proposals.draft")
     expect(result["target_key"]).to eq("identity.target")
-    expect { store.as(Textus::Value::Role::DEFAULT).get("proposals.draft") }
+    expect { store.with_role(Textus::Value::Role::DEFAULT).get("proposals.draft") }
       .to raise_error(Textus::ActionError, /no entry at/)
   end
 
   it "refuses to reject a non-proposals entry" do
     store = Textus::Store.new(root)
-    store.as("human").put("identity.target", meta: { "name" => "target" }, body: "x")
-    expect { store.as("human").reject("identity.target") }
+    store.with_role("human").put("identity.target", meta: { "name" => "target" }, body: "x")
+    expect { store.with_role("human").reject("identity.target") }
       .to raise_error(Textus::ActionError, /not in a proposal zone/)
   end
 
   it "refuses to reject when entry has no proposal block" do
     store = Textus::Store.new(root)
-    store.as("agent").put("proposals.draft", meta: { "name" => "draft" }, body: "x")
-    expect { store.as("human").reject("proposals.draft") }
+    store.with_role("agent").put("proposals.draft", meta: { "name" => "draft" }, body: "x")
+    expect { store.with_role("human").reject("proposals.draft") }
       .to raise_error(Textus::ActionError, /no proposal/)
   end
 
@@ -106,7 +106,7 @@ RSpec.describe ":proposal_rejected event and store.reject" do
     end
 
     it "rejects a proposals entry via CLI and emits JSON" do
-      cli_store.as("agent").put(
+      cli_store.with_role("agent").put(
         "proposals.d",
         meta: { "name" => "d", "proposal" => { "target_key" => "identity.t", "action" => "put" } },
         body: "x",
@@ -147,16 +147,16 @@ RSpec.describe ":proposal_rejected event and store.reject" do
       YAML
 
       store = Textus::Store.new(root)
-      store.as("agent").put(
+      store.with_role("agent").put(
         "proposals.draft",
         meta: { "name" => "draft", "proposal" => { "target_key" => "identity.target", "action" => "put" } },
         body: "proposed body",
       )
 
-      result = store.as("human").reject("proposals.draft")
+      result = store.with_role("human").reject("proposals.draft")
       expect(result["rejected"]).to eq("proposals.draft")
       expect(result["target_key"]).to eq("identity.target")
-      expect { store.as(Textus::Value::Role::DEFAULT).get("proposals.draft") }
+      expect { store.with_role(Textus::Value::Role::DEFAULT).get("proposals.draft") }
         .to raise_error(Textus::ActionError, /no entry at/)
     end
 
@@ -178,12 +178,12 @@ RSpec.describe ":proposal_rejected event and store.reject" do
       YAML
 
       store = Textus::Store.new(root)
-      store.as("human").put(
+      store.with_role("human").put(
         "pending.draft",
         meta: { "name" => "draft", "proposal" => { "target_key" => "identity.target", "action" => "put" } },
         body: "x",
       )
-      expect { store.as("human").reject("pending.draft") }
+      expect { store.with_role("human").reject("pending.draft") }
         .to raise_error(Textus::ActionError, /not in a proposal zone/)
     end
   end

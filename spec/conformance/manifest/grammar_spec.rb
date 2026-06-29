@@ -59,7 +59,7 @@ RSpec.describe "Textus::Manifest grammar" do
     end
 
     it "emits the manifest desc on the boot zone row" do
-      row = store.as("human").boot["lanes"].find { |z| z["name"] == "knowledge" }
+      row = store.with_role("human").boot["lanes"].find { |z| z["name"] == "knowledge" }
       expect(row["purpose"]).to eq("the maintained source of truth")
     end
 
@@ -71,7 +71,7 @@ RSpec.describe "Textus::Manifest grammar" do
         lanes:
           - { name: knowledge, kind: canon }
       YAML
-      row = s.as("human").boot["lanes"].find { |z| z["name"] == "knowledge" }
+      row = s.with_role("human").boot["lanes"].find { |z| z["name"] == "knowledge" }
       expect(row).not_to have_key("purpose")
     end
   end

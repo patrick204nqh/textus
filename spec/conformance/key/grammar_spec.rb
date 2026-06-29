@@ -60,7 +60,7 @@ RSpec.describe "Key grammar enforcement" do
     it "rejects illegal key at put time before any write" do
       store = Textus::Store.new(root)
       expect do
-        store.as("human").put("working.Bad_Name", meta: { "name" => "Bad_Name" }, body: "x")
+        store.with_role("human").put("working.Bad_Name", meta: { "name" => "Bad_Name" }, body: "x")
       end.to raise_error(Textus::UsageError, /invalid key segment/)
     end
   end
@@ -76,7 +76,7 @@ RSpec.describe "Key grammar enforcement" do
       end
       store = Textus::Store.new(root)
       begin
-        store.as(Textus::Value::Role::DEFAULT).get("workng.notes.alpha")
+        store.with_role(Textus::Value::Role::DEFAULT).get("workng.notes.alpha")
         raise "expected UnknownKey"
       rescue Textus::UnknownKey => e
         expect(e.suggestions).to include("working.notes.alpha")

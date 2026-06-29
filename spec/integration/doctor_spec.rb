@@ -166,7 +166,7 @@ RSpec.describe Textus::Doctor do
 
       ra_store = Textus::Store.new(ra_root)
       # Write full_name as ai — violates maintained_by: human
-      ra_store.as("agent").put(
+      ra_store.with_role("agent").put(
         "proposals.people.alice",
         meta: { "name" => "alice", "full_name" => "Alice Wonder", "embedding" => [0.1, 0.2] }, body: "",
       )
