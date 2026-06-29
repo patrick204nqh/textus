@@ -33,7 +33,12 @@ module Textus
           return [] unless match
 
           front = YAML.safe_load(match[1])
-          Array(front&.dig("sources"))
+          Array(front&.dig("sources")).filter_map do |s|
+            case s
+            when String then s
+            when Hash   then s["key"]
+            end
+          end
         rescue StandardError
           []
         end
