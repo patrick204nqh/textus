@@ -42,8 +42,8 @@ module Textus
           str_args = deep_stringify_keys(args)
           @store.check_etag!(contract_etag_now) unless Catalog.read_verbs.include?(verb_name.to_s)
           result = Catalog.call(verb_name.to_s, store: @store, args: str_args)
-          @store = @store.advance_cursor(@store.audit_log.latest_seq) if verb_name.to_s == "pulse"
-          @store = @store.with_role(@store.role) if verb_name.to_s == "boot"
+          @store = @store.advance_cursor(@store.audit_log.latest_seq) if verb_name == :pulse
+          @store = @store.with_role(@store.role) if verb_name == :boot
           ::MCP::Tool::Response.new([{ type: "text", text: JSON.dump(result) }])
         rescue Textus::ContractDrift => e
           raise_handler_error(e.message, Textus::ContractDrift::JSONRPC_CODE)
@@ -57,6 +57,9 @@ module Textus
 
         private
 
+        # Snapshot at server init against the boot-time manifest. New produced entries
+        # added by a later reconcile are invisible until the server restarts — this is
+        # intentional: a ContractDrift will gate writes on any mid-session manifest change.
         def build_resources
           machine_lane = @store.manifest.policy.machine_lane
           return [] unless machine_lane
@@ -67,13 +70,15 @@ module Textus
         end
 
         def handle_resource_read(uri, _server_context)
-          key = uri.delete_prefix("textus://").tr("/", ".")
+          key  = uri.delete_prefix("textus://").tr("/", ".")
           env  = @store.get(key:)
           text = env.content.is_a?(Hash) ? JSON.dump(env.content) : (env.body || "").to_s
-          mime = mime_for_format(@store.manifest.resolver.resolve(key).entry.format)
+          mime = mime_for_format(env.format)
           [{ uri: uri, mimeType: mime, text: text }]
         rescue Textus::Error => e
           raise_handler_error("resource read failed: #{e.message}", -32_603)
+        rescue StandardError => e
+          raise_handler_error("internal: #{e.message}", -32_603)
         end
 
         def contract_etag_now = Textus::Value::Etag.for_contract(@store.root)

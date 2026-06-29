@@ -342,7 +342,7 @@ module Textus
                    description: "ready|leased|done|failed"),
        ArgSpec.arg(name: :action, description: "retry|purge (optional)"),
        ArgSpec.arg(name: :job_id, description: "job id (required for action=retry)")],
-      %i[cli mcp], { default: identity }, "jobs", nil, :read
+      %i[cli mcp], { default: identity }, "jobs", nil, :maintenance
     )
 
     # ── data_mv ──────────────────────────────────────────
