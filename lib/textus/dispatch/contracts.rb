@@ -47,7 +47,7 @@ module Textus
 
       DrainStore = Data.define(:prefix, :lane)
 
-      IngestEntry = Data.define(:kind, :slug, :url, :path, :zone, :label)
+      IngestEntry = Data.define(:kind, :slug, :url, :path, :lane, :label)
 
       JobsAction = Data.define(:state, :action, :job_id)
 

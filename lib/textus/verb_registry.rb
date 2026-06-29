@@ -200,7 +200,7 @@ module Textus
                "remote URL (required when kind=url)", nil, nil, nil, nil, :__unset],
        ArgSpec[:path, String, false, false, nil,
                "local file path (required when kind=file or kind=asset)", nil, nil, nil, nil, :__unset],
-       ArgSpec[:zone, String, false, false, nil,
+       ArgSpec[:lane, String, false, false, nil,
                "asset group subdirectory (required when kind=asset)", nil, nil, nil, nil, :__unset],
        ArgSpec[:label, String, false, false, nil,
                "human label stored in source.label", nil, nil, nil, nil, :__unset]],

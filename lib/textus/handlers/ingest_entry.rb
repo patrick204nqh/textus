@@ -23,7 +23,7 @@ module Textus
         when "file"  then return Value::Result.failure(:usage_error, "ingest file requires path") unless command.path
         when "asset"
           return Value::Result.failure(:usage_error, "ingest asset requires path") unless command.path
-          return Value::Result.failure(:usage_error, "ingest asset requires zone") unless command.zone
+          return Value::Result.failure(:usage_error, "ingest asset requires lane") unless command.lane
         end
 
         now = Time.now.utc
@@ -75,22 +75,22 @@ module Textus
                                    "label" => command.label || File.basename(command.path) },
                      "body" => File.read(command.path))
         when "asset"
-          asset_rel = copy_asset(now, command.path, command.zone)
+          asset_rel = copy_asset(now, command.path, command.lane)
           base.merge("source" => { "kind" => "asset",
                                    "label" => command.label || File.basename(command.path) },
                      "asset" => asset_rel, "body" => nil)
         end
       end
 
-      def copy_asset(now, path, zone)
+      def copy_asset(now, path, lane)
         date_path = now.strftime("%Y/%m/%d")
         filename  = File.basename(path)
-        assets_dir = @container.geometry.asset_raw_dir(date_path, zone)
+        assets_dir = @container.geometry.asset_raw_dir(date_path, lane)
         FileUtils.mkdir_p(assets_dir)
         FileUtils.cp(path, File.join(assets_dir, filename))
         sentinel = @container.geometry.asset_sentinel_path
         File.write(sentinel, "*\n") unless File.exist?(sentinel)
-        "raw/#{date_path}/#{zone}/#{filename}"
+        "raw/#{date_path}/#{lane}/#{filename}"
       end
 
       def write_entry(key, structured, mentry, call)
@@ -126,20 +126,20 @@ module Textus
         env = write_entry(new_key, structured,
                           @container.manifest.resolver.resolve(new_key).entry, call)
 
-        move_asset(old_content["asset"], command.zone) if command.kind == "asset" && old_content["asset"]
+        move_asset(old_content["asset"], command.lane) if command.kind == "asset" && old_content["asset"]
 
         rebuild_index(store)
         env
       end
 
-      def move_asset(old_rel, zone)
+      def move_asset(old_rel, lane)
         old_path = @container.geometry.asset_resolve(old_rel)
         return unless File.exist?(old_path)
 
         now = Time.now.utc
         date_path = now.strftime("%Y/%m/%d")
         filename = File.basename(old_path)
-        new_dir = @container.geometry.asset_raw_dir(date_path, zone)
+        new_dir = @container.geometry.asset_raw_dir(date_path, lane)
         new_path = File.join(new_dir, filename)
         return if old_path == new_path
 
