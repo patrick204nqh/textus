@@ -70,21 +70,7 @@ module Textus
           mentry: ctx.entry,
           payload: Textus::Value::Payload.new(**normalized),
         )
-        publish_external(key, ctx)
-      end
-
-      def publish_external(key, ctx)
-        entry = ctx.entry
-        return unless entry.publish_tree || !Array(entry.publish_to).empty?
-
-        entry_path = @container.manifest.resolver.resolve(key).path
-        return unless entry.publish_tree || File.exist?(entry_path)
-
-        pctx   = Textus::Manifest::Entry::Base::PublishContext.new(
-          container: @container, call: @call,
-          reader: ->(key) { Textus::Store::Entry::Reader.from(container: @container).read(key) }
-        )
-        entry.publish_via(pctx)
+        Textus::Produce::Publisher.call(container: @container, call: @call, key: key)
       end
     end
   end
