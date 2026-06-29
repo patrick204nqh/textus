@@ -13,7 +13,7 @@ module Textus
         @coord = coord
       end
 
-      attr_reader :infra, :coord
+      attr_reader :infra, :coord, :pipeline, :reader, :writer
 
       def root
         @infra.geometry.root
@@ -27,11 +27,17 @@ module Textus
         define_method(name) { @coord.public_send(name) }
       end
 
-      # Minor incremental injection points: allow the container to expose
-      # a pre-built pipeline, reader, and writer. We keep existing
-      # build_full behaviour but prefer these accessors when present so
-      # tests can swap a single instance.
-      attr_reader :pipeline, :reader, :writer
+      def wire!(pipeline:, reader:, writer:)
+        @pipeline = pipeline
+        @reader   = reader
+        @writer   = writer
+        @coord    = Coordination.new(
+          manifest: @coord.manifest,
+          workflows: @coord.workflows,
+          pipeline: pipeline,
+        )
+        self
+      end
 
       def self.build_full(infra, coord_seed)
         coord = Coordination.new(
@@ -57,31 +63,10 @@ module Textus
         )
 
         pipeline = adapter.pipeline
+        reader   = Textus::Store::Envelope::Reader.from(container: container)
+        writer   = create_writer_factory(container)
 
-        coord_with_pipeline = Coordination.new(
-          manifest: coord_seed.manifest,
-          workflows: coord_seed.workflows,
-          pipeline: pipeline,
-        )
-        container.instance_variable_set(:@coord, coord_with_pipeline)
-        # cache pipeline on the container instance so the attr_reader
-        # we expose returns the constructed pipeline (keeps the
-        # incremental injection behaviour consistent)
-        container.instance_variable_set(:@pipeline, pipeline)
-        # also create and cache a reader/writer for reuse; tests can
-        # override container.instance_variable_set(:@reader, ...) if
-        # they want to inject fakes.
-        container.instance_variable_set(:@reader, Textus::Store::Envelope::Reader.from(container: container))
-        # writer requires a call object; build a writer factory-like
-        # accessor via a lambda stored on the container so callers can
-        # request a writer for a call: container.writer_factory.call(call)
-        # Build a writer factory that constructs Writer instances directly
-        # (avoid calling Writer.from here which would prefer container.writer
-        # and cause recursion). Use the cached reader so the writer shares
-        # the same reader instance.
-        writer_factory = create_writer_factory(container)
-        container.instance_variable_set(:@writer, writer_factory)
-        container
+        container.wire!(pipeline: pipeline, reader: reader, writer: writer)
       end
 
       def self.register_builder_handlers(builder)
