@@ -9,7 +9,7 @@ module Textus
         Textus::Manifest::Data.validate_key!(command.key)
         mentry = @container.manifest.resolver.resolve(command.key).entry
 
-        writer = Store::Envelope::Writer.from(container: @container, call: call)
+        writer = Store::Entry::Writer.from(container: @container, call: call)
         envelope = writer.put(
           command.key,
           mentry: mentry,

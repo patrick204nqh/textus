@@ -65,7 +65,7 @@ module Textus
           action: :converge, actor: @call.role, key: key,
           rule_predicates: rule_preds
         )
-        Textus::Store::Envelope::Writer.from(container: @container, call: @call).put(
+        Textus::Store::Entry::Writer.from(container: @container, call: @call).put(
           key,
           mentry: ctx.entry,
           payload: Textus::Value::Payload.new(**normalized),
@@ -82,7 +82,7 @@ module Textus
 
         pctx   = Textus::Manifest::Entry::Base::PublishContext.new(
           container: @container, call: @call,
-          reader: ->(key) { Textus::Store::Envelope::Reader.from(container: @container).read(key) }
+          reader: ->(key) { Textus::Store::Entry::Reader.from(container: @container).read(key) }
         )
         entry.publish_via(pctx)
       end

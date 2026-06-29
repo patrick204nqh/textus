@@ -6,7 +6,7 @@ module Textus
       end
 
       def call(command, call)
-        reader = Store::Envelope::Reader.from(container: @container)
+        reader = Store::Entry::Reader.from(container: @container)
         env = reader.read(command.pending_key)
         proposal = env&.meta&.dig("proposal") or
           return Value::Result.failure(:proposal_error, "entry has no proposal block: #{command.pending_key}")
@@ -14,7 +14,7 @@ module Textus
           return Value::Result.failure(:proposal_error, "proposal missing target_key")
         action = proposal["action"] || "put"
 
-        writer = Store::Envelope::Writer.from(container: @container, call: call)
+        writer = Store::Entry::Writer.from(container: @container, call: call)
         case action
         when "put"
           mentry = @container.manifest.resolver.resolve(target).entry

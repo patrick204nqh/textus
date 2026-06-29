@@ -15,7 +15,7 @@ module Textus
 
         key = "#{zone}.#{command.key}"
         mentry = @container.manifest.resolver.resolve(key).entry
-        writer = Store::Envelope::Writer.from(container: @container, call: call)
+        writer = Store::Entry::Writer.from(container: @container, call: call)
         envelope = writer.put(
           key, mentry: mentry,
                payload: Textus::Value::Payload.new(meta: command.meta || {}, body: command.body, content: command.content)

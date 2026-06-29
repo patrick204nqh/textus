@@ -42,7 +42,7 @@ module Textus
 
           def delete(key)
             mentry = @container.manifest.resolver.resolve(key).entry
-            writer = Textus::Store::Envelope::Writer.from(container: @container, call: @call)
+            writer = Textus::Store::Entry::Writer.from(container: @container, call: @call)
             writer.delete(key, mentry: mentry)
           end
         end

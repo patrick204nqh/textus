@@ -63,7 +63,7 @@ module Textus
         )
 
         pipeline = adapter.pipeline
-        reader   = Textus::Store::Envelope::Reader.from(container: container)
+        reader   = Textus::Store::Entry::Reader.from(container: container)
         writer   = create_writer_factory(container)
 
         container.wire!(pipeline: pipeline, reader: reader, writer: writer)
@@ -152,7 +152,7 @@ module Textus
 
       def self.create_writer_factory(container)
         lambda do |call|
-          Textus::Store::Envelope::Writer.new(
+          Textus::Store::Entry::Writer.new(
             file_store: container.file_store,
             manifest: container.manifest,
             schemas: container.schemas,

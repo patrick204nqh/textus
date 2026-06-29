@@ -39,7 +39,7 @@ module Textus
         reader     = if @container.respond_to?(:reader) && @container.reader
                        @container.reader
                      else
-                       Textus::Store::Envelope::Reader.from(container: @container)
+                       Textus::Store::Entry::Reader.from(container: @container)
                      end
         entry_path = @container.manifest.resolver.resolve(key).path
         # Prefer the container's file_store for existence checks; this keeps

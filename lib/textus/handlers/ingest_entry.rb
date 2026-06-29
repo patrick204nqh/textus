@@ -94,7 +94,7 @@ module Textus
       end
 
       def write_entry(key, structured, mentry, call)
-        writer = Store::Envelope::Writer.from(container: @container, call: call)
+        writer = Store::Entry::Writer.from(container: @container, call: call)
         writer.put(key, mentry: mentry,
                         payload: Textus::Value::Payload.new(meta: nil, body: nil, content: structured))
       end
@@ -109,7 +109,7 @@ module Textus
 
       def supersede_entry(old_key, new_key, structured, call, store, command)
         old_mentry = @container.manifest.resolver.resolve(old_key).entry
-        reader = Store::Envelope::Reader.from(container: @container)
+        reader = Store::Entry::Reader.from(container: @container)
         old_env = reader.read(old_key)
         old_content = old_env&.content || {}
         tombstone = {}
@@ -118,7 +118,7 @@ module Textus
         tombstone["source"] = { "kind" => source_kind } if source_kind
         tombstone["superseded_by"] = new_key
 
-        writer = Store::Envelope::Writer.from(container: @container, call: call)
+        writer = Store::Entry::Writer.from(container: @container, call: call)
         writer.put(old_key, mentry: old_mentry,
                             payload: Textus::Value::Payload.new(meta: nil, body: nil, content: tombstone))
 

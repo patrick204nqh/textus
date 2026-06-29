@@ -2,7 +2,7 @@ require "fileutils"
 
 module Textus
   class Store
-    module Envelope
+    module Entry
       # Owns the write pipeline (validate, serialize, etag-check, write, audit).
       # Talks to ports (FileStore, Schemas, AuditLog, Manifest) and an
       # Reader for the existing-uid lookup.
@@ -137,7 +137,7 @@ module Textus
         end
 
         def inject_meta(meta, content, existing_meta, format)
-          Meta.inject_all(meta, content, existing_meta, format: format)
+          Envelope::Meta.inject_all(meta, content, existing_meta, format: format)
         end
 
         def resolve_path(key)

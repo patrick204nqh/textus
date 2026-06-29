@@ -12,13 +12,13 @@ module Textus
                                        "reject: '#{command.pending_key}' is not in a proposal zone (zone=#{mentry.lane})")
         end
 
-        reader = Store::Envelope::Reader.from(container: @container)
+        reader = Store::Entry::Reader.from(container: @container)
         env = reader.read(command.pending_key)
         proposal = env&.meta&.dig("proposal") or
           return Value::Result.failure(:proposal_error, "entry has no proposal block: #{command.pending_key}")
         target_key = proposal["target_key"]
 
-        writer = Store::Envelope::Writer.from(container: @container, call: call)
+        writer = Store::Entry::Writer.from(container: @container, call: call)
         writer.delete(command.pending_key, mentry: mentry)
         Value::Result.success("protocol" => Textus::PROTOCOL, "rejected" => command.pending_key, "target_key" => target_key)
       end

@@ -121,7 +121,7 @@ module TextusSpecHelpers
   end
 
   def build_envelope_reader(store)
-    Textus::Store::Envelope::Reader.new(
+    Textus::Store::Entry::Reader.new(
       file_store: store.file_store,
       manifest: store.manifest,
       layout: store.layout,
@@ -130,7 +130,7 @@ module TextusSpecHelpers
 
   def build_envelope_writer(store, call, reader: nil)
     reader ||= build_envelope_reader(store)
-    Textus::Store::Envelope::Writer.new(
+    Textus::Store::Entry::Writer.new(
       file_store: store.file_store,
       manifest: store.manifest,
       schemas: store.schemas,

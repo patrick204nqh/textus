@@ -6,7 +6,7 @@ module Textus
       end
 
       def call(command, call)
-        writer = Store::Envelope::Writer.from(container: @container, call: call)
+        writer = Store::Entry::Writer.from(container: @container, call: call)
         writer.delete(command.key, if_etag: command.if_etag)
         Value::Result.success("protocol" => Textus::PROTOCOL, "ok" => true, "key" => command.key, "deleted" => true)
       end

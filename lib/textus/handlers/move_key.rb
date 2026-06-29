@@ -15,7 +15,7 @@ module Textus
         old_res = @manifest.resolver.resolve(command.old_key)
         new_res = @manifest.resolver.resolve(command.new_key)
 
-        reader = Store::Envelope::Reader.from(container: @container)
+        reader = Store::Entry::Reader.from(container: @container)
 
         unless reader.exists?(command.old_key)
           return Value::Result.failure(:not_found,
@@ -30,7 +30,7 @@ module Textus
         end
 
         pre_env = reader.read(command.old_key)
-        writer = Store::Envelope::Writer.from(container: @container, call: call)
+        writer = Store::Entry::Writer.from(container: @container, call: call)
         unless pre_env.uid
           writer.put(
             command.old_key, mentry: old_res.entry,

@@ -164,7 +164,7 @@ module Textus
       res = container.manifest.resolver.resolve(key)
       return nil unless res.path && File.exist?(res.path)
 
-      env = Textus::Store::Envelope::Reader.from(container: container).read(key)
+      env = Textus::Store::Entry::Reader.from(container: container).read(key)
       env&.content
     rescue Textus::Error
       nil
@@ -174,7 +174,7 @@ module Textus
       res = container.manifest.resolver.resolve("knowledge.boot")
       return nil unless res.path && File.exist?(res.path)
 
-      env = Textus::Store::Envelope::Reader.from(container: container).read("knowledge.boot")
+      env = Textus::Store::Entry::Reader.from(container: container).read("knowledge.boot")
       body = env&.body&.strip
       body.nil? || body.empty? ? nil : body
     rescue Textus::Error
