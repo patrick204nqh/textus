@@ -1,0 +1,9 @@
+_meta:
+  uid: b922e39fd3227f40
+ingested_at: '2026-06-29T06:28:38Z'
+content_hash: sha256:a9a647c06c2fb1074ccf011298d5d031d3c77ec55dbf05d1ebaec101e801b3f1
+source:
+  kind: url
+  url: https://www.cs.umd.edu/users/ben/goldenrules.html
+  label: Shneiderman golden rules
+body:

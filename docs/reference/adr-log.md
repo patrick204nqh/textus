@@ -21,6 +21,7 @@ curated, annotated reading guide see
 | [0119](../architecture/decisions/0119-architecture-deepening-phase-2.md) | architecture deepening phase 2 |  |  |
 | [0118](../architecture/decisions/0118-sources-first-class-envelope-field.md) | sources first class envelope field |  |  |
 | [0117](../architecture/decisions/0117-textus-4-protocol-version-bump.md) | textus 4 protocol version bump | 2026-06-17 | Accepted |
+| [0117](../architecture/decisions/0117-adopt-pipeline-handler-factory-registry.md) | adopt pipeline handler factory registry |  |  |
 | [0116](../architecture/decisions/0116-raw-lane-and-ingest-verb.md) | raw lane and ingest verb | 2026-06-16 | Accepted |
 | [0115](../architecture/decisions/0115-role-trust-model.md) | role trust model | 2026-06-14 | Accepted |
 | [0114](../architecture/decisions/0114-foundation-refactor.md) | Foundation refactor: lanes, dispatch, core, surfaces | 2026-06-13 | Accepted |

@@ -1,0 +1,9 @@
+_meta:
+  uid: 22d6dbedfc4d3a6e
+ingested_at: '2026-06-29T06:28:38Z'
+content_hash: sha256:91fc906a99431e8ad7ccdbe4b7cd31c101ae94d326aa5d3c2606d93dfe077e28
+source:
+  kind: url
+  url: https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f
+  label: Karpathy Software 2.0 gist
+body:

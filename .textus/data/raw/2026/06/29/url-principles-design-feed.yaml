@@ -1,0 +1,9 @@
+_meta:
+  uid: 143c730f2a0086f8
+ingested_at: '2026-06-29T06:28:38Z'
+content_hash: sha256:1c262150dbd13422499e6e4358bdf91c1a9d5ed65de37b8edfb753c71c855922
+source:
+  kind: url
+  url: https://principles.design/examples/feed.xml
+  label: Principles.design examples feed
+body:

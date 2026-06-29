@@ -32,6 +32,12 @@ entries:
     nested: true
     kind: nested
     publish: [{ tree: docs/explanation }]
+  - key: knowledge.design
+    lane: knowledge
+    owner: human:self
+    nested: true
+    kind: nested
+    publish: [{ tree: docs/design }]
   - key: knowledge.cookbook
     lane: knowledge
     owner: human:self

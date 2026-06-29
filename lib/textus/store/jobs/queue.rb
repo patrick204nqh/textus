@@ -44,10 +44,18 @@ module Textus
 
         def enqueue(job)
           now = iso_now
-          @store.execute(
+          inserted = @store.execute(
             "INSERT OR IGNORE INTO jobs (id, type, args, state, role, attempts, max_attempts, errors, lease, created_at, updated_at)
            VALUES (?, ?, ?, 'ready', ?, ?, ?, ?, NULL, ?, ?)",
             [job.id, job.type, JSON.dump(job.args), job.role, job.attempts, job.max_attempts, JSON.dump(job.errors), now, now],
+          )
+          return inserted if @store.query_value("SELECT changes()")&.to_i&.positive?
+
+          @store.execute(
+            "UPDATE jobs
+               SET state = 'ready', role = ?, args = ?, attempts = 0, errors = ?, lease = NULL, max_attempts = ?, updated_at = ?
+             WHERE id = ? AND state IN ('done', 'failed')",
+            [job.role, JSON.dump(job.args), JSON.dump([]), job.max_attempts, now, job.id],
           )
         end
 

@@ -1,0 +1,9 @@
+_meta:
+  uid: 775d540bb75f579c
+ingested_at: '2026-06-29T06:28:38Z'
+content_hash: sha256:7134d3eeadba582adb0086a641ba1a53203722e37692ad6d8676185b7b099c3c
+source:
+  kind: url
+  url: https://addyosmani.com/blog/loop-engineering/
+  label: Addy Osmani loop engineering
+body:
