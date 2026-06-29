@@ -76,7 +76,7 @@ module Textus
 
         # Core registrations that don't require orchestration
         builder.register(Dispatch::Contracts::GetEntry, lambda { |c|
-          Handlers::GetEntry.new(container: c, freshness_evaluator: freshness_evaluator(c))
+          Handlers::Read::GetEntry.new(container: c, freshness_evaluator: freshness_evaluator(c))
         })
 
         register_basic_handlers(builder, manifest_handler, container_handler, job_store_handler)
@@ -86,50 +86,52 @@ module Textus
 
       def self.orchestration_for(container)
         Orchestration.new(
-          list_keys: Handlers::ListKeys.new(manifest: container.manifest),
-          move_key: Handlers::MoveKey.new(container: container, manifest: container.manifest),
-          delete_key: Handlers::DeleteKey.new(container: container),
-          audit_entries: Handlers::AuditEntries.new(manifest: container.manifest, audit_log: container.audit_log),
+          list_keys: Handlers::Read::ListKeys.new(manifest: container.manifest),
+          move_key: Handlers::Write::MoveKey.new(container: container, manifest: container.manifest),
+          delete_key: Handlers::Write::DeleteKey.new(container: container),
+          audit_entries: Handlers::Read::AuditEntries.new(manifest: container.manifest, audit_log: container.audit_log),
         )
       end
 
       def self.register_basic_handlers(builder, manifest_hnd, container_hnd, job_store_hnd)
-        builder.register(Dispatch::Contracts::PutEntry, container_hnd.call(Handlers::PutEntry))
-        builder.register(Dispatch::Contracts::ListKeys, manifest_hnd.call(Handlers::ListKeys))
-        builder.register(Dispatch::Contracts::DeleteKey, container_hnd.call(Handlers::DeleteKey))
-        builder.register(Dispatch::Contracts::MoveKey, ->(c) { Handlers::MoveKey.new(container: c, manifest: c.manifest) })
-        builder.register(Dispatch::Contracts::ProposeEntry, container_hnd.call(Handlers::ProposeEntry))
-        builder.register(Dispatch::Contracts::AcceptProposal, container_hnd.call(Handlers::AcceptProposal))
-        builder.register(Dispatch::Contracts::RejectProposal, container_hnd.call(Handlers::RejectProposal))
-        builder.register(Dispatch::Contracts::EnqueueJob, job_store_hnd.call(Handlers::EnqueueJob))
+        builder.register(Dispatch::Contracts::PutEntry, container_hnd.call(Handlers::Write::PutEntry))
+        builder.register(Dispatch::Contracts::ListKeys, manifest_hnd.call(Handlers::Read::ListKeys))
+        builder.register(Dispatch::Contracts::DeleteKey, container_hnd.call(Handlers::Write::DeleteKey))
+        builder.register(Dispatch::Contracts::MoveKey, ->(c) { Handlers::Write::MoveKey.new(container: c, manifest: c.manifest) })
+        builder.register(Dispatch::Contracts::ProposeEntry, container_hnd.call(Handlers::Write::ProposeEntry))
+        builder.register(Dispatch::Contracts::AcceptProposal, container_hnd.call(Handlers::Write::AcceptProposal))
+        builder.register(Dispatch::Contracts::RejectProposal, container_hnd.call(Handlers::Write::RejectProposal))
+        builder.register(Dispatch::Contracts::EnqueueJob, job_store_hnd.call(Handlers::Write::EnqueueJob))
 
-        builder.register(Dispatch::Contracts::WhereEntry, manifest_hnd.call(Handlers::WhereEntry))
-        builder.register(Dispatch::Contracts::UidEntry, container_hnd.call(Handlers::UidEntry))
-        builder.register(Dispatch::Contracts::DepsEntry, manifest_hnd.call(Handlers::DepsEntry))
-        builder.register(Dispatch::Contracts::RdepsEntry, manifest_hnd.call(Handlers::RdepsEntry))
-        builder.register(Dispatch::Contracts::BootStore, container_hnd.call(Handlers::BootStore))
-        builder.register(Dispatch::Contracts::DoctorStore, container_hnd.call(Handlers::DoctorStore))
-        builder.register(Dispatch::Contracts::PublishedEntries, manifest_hnd.call(Handlers::PublishedEntries))
-        builder.register(Dispatch::Contracts::RuleExplain, manifest_hnd.call(Handlers::RuleExplain))
-        builder.register(Dispatch::Contracts::RuleList, manifest_hnd.call(Handlers::RuleList))
+        builder.register(Dispatch::Contracts::WhereEntry, manifest_hnd.call(Handlers::Read::WhereEntry))
+        builder.register(Dispatch::Contracts::UidEntry, container_hnd.call(Handlers::Read::UidEntry))
+        builder.register(Dispatch::Contracts::DepsEntry, manifest_hnd.call(Handlers::Read::DepsEntry))
+        builder.register(Dispatch::Contracts::RdepsEntry, manifest_hnd.call(Handlers::Read::RdepsEntry))
+        builder.register(Dispatch::Contracts::BootStore, container_hnd.call(Handlers::Maintenance::BootStore))
+        builder.register(Dispatch::Contracts::DoctorStore, container_hnd.call(Handlers::Maintenance::DoctorStore))
+        builder.register(Dispatch::Contracts::PublishedEntries, manifest_hnd.call(Handlers::Maintenance::PublishedEntries))
+        builder.register(Dispatch::Contracts::RuleExplain, manifest_hnd.call(Handlers::Maintenance::RuleExplain))
+        builder.register(Dispatch::Contracts::RuleList, manifest_hnd.call(Handlers::Maintenance::RuleList))
         builder.register(Dispatch::Contracts::SchemaEnvelope, lambda { |c|
-          Handlers::SchemaEnvelope.new(manifest: c.manifest, schemas: c.schemas)
+          Handlers::Maintenance::SchemaEnvelope.new(manifest: c.manifest, schemas: c.schemas)
         })
-        builder.register(Dispatch::Contracts::DrainStore, ->(c) { Handlers::DrainStore.new(container: c, job_store: c.job_store) })
-        builder.register(Dispatch::Contracts::IngestEntry, container_hnd.call(Handlers::IngestEntry))
-        builder.register(Dispatch::Contracts::JobsAction, job_store_hnd.call(Handlers::JobsAction))
-        builder.register(Dispatch::Contracts::RuleLint, manifest_hnd.call(Handlers::RuleLint))
-        builder.register(Dispatch::Contracts::DataMv, container_hnd.call(Handlers::DataMv))
+        builder.register(Dispatch::Contracts::DrainStore, lambda { |c|
+          Handlers::Maintenance::DrainStore.new(container: c, job_store: c.job_store)
+        })
+        builder.register(Dispatch::Contracts::IngestEntry, container_hnd.call(Handlers::Maintenance::IngestEntry))
+        builder.register(Dispatch::Contracts::JobsAction, job_store_hnd.call(Handlers::Maintenance::JobsAction))
+        builder.register(Dispatch::Contracts::RuleLint, manifest_hnd.call(Handlers::Maintenance::RuleLint))
+        builder.register(Dispatch::Contracts::DataMv, container_hnd.call(Handlers::Write::DataMv))
       end
 
       def self.register_orchestration_handlers(builder)
         # AuditEntries needs both manifest and audit_log
         builder.register(Dispatch::Contracts::AuditEntries, lambda { |c|
-          Handlers::AuditEntries.new(manifest: c.manifest, audit_log: c.audit_log)
+          Handlers::Read::AuditEntries.new(manifest: c.manifest, audit_log: c.audit_log)
         })
 
         builder.register(Dispatch::Contracts::PulseEntries, lambda { |c|
-          Handlers::PulseEntries.new(
+          Handlers::Read::PulseEntries.new(
             manifest: c.manifest,
             audit_log: c.audit_log,
             file_store: c.file_store,
@@ -138,15 +140,15 @@ module Textus
         })
 
         builder.register(Dispatch::Contracts::BlameEntry, lambda { |c|
-          Handlers::BlameEntry.new(manifest: c.manifest, orchestration: orchestration_for(c))
+          Handlers::Read::BlameEntry.new(manifest: c.manifest, orchestration: orchestration_for(c))
         })
 
         builder.register(Dispatch::Contracts::KeyMvPrefix, lambda { |c|
-          Handlers::KeyMvPrefix.new(orchestration: orchestration_for(c))
+          Handlers::Write::KeyMvPrefix.new(orchestration: orchestration_for(c))
         })
 
         builder.register(Dispatch::Contracts::KeyDeletePrefix, lambda { |c|
-          Handlers::KeyDeletePrefix.new(orchestration: orchestration_for(c))
+          Handlers::Write::KeyDeletePrefix.new(orchestration: orchestration_for(c))
         })
       end
 
