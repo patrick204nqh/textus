@@ -5,7 +5,7 @@ module Textus
 
       PutEntry = Data.define(:key, :meta, :body, :content, :if_etag)
 
-      ListKeys = Data.define(:prefix, :lane)
+      ListKeys = Data.define(:prefix, :lane, :q, :schema)
 
       DeleteKey = Data.define(:key, :if_etag)
 

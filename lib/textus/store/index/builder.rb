@@ -19,9 +19,10 @@ module Textus
             @store.execute("DELETE FROM entries")
             rows.each do |data|
               @store.execute(
-                "INSERT INTO entries (key, lane, format, etag, content, extra, indexed_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?)",
-                [data[:key], data[:lane], data[:format], data[:etag], data[:content], data[:extra], now_iso],
+                "INSERT INTO entries (key, lane, format, etag, content, extra, indexed_at, schema_ref)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                [data[:key], data[:lane], data[:format], data[:etag],
+                 data[:content], data[:extra], now_iso, data[:schema_ref]],
               )
             end
             @store.execute("INSERT INTO entries_fts(entries_fts) VALUES('rebuild')")
@@ -46,6 +47,7 @@ module Textus
             etag: Textus::Value::Etag.for_bytes(raw),
             content: content_text(parsed),
             extra: extra_json(parsed),
+            schema_ref: entry.schema,
           }
         end
 

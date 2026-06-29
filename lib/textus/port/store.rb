@@ -73,7 +73,19 @@ module Textus
 
           CREATE INDEX IF NOT EXISTS idx_audit_events_seq ON audit_events(seq);
         SQL
+        # Idempotent migration: add schema_ref column if missing (existing stores).
+        execute("ALTER TABLE entries ADD COLUMN schema_ref TEXT") rescue nil # rubocop:disable Style/RescueModifier
         self
+      end
+
+      def search_entries(q: nil, schema: nil, lane: nil, prefix: nil) # rubocop:disable Naming/MethodParameterName
+        return nil if q.nil? && schema.nil?
+
+        if q
+          fts_search(q: q, schema: schema, lane: lane, prefix: prefix)
+        else
+          schema_search(schema: schema, lane: lane, prefix: prefix)
+        end
       end
 
       def insert_audit_event(seq:, ts:, role:, verb:, key:, etag_before:, etag_after:) # rubocop:disable Naming/MethodParameterName
@@ -113,6 +125,25 @@ module Textus
         store&.close
       end
       private :connection
+
+      def fts_search(q:, schema:, lane:, prefix:) # rubocop:disable Naming/MethodParameterName
+        sql    = "SELECT e.key, e.lane, e.schema_ref FROM entries e JOIN entries_fts fts ON e.rowid = fts.rowid WHERE entries_fts MATCH ?"
+        params = [q]
+        sql += " AND e.lane = ?"                  and params << lane                       if lane
+        sql += " AND e.schema_ref = ?"            and params << schema                     if schema
+        sql += " AND (e.key = ? OR e.key LIKE ?)" and params.push(prefix, "#{prefix}.%")   if prefix
+        execute(sql, params)
+      end
+      private :fts_search
+
+      def schema_search(schema:, lane:, prefix:)
+        sql    = "SELECT key, lane, schema_ref FROM entries WHERE schema_ref = ?"
+        params = [schema]
+        sql += " AND lane = ?"                    and params << lane                       if lane
+        sql += " AND (key = ? OR key LIKE ?)"     and params.push(prefix, "#{prefix}.%")   if prefix
+        execute(sql, params)
+      end
+      private :schema_search
     end
   end
 end

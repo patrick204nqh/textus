@@ -54,14 +54,14 @@ module Textus
 
       def self.orchestration_for(container)
         Orchestration.new(
-          list_keys: Handlers::Read::ListKeys.new(manifest: container.manifest),
+          list_keys: Handlers::Read::ListKeys.new(manifest: container.manifest, job_store: container.job_store),
           move_key: Handlers::Write::MoveKey.new(container: container, manifest: container.manifest),
           delete_key: Handlers::Write::DeleteKey.new(container: container),
           audit_entries: Handlers::Read::AuditEntries.new(manifest: container.manifest, audit_log: container.audit_log),
         )
       end
 
-      def self.build_pipeline(container) # rubocop:disable Metrics/MethodLength
+      def self.build_pipeline(container) # rubocop:disable Metrics/MethodLength,Metrics/AbcSize
         registry = Dispatch::HandlerRegistry.new
         fe   = freshness_evaluator(container)
         orch = orchestration_for(container)
@@ -71,7 +71,7 @@ module Textus
         registry.register(Dispatch::Contracts::PutEntry,
                           Handlers::Write::PutEntry.new(container: container))
         registry.register(Dispatch::Contracts::ListKeys,
-                          Handlers::Read::ListKeys.new(manifest: container.manifest))
+                          Handlers::Read::ListKeys.new(manifest: container.manifest, job_store: container.job_store))
         registry.register(Dispatch::Contracts::DeleteKey,
                           Handlers::Write::DeleteKey.new(container: container))
         registry.register(Dispatch::Contracts::MoveKey,

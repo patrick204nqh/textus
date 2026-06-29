@@ -126,7 +126,11 @@ module Textus
       [ArgSpec[:prefix, String, false, false, nil,
                "restrict to keys starting with this dotted prefix, e.g. 'knowledge.runbooks'", nil, nil, nil, nil, :__unset],
        ArgSpec[:lane, String, false, false, nil,
-               "restrict to one lane by name (see `boot` lanes)", nil, nil, nil, nil, :__unset]],
+               "restrict to one lane by name (see `boot` lanes)", nil, nil, nil, nil, :__unset],
+       ArgSpec[:q, String, false, false, nil,
+               "full-text search query over entry content (FTS5)", nil, nil, nil, nil, :__unset],
+       ArgSpec[:schema, String, false, false, nil,
+               "filter to entries whose schema matches this name", nil, nil, nil, nil, :__unset]],
       %i[cli mcp], { cli: ->(rows, _) { { "entries" => rows } }, default: identity }, nil, nil, :read
     )
 
