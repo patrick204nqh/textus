@@ -21,13 +21,12 @@ module Textus
 
             data_path = pctx.manifest.resolver.resolve(entry.key).path
             envelope  = pctx.reader.call(entry.key)
-            renderer  = Textus::Produce::Render.new(template_loader: ->(n) { pctx.read_template(n) })
             content = nil # parsed lazily; the data's `content` (always _meta-free)
 
             targets.each do |t|
               if t.renders?
                 content ||= Textus::Format.for(entry.format).parse(File.read(data_path), path: data_path)["content"]
-                publish_bytes(render_bytes(t, content, renderer, pctx), entry.key, t, pctx, data_path, envelope)
+                publish_bytes(render_bytes(t, content, pctx), entry.key, t, pctx, data_path, envelope)
               elsif strip_meta?(entry)
                 content ||= Textus::Format.for(entry.format).parse(File.read(data_path), path: data_path)["content"]
                 bytes = Textus::Format.for(entry.format).serialize(meta: {}, body: "", content: content)
@@ -49,8 +48,13 @@ module Textus
             %w[json yaml].include?(entry.format.to_s)
           end
 
-          def render_bytes(target, content, renderer, pctx)
-            boot = target.inject_boot ? Textus::Boot.build(container: pctx.container) : nil
+          def render_bytes(target, content, pctx)
+            boot     = target.inject_boot ? Textus::Boot.build(container: pctx.container) : nil
+            renderer = Textus::Produce::Render.new(
+              template_loader: ->(n) { pctx.read_template(n) },
+              manifest: pctx.manifest,
+              source_publish_path: target.to,
+            )
             renderer.bytes_for(target: target, data: content, boot: boot)
           end
 
