@@ -3,7 +3,7 @@ require_relative "lib/textus/version"
 Gem::Specification.new do |s|
   s.name        = "textus"
   s.version     = Textus::VERSION
-  s.summary     = "Reference implementation of the textus/3 protocol."
+  s.summary     = "Reference implementation of the textus/4 protocol."
   s.description = "A coordination space for humans, AI, and automation. " \
                   "Durable, multi-writer project memory where each actor writes into its own lane, " \
                   "proposals cross a review queue, and every change is audited."
@@ -17,7 +17,6 @@ Gem::Specification.new do |s|
     "lib/**/*.rb",
     "exe/*",
     "README.md",
-    "SPEC.md",
     "CHANGELOG.md",
     "docs/architecture/README.md",
     "docs/reference/conventions.md",
@@ -42,7 +41,7 @@ Gem::Specification.new do |s|
     "source_code_uri" => "https://github.com/patrick204nqh/textus",
     "bug_tracker_uri" => "https://github.com/patrick204nqh/textus/issues",
     "changelog_uri" => "https://github.com/patrick204nqh/textus/blob/main/CHANGELOG.md",
-    "documentation_uri" => "https://github.com/patrick204nqh/textus/blob/main/SPEC.md",
+    "documentation_uri" => "https://github.com/patrick204nqh/textus/blob/main/README.md",
     "rubygems_mfa_required" => "true",
   }
 end
