@@ -54,4 +54,31 @@ RSpec.describe Textus::Links::UriRewriter do
       expect(output).to eq("[foo](`textus get foo.bar`)")
     end
   end
+
+  describe "edge recording" do
+    subject(:rewriter) do
+      described_class.new(
+        resolver: resolver,
+        from_path: "docs/how-to/guide.md",
+        from_key: "artifacts.how-to.guide",
+        edge_store: edge_store,
+      )
+    end
+
+    let(:edge_store) { instance_double(Textus::Links::LinkEdgeStore, record: nil) }
+
+    it "records an edge on successful resolution" do
+      rewriter.rewrite("[lanes](textus:artifacts.reference.lanes)")
+      expect(edge_store).to have_received(:record).with(
+        from_key: "artifacts.how-to.guide",
+        to_key: "artifacts.reference.lanes",
+      )
+    end
+
+    it "does not record an edge when resolution raises UnknownKeyError" do
+      allow(resolver).to receive(:resolve).and_raise(Textus::Links::Resolver::UnknownKeyError.new("unknown"))
+      rewriter.rewrite("[foo](textus:unknown.key)")
+      expect(edge_store).not_to have_received(:record)
+    end
+  end
 end

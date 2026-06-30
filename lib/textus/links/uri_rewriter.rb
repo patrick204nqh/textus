@@ -7,9 +7,11 @@ module Textus
       # Group 1: link text, Group 2: key, Group 3: anchor (may be nil/empty)
       TEXTUS_URI = /\[([^\]]*)\]\(textus:([^#)\s]+)(#[^)\s]*)?\)/
 
-      def initialize(resolver:, from_path:)
-        @resolver  = resolver
-        @from_path = from_path
+      def initialize(resolver:, from_path:, from_key: nil, edge_store: nil)
+        @resolver   = resolver
+        @from_path  = from_path
+        @from_key   = from_key
+        @edge_store = edge_store
       end
 
       def rewrite(content)
@@ -19,6 +21,7 @@ module Textus
           anchor = Regexp.last_match(3).to_s
 
           resolved = @resolver.resolve(key: key, from_path: @from_path)
+          @edge_store&.record(from_key: @from_key, to_key: key)
           "[#{text}](#{resolved}#{anchor})"
         rescue Textus::Links::Resolver::UnknownKeyError
           "[#{text}](`textus get #{key}`)"

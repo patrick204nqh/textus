@@ -8,10 +8,12 @@ require_relative "render/context"
 module Textus
   module Produce
     class Render
-      def initialize(template_loader:, manifest: nil, source_publish_path: nil)
+      def initialize(template_loader:, manifest: nil, source_publish_path: nil, entry_key: nil, edge_store: nil)
         @template_loader     = template_loader
         @manifest            = manifest
         @source_publish_path = source_publish_path
+        @entry_key           = entry_key
+        @edge_store          = edge_store
       end
 
       def bytes_for(target:, data:, boot:)
@@ -29,7 +31,12 @@ module Textus
       def rewrite(bytes, from_path, resolver)
         return bytes unless resolver && bytes.include?("textus:")
 
-        Textus::Links::UriRewriter.new(resolver: resolver, from_path: from_path).rewrite(bytes)
+        Textus::Links::UriRewriter.new(
+          resolver: resolver,
+          from_path: from_path,
+          from_key: @entry_key,
+          edge_store: @edge_store,
+        ).rewrite(bytes)
       end
     end
   end

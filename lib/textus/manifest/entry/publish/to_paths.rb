@@ -54,6 +54,8 @@ module Textus
               template_loader: ->(n) { pctx.read_template(n) },
               manifest: pctx.manifest,
               source_publish_path: target.to,
+              entry_key: entry.key,
+              edge_store: pctx.edge_store,
             )
             renderer.bytes_for(target: target, data: content, boot: boot)
           end

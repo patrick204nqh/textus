@@ -1,3 +1,5 @@
+require_relative "../links/link_edge_store"
+
 module Textus
   module Produce
     class Engine
@@ -6,8 +8,9 @@ module Textus
       end
 
       def initialize(container:, call:)
-        @container = container
-        @call      = call
+        @container  = container
+        @call       = call
+        @edge_store = Textus::Links::LinkEdgeStore.new
       end
 
       def run(keys)
@@ -33,7 +36,7 @@ module Textus
       end
 
       def publish_only(key)
-        Textus::Produce::Publisher.call(container: @container, call: @call, key: key)
+        Textus::Produce::Publisher.call(container: @container, call: @call, key: key, edge_store: @edge_store)
       end
     end
   end

@@ -1,7 +1,7 @@
 module Textus
   module Produce
     module Publisher
-      def self.call(container:, call:, key:)
+      def self.call(container:, call:, key:, edge_store: nil)
         entry = container.manifest.resolver.resolve(key).entry
         return unless entry.publish_tree || !Array(entry.publish_to).empty?
 
@@ -13,6 +13,7 @@ module Textus
           container: container,
           call: call,
           reader: reader.method(:read),
+          edge_store: edge_store,
         )
         entry.publish_via(pctx)
       end

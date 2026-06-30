@@ -63,7 +63,11 @@ module Textus
 
         # Minimal context object passed into entry `publish_via` hooks.
         # Everything beyond the three primitives is derived.
-        PublishContext = ::Data.define(:container, :call, :reader) do
+        PublishContext = ::Data.define(:container, :call, :reader, :edge_store) do
+          def initialize(container:, call:, reader:, edge_store: nil)
+            super
+          end
+
           def manifest   = container.manifest
           def root       = container.root
           def repo_root  = File.dirname(container.root)
