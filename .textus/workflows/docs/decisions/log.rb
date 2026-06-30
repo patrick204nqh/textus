@@ -1,6 +1,6 @@
 # rubocop:disable Metrics/BlockLength
-Textus.workflow "adr_log" do
-  match "artifacts.docs.adr-log"
+Textus.workflow "decisions-log" do
+  match "artifacts.decisions.log"
 
   # Keep the body concise for RuboCop's block-length rule by delegating
   # work to small lambdas.

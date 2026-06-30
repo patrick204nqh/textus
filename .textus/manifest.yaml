@@ -83,19 +83,13 @@ entries:
     source: { from: external, command: "true", sources: [] }
     publish: [{ to: .claude-plugin/plugin.json }]
   # Docs — meta (index, readme, adr log)
-  - key: artifacts.docs.index
+
+  - key: artifacts.decisions.log
     lane: artifacts
     kind: produced
     format: json
     source: { from: external, command: "true", sources: [] }
-    publish:
-      - { to: docs/README.md, template: docs/meta/docs-index.erb }
-  - key: artifacts.docs.adr-log
-    lane: artifacts
-    kind: produced
-    format: json
-    source: { from: external, command: "true", sources: [] }
-    publish: [{ to: docs/reference/adr-log.md, template: docs/meta/adr-log.erb }]
+    publish: [{ to: docs/decisions.md, template: docs/decisions/log.erb }]
   - key: artifacts.docs.readme
     lane: artifacts
     kind: produced
