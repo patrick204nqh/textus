@@ -2,10 +2,10 @@ require "fileutils"
 
 module Textus
   class Store
-    attr_reader :container, :role, :correlation_id, :cursor, :propose_lane, :contract_etag
+    attr_reader :ctx, :container, :role, :correlation_id, :cursor, :propose_lane, :contract_etag, :root
 
-    Textus::Store::Container.attribute_names.each do |field|
-      define_method(field) { @container.public_send(field) }
+    %i[manifest file_store schemas audit_log job_store layout link_edge_store workflows].each do |field|
+      define_method(field) { @ctx.public_send(field) }
     end
 
     def self.discover(start_dir = Dir.pwd, root: nil)
@@ -41,7 +41,8 @@ module Textus
 
     def initialize(root, role: Value::Role::DEFAULT, correlation_id: nil, dry_run: false, container: nil)
       @root = File.expand_path(root)
-      @container = container || build_container(@root)
+      @ctx = build_ctx(@root)
+      @container = build_container_proxy(@ctx)
       @role = role.to_s
       @correlation_id = correlation_id || SecureRandom.uuid
       @dry_run = dry_run
@@ -87,13 +88,14 @@ module Textus
 
       pending = Dispatch::Binder.command(spec, opts)
       call    = Value::Call.build(role: @role, correlation_id: @correlation_id)
-      result  = @container.pipeline.dispatch(pending, call: call)
+      result  = @ctx.pipeline.dispatch(pending, call: call)
       Value::Result.extract(result)
     end
 
     def _rebuild(role: @role, correlation_id: @correlation_id, dry_run: @dry_run)
       self.class.allocate.tap do |s|
         s.instance_variable_set(:@root, @root)
+        s.instance_variable_set(:@ctx, @ctx)
         s.instance_variable_set(:@container, @container)
         s.instance_variable_set(:@role, role.to_s)
         s.instance_variable_set(:@correlation_id, correlation_id || SecureRandom.uuid)
@@ -103,36 +105,84 @@ module Textus
     end
 
     def build_session!
-      @cursor = @container.audit_log.latest_seq
-      @propose_lane = @container.manifest.policy.propose_lane_for(@role)
+      @cursor = @ctx.audit_log.latest_seq
+      @propose_lane = @ctx.manifest.policy.propose_lane_for(@role)
       @contract_etag = Value::Etag.for_contract(@root)
     end
 
     def short_etag(etag) = etag.to_s.delete_prefix("sha256:")[0, 8]
 
-    def build_container(root)
+    def build_ctx(root)
       manifest = Manifest.load(root)
       job_store = Port::Store.new(root: root).setup!
       layout = Store::Layout.new(root)
-      infra = Container::Infrastructure.new(
-        file_store: Port::Storage::FileStore.new,
-        schemas: Schema::Registry.new(layout.schemas_dir),
-        audit_log: Port::AuditLog.new(
-          layout: layout,
-          max_size: manifest.data.audit_config[:max_size],
-          keep: manifest.data.audit_config[:keep],
-        ),
-        job_store:,
+      file_store = Port::Storage::FileStore.new
+      schemas = Schema::Registry.new(layout.schemas_dir)
+      audit_log = Port::AuditLog.new(
         layout:,
+        max_size: manifest.data.audit_config[:max_size],
+        keep: manifest.data.audit_config[:keep],
       )
+      link_edge_store = Links::LinkEdgeStore.new
+      workflows = Workflow::Loader.load_all(root)
+      event_bus = Event::Bus.new
 
-      coord_seed = Container::Coordination.new(
+      freshness_evaluator = Store::Freshness::TtlEvaluator.new(
         manifest:,
-        workflows: Workflow::Loader.load_all(root),
-        pipeline: nil,
+        file_stat: Port::Storage::FileStat.new,
+        clock: Port::Clock.new,
       )
 
-      Container.build(infra, coord_seed)
+      orchestration = build_orchestration(
+        manifest:, file_store:, schemas:, audit_log:, job_store:, layout:,
+      )
+
+      partial = Ctx.new(
+        manifest:, file_store:, schemas:, audit_log:, job_store:,
+        layout:, link_edge_store:, workflows:, event_bus:,
+        freshness_evaluator:, orchestration:, pipeline: nil
+      )
+
+      middleware = [
+        Dispatch::Middleware::Binder.new,
+        Dispatch::Middleware::Auth.new,
+        Dispatch::Middleware::AuditIndex.new(job_store: partial.job_store, audit_log: partial.audit_log),
+        Dispatch::Middleware::Cascade.new,
+      ]
+
+      Dispatch::HandlerResolver.eager_load!
+      registry = Dispatch::HandlerResolver.build(partial)
+      pipeline = Dispatch::Pipeline.new(registry:, container: partial, middleware:)
+
+      partial.with(pipeline:)
+    end
+
+    def build_orchestration(manifest:, file_store:, schemas:, audit_log:, job_store:, layout:)
+      list_deps = Data.define(:manifest, :job_store).new(manifest:, job_store:)
+      audit_deps = Data.define(:manifest, :audit_log).new(manifest:, audit_log:)
+      move_deps = Data.define(:file_store, :manifest, :schemas, :audit_log, :layout).new(
+        file_store:, manifest:, schemas:, audit_log:, layout:,
+      )
+      delete_deps = Data.define(:file_store, :manifest, :schemas, :audit_log, :layout).new(
+        file_store:, manifest:, schemas:, audit_log:, layout:,
+      )
+      Orchestration.new(
+        list_keys: ->(command, call) { Handlers::Read::ListKeys.call(command, call, list_deps) },
+        move_key: ->(command, call) { Handlers::Write::MoveKey.call(command, call, move_deps) },
+        delete_key: ->(command, call) { Handlers::Write::DeleteKey.call(command, call, delete_deps) },
+        audit_entries: ->(command, call) { Handlers::Read::AuditEntries.call(command, call, audit_deps) },
+      )
+    end
+
+    def build_container_proxy(ctx)
+      Store::ContainerProxy.new(
+        manifest: ctx.manifest, file_store: ctx.file_store,
+        schemas: ctx.schemas, audit_log: ctx.audit_log,
+        job_store: ctx.job_store, layout: ctx.layout,
+        link_edge_store: ctx.link_edge_store,
+        workflows: ctx.workflows, pipeline: ctx.pipeline,
+        root: ctx.layout.root
+      )
     end
   end
 end

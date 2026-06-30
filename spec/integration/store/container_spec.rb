@@ -47,7 +47,7 @@ RSpec.describe Textus::Store::Container do
     end
   end
 
-  it "backs the Store's delegated readers via Infra/Coord composition", :aggregate_failures do
+  it "backs the Store via ContainerProxy with expected accessors", :aggregate_failures do
     Dir.mktmpdir do |tmp|
       Textus::Surface::CLI.run(
         ["--root=#{tmp}/.textus", "init"],
@@ -56,11 +56,10 @@ RSpec.describe Textus::Store::Container do
       store = Textus::Store.new(File.join(tmp, ".textus"))
       container = store.container
 
-      expect(container).to be_a(Textus::Store::Container)
-      expect(container.infra).to be_a(Textus::Store::Container::Infrastructure)
-      expect(container.coord).to be_a(Textus::Store::Container::Coordination)
+      expect(container).to be_a(Textus::Store::ContainerProxy)
       expect(container.manifest).to be_a(Textus::Manifest)
       expect(container.root).to be_a(String)
+      expect(container.pipeline).not_to be_nil
     end
   end
 

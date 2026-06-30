@@ -10,7 +10,8 @@ module Textus
             manifest: deps.manifest, file_store: deps.file_store,
             layout: deps.layout, pipeline: deps.pipeline,
             audit_log: deps.audit_log, schemas: deps.schemas,
-            job_store: nil, workflows: nil, root: deps.layout.root
+            job_store: nil, workflows: nil,
+            link_edge_store: nil, root: deps.layout.root
           )
           Value::Result.success(Textus::Doctor.build(container: proxy, checks: command.checks, role: call.role))
         end

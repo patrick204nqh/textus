@@ -11,7 +11,7 @@ module Textus
             schemas: deps.schemas, audit_log: deps.audit_log,
             job_store: deps.job_store, layout: deps.layout,
             workflows: deps.workflows,
-            pipeline: nil, root: deps.layout.root
+            link_edge_store: nil, pipeline: nil, root: deps.layout.root
           )
           queue = Textus::Store::Jobs::Queue.new(store: deps.job_store)
           Textus::Store::Jobs::Planner.seed(container: proxy, queue: queue, role: call.role)

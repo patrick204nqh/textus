@@ -11,7 +11,7 @@ module Textus
             schemas: deps.schemas, audit_log: deps.audit_log,
             layout: deps.layout, pipeline: deps.pipeline,
             job_store: nil, workflows: nil,
-            root: deps.layout.root
+            link_edge_store: nil, root: deps.layout.root
           )
           Value::Result.success(Textus::Boot.build(container: proxy))
         end
