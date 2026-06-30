@@ -59,6 +59,16 @@ entries:
     source: { from: external, command: "true", sources: [] }
     publish:
       - { to: docs/README.md, template: docs/docs-index.erb }
+  - key: knowledge.goals
+    lane: knowledge
+    owner: human:self
+    nested: true
+    kind: nested
+  - key: knowledge.rules
+    lane: knowledge
+    owner: human:self
+    nested: true
+    kind: nested
   - { key: knowledge.architecture-index, lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: docs/architecture/README.md }] }
   - key: knowledge.readme
     lane: knowledge
