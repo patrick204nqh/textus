@@ -8,6 +8,54 @@
       "date": null,
       "commits": [
         {
+          "subject": "refactor(Move1): rename Produce::ContextHelpers → Textus::ContainerHelpers — neutral top-level module used by both publish and workflow contexts",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "refactor(M3): rename Render::Context#binding → #to_erb_binding — avoids shadowing Ruby built-in",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "refactor(M2): remove silent StandardError rescue in read_family — reader.read returns nil for absent files",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "refactor(M1): drop edge_store param from Publisher — ToPaths reads container.link_edge_store directly",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "fix(critical): Container#link_edge_store shared — Engine + Workflow::Runner both record edges, RdepsEntry queries same instance (C1+C2)",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "chore: drop redundant require_relative — Zeitwerk autoloads lib/textus/**",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "refactor: extract ContextHelpers — manifest/repo_root shared across PublishContext + Workflow::Context (Audit #4)",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "refactor: Container#read_family — hide manifest.resolver.enumerate from workflows (Audit #5)",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "feat: wire LinkEdgeStore recording through Engine → Render → UriRewriter (ADR-0121 complete)",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "refactor: move link rewriting into Render — ToPaths drops UriRewriter dependency (Audit #2)",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "refactor: extract Render::Context — testable binding factory (Audit #1)",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "feat: ADR-0121 Phase 1 complete — textus-native link resolution (filesystem mode)",
+          "date": "2026-06-30"
+        },
+        {
           "subject": "refactor: migrate template cross-links to textus_link helper",
           "date": "2026-06-30"
         },

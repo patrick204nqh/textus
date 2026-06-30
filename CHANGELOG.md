@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+- refactor(Move1): rename Produce::ContextHelpers → Textus::ContainerHelpers — neutral top-level module used by both publish and workflow contexts
+- refactor(M3): rename Render::Context#binding → #to_erb_binding — avoids shadowing Ruby built-in
+- refactor(M2): remove silent StandardError rescue in read_family — reader.read returns nil for absent files
+- refactor(M1): drop edge_store param from Publisher — ToPaths reads container.link_edge_store directly
+- fix(critical): Container#link_edge_store shared — Engine + Workflow::Runner both record edges, RdepsEntry queries same instance (C1+C2)
+- chore: drop redundant require_relative — Zeitwerk autoloads lib/textus/**
+- refactor: extract ContextHelpers — manifest/repo_root shared across PublishContext + Workflow::Context (Audit #4)
+- refactor: Container#read_family — hide manifest.resolver.enumerate from workflows (Audit #5)
+- feat: wire LinkEdgeStore recording through Engine → Render → UriRewriter (ADR-0121 complete)
+- refactor: move link rewriting into Render — ToPaths drops UriRewriter dependency (Audit #2)
+- refactor: extract Render::Context — testable binding factory (Audit #1)
+- feat: ADR-0121 Phase 1 complete — textus-native link resolution (filesystem mode)
 - refactor: migrate template cross-links to textus_link helper
 - feat: LinkEdgeStore + extend rdeps to include link dependency edges
 - feat: add UriRewriter — post-process textus: URIs in rendered output
