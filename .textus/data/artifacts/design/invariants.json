@@ -1,0 +1,89 @@
+{
+  "_meta": {
+    "uid": "0b068a97bfd66747"
+  },
+  "goals": [
+    {
+      "key": "knowledge.goals.north-star",
+      "slug": "north-star",
+      "body": "## North Star\n\ntextus exists to empower humans by coordinating agents and automation around durable context/knowledge.\n\nTarget outcome:\n- humans spend more time on decisions, direction, and design;\n- agents spend more time on creative synthesis and proposal work;\n- automation handles accurate, repeatable, fixed-step operations;\n- repetitive manual work is reduced without creating AI slop.\n"
+    },
+    {
+      "key": "knowledge.goals.strength-model",
+      "slug": "strength-model",
+      "body": "## Strength Model\n\n- Human is strongest at intent, judgment, trade-offs, and final authority.\n- Agent is strongest at creative generation, synthesis, drafting, and exploration.\n- Automation is strongest at deterministic, recurring, and precision execution.\n\nArchitecture must route work to the actor that is naturally strongest at it.\n"
+    }
+  ],
+  "rules": [
+    {
+      "key": "knowledge.rules.agent-proposes-human-decides",
+      "slug": "agent-proposes-human-decides",
+      "body": "### Rule 4 — Agent proposes, human decides\n\nAgents can draft, summarize, and propose at high speed; they do not self-authorize canonical change.\n"
+    },
+    {
+      "key": "knowledge.rules.automation-runs-boring-loops",
+      "slug": "automation-runs-boring-loops",
+      "body": "### Rule 5 — Automation runs the boring loops\n\nFetching feeds, scheduled materialization, sweeps, and other deterministic loops belong to automation, not ad hoc agent prompting.\n"
+    },
+    {
+      "key": "knowledge.rules.avoid-ai-slop",
+      "slug": "avoid-ai-slop",
+      "body": "### Rule 6 — Avoid AI slop\n\nPrefer structured outputs, traceable provenance, and explicit constraints over verbose ungrounded generation.\n"
+    },
+    {
+      "key": "knowledge.rules.canon-is-human-owned",
+      "slug": "canon-is-human-owned",
+      "body": "### Rule 3 — Canon is human-owned\n\nAuthoritative truth (`canon`) is never silently machine-promoted. Promotion always crosses explicit review (`propose -> accept`).\n"
+    },
+    {
+      "key": "knowledge.rules.decision-test",
+      "slug": "decision-test",
+      "body": "## Decision Test\n\nA proposed change is valid only if all answers are \"yes\":\n\n1. Does it preserve protocol determinism and envelope stability?\n2. Does it keep trust transitions explicit and auditable?\n3. Does it route work to the actor naturally strongest at it?\n4. Does it reduce manual repetition without reducing human agency?\n5. Does it improve evolvability without weakening authority boundaries?\n\nIf any answer is \"no\", redesign the change.\n"
+    },
+    {
+      "key": "knowledge.rules.evolution-rules",
+      "slug": "evolution-rules",
+      "body": "## Evolution Rules\n\nWhen changing textus, these rules are mandatory:\n\n1. Preserve the protocol contract unless a deliberate protocol revision is introduced.\n2. Keep lane authority derivation capability × kind; do not add ad hoc per-entry write policy.\n3. Keep role boundaries sharp (human decision, agent creativity, automation repetition).\n4. Never introduce hidden side effects on read paths.\n5. Keep deterministic output semantics and explicit freshness reporting.\n6. Prefer explicit seams over special-case branching.\n"
+    },
+    {
+      "key": "knowledge.rules.human-centric",
+      "slug": "human-centric",
+      "body": "### Rule 1 — Human-centric by default\n\nEvery feature must reduce unnecessary manual burden while preserving human control over important decisions.\n"
+    },
+    {
+      "key": "knowledge.rules.keep-seams-explicit",
+      "slug": "keep-seams-explicit",
+      "body": "### Rule 11 — Keep seams explicit\n\nEvolve via contracts, actions, rules, workflows, and ports. Avoid cross-layer shortcuts and dual paths.\n"
+    },
+    {
+      "key": "knowledge.rules.no-hidden-side-effects-on-read",
+      "slug": "no-hidden-side-effects-on-read",
+      "body": "### Rule 8 — No hidden side effects on read\n\nReads return state and freshness only. Convergence is explicit (`drain`, jobs, workflows).\n"
+    },
+    {
+      "key": "knowledge.rules.one-path-for-recurring-operations",
+      "slug": "one-path-for-recurring-operations",
+      "body": "### Rule 10 — One clear path for recurring operations\n\nIf a task repeats, encode it as workflow/schedule/automation. Do not normalize manual repeat prompting.\n"
+    },
+    {
+      "key": "knowledge.rules.protocol-before-convenience",
+      "slug": "protocol-before-convenience",
+      "body": "### Rule 7 — Protocol before convenience\n\nKeep `textus/4` deterministic and explicit. Do not introduce hidden behavior that makes results depend on who or what called it.\n"
+    },
+    {
+      "key": "knowledge.rules.provenance-is-mandatory",
+      "slug": "provenance-is-mandatory",
+      "body": "### Rule 9 — Provenance is mandatory\n\nExternal inspiration/data should be referenceable from raw intake; canonical docs remain concise and goal/rule-focused.\n"
+    },
+    {
+      "key": "knowledge.rules.quality-over-volume",
+      "slug": "quality-over-volume",
+      "body": "### Rule 12 — Quality over volume\n\nFewer accurate artifacts beat many low-signal artifacts. Ship only what improves shared understanding and action.\n"
+    },
+    {
+      "key": "knowledge.rules.right-work-right-actor",
+      "slug": "right-work-right-actor",
+      "body": "### Rule 2 — Right work to the right actor\n\nCreative/synthesis tasks go to agents. Repeatable/fixed-step tasks go to automation. Direction and acceptance stay with humans.\n"
+    }
+  ]
+}

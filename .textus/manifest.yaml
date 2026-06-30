@@ -37,6 +37,7 @@ entries:
     owner: human:self
     nested: true
     kind: nested
+    ignore: ["**/invariants.md"]
     publish: [{ tree: docs/design }]
   - key: knowledge.cookbook
     lane: knowledge
