@@ -34,11 +34,7 @@ module Textus
       def read_family(prefix, include_keyless: false)
         manifest.resolver
                 .enumerate(prefix: prefix, include_keyless: include_keyless)
-                .filter_map do |row|
-                  reader.read(row[:key])
-                rescue StandardError
-                  nil
-                end
+                .filter_map { |row| reader.read(row[:key]) }
       end
 
       def wire!(pipeline:, reader:, writer:)
