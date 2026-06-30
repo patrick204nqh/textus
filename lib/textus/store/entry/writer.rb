@@ -54,63 +54,28 @@ module Textus
         def delete(key, mentry: nil, if_etag: nil)
           ctx = WriteStep::DeleteContext.new(
             key:, mentry:, if_etag:,
-            path: nil, etag_before: nil,
+            path: nil, etag_before: nil
           )
           deps = WriteStep::WriteDeps.new(
             file_store: @file_store, manifest: @manifest, schemas: @schemas,
-            audit_log: @audit_log, call: @call, reader: @reader, layout: @layout,
+            audit_log: @audit_log, call: @call, reader: @reader, layout: @layout
           )
           WriteStep::DEFAULT_DELETE.reduce(ctx) { |c, step| step.call(c, deps) }
           nil
         end
 
         def move(from_key:, to_key:, new_mentry:, if_etag: nil)
-          from_path = @manifest.resolver.resolve(from_key).path
-          to_path   = @manifest.resolver.resolve(to_key).path
-          raise UnknownKey.new(from_key, suggestions: @manifest.resolver.suggestions_for(from_key)) unless @file_store.exists?(from_path)
-
-          etag_before = @file_store.etag(from_path)
-          raise EtagMismatch.new(from_key, if_etag, etag_before) if if_etag && if_etag != etag_before
-
-          @file_store.mv(from_path, to_path)
-          prune_empty_parents(from_path)
-          basename = to_key.split(".").last
-          Format.for(new_mentry.format).rewrite_name(to_path, basename)
-          etag_after = Value::Etag.for_file(to_path)
-
-          envelope = @reader.read(to_key)
-
-          extras = {
-            "from_key" => from_key, "to_key" => to_key,
-            "from_path" => from_path, "to_path" => to_path,
-            "uid" => envelope.uid
-          }
-          extras["correlation_id"] = @call.correlation_id if @call.correlation_id
-
-          @audit_log.append(
-            role: @call.role, verb: "key_mv", key: to_key,
-            etag_before: etag_before, etag_after: etag_after,
-            extras: extras
+          ctx = WriteStep::MoveContext.new(
+            from_key:, to_key:, new_mentry:, if_etag:,
+            from_path: nil, to_path: nil,
+            etag_before: nil, etag_after: nil, envelope: nil
           )
-
-          envelope
-        end
-
-        private
-
-        # After a move, prune now-empty source-side parent dirs. Floored at
-        # the zone directory. Best-effort, never fatal.
-        def prune_empty_parents(path)
-          floor = @layout.lane_floor(path)
-          return unless floor
-
-          dir = File.dirname(path)
-          while dir.start_with?("#{floor}/") && @file_store.dir_empty?(dir)
-            @file_store.rmdir(dir)
-            dir = File.dirname(dir)
-          end
-        rescue SystemCallError
-          nil
+          deps = WriteStep::WriteDeps.new(
+            file_store: @file_store, manifest: @manifest, schemas: @schemas,
+            audit_log: @audit_log, call: @call, reader: @reader, layout: @layout
+          )
+          ctx = WriteStep::DEFAULT_MOVE.reduce(ctx) { |c, step| step.call(c, deps) }
+          ctx.envelope
         end
       end
     end

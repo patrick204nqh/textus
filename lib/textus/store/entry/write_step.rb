@@ -142,7 +142,7 @@ module Textus
         DeleteContext = Data.define(
           :key, :mentry, :if_etag,
           :path,
-          :etag_before,
+          :etag_before
         ) do
           def with(**attrs) = self.class.new(**to_h, **attrs)
         end
@@ -184,7 +184,7 @@ module Textus
             deps.audit_log.append(
               role: deps.call.role, verb: "key_delete", key: ctx.key,
               etag_before: ctx.etag_before, etag_after: nil,
-              extras:,
+              extras:
             )
             ctx
           end
@@ -197,6 +197,127 @@ module Textus
           DeleteFile,
           PruneParents,
           AppendDeleteAudit,
+        ].freeze
+
+        MoveContext = Data.define(
+          :from_key, :to_key, :new_mentry, :if_etag,
+          :from_path, :to_path,
+          :etag_before,
+          :etag_after,
+          :envelope
+        ) do
+          def with(**attrs) = self.class.new(**to_h, **attrs)
+        end
+
+        module ResolvePaths
+          def self.call(ctx, deps)
+            from_path = deps.manifest.resolver.resolve(ctx.from_key).path
+            to_path   = deps.manifest.resolver.resolve(ctx.to_key).path
+            ctx.with(from_path:, to_path:)
+          end
+        end
+
+        module AssertSourceExists
+          def self.call(ctx, deps)
+            return ctx if deps.file_store.exists?(ctx.from_path)
+
+            raise UnknownKey.new(
+              ctx.from_key,
+              suggestions: deps.manifest.resolver.suggestions_for(ctx.from_key),
+            )
+          end
+        end
+
+        module ReadMoveEtagBefore
+          def self.call(ctx, deps)
+            etag_before = deps.file_store.etag(ctx.from_path)
+            ctx.with(etag_before:)
+          end
+        end
+
+        module CheckMoveEtag
+          def self.call(ctx, _deps)
+            return ctx unless ctx.if_etag
+
+            raise EtagMismatch.new(ctx.from_key, ctx.if_etag, ctx.etag_before) if ctx.etag_before != ctx.if_etag
+
+            ctx
+          end
+        end
+
+        module MoveFile
+          def self.call(ctx, deps)
+            deps.file_store.mv(ctx.from_path, ctx.to_path)
+            ctx
+          end
+        end
+
+        module PruneSourceParents
+          def self.call(ctx, deps)
+            floor = deps.layout.lane_floor(ctx.from_path)
+            if floor
+              dir = File.dirname(ctx.from_path)
+              while dir.start_with?("#{floor}/") && deps.file_store.dir_empty?(dir)
+                deps.file_store.rmdir(dir)
+                dir = File.dirname(dir)
+              end
+            end
+            ctx
+          rescue SystemCallError
+            ctx
+          end
+        end
+
+        module RewriteBasename
+          def self.call(ctx, _deps)
+            basename = ctx.to_key.split(".").last
+            Format.for(ctx.new_mentry.format).rewrite_name(ctx.to_path, basename)
+            ctx
+          end
+        end
+
+        module ReadEtagAfter
+          def self.call(ctx, _deps)
+            etag_after = Value::Etag.for_file(ctx.to_path)
+            ctx.with(etag_after:)
+          end
+        end
+
+        module ReadEnvelope
+          def self.call(ctx, deps)
+            envelope = deps.reader.read(ctx.to_key)
+            ctx.with(envelope:)
+          end
+        end
+
+        module AppendMoveAudit
+          def self.call(ctx, deps)
+            extras = {
+              "from_key" => ctx.from_key, "to_key" => ctx.to_key,
+              "from_path" => ctx.from_path, "to_path" => ctx.to_path,
+              "uid" => ctx.envelope.uid
+            }
+            extras["correlation_id"] = deps.call.correlation_id if deps.call.correlation_id
+            deps.audit_log.append(
+              role: deps.call.role, verb: "key_mv", key: ctx.to_key,
+              etag_before: ctx.etag_before, etag_after: ctx.etag_after,
+              extras:
+            )
+            ctx
+          end
+        end
+
+        DEFAULT_MOVE = [
+          ResolvePaths,
+          AssertSourceExists,
+          ReadMoveEtagBefore,
+          CheckMoveEtag,
+          MoveFile,
+          PruneSourceParents,
+          RewriteBasename,
+          ReadEtagAfter,
+          ReadEnvelope,
+          AppendMoveAudit,
         ].freeze
       end
     end
