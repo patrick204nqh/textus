@@ -14,7 +14,7 @@ point forward (`Superseded by NNNN` / `Partially superseded by NNNN`) and leave
 the original reasoning intact. The history is the point.
 
 > **Live status** of every ADR (Accepted / Proposed / Superseded …) is the
-> status board at [`docs/reference/adr-log.md`](../../reference/adr-log.md),
+> status board at [`docs/decisions.md`](../../decisions.md),
 > derived from each ADR's `**Status:**` line. This page is the *curated reading
 > guide* — what each decision is about, in sequence.
 
