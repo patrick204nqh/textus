@@ -2,8 +2,6 @@ Textus.workflow "reference-lanes" do
   match "artifacts.reference.lanes"
 
   step :build do |_, ctx|
-    require "digest"
-
     data   = ctx.container.manifest.data
     policy = ctx.container.manifest.policy
     kmap   = Textus::Manifest::Schema::Vocabulary::LANES
@@ -19,11 +17,7 @@ Textus.workflow "reference-lanes" do
       { "name" => role.to_s, "capabilities" => caps.map(&:to_s) }
     end
 
-    canonical = lanes.map { |l| l["name"] + l["kind"] }.join + roles.map { |r| r["name"] }.join
-    uid = Digest::SHA1.hexdigest(canonical)[0, 16]
-
-    { "_meta" => { "uid" => uid },
-      "content" => { "lanes" => lanes, "roles" => roles, "kind_capability_map" => kmap } }
+    { "content" => { "lanes" => lanes, "roles" => roles, "kind_capability_map" => kmap } }
   end
 
   publish

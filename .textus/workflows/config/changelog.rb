@@ -3,8 +3,6 @@ Textus.workflow "changelog" do
   match "artifacts.changelog"
 
   step :build do |_, _|
-    require "digest"
-
     # skip: merge commits, and housekeeping drain commits that would otherwise
     # create a self-referential loop (drain produces a commit → commit appears
     # in changelog → drain produces a new file → repeat).
@@ -36,9 +34,7 @@ Textus.workflow "changelog" do
     end
     flush.call
 
-    canonical = entries.flat_map { |e| e["commits"].map { |c| "#{e["tag"]}|#{c["subject"]}" } }.join("\n")
-    uid = Digest::SHA1.hexdigest(canonical)[0, 16]
-    { "_meta" => { "uid" => uid }, "content" => { "entries" => entries } }
+    { "content" => { "entries" => entries } }
   end
 
   publish

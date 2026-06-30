@@ -2,9 +2,7 @@
 Textus.workflow "how-to-agents-mcp" do
   match "artifacts.how-to.agents-mcp"
 
-  step :build do |_, ctx| # rubocop:disable Metrics/BlockLength
-    require "digest"
-
+  step :build do |_, ctx|
     data   = ctx.container.manifest.data
     policy = ctx.container.manifest.policy
     kmap   = Textus::Manifest::Schema::Vocabulary::LANES
@@ -28,12 +26,9 @@ Textus.workflow "how-to-agents-mcp" do
       end
     end
 
-    lanes        = agent_lanes.call
     propose_lane = policy.propose_lane_for("agent").to_s
-    uid          = Digest::SHA1.hexdigest(lanes.map { |l| l["name"] }.join + propose_lane)[0, 16]
 
-    { "_meta" => { "uid" => uid },
-      "content" => { "writable_agent_lanes" => lanes,
+    { "content" => { "writable_agent_lanes" => agent_lanes.call,
                      "propose_lane" => propose_lane,
                      "role_authority" => authority.call } }
   end

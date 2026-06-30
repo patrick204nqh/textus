@@ -1,17 +1,11 @@
-# rubocop:disable Metrics/BlockLength
 Textus.workflow "decisions-log" do
   match "artifacts.decisions.log"
 
-  # Keep the body concise for RuboCop's block-length rule by delegating
-  # work to small lambdas.
   step :build do |_, ctx|
-    require "digest"
-
     normalize = ->(s) { s.to_s.gsub(/\[([^\]]+)\]\([^)]+\)/, '\1').gsub(/\s+/, " ").strip }
 
     envelopes = ctx.container.read_family("knowledge.decisions", include_keyless: true)
 
-    # Pull the ADRs in a separate helper to keep this block short for RuboCop
     build_adrs = lambda do
       envelopes.filter_map do |env|
         slug = env.key.split(".").last
@@ -31,22 +25,8 @@ Textus.workflow "decisions-log" do
       end.sort_by { |a| a["number"].to_i }.reverse
     end
 
-    adrs = build_adrs.call
-
-    # Produce a deterministic _meta.uid derived from the content so repeated
-    # runs produce byte-for-byte identical generated artifacts. JSON
-    # serialization can vary across Ruby/JSON versions and platforms, which
-    # caused CI drift. Build a canonical ASCII string from each ADR's stable
-    # fields and hash that instead to ensure cross-platform determinism.
-    canonical = adrs.map do |a|
-      [a["number"], a["title"], a["date"], a["status"], a["slug"]].join("\u001F")
-    end.join("\n")
-
-    uid = Digest::SHA1.hexdigest(canonical)[0, 16]
-
-    { "_meta" => { "uid" => uid }, "content" => { "adrs" => adrs } }
+    { "content" => { "adrs" => build_adrs.call } }
   end
 
   publish
 end
-# rubocop:enable Metrics/BlockLength

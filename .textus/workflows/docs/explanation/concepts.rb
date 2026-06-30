@@ -2,8 +2,6 @@ Textus.workflow "explanation-concepts" do
   match "artifacts.explanation.concepts"
 
   step :build do |_, ctx|
-    require "digest"
-
     data   = ctx.container.manifest.data
     policy = ctx.container.manifest.policy
     kmap   = Textus::Manifest::Schema::Vocabulary::LANES
@@ -20,11 +18,8 @@ Textus.workflow "explanation-concepts" do
     end
 
     propose_lane = policy.propose_lane_for("agent").to_s
-    canonical    = lanes.map { |l| l["name"] }.join + propose_lane
-    uid          = Digest::SHA1.hexdigest(canonical)[0, 16]
 
-    { "_meta" => { "uid" => uid },
-      "content" => { "lanes" => lanes, "roles" => roles, "propose_lane" => propose_lane } }
+    { "content" => { "lanes" => lanes, "roles" => roles, "propose_lane" => propose_lane } }
   end
 
   publish

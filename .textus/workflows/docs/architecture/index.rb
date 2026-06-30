@@ -2,8 +2,6 @@ Textus.workflow "architecture-index-generator" do
   match "artifacts.architecture.index"
 
   step :build do |_, ctx|
-    require "digest"
-
     data   = ctx.container.manifest.data
     policy = ctx.container.manifest.policy
 
@@ -20,11 +18,7 @@ Textus.workflow "architecture-index-generator" do
       { "name" => role.to_s, "capabilities" => caps.map(&:to_s) }
     end
 
-    require "json"
-    canonical = JSON.generate({ "lanes" => lanes, "roles" => roles })
-    uid = Digest::SHA1.hexdigest(canonical)[0, 16]
-
-    { "_meta" => { "uid" => uid }, "content" => { "lanes" => lanes, "roles" => roles } }
+    { "content" => { "lanes" => lanes, "roles" => roles } }
   end
 
   publish
