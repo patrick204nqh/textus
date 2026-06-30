@@ -1,7 +1,7 @@
 Textus.workflow "opencode_config" do
   match "artifacts.config.opencode"
 
-  step :build do |_, ctx|
+  step :build do |_, _ctx|
     { "content" => {
       "$schema" => "https://opencode.ai/config.json",
       "mcp" => { "textus" => { "type" => "local", "command" => %w[bundle exec exe/textus mcp serve], "enabled" => true } },

@@ -64,9 +64,9 @@ module Textus
         # Minimal context object passed into entry `publish_via` hooks.
         # Everything beyond the three primitives is derived.
         PublishContext = ::Data.define(:container, :call, :reader) do
-          def manifest   = container.manifest
-          def root       = container.root
-          def repo_root  = File.dirname(container.root)
+          include Textus::ContainerHelpers
+
+          def root = container.root
 
           # No-op: event bus removed in workflow redesign; callers that fire
           # :entry_published / :entry_produced remain unchanged in the source.

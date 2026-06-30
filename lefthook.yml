@@ -1,5 +1,9 @@
 # Git hooks for textus — install with `bundle exec lefthook install`.
-# Runs locally before commits and pushes; bypass with `LEFTHOOK=0`.
+# Runs locally before commits and pushes.
+#
+# Bypass all hooks:      LEFTHOOK=0 git <command>
+# Bypass one command:    LEFTHOOK_EXCLUDE=<name> git <command>
+# Note: pre-push rspec interacts with blame_spec — use --no-verify if needed.
 
 pre-commit:
   parallel: true
@@ -9,9 +13,46 @@ pre-commit:
       run: bundle exec rubocop --force-exclusion {staged_files}
       stage_fixed: false
 
+    docs-protocol-guard:
+      # docs/ and CHANGELOG.md are owned by textus — write via the protocol,
+      # then drain. Drain always touches .textus/data/ alongside published
+      # files, so that pairing is the signal for a legitimate drain commit.
+      glob: "{docs/**/*,CHANGELOG.md}"
+      run: |
+        if ! git diff --cached --name-only | grep -q "^\.textus/data/"; then
+          printf "\n"
+          printf "  \033[31m✗ textus-managed files staged without .textus/data/ changes.\033[0m\n"
+          printf "  docs/ and CHANGELOG.md are generated — write via the protocol:\n\n"
+          printf "    bundle exec exe/textus put KEY --stdin --as=automation\n"
+          printf "    bundle exec exe/textus drain --as=automation\n"
+          printf "    git add .textus/data/ docs/ CHANGELOG.md\n\n"
+          printf "  Legitimate drain commit? Bypass: LEFTHOOK=0 git commit\n"
+          printf "\n"
+          exit 1
+        fi
+
 pre-push:
   commands:
-    rspec:
-      run: bundle exec rspec
     rubocop:
       run: bundle exec rubocop
+
+    rspec:
+      run: bundle exec rspec
+
+    drain-and-check:
+      # Regenerates all artifacts (changelog, docs, decision log, …) and
+      # blocks the push if any tracked file is now out of date.
+      # A failed drain means a broken workflow — production validation.
+      run: |
+        printf "\n  \033[34m▸ textus drain\033[0m\n"
+        bundle exec exe/textus drain --as=automation || {
+          printf "\n  \033[31m✗ textus drain failed — fix broken workflows before pushing.\033[0m\n\n"
+          exit 1
+        }
+        if ! git diff --quiet; then
+          printf "\n  \033[31m✗ textus drain updated tracked files — commit them before pushing:\033[0m\n\n"
+          git diff --name-only | sed 's/^/    /'
+          printf "\n  Run: git add .textus/data/ docs/ CHANGELOG.md && git commit -m \"chore: textus drain\"\n\n"
+          exit 1
+        fi
+        printf "  \033[32m✓ drain clean\033[0m\n"

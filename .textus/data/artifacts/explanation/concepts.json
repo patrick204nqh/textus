@@ -1,0 +1,81 @@
+{
+  "_meta": {
+    "uid": "bfaa989b341741ac"
+  },
+  "lanes": [
+    {
+      "name": "knowledge",
+      "kind": "canon",
+      "purpose": "the maintained source of truth about the repo",
+      "capability": "author",
+      "writers": [
+        "human"
+      ]
+    },
+    {
+      "name": "scratchpad",
+      "kind": "workspace",
+      "purpose": "the agent's own durable scratchpad (working memory)",
+      "capability": "keep",
+      "writers": [
+        "agent"
+      ]
+    },
+    {
+      "name": "proposals",
+      "kind": "queue",
+      "purpose": "changes awaiting a human accept",
+      "capability": "propose",
+      "writers": [
+        "human",
+        "agent"
+      ]
+    },
+    {
+      "name": "artifacts",
+      "kind": "machine",
+      "purpose": "machine-maintained computed outputs",
+      "capability": "converge",
+      "writers": [
+        "automation"
+      ]
+    },
+    {
+      "name": "raw",
+      "kind": "raw",
+      "purpose": "ingested external source material (write-once)",
+      "capability": "ingest",
+      "writers": [
+        "human",
+        "agent",
+        "automation"
+      ]
+    }
+  ],
+  "roles": [
+    {
+      "name": "human",
+      "capabilities": [
+        "author",
+        "propose",
+        "ingest"
+      ]
+    },
+    {
+      "name": "agent",
+      "capabilities": [
+        "propose",
+        "keep",
+        "ingest"
+      ]
+    },
+    {
+      "name": "automation",
+      "capabilities": [
+        "converge",
+        "ingest"
+      ]
+    }
+  ],
+  "propose_lane": "proposals"
+}

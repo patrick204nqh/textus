@@ -29,7 +29,7 @@ Try the gate the other way (`textus put knowledge.notes.X --as=agent`) and you g
 
 This Ruby gem is the reference implementation of **`textus/4`** — a wire format and storage convention any language can speak. The protocol owns the envelope shape, the role/lane gate, the audit log format, and the key grammar. The gem version (semver, see badge) and the protocol version (`textus/4`) move independently; envelopes carry the `protocol` field so consumers can pin to the contract, not the implementation.
 
-- Specification: [`SPEC.md`](SPEC.md)
+- Specification: the wire protocol spec (`textus get knowledge.specs.*`)
 - Architecture: [`docs/architecture/README.md`](docs/architecture/README.md)
 - Per-release notes: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -105,9 +105,9 @@ For a worked store — knowledge entries, a staged proposal, schemas, ERB templa
 
 ## What's shipped
 
-- **Per-entry formats & publish.** `format: markdown|json|yaml|text` per entry; a typed `publish:` block (`to:` for file fan-out, `tree:` for a whole-subtree mirror) byte-copies derived files to their consumer paths. ([SPEC §5.2–5.3](SPEC.md))
+- **Per-entry formats & publish.** `format: markdown|json|yaml|text` per entry; a typed `publish:` block (`to:` for file fan-out, `tree:` for a whole-subtree mirror) byte-copies derived files to their consumer paths. (the wire protocol spec §5.2–5.3)
 - **Stable identity.** Auto-minted `uid:` survives writes and `textus key mv`; reorganising never breaks references.
-- **Capability × lane-kind gate.** Writes carry `--as=<role>`; a role may write a lane iff it holds the capability the lane's `kind:` requires (`canon`→`author`, `workspace`→`keep`, `machine`→`converge`, `queue`→`propose`). The wrong role gets `write_forbidden` naming the capability needed and the roles that hold it. ([SPEC §5](SPEC.md))
+- **Capability × lane-kind gate.** Writes carry `--as=<role>`; a role may write a lane iff it holds the capability the lane's `kind:` requires (`canon`→`author`, `workspace`→`keep`, `machine`→`converge`, `queue`→`propose`). The wrong role gets `write_forbidden` naming the capability needed and the roles that hold it. (the wire protocol spec §5)
 - **Agent loop.** `textus boot` orients a fresh session; `textus pulse --since=N` is the per-turn heartbeat (changed entries, pending proposals, index etag for catalog drift detection). ([docs/how-to/agents-mcp.md](docs/how-to/agents-mcp.md))
 - **MCP surface.** The official `mcp` Ruby SDK drives the stdio JSON-RPC server; protocol version auto-negotiated up to `2025-11-25`. Wire textus into Claude Code, Cursor, or any MCP host in one config block.
 - **`textus doctor`.** Health checks across schemas, workflow registrations, keys, sentinels, and the audit log.
@@ -115,10 +115,10 @@ For a worked store — knowledge entries, a staged proposal, schemas, ERB templa
 
 ## CLI and lanes
 
-Every command operates on one store, located in this order: `--root <path>` flag → **`TEXTUS_ROOT`** env → walk up from the working directory for a `.textus/` ([SPEC §3.1](SPEC.md)). Write verbs require `--as=<role>`, resolved as: `--as` flag → **`TEXTUS_ROLE`** env → `.textus/role` file → default `human` ([SPEC §5.1](SPEC.md)). Default roles: `human`, `agent`, `automation` (rename or add your own in the manifest's `roles:` block). All verbs accept `--output=json` and return the envelope defined in [SPEC §8](SPEC.md).
+Every command operates on one store, located in this order: `--root <path>` flag → **`TEXTUS_ROOT`** env → walk up from the working directory for a `.textus/` (the wire protocol spec §3.1). Write verbs require `--as=<role>`, resolved as: `--as` flag → **`TEXTUS_ROLE`** env → `.textus/role` file → default `human` (the wire protocol spec §5.1). Default roles: `human`, `agent`, `automation` (rename or add your own in the manifest's `roles:` block). All verbs accept `--output=json` and return the envelope defined in the wire protocol spec §8.
 
-- Full verb table — read, write, health, scaffolding — is in [SPEC §9](SPEC.md).
-- Lane semantics and the capability × lane-kind mapping live in [SPEC §5](SPEC.md), with the reference in [`docs/reference/lanes.md`](docs/reference/lanes.md).
+- Full verb table — read, write, health, scaffolding — is in the wire protocol spec §9.
+- Lane semantics and the capability × lane-kind mapping live in the wire protocol spec §5, with the reference in [`docs/reference/lanes.md`](docs/reference/lanes.md).
 
 `textus boot` prints the same information for the current store: lanes, entry families with schemas, registered workflows, write flows, and the verb catalog. Run it inside a store and you get the live picture; reach for the SPEC when you want the contract.
 

@@ -1,22 +1,42 @@
 {
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/protect-artifacts.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/protect-artifacts-bash.sh"
+          }
+        ]
+      }
+    ],
     "SessionStart": [
       {
         "matcher": "startup",
         "hooks": [
-          { "type": "command", "command": "bundle exec exe/textus boot --lean" }
+          { "type": "command", "command": "bundle exec exe/textus boot" }
         ]
       },
       {
         "matcher": "clear",
         "hooks": [
-          { "type": "command", "command": "bundle exec exe/textus boot --lean" }
+          { "type": "command", "command": "bundle exec exe/textus boot" }
         ]
       },
       {
         "matcher": "compact",
         "hooks": [
-          { "type": "command", "command": "bundle exec exe/textus boot --lean" }
+          { "type": "command", "command": "bundle exec exe/textus boot" }
         ]
       }
     ]

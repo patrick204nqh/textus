@@ -27,6 +27,16 @@ module Textus
         define_method(name) { @coord.public_send(name) }
       end
 
+      def link_edge_store
+        @link_edge_store ||= Textus::Links::LinkEdgeStore.new
+      end
+
+      def read_family(prefix, include_keyless: false)
+        manifest.resolver
+                .enumerate(prefix: prefix, include_keyless: include_keyless)
+                .filter_map { |row| reader.read(row[:key]) }
+      end
+
       def wire!(pipeline:, reader:, writer:)
         @pipeline = pipeline
         @reader   = reader
@@ -91,7 +101,8 @@ module Textus
         registry.register(Dispatch::Contracts::DepsEntry,
                           Handlers::Read::DepsEntry.new(manifest: container.manifest))
         registry.register(Dispatch::Contracts::RdepsEntry,
-                          Handlers::Read::RdepsEntry.new(manifest: container.manifest))
+                          Handlers::Read::RdepsEntry.new(manifest: container.manifest,
+                                                         link_edge_store: container.link_edge_store))
         registry.register(Dispatch::Contracts::BootStore,
                           Handlers::Maintenance::BootStore.new(container: container))
         registry.register(Dispatch::Contracts::DoctorStore,

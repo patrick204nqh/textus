@@ -1,0 +1,75 @@
+{
+  "_meta": {
+    "uid": "b94e505b773d3c39"
+  },
+  "lanes": [
+    {
+      "name": "knowledge",
+      "kind": "canon",
+      "purpose": "the maintained source of truth about the repo",
+      "writers": [
+        "human"
+      ]
+    },
+    {
+      "name": "scratchpad",
+      "kind": "workspace",
+      "purpose": "the agent's own durable scratchpad (working memory)",
+      "writers": [
+        "agent"
+      ]
+    },
+    {
+      "name": "proposals",
+      "kind": "queue",
+      "purpose": "changes awaiting a human accept",
+      "writers": [
+        "human",
+        "agent"
+      ]
+    },
+    {
+      "name": "artifacts",
+      "kind": "machine",
+      "purpose": "machine-maintained computed outputs",
+      "writers": [
+        "automation"
+      ]
+    },
+    {
+      "name": "raw",
+      "kind": "raw",
+      "purpose": "ingested external source material (write-once)",
+      "writers": [
+        "human",
+        "agent",
+        "automation"
+      ]
+    }
+  ],
+  "roles": [
+    {
+      "name": "human",
+      "capabilities": [
+        "author",
+        "propose",
+        "ingest"
+      ]
+    },
+    {
+      "name": "agent",
+      "capabilities": [
+        "propose",
+        "keep",
+        "ingest"
+      ]
+    },
+    {
+      "name": "automation",
+      "capabilities": [
+        "converge",
+        "ingest"
+      ]
+    }
+  ]
+}
