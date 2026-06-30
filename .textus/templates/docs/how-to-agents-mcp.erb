@@ -77,8 +77,8 @@ The first call every agent makes. Returns the full orientation contract includin
 
 Key fields from `agent_quickstart`:
 
-- `writable_lanes` — lanes the agent can write directly: `scratchpad, proposals, raw`
-- `propose_lane` — where proposals go: `proposals`
+- `writable_lanes` — lanes the agent can write directly: `<%= writable_agent_lanes.map{|l| l["name"]}.join(", ") %>`
+- `propose_lane` — where proposals go: `<%= propose_lane %>`
 - `latest_seq` — starting cursor for `pulse`
 - `contract_etag` — hash of manifest + schemas; checked on every write
 
@@ -108,7 +108,7 @@ schema_show(key: "scratchpad.notes.plan") → { fields: {...} }
 put(key: "scratchpad.notes.plan", _meta: { title: "Plan" }, body: "...")
 ```
 
-Writable lanes for agents: `scratchpad` (workspace) `proposals` (queue) `raw` (raw) 
+Writable lanes for agents: <% writable_agent_lanes.each do |lane| %>`<%= lane["name"] %>` (<%= lane["kind"] %>) <% end %>
 
 ### Propose (canon changes go through the queue)
 
@@ -118,13 +118,13 @@ The agent cannot write to `knowledge/` directly. It writes a proposal to the que
 propose(key: "decisions.feature-x",
         _meta: { proposal: { target_key: "knowledge.decisions.feature-x" } },
         body: "...")
-→ writes proposals.decisions.feature-x
+→ writes <%= propose_lane %>.decisions.feature-x
 ```
 
 A human then promotes it:
 
 ```sh
-textus accept proposals.decisions.feature-x
+textus accept <%= propose_lane %>.decisions.feature-x
 ```
 
 ### Drain (keep machine lanes fresh)
@@ -138,12 +138,10 @@ drain(lane: "artifacts")   # → materialize + sweep
 
 ## Role authority
 
-**`human`** — capabilities: `author`, `propose`, `ingest`
+<% role_authority.each do |r| -%>
+**`<%= r["role"] %>`** — capabilities: `<%= r["capabilities"].join("`, `") %>`
 
-**`agent`** — capabilities: `propose`, `keep`, `ingest`
-
-**`automation`** — capabilities: `converge`, `ingest`
-
+<% end -%>
 
 ---
 
@@ -151,8 +149,8 @@ drain(lane: "artifacts")   # → materialize + sweep
 
 ```
 ── boot() ──────────────────────────────────────────────────────────────
-← { contract_etag, writable_lanes: [scratchpad, proposals, raw],
-    propose_lane: "proposals", latest_seq: N }
+← { contract_etag, writable_lanes: [<%= writable_agent_lanes.map{|l|l["name"]}.join(", ") %>],
+    propose_lane: "<%= propose_lane %>", latest_seq: N }
 
 ── [per turn] ──────────────────────────────────────────────────────────
 ── pulse() → { cursor, changed: [...], pending_review: [...] }

@@ -25,6 +25,7 @@ entries:
     owner: human:self
     nested: true
     kind: nested
+    ignore: ["**/agents-mcp.md"]
     publish: [{ tree: docs/how-to }]
   - key: knowledge.explanation
     lane: knowledge
@@ -132,6 +133,13 @@ entries:
     source: { from: external, command: "true", sources: [] }
     publish: [{ to: .claude-plugin/plugin.json }]
   # Docs — generated reference documentation
+  - key: artifacts.how-to.agents-mcp
+    lane: artifacts
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
+    publish:
+      - { to: docs/how-to/agents-mcp.md, template: docs/how-to-agents-mcp.erb }
   - key: artifacts.design.invariants
     lane: artifacts
     kind: produced
