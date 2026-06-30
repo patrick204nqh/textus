@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+- chore: add textus drain to pre-push hook + docs-protocol-guard on pre-commit
 - refactor(Move1): rename Produce::ContextHelpers → Textus::ContainerHelpers — neutral top-level module used by both publish and workflow contexts
 - refactor(M3): rename Render::Context#binding → #to_erb_binding — avoids shadowing Ruby built-in
 - refactor(M2): remove silent StandardError rescue in read_family — reader.read returns nil for absent files

@@ -1,12 +1,16 @@
 {
   "_meta": {
-    "uid": "8c13903a73559e46"
+    "uid": "6642a56ccf6f2286"
   },
   "entries": [
     {
       "tag": "Unreleased",
       "date": null,
       "commits": [
+        {
+          "subject": "chore: add textus drain to pre-push hook + docs-protocol-guard on pre-commit",
+          "date": "2026-06-30"
+        },
         {
           "subject": "refactor(Move1): rename Produce::ContextHelpers → Textus::ContainerHelpers — neutral top-level module used by both publish and workflow contexts",
           "date": "2026-06-30"

@@ -5,6 +5,11 @@ Textus.workflow "changelog" do
   step :build do |_, _|
     require "digest"
 
+    # skip: merge commits, and housekeeping drain commits that would otherwise
+    # create a self-referential loop (drain produces a commit → commit appears
+    # in changelog → drain produces a new file → repeat).
+    skip_pattern = /\A(chore: textus drain|Merge )/
+
     raw = `git log --no-merges --pretty=format:"%D|||%s|||%ad" --date=short 2>/dev/null`.strip
     lines = raw.split("\n").map { |l| l.split("|||") }
 
@@ -25,11 +30,14 @@ Textus.workflow "changelog" do
         current_tag = tag
         current_date = date.to_s.strip
       end
-      current_commits << { "subject" => subject.to_s.strip, "date" => date.to_s.strip } if subject
+      next unless subject && !subject.to_s.strip.match?(skip_pattern)
+
+      current_commits << { "subject" => subject.to_s.strip, "date" => date.to_s.strip }
     end
     flush.call
 
-    uid = Digest::SHA1.hexdigest(entries.map { |e| e["tag"] }.join)[0, 16]
+    canonical = entries.flat_map { |e| e["commits"].map { |c| "#{e["tag"]}|#{c["subject"]}" } }.join("\n")
+    uid = Digest::SHA1.hexdigest(canonical)[0, 16]
     { "_meta" => { "uid" => uid }, "content" => { "entries" => entries } }
   end
 

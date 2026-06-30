@@ -52,7 +52,7 @@ pre-push:
         if ! git diff --quiet; then
           printf "\n  \033[31m✗ textus drain updated tracked files — commit them before pushing:\033[0m\n\n"
           git diff --name-only | sed 's/^/    /'
-          printf "\n  Run: git add -p && git commit -m \"chore: textus drain\"\n\n"
+          printf "\n  Run: git add .textus/data/ docs/ CHANGELOG.md && git commit -m \"chore: textus drain\"\n\n"
           exit 1
         fi
         printf "  \033[32m✓ drain clean\033[0m\n"
