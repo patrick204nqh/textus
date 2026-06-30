@@ -284,3 +284,11 @@ The agent loop:
 3. **On demand:** `get`, `put`, `propose`, `schema_show`, `rule_explain`, `drain`.
 
 Contract drift surfaces as `ContractDrift` (contract_etag mismatch); audit cursor expiry as `CursorExpired`. Both signal "call `boot` again."
+
+---
+
+## See also
+
+- [`decisions/README.md`](decisions/README.md) — curated decision reading guide
+- [`../decisions.md`](../decisions.md) — live decision log (all statuses)
+- [`../../SPEC.md`](../../SPEC.md) — normative wire-protocol spec

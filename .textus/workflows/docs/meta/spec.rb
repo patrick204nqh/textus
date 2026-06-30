@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 Textus.workflow "spec" do
-  match "knowledge.spec"
+  match "artifacts.spec"
 
   step :collect do |_data, ctx|
     root = ctx.container.root

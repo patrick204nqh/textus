@@ -42,9 +42,8 @@ entries:
     owner: human:self
     nested: true
     kind: nested
-  - key: knowledge.spec
-    lane: knowledge
-    owner: human:self
+  - key: artifacts.spec
+    lane: artifacts
     kind: produced
     format: json
     source: { from: external, command: "true", sources: [] }
