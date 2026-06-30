@@ -8,6 +8,30 @@
       "date": null,
       "commits": [
         {
+          "subject": "feat: Introduce Boot.wire and Typed Events",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "refactor: drop positional-arg support from entry/ops/rule — keyword args only",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "feat: replace generated verb methods with entry/ops/rule noun-domain API on Store",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "refactor: replace Container#build_pipeline with declarative HANDLER_MANIFEST in Dispatch::Assembler",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "refactor: decompose Entry::Writer#put into WriteStep::DEFAULT_PUT chain",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "chore: save architecture redesign plan to scratchpad",
+          "date": "2026-06-30"
+        },
+        {
           "subject": "refactor: remove manual uid from all workflows — textus manages uid natively via inject_all",
           "date": "2026-06-30"
         },
