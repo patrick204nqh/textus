@@ -419,7 +419,7 @@ module Textus
       %i[cli mcp], {
         cli: ->(r, _) { r },
         default: ->(r, _) { r },
-      }, "rule trace", nil, :maintenance
+      }, "rule trace", nil, :read
     )
   end
 end
