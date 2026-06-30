@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+- refactor: migrate template cross-links to textus_link helper
+- feat: LinkEdgeStore + extend rdeps to include link dependency edges
+- feat: add UriRewriter — post-process textus: URIs in rendered output
+- feat: inject textus_link method into ERB template context via binding
+- feat: add Textus::Links::Resolver — resolves textus:KEY to relative paths
+- feat: add ADR-0121 — textus-native link resolution via textus: URI scheme
+- feat: remove SPEC.md — spec lives in knowledge.specs/* via textus protocol
 - fix: changelog filters merge commits (--no-merges), delete unmanaged CHANGELOG/COC files
 - fix: remove orphaned docs/design/architecture.md sentinel
 - refactor: rules key ordering, contributing/security/changelog/coc as artifacts

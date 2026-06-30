@@ -8,6 +8,34 @@
       "date": null,
       "commits": [
         {
+          "subject": "refactor: migrate template cross-links to textus_link helper",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "feat: LinkEdgeStore + extend rdeps to include link dependency edges",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "feat: add UriRewriter — post-process textus: URIs in rendered output",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "feat: inject textus_link method into ERB template context via binding",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "feat: add Textus::Links::Resolver — resolves textus:KEY to relative paths",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "feat: add ADR-0121 — textus-native link resolution via textus: URI scheme",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "feat: remove SPEC.md — spec lives in knowledge.specs/* via textus protocol",
+          "date": "2026-06-30"
+        },
+        {
           "subject": "fix: changelog filters merge commits (--no-merges), delete unmanaged CHANGELOG/COC files",
           "date": "2026-06-30"
         },
