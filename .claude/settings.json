@@ -1,5 +1,25 @@
 {
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/protect-artifacts.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/protect-artifacts-bash.sh"
+          }
+        ]
+      }
+    ],
     "SessionStart": [
       {
         "matcher": "startup",
