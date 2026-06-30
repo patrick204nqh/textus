@@ -124,8 +124,8 @@ RSpec.describe "Textus::Init with_agent profile" do
         dot = File.join(dir, ".textus")
         Textus::Init.run(dot)
         store = Textus::Store.new(dot)
-        store.with_role("agent").entry(:put, "scratchpad.notes.s1", meta: { "name" => "s1" }, body: "remembered\n")
-        expect(store.with_role("agent").entry(:get, "scratchpad.notes.s1").body).to eq("remembered\n")
+        store.with_role("agent").entry(:put, key: "scratchpad.notes.s1", meta: { "name" => "s1" }, body: "remembered\n")
+        expect(store.with_role("agent").entry(:get, key: "scratchpad.notes.s1").body).to eq("remembered\n")
       end
     end
   end
@@ -138,7 +138,7 @@ RSpec.describe "Textus::Init with_agent profile" do
 
         store = Textus::Store.new(root)
         store.with_role("human").entry(:put,
-                                       "knowledge.project",
+                                       key: "knowledge.project",
                                        meta: { "name" => "project", "description" => "double-entry accounting service" },
                                        body: "")
         expect { store.with_role("automation").ops(:drain) }.not_to raise_error

@@ -19,8 +19,8 @@ RSpec.describe "author capability (ADR 0033)" do
   end
 
   it "lets an author-holder write a canon zone" do
-    store.with_role("human").entry(:put, "knowledge.notes.x", meta: { "name" => "x" }, body: "hi\n")
-    expect(store.with_role("human").entry(:get, "knowledge.notes.x").body).to eq("hi\n")
+    store.with_role("human").entry(:put, key: "knowledge.notes.x", meta: { "name" => "x" }, body: "hi\n")
+    expect(store.with_role("human").entry(:get, key: "knowledge.notes.x").body).to eq("hi\n")
   end
 
   it "rejects the retired `accept` capability at load" do
@@ -33,9 +33,12 @@ RSpec.describe "author capability (ADR 0033)" do
   end
 
   it "fails accept/reject with author_held when the role lacks `author`" do
-    store.with_role("agent").entry(:put, "proposals.notes.p1",
-                                   meta: { "name" => "p1", "proposal" => { "target_key" => "knowledge.notes.p1", "action" => "put" } },
-                                   body: "please add\n")
-    expect { store.with_role("agent").entry(:accept, "proposals.notes.p1") }.to fail_guard_with("author_held")
+    store.with_role("agent").entry(
+      :put,
+      key: "proposals.notes.p1",
+      meta: { "name" => "p1", "proposal" => { "target_key" => "knowledge.notes.p1", "action" => "put" } },
+      body: "please add\n",
+    )
+    expect { store.with_role("agent").entry(:accept, pending_key: "proposals.notes.p1") }.to fail_guard_with("author_held")
   end
 end

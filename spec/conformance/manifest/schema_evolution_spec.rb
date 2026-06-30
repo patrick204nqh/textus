@@ -63,7 +63,7 @@ RSpec.describe "Schema evolution" do
       store = store_with_roles
 
       store.with_role("human").entry(:put,
-                                     "knowledge.note",
+                                     key: "knowledge.note",
                                      meta: { "name" => "note", "headline" => "My Headline" },
                                      body: "body text")
 
@@ -71,7 +71,7 @@ RSpec.describe "Schema evolution" do
 
       expect(res["migrated"]).to include("knowledge.note")
 
-      env = store.with_role(Textus::Value::Role::DEFAULT).entry(:get, "knowledge.note")
+      env = store.with_role(Textus::Value::Role::DEFAULT).entry(:get, key: "knowledge.note")
       expect(env.meta).to have_key("title")
       expect(env.meta).not_to have_key("headline")
 
@@ -103,7 +103,7 @@ RSpec.describe "Schema evolution" do
     it "raises SchemaViolation listing the missing required field" do
       expect do
         store.with_role("human").entry(:put,
-                                       "knowledge.network.org.bob",
+                                       key: "knowledge.network.org.bob",
                                        meta: { "name" => "bob", "org" => "acme" },
                                        body: "")
       end.to raise_error(Textus::SchemaViolation) do |err|

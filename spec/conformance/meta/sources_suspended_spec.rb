@@ -29,9 +29,9 @@ RSpec.describe "Sources suspended detection" do
     raw_key = ingest_file(full_store)
     raw_etag = full_store.entry(:get, key: raw_key).etag
 
-    full_store.with_role(:human).entry(:put, "knowledge.notes.derived",
-                                       meta: { "sources" => [raw_key] },
-                                       body: "derived\n")
+    full_store.with_role(:human).entry(:put, key: "knowledge.notes.derived",
+                                             meta: { "sources" => [raw_key] },
+                                             body: "derived\n")
 
     result = full_store.entry(:get, key: "knowledge.notes.derived")
     src = result.sources.first
@@ -44,9 +44,9 @@ RSpec.describe "Sources suspended detection" do
   it "marks sources as suspended when source etag changed after put" do
     raw_key = ingest_file(full_store)
 
-    full_store.with_role(:human).entry(:put, "knowledge.notes.derived",
-                                       meta: { "sources" => [raw_key] },
-                                       body: "derived\n")
+    full_store.with_role(:human).entry(:put, key: "knowledge.notes.derived",
+                                             meta: { "sources" => [raw_key] },
+                                             body: "derived\n")
 
     raw_path = full_store.entry(:get, key: raw_key).path
     File.write(raw_path, File.read(raw_path) + "\n# changed\n")

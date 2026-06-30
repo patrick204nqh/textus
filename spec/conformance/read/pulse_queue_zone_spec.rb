@@ -18,9 +18,9 @@ RSpec.describe "pulse pending_review derives the queue zone, not 'review' (ADR 0
   end
 
   it "lists keys from the live queue zone (named 'proposals', not 'review')" do
-    store.with_role("agent").entry(:put, "proposals.p1",
-                                   meta: { "name" => "p1", "proposal" => { "target_key" => "knowledge.p1", "action" => "put" } },
-                                   body: "please add\n")
+    store.with_role("agent").entry(:put, key: "proposals.p1",
+                                         meta: { "name" => "p1", "proposal" => { "target_key" => "knowledge.p1", "action" => "put" } },
+                                         body: "please add\n")
     pulse = store.with_role("agent").ops(:pulse)
     expect(pulse["pending_review"]).to include("proposals.p1")
   end

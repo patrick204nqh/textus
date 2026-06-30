@@ -50,17 +50,9 @@ module Textus
 
     def dry_run? = @dry_run
 
-    def entry(verb, *positional, **)
-      _dispatch_in_domain(verb, VerbRegistry::ENTRY_VERBS, positional, **)
-    end
-
-    def ops(verb, *positional, **)
-      _dispatch_in_domain(verb, VerbRegistry::OPS_VERBS, positional, **)
-    end
-
-    def rule(verb, *positional, **)
-      _dispatch_in_domain(verb, VerbRegistry::RULE_VERBS, positional, **)
-    end
+    def entry(verb, **) = _dispatch_in_domain(verb, VerbRegistry::ENTRY_VERBS, **)
+    def ops(verb, **)   = _dispatch_in_domain(verb, VerbRegistry::OPS_VERBS, **)
+    def rule(verb, **)  = _dispatch_in_domain(verb, VerbRegistry::RULE_VERBS, **)
 
     def with_role(new_role)
       _rebuild(role: new_role)
@@ -87,17 +79,13 @@ module Textus
 
     private
 
-    def _dispatch_in_domain(verb, allowed, positional_args, **opts)
+    def _dispatch_in_domain(verb, allowed, **opts)
       raise ArgumentError.new("#{verb} is not in this domain (allowed: #{allowed.first(4).join(", ")}...)") unless allowed.include?(verb)
 
       spec = VerbRegistry.for(verb)
       raise ArgumentError.new("unknown verb: #{verb}") unless spec
 
-      positional_names = VerbRegistry::POSITIONAL[verb] || []
-      positional_inputs = positional_names.zip(positional_args).to_h.compact
-      inputs = positional_inputs.merge(opts)
-
-      pending = Dispatch::Binder.command(spec, inputs)
+      pending = Dispatch::Binder.command(spec, opts)
       call    = Value::Call.build(role: @role, correlation_id: @correlation_id)
       result  = @container.pipeline.dispatch(pending, call: call)
       Value::Result.extract(result)

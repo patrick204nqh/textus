@@ -56,27 +56,27 @@ RSpec.describe ":proposal_rejected event and store.reject" do
   it "rejects the proposal, returns result, and deletes the entry" do
     store = Textus::Store.new(root)
     store.with_role("agent").entry(:put,
-                                   "proposals.draft",
+                                   key: "proposals.draft",
                                    meta: { "name" => "draft", "proposal" => { "target_key" => "identity.target", "action" => "put" } },
                                    body: "proposed body")
-    result = store.with_role("human").entry(:reject, "proposals.draft")
+    result = store.with_role("human").entry(:reject, pending_key: "proposals.draft")
     expect(result["rejected"]).to eq("proposals.draft")
     expect(result["target_key"]).to eq("identity.target")
-    expect { store.with_role(Textus::Value::Role::DEFAULT).entry(:get, "proposals.draft") }
+    expect { store.with_role(Textus::Value::Role::DEFAULT).entry(:get, key: "proposals.draft") }
       .to raise_error(Textus::ActionError, /no entry at/)
   end
 
   it "refuses to reject a non-proposals entry" do
     store = Textus::Store.new(root)
-    store.with_role("human").entry(:put, "identity.target", meta: { "name" => "target" }, body: "x")
-    expect { store.with_role("human").entry(:reject, "identity.target") }
+    store.with_role("human").entry(:put, key: "identity.target", meta: { "name" => "target" }, body: "x")
+    expect { store.with_role("human").entry(:reject, pending_key: "identity.target") }
       .to raise_error(Textus::ActionError, /not in a proposal zone/)
   end
 
   it "refuses to reject when entry has no proposal block" do
     store = Textus::Store.new(root)
-    store.with_role("agent").entry(:put, "proposals.draft", meta: { "name" => "draft" }, body: "x")
-    expect { store.with_role("human").entry(:reject, "proposals.draft") }
+    store.with_role("agent").entry(:put, key: "proposals.draft", meta: { "name" => "draft" }, body: "x")
+    expect { store.with_role("human").entry(:reject, pending_key: "proposals.draft") }
       .to raise_error(Textus::ActionError, /no proposal/)
   end
 
@@ -106,7 +106,7 @@ RSpec.describe ":proposal_rejected event and store.reject" do
 
     it "rejects a proposals entry via CLI and emits JSON" do
       cli_store.with_role("agent").entry(:put,
-                                         "proposals.d",
+                                         key: "proposals.d",
                                          meta: { "name" => "d", "proposal" => { "target_key" => "identity.t", "action" => "put" } },
                                          body: "x")
       stdout = StringIO.new
@@ -146,14 +146,14 @@ RSpec.describe ":proposal_rejected event and store.reject" do
 
       store = Textus::Store.new(root)
       store.with_role("agent").entry(:put,
-                                     "proposals.draft",
+                                     key: "proposals.draft",
                                      meta: { "name" => "draft", "proposal" => { "target_key" => "identity.target", "action" => "put" } },
                                      body: "proposed body")
 
-      result = store.with_role("human").entry(:reject, "proposals.draft")
+      result = store.with_role("human").entry(:reject, pending_key: "proposals.draft")
       expect(result["rejected"]).to eq("proposals.draft")
       expect(result["target_key"]).to eq("identity.target")
-      expect { store.with_role(Textus::Value::Role::DEFAULT).entry(:get, "proposals.draft") }
+      expect { store.with_role(Textus::Value::Role::DEFAULT).entry(:get, key: "proposals.draft") }
         .to raise_error(Textus::ActionError, /no entry at/)
     end
 
@@ -176,10 +176,10 @@ RSpec.describe ":proposal_rejected event and store.reject" do
 
       store = Textus::Store.new(root)
       store.with_role("human").entry(:put,
-                                     "pending.draft",
+                                     key: "pending.draft",
                                      meta: { "name" => "draft", "proposal" => { "target_key" => "identity.target", "action" => "put" } },
                                      body: "x")
-      expect { store.with_role("human").entry(:reject, "pending.draft") }
+      expect { store.with_role("human").entry(:reject, pending_key: "pending.draft") }
         .to raise_error(Textus::ActionError, /not in a proposal zone/)
     end
   end
