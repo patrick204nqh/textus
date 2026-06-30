@@ -70,7 +70,14 @@ entries:
     owner: human:self
     nested: true
     kind: nested
-  - { key: knowledge.architecture-index, lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: docs/architecture/README.md }] }
+  - { key: knowledge.architecture-index, lane: knowledge, owner: human:self, kind: leaf }
+  - key: artifacts.architecture.index
+    lane: artifacts
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
+    publish:
+      - { to: docs/architecture/README.md, template: docs/architecture-index.erb }
   - key: knowledge.readme
     lane: knowledge
     owner: human:self

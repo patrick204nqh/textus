@@ -11,19 +11,17 @@
 
 | Name | Kind | Writers | Purpose |
 |---|---|---|---|
-| `knowledge` | `canon` | `human` | the maintained source of truth about the repo |
-| `scratchpad` | `workspace` | `agent` | the agent's own durable scratchpad (working memory) |
-| `proposals` | `queue` | `human`, `agent` | changes awaiting a human accept |
-| `artifacts` | `machine` | `automation` | machine-maintained computed outputs |
-| `raw` | `raw` | `human`, `agent`, `automation` | ingested external source material (write-once) |
+<% lanes.each do |lane| -%>
+| `<%= lane["name"] %>` | `<%= lane["kind"] %>` | <%= lane["writers"].map{|w| "`#{w}`"}.join(", ") %> | <%= lane["purpose"] %> |
+<% end -%>
 
 ## Roles and capabilities
 
 | Role | Capabilities |
 |---|---|
-| `human` | `author`, `propose`, `ingest` |
-| `agent` | `propose`, `keep`, `ingest` |
-| `automation` | `converge`, `ingest` |
+<% roles.each do |role| -%>
+| `<%= role["name"] %>` | <%= role["capabilities"].map{|c| "`#{c}`"}.join(", ") %> |
+<% end -%>
 
 ## Implementation layers
 
