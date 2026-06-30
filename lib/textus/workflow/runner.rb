@@ -70,7 +70,12 @@ module Textus
           mentry: ctx.entry,
           payload: Textus::Value::Payload.new(**normalized),
         )
-        Textus::Produce::Publisher.call(container: @container, call: @call, key: key)
+        Textus::Produce::Publisher.call(
+          container: @container,
+          call: @call,
+          key: key,
+          edge_store: @container.link_edge_store,
+        )
       end
     end
   end

@@ -71,6 +71,18 @@ RSpec.describe Textus::Produce::Publisher do
       output_path = File.join(File.dirname(store_with_links.container.root), "docs/reference/lanes.md")
       expect(File.read(output_path)).to include("[guide](../how-to/guide.md)")
     end
+
+    it "records the link edge into the container's shared LinkEdgeStore" do
+      container = store_with_links.container
+      Textus::Produce::Publisher.call(
+        container: container,
+        call: Textus::Value::Call.build(role: "automation"),
+        key: "artifacts.reference.lanes",
+        edge_store: container.link_edge_store,
+      )
+      deps = container.link_edge_store.dependents_of("artifacts.how-to.guide")
+      expect(deps).to include("artifacts.reference.lanes")
+    end
   end
 
   describe ".call" do

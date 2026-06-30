@@ -19,8 +19,14 @@ module Textus
 
         locals   = target.inject_boot ? data.merge("boot" => boot) : data
         resolver = @manifest ? Textus::Links::Resolver.new(manifest: @manifest) : nil
-        ctx      = Render::Context.for(locals: locals, resolver: resolver, from_path: target.to)
-        raw      = ERB.new(@template_loader.call(target.template), trim_mode: "-").result(ctx.binding)
+        ctx      = Render::Context.for(
+          locals: locals,
+          resolver: resolver,
+          from_path: target.to,
+          from_key: @entry_key,
+          edge_store: @edge_store,
+        )
+        raw = ERB.new(@template_loader.call(target.template), trim_mode: "-").result(ctx.binding)
         rewrite(raw, target.to, resolver)
       end
 

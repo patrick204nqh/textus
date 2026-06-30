@@ -6,9 +6,8 @@ module Textus
       end
 
       def initialize(container:, call:)
-        @container  = container
-        @call       = call
-        @edge_store = Textus::Links::LinkEdgeStore.new
+        @container = container
+        @call      = call
       end
 
       def run(keys)
@@ -34,7 +33,12 @@ module Textus
       end
 
       def publish_only(key)
-        Textus::Produce::Publisher.call(container: @container, call: @call, key: key, edge_store: @edge_store)
+        Textus::Produce::Publisher.call(
+          container: @container,
+          call: @call,
+          key: key,
+          edge_store: @container.link_edge_store,
+        )
       end
     end
   end

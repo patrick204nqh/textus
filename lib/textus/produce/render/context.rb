@@ -4,14 +4,16 @@ module Textus
   module Produce
     class Render
       class Context
-        def self.for(locals:, resolver: nil, from_path: nil)
-          new(locals, resolver, from_path)
+        def self.for(locals:, resolver: nil, from_path: nil, from_key: nil, edge_store: nil)
+          new(locals, resolver, from_path, from_key, edge_store)
         end
 
-        def initialize(locals, resolver, from_path)
-          @locals    = locals
-          @resolver  = resolver
-          @from_path = from_path
+        def initialize(locals, resolver, from_path, from_key, edge_store)
+          @locals     = locals
+          @resolver   = resolver
+          @from_path  = from_path
+          @from_key   = from_key
+          @edge_store = edge_store
         end
 
         def binding
@@ -20,10 +22,14 @@ module Textus
           obj = Object.new.extend(mod)
 
           if @resolver && @from_path
-            resolver  = @resolver
-            from_path = @from_path
+            resolver   = @resolver
+            from_path  = @from_path
+            from_key   = @from_key
+            edge_store = @edge_store
             obj.define_singleton_method(:textus_link) do |key|
-              resolver.resolve(key: key, from_path: from_path)
+              resolved = resolver.resolve(key: key, from_path: from_path)
+              edge_store&.record(from_key: from_key, to_key: key)
+              resolved
             rescue Textus::Links::Resolver::UnknownKeyError
               "`textus get #{key}`"
             end
