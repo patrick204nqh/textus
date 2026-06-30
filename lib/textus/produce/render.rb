@@ -2,6 +2,7 @@
 
 require "erb"
 require_relative "../links/resolver"
+require_relative "../links/uri_rewriter"
 require_relative "render/context"
 
 module Textus
@@ -19,7 +20,16 @@ module Textus
         locals   = target.inject_boot ? data.merge("boot" => boot) : data
         resolver = @manifest ? Textus::Links::Resolver.new(manifest: @manifest) : nil
         ctx      = Render::Context.for(locals: locals, resolver: resolver, from_path: target.to)
-        ERB.new(@template_loader.call(target.template), trim_mode: "-").result(ctx.binding)
+        raw      = ERB.new(@template_loader.call(target.template), trim_mode: "-").result(ctx.binding)
+        rewrite(raw, target.to, resolver)
+      end
+
+      private
+
+      def rewrite(bytes, from_path, resolver)
+        return bytes unless resolver && bytes.include?("textus:")
+
+        Textus::Links::UriRewriter.new(resolver: resolver, from_path: from_path).rewrite(bytes)
       end
     end
   end

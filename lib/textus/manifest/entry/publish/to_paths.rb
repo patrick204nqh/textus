@@ -1,6 +1,4 @@
 require "tempfile"
-require_relative "../../../links/resolver"
-require_relative "../../../links/uri_rewriter"
 
 module Textus
   class Manifest
@@ -60,19 +58,10 @@ module Textus
             renderer.bytes_for(target: target, data: content, boot: boot)
           end
 
-          def rewrite_textus_links(bytes, source_publish_path, pctx)
-            return bytes unless bytes.include?("textus:")
-
-            resolver = Textus::Links::Resolver.new(manifest: pctx.manifest)
-            rewriter = Textus::Links::UriRewriter.new(resolver: resolver, from_path: source_publish_path)
-            rewriter.rewrite(bytes)
-          end
-
           # Write bytes to a system temp, publish (recording the persistent data
           # file as the sentinel source), then remove the temp — the store is
           # never polluted with render artifacts.
           def publish_bytes(bytes, key, target, pctx, data_path, envelope)
-            bytes      = rewrite_textus_links(bytes, target.to, pctx)
             target_abs = File.join(pctx.repo_root, target.to)
             Tempfile.create(["textus-publish", File.extname(target.to)]) do |f|
               f.binmode
