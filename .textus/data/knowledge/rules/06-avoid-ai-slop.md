@@ -1,3 +1,3 @@
-### Rule 6 — Avoid AI slop
+### Avoid AI slop
 
 Prefer structured outputs, traceable provenance, and explicit constraints over verbose ungrounded generation.

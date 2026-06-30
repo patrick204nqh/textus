@@ -1,0 +1,2865 @@
+{
+  "_meta": {
+    "uid": "f5683fb03fa03aab"
+  },
+  "entries": [
+    {
+      "tag": "Unreleased",
+      "date": null,
+      "commits": [
+        {
+          "subject": "fix: decisions log workflow — use container.reader.read, fix relative links in template",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "refactor: move knowledge.spec → artifacts.spec, remove orphaned artifacts, integrate decision log",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "chore: remove stale knowledge sources replaced by artifact equivalents",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "chore: remove knowledge/cookbook source directory",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "fix: clean orphaned sentinels/files, update decisions README link, restore ignore",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "refactor: rename adr-log to decision log, remove docs/README.md index artifact",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "refactor: prune legacy knowledge, remove cookbook, reorganize workflows+templates",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "feat: convert all how-to, reference, cookbook, explanation docs to generated artifacts",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "feat: wire artifacts.how-to.agents-mcp — pilot how-to artifact pattern",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "feat: wire artifacts.architecture.index — generates lane/role tables + static layer layout",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "feat: delete design/invariants monolith — replaced by atomic canon + assembler artifact",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "feat: wire artifacts.design.invariants — assembles goals + rules atoms via workflow",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "feat: decompose design/invariants into atomic knowledge.goals.* and knowledge.rules.* entries",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "feat: add knowledge.goals and knowledge.rules nested families to manifest",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "feat: add ADR-0120 — atomic canon + composed artifacts principle",
+          "date": "2026-06-30"
+        }
+      ]
+    },
+    {
+      "tag": "v0.55.2",
+      "date": "2026-06-30",
+      "commits": [
+        {
+          "subject": "chore: bump version to 0.55.2",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "docs: fix 15 stale content issues found in audit",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "chore: sync how-to store source files and refresh boot artifact",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "docs: rewrite how-to guides — add MCP protocol lifecycle, remove stale content",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "fix: harden MCP server dispatch and resource handling",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "fix: scratchpad sources doctor check handles object-form sources",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "feat: expand sources with suspended flag at get time",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "feat: normalize sources to {key,etag} objects at write time",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "refactor: harden API and interface boundaries across Store, MCP, and registry",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "refactor: update all notebook→scratchpad references in docs, specs, lib, and store data",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "refactor: rename notebook lane to scratchpad across manifest, docs, lib, and specs",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "feat: extend list with q: FTS and schema: filter via SQLite entries index",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "feat: shadow writes to SQLite audit_events, pulse reads from index with flat-log fallback",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "feat: consolidate boot into artifacts.boot, drain computes stable content, boot injects live fields",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "chore: remove generated reference docs, superpowers scratch dirs, fix broken links",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "split Freshness::Evaluator into TtlEvaluator + DriftDetector",
+          "date": "2026-06-29"
+        },
+        {
+          "subject": "flatten Container wiring — remove hypothetical HandlerFactoryRegistry+Adapter seam",
+          "date": "2026-06-29"
+        },
+        {
+          "subject": "cascade delegates reactive enqueue to Planner — removes manifest-walking from middleware",
+          "date": "2026-06-29"
+        },
+        {
+          "subject": "extract Produce::Publisher — single seam for publish-after-materialise",
+          "date": "2026-06-29"
+        },
+        {
+          "subject": "fix: correct indentation in write_entry method for better readability",
+          "date": "2026-06-29"
+        },
+        {
+          "subject": "refactor: group handlers into read/write/maintenance subdirs (S-1)",
+          "date": "2026-06-29"
+        },
+        {
+          "subject": "refactor: rename Store::Envelope::Reader/Writer → Store::Entry::Reader/Writer (I/O for entries, not envelopes)",
+          "date": "2026-06-29"
+        },
+        {
+          "subject": "refactor: move Handlers::Orchestration → Textus::Orchestration (not a handler, shared service)",
+          "date": "2026-06-29"
+        },
+        {
+          "subject": "refactor: rename Store::Geometry → Store::Layout (filesystem layout, not spatial geometry)",
+          "date": "2026-06-29"
+        },
+        {
+          "subject": "refactor: inline Dispatch.dispatch into Store, move unwrap to Value::Result.extract",
+          "date": "2026-06-29"
+        },
+        {
+          "subject": "refactor: private_constant VERB_TO_CONTRACT/CONTRACT_TO_VERB, expose via contract_class_for",
+          "date": "2026-06-29"
+        },
+        {
+          "subject": "refactor: rename IngestEntry :zone → :lane to complete ADR-0114 vocabulary migration",
+          "date": "2026-06-29"
+        },
+        {
+          "subject": "refactor: rename Schema::Store → Schema::Registry (schema registry not a sub-store)",
+          "date": "2026-06-29"
+        },
+        {
+          "subject": "refactor: rename Container.build_full → Container.build (no contrast remains)",
+          "date": "2026-06-29"
+        },
+        {
+          "subject": "refactor: add Container#wire! to encapsulate post-construction boot mutation",
+          "date": "2026-06-29"
+        },
+        {
+          "subject": "refactor: extract Pipeline I/O to direct Writer/Reader calls, reduce Pipeline to single dispatch method",
+          "date": "2026-06-29"
+        },
+        {
+          "subject": "refactor: remove Store#as and Store#session, migrate all callers to with_role",
+          "date": "2026-06-29"
+        },
+        {
+          "subject": "refactor: delete dead Dispatch::Middleware::Audit (unwired, inline Writer audit is the seam)",
+          "date": "2026-06-29"
+        },
+        {
+          "subject": "refactor: delete dead handler registration path (build_pipeline + register_pipeline_registry_handlers)",
+          "date": "2026-06-29"
+        },
+        {
+          "subject": "feat: add architecture and design invariants documentation; update job queue handling",
+          "date": "2026-06-29"
+        },
+        {
+          "subject": "Merge pull request #244 from patrick204nqh/api-interface-hygiene",
+          "date": "2026-06-26"
+        },
+        {
+          "subject": "style(rubocop): align ADR-0121 refactor formatting",
+          "date": "2026-06-26"
+        },
+        {
+          "subject": "refactor: api and interface hygiene consolidation (ADR-0121)",
+          "date": "2026-06-23"
+        },
+        {
+          "subject": "Merge pull request #243 from patrick204nqh/bus-pipeline-design-b",
+          "date": "2026-06-23"
+        },
+        {
+          "subject": "fix(docs): regenerate adr-log.json to include new ADR 0117",
+          "date": "2026-06-23"
+        },
+        {
+          "subject": "fix(docs): deterministic ADR log uid across platforms; rubocop balance",
+          "date": "2026-06-23"
+        },
+        {
+          "subject": "workflow(adr_log): produce deterministic uid for adr-log to avoid CI drift",
+          "date": "2026-06-23"
+        },
+        {
+          "subject": "Merge remote-tracking branch 'origin/main' into bus-pipeline-design-b",
+          "date": "2026-06-23"
+        },
+        {
+          "subject": "Regenerate docs artifacts: ADR log updated by textus drain --as=automation",
+          "date": "2026-06-23"
+        },
+        {
+          "subject": "ci(rubocop): ignore var/ temp clones from drain runs",
+          "date": "2026-06-23"
+        },
+        {
+          "subject": "chore(docs): add generated reference/specs files",
+          "date": "2026-06-23"
+        },
+        {
+          "subject": "ci(docs): run textus drain as automation in CI to stabilise generated metadata",
+          "date": "2026-06-23"
+        },
+        {
+          "subject": "chore(docs): regenerate docs via textus drain",
+          "date": "2026-06-23"
+        },
+        {
+          "subject": "docs: annotate HandlerFactoryRegistry to note it replaces Builder seam",
+          "date": "2026-06-23"
+        },
+        {
+          "subject": "docs(adr): record adoption of HandlerFactoryRegistry + Adapter for pipeline composition (ADR 0117)",
+          "date": "2026-06-23"
+        },
+        {
+          "subject": "refactor(container): switch pipeline composition to HandlerFactoryRegistry + Adapter (Design B)",
+          "date": "2026-06-23"
+        },
+        {
+          "subject": "feat(container): make pipeline composition pluggable; support HandlerFactoryRegistry+Adapter via TEXTUS_PIPELINE_ADAPTER=1",
+          "date": "2026-06-23"
+        },
+        {
+          "subject": "refactor(container): extract pipeline registry registrations to helper and simplify build_pipeline",
+          "date": "2026-06-23"
+        },
+        {
+          "subject": "refactor(container): extract handler registration and writer factory helpers from build_full",
+          "date": "2026-06-23"
+        },
+        {
+          "subject": "chore(ci): suppress method-size rubocop for build_full to satisfy CI",
+          "date": "2026-06-23"
+        },
+        {
+          "subject": "chore: add Design B adapter + registry; fix style",
+          "date": "2026-06-23"
+        },
+        {
+          "subject": "feat(design-b): add Pipeline Adapter and HandlerFactoryRegistry for alternative composition seam",
+          "date": "2026-06-23"
+        },
+        {
+          "subject": "chore(deepening): incremental pipeline+reader/writer injection, format registry, file_store helpers",
+          "date": "2026-06-23"
+        },
+        {
+          "subject": "Merge pull request #237 from patrick204nqh/bus-pipeline-architecture",
+          "date": "2026-06-23"
+        },
+        {
+          "subject": "docs: add engineering skills process contract",
+          "date": "2026-06-23"
+        },
+        {
+          "subject": "refactor: remove dispatch session_default plumbing",
+          "date": "2026-06-23"
+        },
+        {
+          "subject": "refactor: remove unused dispatch contract from_wire helpers",
+          "date": "2026-06-23"
+        },
+        {
+          "subject": "refactor: deepen dispatch, orchestration, and geometry seams",
+          "date": "2026-06-23"
+        },
+        {
+          "subject": "fix: update detect_skills to include descendant directories for SKILL.md",
+          "date": "2026-06-23"
+        },
+        {
+          "subject": "style: suppress remaining lint/metrics for predicate interface and build_pipeline",
+          "date": "2026-06-23"
+        },
+        {
+          "subject": "style: fix rubocop issues — line length, block alignment, suppress structural cops",
+          "date": "2026-06-23"
+        },
+        {
+          "subject": "fix: update workflow Bus.dispatch → Dispatch.dispatch",
+          "date": "2026-06-23"
+        },
+        {
+          "subject": "docs: update conventions.md, regenerate ref docs",
+          "date": "2026-06-23"
+        },
+        {
+          "subject": "refactor: unify dispatch, rename Bus→Dispatch, re-home modules",
+          "date": "2026-06-23"
+        },
+        {
+          "subject": "refactor(bus)!: Complete Gate-to-Bus migration with shared predicate classes",
+          "date": "2026-06-22"
+        },
+        {
+          "subject": "refactor: replace action/contract layer with Bus pipeline architecture",
+          "date": "2026-06-22"
+        },
+        {
+          "subject": "Merge pull request #236 from patrick204nqh/architecture-deepening-phase-3",
+          "date": "2026-06-22"
+        },
+        {
+          "subject": "Architecture deepening phase 3 — write-path standardisation, container fix, format dedup",
+          "date": "2026-06-22"
+        }
+      ]
+    },
+    {
+      "tag": "v0.55.1",
+      "date": "2026-06-22",
+      "commits": [
+        {
+          "subject": "textus 0.55.1 — CI fix: converge_now purges done jobs",
+          "date": "2026-06-22"
+        },
+        {
+          "subject": "textus 0.55.1 — CI fix: converge_now purges done jobs",
+          "date": "2026-06-22"
+        },
+        {
+          "subject": "fix: purge done jobs before reseeding in converge_now to fix publish_tree prune test",
+          "date": "2026-06-22"
+        }
+      ]
+    },
+    {
+      "tag": "v0.55.0",
+      "date": "2026-06-22",
+      "commits": [
+        {
+          "subject": "textus 0.55.0 — Architecture Deepening Phase 2 (#234)",
+          "date": "2026-06-22"
+        },
+        {
+          "subject": "Architecture-deepening: enforce 10 conventions structurally, kill dual paths (#233)",
+          "date": "2026-06-22"
+        },
+        {
+          "subject": "feat: action composition + contract/impl split + container wiring (#232)",
+          "date": "2026-06-21"
+        },
+        {
+          "subject": "feat: knowledge structure audit + sources as first-class envelope field (ADR-0118) (#231)",
+          "date": "2026-06-20"
+        },
+        {
+          "subject": "refactor: split knowledge.readme into composed fragments + template prototype (#230)",
+          "date": "2026-06-20"
+        },
+        {
+          "subject": "Architecture deepening — module restructuring, seam sealing, code smell cleanup (#229)",
+          "date": "2026-06-20"
+        },
+        {
+          "subject": "feat: centralized SQLite index and job queue (#228)",
+          "date": "2026-06-19"
+        },
+        {
+          "subject": "refactor: separate contract declaration from dispatch machinery (#227)",
+          "date": "2026-06-19"
+        }
+      ]
+    },
+    {
+      "tag": "v0.54.2",
+      "date": "2026-06-19",
+      "commits": [
+        {
+          "subject": "feat: ingest dedup with supersede chain, .run → .state rename (#226)",
+          "date": "2026-06-19"
+        },
+        {
+          "subject": "feat: restructure artifacts lane into config/docs/system concerns (#225)",
+          "date": "2026-06-18"
+        },
+        {
+          "subject": "feat: workflow rename, feeds pipeline, raw/ingest docs, SPEC v4, docs audit (#224)",
+          "date": "2026-06-18"
+        }
+      ]
+    },
+    {
+      "tag": "v0.54.1",
+      "date": "2026-06-17",
+      "commits": [
+        {
+          "subject": "feat: MCP SDK + dry ecosystem + ERB templates (v0.54.1) (#223)",
+          "date": "2026-06-17"
+        },
+        {
+          "subject": "Merge pull request #222 from patrick204nqh/feat/docs-knowledge-pipeline",
+          "date": "2026-06-17"
+        },
+        {
+          "subject": "fix: use Time.now.utc in ingest spec to match action's key derivation",
+          "date": "2026-06-17"
+        },
+        {
+          "subject": "fix: give artifacts.mcp explicit path to avoid collision with artifacts.mcp-config",
+          "date": "2026-06-17"
+        },
+        {
+          "subject": "fix: sort MCP tool catalog alphabetically for cross-platform determinism",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "chore: move templates into templates/artifacts/ to mirror workflow structure",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "feat: promote events.md and mcp.md to produced artifacts",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "feat: update index_key handling in boot process based on artifacts presence",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "feat: add StaleReviewedStamp doctor check for knowledge doc currency",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "chore: move SPEC.md into knowledge zone (knowledge.spec)",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "chore: adopt contributor-conventions.md into knowledge zone",
+          "date": "2026-06-16"
+        }
+      ]
+    },
+    {
+      "tag": "v0.54.0",
+      "date": "2026-06-16",
+      "commits": [
+        {
+          "subject": "Merge pull request #221 from patrick204nqh/fix/mcp-resources-capability",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "fix: correct ADR filenames in CHANGELOG links (0114/0115/0116)",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "chore: expand 0.54.0 CHANGELOG — covers all 3 PRs and standalone commits",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "chore: release 0.54.0",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "fix: move string-described specs to conformance per SpecLayout rule",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "fix: advertise resources capability in MCP initialize handshake",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "Merge pull request #220 from patrick204nqh/agent-session-lifecycle",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "refactor: move ContractDrift from MCP surface to core Textus::ContractDrift",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "refactor: apply Sandi Metz rules to MCP Server — extract methods and Routing module",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "chore: remove remaining --lean references from plugin manifest spec",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "fix: claude_plugin uses plain textus (external use); mcp_config keeps bundle exec (dev)",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "chore: refresh artifact files from drain",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "fix: adr_log workflow needs include_keyless: true for tree-publish knowledge.decisions",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "style: rubocop auto-fixes — alignment, redundant initialize",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "refactor: slim pulse — remove stale/doctor/next_due_at, add index_etag, delete Scanner",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "feat: add MCP resources/list and resources/read — exposes machine-lane artifacts",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "refactor: boot reads from artifacts, removes --lean flag and inline computation",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "feat: add artifacts.index produced workflow — pre-computed full-store catalog",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "refactor: standardize all workflows — :build step name, content wrapper, fix commands",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "chore: organise workflows into artifacts/ and config/ subdirectories",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "chore: migrate artifact data files from artifacts/derived/ to artifacts/",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "refactor: flatten artifacts.derived.* to artifacts.* in manifest + workflow matches",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "fix: rewrite adr_log + orientation workflows — use resolver.enumerate, fix List bug",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "Merge pull request #219 from patrick204nqh/raw-ingest-pipeline",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "style: fix extra blank lines left by BURN deletion (rubocop)",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "remove: delete dead derived_write? no-op guard from WriteVerb#cascade_to_rdeps",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "remove: delete stale publish_each runtime guard from Entry::Publish (validator catches it at load)",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "remove: drop duplicate inline check_action! from put/key_delete/reject (Gate covers these)",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "remove: drop cross-lane notebook side-effect from Action::Ingest",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "remove: delete dead BURN = :sync constant from all actions",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "fix: move doctor check specs to spec/integration/doctor/check/ per layout rule",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "feat: implement raw ingest pipeline — Action::Ingest, doctor checks, asset sentinel, ADR 0116",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "add gate predicates: raw_lane_ingest_only + raw_write_once",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "add Command::Ingest struct and gate verb routing stub",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "expand zone-kind bijection: add raw→ingest (ADR 0114)",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "remove Jobs::Refresh — workflow covers periodic re-derivation (ADR 0115)",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "Merge pull request #218 from patrick204nqh/workflow-redesign",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "fix: resolve all rubocop offenses (autocorrect + nest workflow errors spec)",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "docs: rewrite architecture README for workflow redesign — remove Step system, add Workflow layer",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "refactor: remove data/ prefix and explicit path: from spec manifest fixtures",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "refactor: rename docs-readme→docs-index, architecture-readme→architecture-index; drop last explicit path: fields",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "refactor: strip data/ prefix from manifest paths — implicit via normalize_relative_path",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "feat: make path: optional in manifest entries — derive from key + format + kind",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "remove: source: field narrowed to external-only keys; fetch/derive schema fields removed",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "remove: strip fetch/derive methods from Produced; freshness/pulse use retention rules; boot drops intake/derived keys; deps/rdeps simplified",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "breaking: narrow Manifest::Policy::Source to from: external only — fetch/derive removed",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "remove: delete dead step/events/projection code (step system fully removed)",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "fix: triage remaining failures — boot/mcp/spec-layout cleanup post workflow redesign",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "fix: update spec fixtures and container/store specs for workflows Container field",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "remove: delete stale specs for removed features (observers, events, steps, intake_registration)",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "fix: keyword args on Produce::Engine; delete Textus::Projection; init scaffolds workflows/ not steps/",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "remove: strip final Step:: references from entry/base, role_scope, mcp/server",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "remove: drop hook_errors from pulse output (step event bus removed)",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "refactor: replace boot hooks output with workflows list; remove Step::Catalog refs",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "remove: strip step system from doctor — delete IntakeRegistration check and run_registered_checks",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "migrate: .textus/ steps -> workflows; strip source/handler/rules from manifest",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "remove: delete dead hooks check and audit_subscriber (step system removed)",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "remove: delete no-op Events validator (step system removed)",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "feat: wire Workflow::Runner into Store; remove step/ and container.steps.publish",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "feat: add Workflow system (errors, Context, Pattern, DSL, Registry, Loader, Runner)",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "refactor: partially implement Task 5 (rename pipeline/ to produce/)",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "remove: delete handler_permit (doctor-only field with no runtime enforcement)",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "fix: remove accidentally committed produce/acquire/ copies with wrong constants",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "refactor: rename pipeline/ to produce/ and update callsites",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "refactor: rename background/ to jobs/ (Background::* → Jobs::*)",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "refactor: rename background/ to jobs/ (Background::* -> Jobs::*)",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "refactor: rename Ports::Queue to Ports::JobStore",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "refactor: flatten envelope/io/ to envelope/ and rename Ports::Queue to Ports::JobStore",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "refactor: flatten envelope/io/ to envelope/",
+          "date": "2026-06-16"
+        },
+        {
+          "subject": "refactor: rename entry/ format strategies to format/",
+          "date": "2026-06-16"
+        }
+      ]
+    },
+    {
+      "tag": "v0.53.0",
+      "date": "2026-06-15",
+      "commits": [
+        {
+          "subject": "fix: rubocop line length in merged audit_log_spec.rb",
+          "date": "2026-06-15"
+        },
+        {
+          "subject": "Merge pull request #217 from patrick204nqh/bump-v0.53.0",
+          "date": "2026-06-15"
+        },
+        {
+          "subject": "chore: regenerate generated files via textus drain",
+          "date": "2026-06-15"
+        },
+        {
+          "subject": "chore: bump to 0.53.0",
+          "date": "2026-06-15"
+        },
+        {
+          "subject": "Merge pull request #216 from patrick204nqh/sandi-metz-refactoring",
+          "date": "2026-06-15"
+        },
+        {
+          "subject": "chore(dev): apply rubocop formatting",
+          "date": "2026-06-15"
+        },
+        {
+          "subject": "chore(dev): add affaan-m/ecc as skill source",
+          "date": "2026-06-15"
+        },
+        {
+          "subject": "refactor: replace hand-rolled mustache with mustache gem",
+          "date": "2026-06-15"
+        },
+        {
+          "subject": "refactor: generate args method dynamically in Action::Base",
+          "date": "2026-06-15"
+        },
+        {
+          "subject": "chore: add bin/dev for local skill sync from GitHub",
+          "date": "2026-06-15"
+        },
+        {
+          "subject": "refactor: extract ErrorInfo parameter object for Error#initialize",
+          "date": "2026-06-15"
+        },
+        {
+          "subject": "refactor: extract verify_integrity per-line checking into sub-methods",
+          "date": "2026-06-15"
+        },
+        {
+          "subject": "refactor: break Init.run into focused class methods",
+          "date": "2026-06-15"
+        },
+        {
+          "subject": "refactor: pull auth/writer/reader helpers into WriteVerb",
+          "date": "2026-06-15"
+        },
+        {
+          "subject": "refactor: deduplicate Gate::Auth#check! and #check_action!",
+          "date": "2026-06-15"
+        },
+        {
+          "subject": "refactor: extract Writer#put into composed methods",
+          "date": "2026-06-15"
+        },
+        {
+          "subject": "Merge pull request #215 from patrick204nqh/auth-gate-cleanup",
+          "date": "2026-06-15"
+        },
+        {
+          "subject": "fix(cli): restore role_filter in RoleScope verb dispatch",
+          "date": "2026-06-15"
+        },
+        {
+          "subject": "refactor: rename Background::Planner::Planner → Planner::Plan (resolve double-name)",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "refactor: remove redundant container: param from Gate#dispatch (always @container)",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "chore: delete empty Textus::Dispatch module (dead since Dispatcher was removed)",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "refactor: remove dead else branch and role_filter from RoleScope verb dispatch",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "refactor: remove double auth in Accept; drop dead UnknownKey rescue from check_action!",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "Merge pull request #214 from patrick204nqh/auth-consolidation",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "refactor: inline dispatch_bound into define_method; delete build_command+build_action from RoleScope",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "fix: Background::Job registry O(1) hash lookup, delete stale domain/jobs spec, add pending_key guard test",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "spec: remove obsolete target_is_canon tests (removed from accept FLOOR)",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "docs: run textus drain — regenerate verbs ref, ADR log, hooks desc",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "refactor: move Core::Jobs::Job to Ports::Queue::Job; delete orphaned Core::Jobs::Registry",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "refactor: collapse Planner::Seeder+Scheduler into Planner.seed; unify manual.kick+schedule.tick into convergence trigger",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "refactor: move job handlers to Background::Job:: with own registry; remove Action::Background::",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "docs: ADR 0115 — document role trust model as asserted identities with ambient authority",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "fix: detect seq gaps and regressions in AuditLog#verify_integrity",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "fix: thread caller role through Doctor::Check dispatch instead of hardcoding human",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "fix: add 1MB message size ceiling to MCP server handle_line",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "fix: route dispatch_bound through Gate for verb-based commands",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "fix: add pending_key to Command::Propose; enforce propose+accept auth at Gate via FLOOR",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "fix: remove AUTOMATION bypass from Gate::Auth#check! — capability check handles it",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "refactor: replace command_to_action regex with VERB_COMMAND.invert constant",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "Merge pull request #213 from patrick204nqh/refactor/layer-redesign",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "fix: propose_spec path depth (../../../../ → ../../../) — CI at 0 failures",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "fix: propose_spec path depth and etag_spec glob — 3 CI failures down to 0",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "docs: refresh architecture README for Surface → Command → Gate → Action; update how-to/contributor refs",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "fix: restore empty-holders edge case in Gate::Auth; fix accept GuardFailed for UnknownKey",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "refactor: clean Action::Background — remove dead BURN/Contract::DSL, simplify Action.fetch",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "fix: remove Gate-level audit recording — actions handle their own; fix Audit role filter mapping",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "refactor: install! and verbs.rb use Gate::ROUTES; replace store.as hook scope",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "refactor: rename Dispatch::Planner/Pipeline/Runtime — eliminate Dispatch:: namespace",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "fix: align Command structs with action kwargs, fix MCP dispatch",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "chore: skip audit for read commands in Gate, final cleanup",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "refactor: delete old dispatch layer (Dispatcher, Gate, Auth, Ledger, Executor, Event)",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "feat: add Surfaces::Watcher — consolidates watch + schedule triggers",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "feat: wire MCP surface to Gate",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "feat: wire CLI surface to Gate — delete RoleScope",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "feat: wire Gate into Container and Store",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "refactor: rename Dispatch::Actions → Action namespace",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "feat: add Textus::Gate with ROUTES map and Gate::Auth",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "feat: add Gate::Auth — command-based auth wrapper",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "feat: add Command namespace and Textus::Events constants",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "test: delete specs for dispatch layer being replaced",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "Merge pull request #212 from patrick204nqh/dispatch-consolidation",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "test: move string-described specs to conformance/ per spec_layout convention",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "test(config): volatile tagging for dispatch/ and surfaces/ unit specs; move manifest fixture to conformance",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "refactor(spec): update terminology and structure for lanes and sources",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "test(manifest): live fixture contract for project .textus manifest",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "test(core): integration spec for Retention::Sweep GC reporting",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "test(core): integration spec for Freshness::Evaluator currency verdicts",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "test(core): unit spec for Core::Sentinel orphan/drift predicates",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "test(core): unit spec for Freshness::Verdict wire serialization",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "test(support): add core domain doubles shared context",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "docs: update README zone→lane vocabulary and hooks→steps extension model",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "docs: update README source vocabulary (from: handler/project/command → fetch/derive/external)",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "fix: restore event lifecycle, drain seeding, and produce_failed after consolidation",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "chore: remove freshness.rb and pipeline/events.rb (dissolved in refactor)",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "refactor: remove ValidateAll verb from Dispatcher::VERBS; role_authority spec calls Doctor::Validator directly",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "docs: add stable/volatile spec convention; delete completed superpowers docs",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "test: add specs for new actions and planner; update fixture callers",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "test: delete stale unit specs for dissolved layers",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "feat: replace ACTIONS_BY_TRIGGER with rules-driven planner",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "feat: route async job execution through Dispatch::Gate; delete Handlers registry",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "refactor: migrate intake steps.publish calls to Gate events",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "refactor: delete Domain::Action stub — no callers",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "refactor: delete Domain::Action stub — no callers",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "refactor: delete capabilities verb — Dispatcher::VERBS is the static contract",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "refactor: move produce/ to dispatch/pipeline/",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "refactor: move maintenance/ to dispatch/runtime/",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "refactor: move jobs/ to dispatch/planner/",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "Merge pull request #211 from patrick204nqh/feat/actions-migration-2026-06-13",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "test(dispatch): migrate verb specs to actions layout",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "refactor(dispatch): migrate runtime verb paths to actions",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "Merge pull request #210 from patrick204nqh/refactor/foundation-refactor-2026-06-13",
+          "date": "2026-06-14"
+        },
+        {
+          "subject": "refactor!: complete foundation refactor and dispatch gate rollout",
+          "date": "2026-06-13"
+        },
+        {
+          "subject": "Merge pull request #209 from patrick204nqh/feat/data-watch-rules-redesign",
+          "date": "2026-06-13"
+        },
+        {
+          "subject": "Merge pull request #208 from patrick204nqh/feat/step-model-full-suite-green",
+          "date": "2026-06-13"
+        },
+        {
+          "subject": "feat(core)!: cut over zones to data and adopt watch runtime",
+          "date": "2026-06-13"
+        },
+        {
+          "subject": "refactor(step): remove hook-era surfaces and restore full-suite green",
+          "date": "2026-06-13"
+        },
+        {
+          "subject": "refactor(step): wire Step::Registry into Container + Store, drop events/rpc fields",
+          "date": "2026-06-10"
+        },
+        {
+          "subject": "feat(step): port the five built-in fetch handlers to Step::Fetch",
+          "date": "2026-06-10"
+        },
+        {
+          "subject": "feat(step): add convention-discovery Step::Loader",
+          "date": "2026-06-10"
+        },
+        {
+          "subject": "feat(step): add Step::Registry unifying observe bus + invocable table",
+          "date": "2026-06-10"
+        },
+        {
+          "subject": "feat(step): add Discovery for path -> (kind, name)",
+          "date": "2026-06-10"
+        },
+        {
+          "subject": "feat(step): add Step base classes for the five step kinds",
+          "date": "2026-06-10"
+        },
+        {
+          "subject": "Merge pull request #207 from patrick204nqh/feat/opencode-config",
+          "date": "2026-06-10"
+        },
+        {
+          "subject": "Configure opencode.json and enhance agent orientation",
+          "date": "2026-06-10"
+        },
+        {
+          "subject": "Merge pull request #206 from patrick204nqh/feat/opencode-integration",
+          "date": "2026-06-10"
+        },
+        {
+          "subject": "feat: integrate opencode configuration and orientation",
+          "date": "2026-06-10"
+        },
+        {
+          "subject": "Merge pull request #205 from patrick204nqh/feat/adr-0113-proposal-block-meta",
+          "date": "2026-06-09"
+        },
+        {
+          "subject": "docs: publish ADR 0113 + regenerate adr-log (drain)",
+          "date": "2026-06-09"
+        },
+        {
+          "subject": "feat: proposal block speaks _meta, not frontmatter (ADR 0113)",
+          "date": "2026-06-09"
+        }
+      ]
+    },
+    {
+      "tag": "v0.52.0",
+      "date": "2026-06-09",
+      "commits": [
+        {
+          "subject": "Merge pull request #204 from patrick204nqh/feat/authority-reference-projection",
+          "date": "2026-06-09"
+        },
+        {
+          "subject": "chore: release textus 0.52.0 (ADR 0112 — produced authority reference)",
+          "date": "2026-06-09"
+        },
+        {
+          "subject": "docs: ADR 0112 + dedupe authority tables into generated authority.md",
+          "date": "2026-06-09"
+        },
+        {
+          "subject": "feat: project the authority model as docs/reference/authority.md (ADR 0112)",
+          "date": "2026-06-09"
+        },
+        {
+          "subject": "feat: add authority handler projecting the lane/role/zone model (ADR 0112)",
+          "date": "2026-06-09"
+        },
+        {
+          "subject": "Merge pull request #203 from patrick204nqh/refactor/converge-vocabulary-cleanup",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "refactor: finish converge rename in SPEC.md + example manifest (ADR 0111)",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "refactor: rename reconcile capability to converge; sweep residual debt (ADR 0111)",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "Merge pull request #201 from patrick204nqh/feat/job-worker-enqueue",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "Merge pull request #200 from patrick204nqh/feat/job-worker-rename",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "Merge pull request #199 from patrick204nqh/feat/job-worker-reactive",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "Merge pull request #202 from patrick204nqh/feat/job-worker-verbs",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "Merge pull request #197 from patrick204nqh/feat/job-worker-substrate",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "Merge branch 'feat/job-worker-rename' into feat/job-worker-enqueue",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "Merge branch 'feat/job-worker-reactive' into feat/job-worker-rename",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "Merge branch 'feat/job-worker-verbs' into feat/job-worker-reactive",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "test(queue): make #198 conformance green for added drain/jobs/serve surface",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "Merge branch 'feat/job-worker-rename' into feat/job-worker-enqueue",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "docs(queue): republish root files (README/CLAUDE/AGENTS/CONTRIBUTING/SECURITY) for drain rename",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "docs(queue): complete reconcile→drain rename in canon docs + templates",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "Merge branch 'feat/job-worker-rename' into feat/job-worker-enqueue",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "Merge branch 'feat/job-worker-reactive' into feat/job-worker-rename",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "Merge branch 'feat/job-worker-verbs' into feat/job-worker-reactive",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "docs(queue): regenerate verbs.md for drain/jobs (docs-freshness gate)",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "feat(queue): add enqueue verb — general runner bounded by the allow-list",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "docs(queue): ADR 0110 — job queue model, drain/serve rename, async-only",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "feat(queue)!: hard-rename reconcile verb to drain/serve; regenerate docs",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "feat(queue): scheduler seeds TTL re-pull/sweep into serve tick",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "fix(queue): re-materialize dependents on delete/rename (ADR 0087 gap)",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "feat(queue): drop source.on_write knob (materialize is async-only)",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "refactor(queue): retire in-process AsyncRunner (queue is the only deferral)",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "feat(queue): write subscriber enqueues materialize (async-only)",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "test(queue): satisfy spec-layout guard (constant-described; worker_config is integration)",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "test(queue): drain/reconcile convergence parity (effect, not result shape)",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "feat(queue): add serve daemon (tick = reclaim + serial drain)",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "feat(queue): add jobs verb (list/retry/purge)",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "feat(queue): add drain verb (seed + serial drain + health)",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "feat(queue): add Jobs::Seeder (mirrors Reconcile produce_scope)",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "feat(queue): register materialize/re-pull/sweep convergence handlers",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "refactor(reconcile): extract Retention::Apply for reuse by sweep handler",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "feat(queue): add manifest worker: config (pool/poll/lease_ttl/max_attempts)",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "feat(queue): add Worker.drain_pool (N-thread, exactly-once)",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "feat(queue): add Maintenance::Worker single-pass drain",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "feat(queue): add Domain::Jobs::Registry closed allow-list",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "feat(queue): add lease reclaim + cover concurrent single-claim",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "feat(queue): add lease (atomic claim), ack, fail with dead-letter",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "feat(queue): add Ports::Queue enqueue with dedup + ready_ids",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "feat(queue): add Domain::Jobs::Job with stable dedup id",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "feat(queue): add Layout.queue paths under .run/queue",
+          "date": "2026-06-08"
+        }
+      ]
+    },
+    {
+      "tag": "v0.51.0",
+      "date": "2026-06-08",
+      "commits": [
+        {
+          "subject": "textus 0.51.0 — the reconcile era + SPEC sync (#196)",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "ADR 0109 — board-exact schema split + single port shape (supersede 0107/0108) (#195)",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "ADR 0108 — name + document the two port shapes (don't convert) (#194)",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "ADR 0107 — split manifest/schema.rb: data vs validation walk (#193)",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "ADR 0106 — make the hexagonal layering executable (#192)",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "ADR 0105 — verb routing ⟺ contract bijection (#191)",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "docs: ADR 0104 — finish the root-doc canon move (CONTRIBUTING + SECURITY) (#190)",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "ADR 0100/0101 — produce/ topology + interface fossils (#189)",
+          "date": "2026-06-08"
+        },
+        {
+          "subject": "ADR 0099 — one Freshness evaluator (collapse the staleness family) (#188)",
+          "date": "2026-06-07"
+        },
+        {
+          "subject": "ADR 0098 — docs SSoT/DRY/SOLID cleanup (produce vs guard) (#187)",
+          "date": "2026-06-07"
+        },
+        {
+          "subject": "ADR 0097 — reference docs become produced (verbs, schema, ADR log) (#186)",
+          "date": "2026-06-07"
+        },
+        {
+          "subject": "test(conformance): consolidate the conformance spec tier (67→19 loose, zero coverage loss) (#185)",
+          "date": "2026-06-07"
+        },
+        {
+          "subject": "ADR 0095: collapse derived/intake into one produced kind (#184)",
+          "date": "2026-06-07"
+        },
+        {
+          "subject": "ADR 0094: source produces data, publish renders (#183)",
+          "date": "2026-06-07"
+        },
+        {
+          "subject": "ADR 0093 — source + retention over one reconcile engine (incl. ADR 0092) (#182)",
+          "date": "2026-06-07"
+        },
+        {
+          "subject": "ADR 0092: spec-suite churn-resistance — fixture vocabulary, retired-token guard, conformance split (#181)",
+          "date": "2026-06-06"
+        },
+        {
+          "subject": "ADR 0091 — one `machine` zone-kind; entry-kind is the single discriminator (#180)",
+          "date": "2026-06-06"
+        },
+        {
+          "subject": "Automation is one capability + one `upkeep` policy (ADR 0090) (#179)",
+          "date": "2026-06-06"
+        },
+        {
+          "subject": "Reconcile-era design cleanup (WS3/WS2/WS4/WS5 — ADR 0088, 0089) (#178)",
+          "date": "2026-06-05"
+        },
+        {
+          "subject": "fix: scrub deleted fetch/fetch_all/build verbs from agent-facing strings (WS1) (#177)",
+          "date": "2026-06-05"
+        },
+        {
+          "subject": "Fold build into reconcile (ADR 0087) (#176)",
+          "date": "2026-06-05"
+        }
+      ]
+    },
+    {
+      "tag": "v0.50.0",
+      "date": "2026-06-05",
+      "commits": [
+        {
+          "subject": "textus 0.50.0 — observability verbs + boot lifecycle + textus-managed agent config (#175)",
+          "date": "2026-06-05"
+        }
+      ]
+    },
+    {
+      "tag": "v0.49.0",
+      "date": "2026-06-04",
+      "commits": [
+        {
+          "subject": "textus 0.49.0 — normalize the key-verb family + remove migrate (ADR 0082) (#174)",
+          "date": "2026-06-04"
+        },
+        {
+          "subject": "textus 0.48.0 — docs become canon (ADR 0081) (#173)",
+          "date": "2026-06-04"
+        },
+        {
+          "subject": "test(suite): split specs into unit/integration/conformance + SOLID foundation (ADR 0080) (#172)",
+          "date": "2026-06-04"
+        },
+        {
+          "subject": "feat: unify staleness + retention into one lifecycle policy (ADR 0079) (#171)",
+          "date": "2026-06-04"
+        }
+      ]
+    },
+    {
+      "tag": "v0.47.1",
+      "date": "2026-06-04",
+      "commits": [
+        {
+          "subject": "Release textus 0.47.1 — External entries are a non-build path (#170)",
+          "date": "2026-06-04"
+        },
+        {
+          "subject": "fix(build): make External a non-build path; parse compute.command (#169)",
+          "date": "2026-06-04"
+        }
+      ]
+    },
+    {
+      "tag": "v0.47.0",
+      "date": "2026-06-04",
+      "commits": [
+        {
+          "subject": "Release textus 0.47.0 — close the agent loop over MCP (#168)",
+          "date": "2026-06-04"
+        },
+        {
+          "subject": "test(spec-layout): guard the spec/ ↔ lib/textus/ mirror (#167)",
+          "date": "2026-06-04"
+        },
+        {
+          "subject": "init --with-agent profile + surface build to MCP (ADRs 0076/0077) (#166)",
+          "date": "2026-06-03"
+        },
+        {
+          "subject": "Contract-etag drift guard + session_opened connect event (ADR 0074, 0075) (#165)",
+          "date": "2026-06-03"
+        },
+        {
+          "subject": "test: consolidate two duplicate spec examples (zero coverage loss) (#164)",
+          "date": "2026-06-03"
+        }
+      ]
+    },
+    {
+      "tag": "v0.46.0",
+      "date": "2026-06-03",
+      "commits": [
+        {
+          "subject": "ADR 0073: surfaces declares external projections; Ruby is the implicit base (#163)",
+          "date": "2026-06-03"
+        },
+        {
+          "subject": "Integration feedback from patrick-nexus: F1–F7 (#161) (#162)",
+          "date": "2026-06-03"
+        },
+        {
+          "subject": "docs: README — correct the .textus/ tree (audit log lives under .run/) (#160)",
+          "date": "2026-06-03"
+        },
+        {
+          "subject": "docs: README — surface store discovery + TEXTUS_ROOT (#159)",
+          "date": "2026-06-03"
+        },
+        {
+          "subject": "docs: README readability — hook tables + newcomer-friendlier opening (#158)",
+          "date": "2026-06-03"
+        },
+        {
+          "subject": "docs: freshness audit — verb drift, event-catalog dedup, output phrasing (#157)",
+          "date": "2026-06-03"
+        }
+      ]
+    },
+    {
+      "tag": "v0.45.1",
+      "date": "2026-06-03",
+      "commits": [
+        {
+          "subject": "0.45.1 — streamline: kill the last dual-paths (ADR 0069) (#156)",
+          "date": "2026-06-03"
+        },
+        {
+          "subject": "0.45.0 — the contract owns the request lifecycle (ADRs 0066–0068) (#155)",
+          "date": "2026-06-03"
+        },
+        {
+          "subject": "textus 0.44.1 — finish the CLI contract projection (ADR 0065) (#154)",
+          "date": "2026-06-03"
+        },
+        {
+          "subject": "0.44.0 — one verb name across surfaces; CLI is a contract projection (ADRs 0058–0063) (#153)",
+          "date": "2026-06-03"
+        }
+      ]
+    },
+    {
+      "tag": "v0.43.2",
+      "date": "2026-06-02",
+      "commits": [
+        {
+          "subject": "textus 0.43.2 — agent-legible MCP contracts (ADR 0057) (#152)",
+          "date": "2026-06-02"
+        }
+      ]
+    },
+    {
+      "tag": "v0.43.1",
+      "date": "2026-06-02",
+      "commits": [
+        {
+          "subject": "textus 0.43.1 — boot agent surface derives from the MCP catalog (ADR 0056) (#151)",
+          "date": "2026-06-02"
+        },
+        {
+          "subject": "feat(boot): derive read_verbs from the MCP catalog; recipes reference verbs (ADR 0056) + draft entry-level desc (ADR 0054) (#150)",
+          "date": "2026-06-02"
+        },
+        {
+          "subject": "docs: fix load-invalid owner archetypes + refresh reviewed stamps (#149)",
+          "date": "2026-06-02"
+        }
+      ]
+    },
+    {
+      "tag": "v0.43.0",
+      "date": "2026-06-02",
+      "commits": [
+        {
+          "subject": "feat(publish)!: typed publish: block + remove index_filename (ADR 0052, 0053) (#148)",
+          "date": "2026-06-02"
+        }
+      ]
+    },
+    {
+      "tag": "v0.42.0",
+      "date": "2026-06-02",
+      "commits": [
+        {
+          "subject": "feat(publish)!: remove publish_each — collapse to two modes (ADR 0051) (#147)",
+          "date": "2026-06-02"
+        }
+      ]
+    },
+    {
+      "tag": "v0.41.0",
+      "date": "2026-06-02",
+      "commits": [
+        {
+          "subject": "textus 0.41.0 — publish_tree subtree mirror + content-identical publish adoption (#146)",
+          "date": "2026-06-02"
+        },
+        {
+          "subject": "feat(publish): adopt a byte-identical target instead of refusing (ADR 0050) (#144)",
+          "date": "2026-06-02"
+        },
+        {
+          "subject": "refactor(publish): resolve publish mode into a sum type; one shared subtree mirror (ADR 0049) (#143)",
+          "date": "2026-06-02"
+        },
+        {
+          "subject": "ADR 0048 — fetch subsystem: one home per concern (#142)",
+          "date": "2026-06-02"
+        },
+        {
+          "subject": "fix(gemspec): package the docs that moved — gem shipped no architecture/conventions doc (#141)",
+          "date": "2026-06-02"
+        },
+        {
+          "subject": "publish_tree: a key-less subtree mirror for a derived-index leaf (ADR 0047) (#140)",
+          "date": "2026-06-02"
+        },
+        {
+          "subject": "test: modernize spec suite onto current lane vocabulary (#139)",
+          "date": "2026-06-02"
+        }
+      ]
+    },
+    {
+      "tag": "v0.40.0",
+      "date": "2026-06-02",
+      "commits": [
+        {
+          "subject": "textus 0.40.0 — publish_each owns multi-file leaf subtrees (ADR 0046) (#138)",
+          "date": "2026-06-02"
+        },
+        {
+          "subject": "publish_each copies a leaf's whole subtree when index_filename is set (ADR 0046) (#136)",
+          "date": "2026-06-02"
+        },
+        {
+          "subject": "Owner-subject validation at load (#135 items 1+2) (#137)",
+          "date": "2026-06-02"
+        },
+        {
+          "subject": "Close the role-name set to {human, agent, automation} (ADR 0045) (#134)",
+          "date": "2026-06-01"
+        },
+        {
+          "subject": "Resolve system actors by capability (ADR 0044) + close role-name set (ADR 0045, proposed) (#133)",
+          "date": "2026-06-01"
+        },
+        {
+          "subject": "refactor(hooks): Catalog as single source of truth for event tables (#131)",
+          "date": "2026-06-01"
+        }
+      ]
+    },
+    {
+      "tag": "v0.39.1",
+      "date": "2026-06-01",
+      "commits": [
+        {
+          "subject": "textus 0.39.1 — feed ergonomics: feeds.machine env snapshot + intake cookbook (ADR 0043) (#130)",
+          "date": "2026-06-01"
+        },
+        {
+          "subject": "feat(init): scaffold feeds.machines.* (nested) with a local env snapshot (ADR 0043) (#128)",
+          "date": "2026-06-01"
+        },
+        {
+          "subject": "docs(how-to): fix zone-rename drift in agents-mcp + :publish event name (#129)",
+          "date": "2026-06-01"
+        },
+        {
+          "subject": "cookbook: multi-machine environment-scan recipe (nested feeds.machines.*) (#127)",
+          "date": "2026-06-01"
+        },
+        {
+          "subject": "examples: use feeds.machine env snapshot, matching `textus init` (#126)",
+          "date": "2026-06-01"
+        },
+        {
+          "subject": "ADR 0043 — feed ergonomics without breaking core purity (#125)",
+          "date": "2026-06-01"
+        },
+        {
+          "subject": "chore: remove legacy ARCHITECTURE.md redirect stub (#124)",
+          "date": "2026-06-01"
+        },
+        {
+          "subject": "docs(readme): redesign flow diagram — group writers, colour-code roles (#123)",
+          "date": "2026-06-01"
+        }
+      ]
+    },
+    {
+      "tag": "v0.39.0",
+      "date": "2026-06-01",
+      "commits": [
+        {
+          "subject": "textus 0.39.0 — native ignore patterns for entry enumeration (ADR 0042) (#122)",
+          "date": "2026-06-01"
+        },
+        {
+          "subject": "docs(readme): add trust×durability quadrant; sharpen the flow diagram (#121)",
+          "date": "2026-06-01"
+        },
+        {
+          "subject": "feat: native ignore patterns for entry enumeration + doctor (ADR 0042) (#120)",
+          "date": "2026-06-01"
+        },
+        {
+          "subject": "feat: dogfood textus in its own repo — self-dev store + MCP wiring (ADR 0041) (#118)",
+          "date": "2026-06-01"
+        },
+        {
+          "subject": "docs: fold docs/ into Diátaxis directories (#117)",
+          "date": "2026-05-31"
+        }
+      ]
+    },
+    {
+      "tag": "v0.38.0",
+      "date": "2026-05-31",
+      "commits": [
+        {
+          "subject": "textus 0.38.0 — MCP serve acts as `agent` by default (ADR 0040) (#116)",
+          "date": "2026-05-31"
+        },
+        {
+          "subject": "textus 0.37.0 — MCP catalog derive-or-guard (ADR 0039) (#115)",
+          "date": "2026-05-31"
+        },
+        {
+          "subject": "feat: runtime artifacts under .run/, Textus::Layout owns the on-disk map (ADR 0038) (#113)",
+          "date": "2026-05-31"
+        },
+        {
+          "subject": "ADR 0037: boot/pulse derive-or-guard — anti-drift contract specs (#114)",
+          "date": "2026-05-31"
+        },
+        {
+          "subject": "docs(examples): consolidate to a single reference example (project) (#112)",
+          "date": "2026-05-31"
+        },
+        {
+          "subject": "textus 0.36.0 — transports as pure framings: one verb vocabulary + lifted session (ADR 0036) (#111)",
+          "date": "2026-05-31"
+        },
+        {
+          "subject": "docs: fix confirmed drift against v0.35.1 (capability canon, §9 verbs, write/ listing, 0.35 notes) (#110)",
+          "date": "2026-05-31"
+        },
+        {
+          "subject": "fix(gemspec): align metadata with current project (textus/3 + coordination-space description) (#109)",
+          "date": "2026-05-31"
+        },
+        {
+          "subject": "textus 0.35.2 — Evaluation field rename + Container doc fix (internal) (#108)",
+          "date": "2026-05-31"
+        }
+      ]
+    },
+    {
+      "tag": "v0.35.1",
+      "date": "2026-05-31",
+      "commits": [
+        {
+          "subject": "textus 0.35.1 — RSpec foundation consolidation (test-only) (#107)",
+          "date": "2026-05-31"
+        },
+        {
+          "subject": "textus 0.35.0 — proposal target-canon constraint + author_held (ADR 0035) (#106)",
+          "date": "2026-05-31"
+        },
+        {
+          "subject": "textus 0.34.0 — unify the Lane vocabulary + finish boot's kind-derived zone naming (ADR 0034) (#105)",
+          "date": "2026-05-31"
+        },
+        {
+          "subject": "test(spec): build shared RSpec foundation and migrate the suite onto it (#104)",
+          "date": "2026-05-31"
+        },
+        {
+          "subject": "textus 0.33.0 — complete primitive set (workspace + keep) + vocabulary (ADR 0031→0033) (#103)",
+          "date": "2026-05-31"
+        },
+        {
+          "subject": "textus 0.32.1 — unified-Guard spec cleanup (#102)",
+          "date": "2026-05-30"
+        },
+        {
+          "subject": "textus 0.32.0 — unified Guard engine (ADR 0031) + drop read_policy (ADR 0032) (#101)",
+          "date": "2026-05-30"
+        },
+        {
+          "subject": "textus 0.31.0 — capability-based roles (ADR 0030) (#100)",
+          "date": "2026-05-30"
+        },
+        {
+          "subject": "docs: refresh content to current v0.30 behavior (#99)",
+          "date": "2026-05-30"
+        },
+        {
+          "subject": "Add brand identity: \"Lanes\" logo, asset set, and DESIGN.md (#98)",
+          "date": "2026-05-30"
+        },
+        {
+          "subject": "docs: restructure for clarity + maintainability (#97)",
+          "date": "2026-05-30"
+        }
+      ]
+    },
+    {
+      "tag": "v0.30.0",
+      "date": "2026-05-29",
+      "commits": [
+        {
+          "subject": "textus 0.30.0 — mandatory zone kind (strict) + retention (ADR 0028 moves 1 & 4) (#96)",
+          "date": "2026-05-29"
+        },
+        {
+          "subject": "textus 0.29.2 — converge hook registries; de-leak MCP transport (ADR 0027) (#95)",
+          "date": "2026-05-29"
+        },
+        {
+          "subject": "textus 0.29.1 — use-case construction seams (ADR 0026) (#94)",
+          "date": "2026-05-29"
+        }
+      ]
+    },
+    {
+      "tag": "v0.29.0",
+      "date": "2026-05-29",
+      "commits": [
+        {
+          "subject": "textus 0.29.0 — Honest Domain (domain purity via ports) (#93)",
+          "date": "2026-05-29"
+        },
+        {
+          "subject": "textus 0.28.0 — consistency sweep & legacy cleanup (#92)",
+          "date": "2026-05-29"
+        },
+        {
+          "subject": "textus 0.27.0 — architecture redesign (Container + Call + Dispatcher) (#91)",
+          "date": "2026-05-29"
+        },
+        {
+          "subject": "docs: cleanup — version drift, SPEC↔ARCH alignment, OSS scaffolding (#90)",
+          "date": "2026-05-29"
+        }
+      ]
+    },
+    {
+      "tag": "v0.26.0",
+      "date": "2026-05-28",
+      "commits": [
+        {
+          "subject": "textus 0.26.0 — architecture consolidation (#89)",
+          "date": "2026-05-28"
+        },
+        {
+          "subject": "textus 0.25.1 — application layering (Ports + EnvelopeIO split + Manifest carving) (#88)",
+          "date": "2026-05-28"
+        },
+        {
+          "subject": "textus 0.25.0 — pulse hardening (#87)",
+          "date": "2026-05-28"
+        },
+        {
+          "subject": "textus 0.24.0 — context-structure ergonomics (#86)",
+          "date": "2026-05-28"
+        },
+        {
+          "subject": "textus 0.23.0 — agent gate (MCP) + docs truth-up (#85)",
+          "date": "2026-05-28"
+        }
+      ]
+    },
+    {
+      "tag": "v0.22.0",
+      "date": "2026-05-28",
+      "commits": [
+        {
+          "subject": "textus 0.22.0 — entry polymorphism pass (#84)",
+          "date": "2026-05-28"
+        },
+        {
+          "subject": "textus 0.21.1 — intake entries as builder outputs (#83)",
+          "date": "2026-05-28"
+        },
+        {
+          "subject": "feat!: 0.21.0 — agent memory integration (boot + pulse) (#81)",
+          "date": "2026-05-27"
+        }
+      ]
+    },
+    {
+      "tag": "v0.20.2",
+      "date": "2026-05-27",
+      "commits": [
+        {
+          "subject": "0.20.2 — finish role-kinds migration (#79)",
+          "date": "2026-05-27"
+        },
+        {
+          "subject": "0.20.1 — user-defined role kinds (#72) (#78)",
+          "date": "2026-05-27"
+        },
+        {
+          "subject": "chore: prune dead code and tighten manifest seams (#77)",
+          "date": "2026-05-27"
+        }
+      ]
+    },
+    {
+      "tag": "v0.20.0",
+      "date": "2026-05-27",
+      "commits": [
+        {
+          "subject": "chore(release): textus 0.20.0 — architecture redesign (#76)",
+          "date": "2026-05-27"
+        },
+        {
+          "subject": "refactor(0.20.0): merge Build into Publish (#75)",
+          "date": "2026-05-27"
+        },
+        {
+          "subject": "refactor(0.20.0): discriminated Manifest::Entry kinds (#74)",
+          "date": "2026-05-27"
+        },
+        {
+          "subject": "refactor(0.20.0): narrowed hook payload (HookContext) (#73)",
+          "date": "2026-05-27"
+        },
+        {
+          "subject": "refactor(0.20.0): unified Hooks::Bus (#71)",
+          "date": "2026-05-27"
+        },
+        {
+          "subject": "refactor(0.20.0): extract Manifest::Resolver (#70)",
+          "date": "2026-05-27"
+        },
+        {
+          "subject": "refactor(0.20.0): kill top-level utility modules (#69)",
+          "date": "2026-05-27"
+        },
+        {
+          "subject": "chore(release): textus 0.19.1 — drop textus/2 migration hint (#68)",
+          "date": "2026-05-27"
+        },
+        {
+          "subject": "feat: explicit dependencies (v0.19.0) (#67)",
+          "date": "2026-05-27"
+        },
+        {
+          "subject": "fix: hook dispatcher safety (v0.18.1) (#66)",
+          "date": "2026-05-27"
+        }
+      ]
+    },
+    {
+      "tag": "v0.18.0",
+      "date": "2026-05-27",
+      "commits": [
+        {
+          "subject": "feat: extract storage ports, Store as composition root (v0.18.0) (#65)",
+          "date": "2026-05-27"
+        },
+        {
+          "subject": "feat: flatten Operations, centralize authz, explicit hook registration (v0.17.0) (#64)",
+          "date": "2026-05-27"
+        },
+        {
+          "subject": "feat: type cleanup & glue (v0.16.0) (#63)",
+          "date": "2026-05-26"
+        }
+      ]
+    },
+    {
+      "tag": "v0.15.0",
+      "date": "2026-05-26",
+      "commits": [
+        {
+          "subject": "feat: operation boundaries reshape (v0.15.0) (#62)",
+          "date": "2026-05-26"
+        }
+      ]
+    },
+    {
+      "tag": "v0.14.4",
+      "date": "2026-05-26",
+      "commits": [
+        {
+          "subject": "fix: lock hygiene + build/freshness decoupling (#58, #59) (#60)",
+          "date": "2026-05-26"
+        }
+      ]
+    },
+    {
+      "tag": "v0.14.3",
+      "date": "2026-05-26",
+      "commits": [
+        {
+          "subject": "feat: top-level build lock (v0.14.3, closes #56) (#57)",
+          "date": "2026-05-26"
+        }
+      ]
+    },
+    {
+      "tag": "v0.14.2",
+      "date": "2026-05-26",
+      "commits": [
+        {
+          "subject": "feat: per-rule fetch_timeout_seconds override (#54) (#55)",
+          "date": "2026-05-26"
+        }
+      ]
+    },
+    {
+      "tag": "v0.14.1",
+      "date": "2026-05-26",
+      "commits": [
+        {
+          "subject": "release: 0.14.1 (#53)",
+          "date": "2026-05-26"
+        },
+        {
+          "subject": "build: skip rewrite when only generated_at would change (#52)",
+          "date": "2026-05-26"
+        },
+        {
+          "subject": "Extract Manifest.check_version! to dedupe parse/load version guard (#51)",
+          "date": "2026-05-26"
+        }
+      ]
+    },
+    {
+      "tag": "v0.14.0",
+      "date": "2026-05-26",
+      "commits": [
+        {
+          "subject": "docs(readme): refresh for v0.14.0 — typed envelopes, Build/Publish split, spec count (#50)",
+          "date": "2026-05-26"
+        },
+        {
+          "subject": "v0.14.0 — Phase 4: Build/Publish split + Envelope Data.define (#49)",
+          "date": "2026-05-26"
+        },
+        {
+          "subject": "v0.13.1 — Phase 3: Manifest::Entry split (Parser + Validators) (#48)",
+          "date": "2026-05-26"
+        },
+        {
+          "subject": "v0.13.0 — Phase 2: Format-strategy extraction (#47)",
+          "date": "2026-05-26"
+        },
+        {
+          "subject": "v0.12.6 — Examples reorg (project + claude-plugin) (#46)",
+          "date": "2026-05-26"
+        },
+        {
+          "subject": "v0.12.5 — Docs refresh for textus/3 + Operations facade (#45)",
+          "date": "2026-05-26"
+        },
+        {
+          "subject": "v0.12.4 — Store facade final removal (Phase 1) (#44)",
+          "date": "2026-05-26"
+        },
+        {
+          "subject": "v0.12.3 — Agent protocol block in textus intro (#43)",
+          "date": "2026-05-26"
+        },
+        {
+          "subject": "v0.12.2 — Operations rename + Store facade removal (breaking) (#42)",
+          "date": "2026-05-26"
+        }
+      ]
+    },
+    {
+      "tag": "v0.12.1",
+      "date": "2026-05-26",
+      "commits": [
+        {
+          "subject": "v0.12.1 — fix textus/2 hint at manifest parser (#41)",
+          "date": "2026-05-26"
+        },
+        {
+          "subject": "v0.12.0 — Legacy Sweep: delete textus/2 compat shims (#40)",
+          "date": "2026-05-25"
+        },
+        {
+          "subject": "0.11.0 — textus/3 vocabulary redesign (BREAKING) (#39)",
+          "date": "2026-05-25"
+        },
+        {
+          "subject": "fix(doctor): IllegalKeys honors index_filename — skip non-matching siblings (#38)",
+          "date": "2026-05-25"
+        }
+      ]
+    },
+    {
+      "tag": "v0.10.5",
+      "date": "2026-05-25",
+      "commits": [
+        {
+          "subject": "0.10.5 — tech-debt cleanup + index_filename + docs polish (#37)",
+          "date": "2026-05-25"
+        },
+        {
+          "subject": "feat(manifest): index_filename — surface a fixed basename as the per-directory row (#36)",
+          "date": "2026-05-25"
+        },
+        {
+          "subject": "ci: accept unbracketed CHANGELOG headings when extracting release notes (#35)",
+          "date": "2026-05-25"
+        }
+      ]
+    },
+    {
+      "tag": "v0.10.4",
+      "date": "2026-05-25",
+      "commits": [
+        {
+          "subject": "0.10.4 — GitHub folder intake recipe + skill-bundle deferral ADR (#34)",
+          "date": "2026-05-25"
+        }
+      ]
+    },
+    {
+      "tag": "v0.10.3",
+      "date": "2026-05-23",
+      "commits": [
+        {
+          "subject": "0.10.3 — documentation refresh and legacy-code removal (#33)",
+          "date": "2026-05-23"
+        }
+      ]
+    },
+    {
+      "tag": "v0.10.2",
+      "date": "2026-05-23",
+      "commits": [
+        {
+          "subject": "0.10.2 — doctor and store cleanup (#32)",
+          "date": "2026-05-23"
+        }
+      ]
+    },
+    {
+      "tag": "v0.10.1",
+      "date": "2026-05-22",
+      "commits": [
+        {
+          "subject": "0.10.1 — documentation refresh and spec hygiene (#31)",
+          "date": "2026-05-22"
+        }
+      ]
+    },
+    {
+      "tag": "v0.10.0",
+      "date": "2026-05-22",
+      "commits": [
+        {
+          "subject": "0.10.0 — shim removal, signal-based zone detection, Builder extraction (#30)",
+          "date": "2026-05-22"
+        }
+      ]
+    },
+    {
+      "tag": "v0.9.2",
+      "date": "2026-05-22",
+      "commits": [
+        {
+          "subject": "0.9.2 — policies, audit verbs, zone rename (#29)",
+          "date": "2026-05-22"
+        },
+        {
+          "subject": "0.9.1 — write-path layering + request Context (#28)",
+          "date": "2026-05-22"
+        },
+        {
+          "subject": "0.9.0 — intake, event standardization, read-time freshness, layered architecture (#27)",
+          "date": "2026-05-22"
+        },
+        {
+          "subject": "0.8.3 — :mv, :reject, :loaded events (#26)",
+          "date": "2026-05-22"
+        },
+        {
+          "subject": "0.8.2 — hook DSL sugar + :publish event (#24)",
+          "date": "2026-05-22"
+        }
+      ]
+    },
+    {
+      "tag": "v0.8.1",
+      "date": "2026-05-21",
+      "commits": [
+        {
+          "subject": "0.8.1 — terminology cleanup: extension → hook (#23)",
+          "date": "2026-05-21"
+        }
+      ]
+    },
+    {
+      "tag": "v0.8.0",
+      "date": "2026-05-21",
+      "commits": [
+        {
+          "subject": "docs: 0.8 refresh — README, SPEC.md, examples, doctor cleanup, spec layout (#22)",
+          "date": "2026-05-21"
+        },
+        {
+          "subject": "0.8.0 — folder restructure, Zeitwerk autoload, Doctor::Check split (#21)",
+          "date": "2026-05-21"
+        },
+        {
+          "subject": "0.7.0 — Reader/Writer split, EventBus, Builder pipeline (#20)",
+          "date": "2026-05-21"
+        },
+        {
+          "subject": "0.6.1 — deprecation cleanup + drop migrate v2 (#19)",
+          "date": "2026-05-21"
+        },
+        {
+          "subject": "feat: 0.6 hook unification — collapse 4 DSL verbs into Textus.hook(event, name) (#18)",
+          "date": "2026-05-21"
+        }
+      ]
+    },
+    {
+      "tag": "v0.5.0",
+      "date": "2026-05-21",
+      "commits": [
+        {
+          "subject": "chore(release): 0.5.0 — wire textus/2, CLI groups, Store split, NDJSON audit log (#17)",
+          "date": "2026-05-21"
+        },
+        {
+          "subject": "refactor(store): split Store into facade + Mover/Staleness/Validator/Events (#16)",
+          "date": "2026-05-21"
+        },
+        {
+          "subject": "feat(protocol): bump to textus/2; unify _meta block across formats (#14)",
+          "date": "2026-05-21"
+        },
+        {
+          "subject": "feat(audit): switch audit log to true NDJSON; legacy TSV reads still parse (#13)",
+          "date": "2026-05-21"
+        },
+        {
+          "subject": "refactor: v0.5 wrap-up batch A — legacy cruft + ManifestEntry split + CLI subcommand groups (#12)",
+          "date": "2026-05-21"
+        },
+        {
+          "subject": "refactor(cli): hash dispatch + alphabetize requires + unify PROTOCOL refs (#11)",
+          "date": "2026-05-21"
+        },
+        {
+          "subject": "refactor(cli): extract per-verb command objects (CLI 434 → 96 LOC) (#9)",
+          "date": "2026-05-21"
+        },
+        {
+          "subject": "feat(cli): fold validate-all into doctor --check=schema_violations (#8)",
+          "date": "2026-05-21"
+        },
+        {
+          "subject": "feat(cli): default --format=json (#7)",
+          "date": "2026-05-21"
+        },
+        {
+          "subject": "docs(architecture): rewrite layering section as module clusters (#6)",
+          "date": "2026-05-20"
+        }
+      ]
+    },
+    {
+      "tag": "v0.4.0",
+      "date": "2026-05-20",
+      "commits": [
+        {
+          "subject": "v0.4.0: extension API redesign — action primitive + doctor_check (#4) (#5)",
+          "date": "2026-05-20"
+        }
+      ]
+    },
+    {
+      "tag": "v0.3.0",
+      "date": "2026-05-20",
+      "commits": [
+        {
+          "subject": "Merge pull request #3 from patrick204nqh/feat/store-root-flag",
+          "date": "2026-05-20"
+        },
+        {
+          "subject": "chore(release): refresh Gemfile.lock for 0.3.0",
+          "date": "2026-05-20"
+        },
+        {
+          "subject": "chore(release): 0.3.0 — configurable store root",
+          "date": "2026-05-20"
+        },
+        {
+          "subject": "docs(spec): document store root resolution precedence (§3.1)",
+          "date": "2026-05-20"
+        },
+        {
+          "subject": "feat(cli): accept --root=<path> flag before subcommand",
+          "date": "2026-05-20"
+        },
+        {
+          "subject": "feat(store): accept explicit root via kwarg + TEXTUS_ROOT env",
+          "date": "2026-05-20"
+        },
+        {
+          "subject": "test(store): pin TEXTUS_ROOT/--root precedence (failing)",
+          "date": "2026-05-20"
+        },
+        {
+          "subject": "docs: badges + CONTRIBUTING + SECURITY",
+          "date": "2026-05-20"
+        },
+        {
+          "subject": "docs(readme): refresh for 0.2 — agent integration as the headline",
+          "date": "2026-05-20"
+        }
+      ]
+    },
+    {
+      "tag": "v0.2.0",
+      "date": "2026-05-20",
+      "commits": [
+        {
+          "subject": "release: prep 0.2.0 (workflow + changelog + gemspec cleanup)",
+          "date": "2026-05-20"
+        },
+        {
+          "subject": "Merge pull request #2 from patrick204nqh/feat/textus-0.2",
+          "date": "2026-05-20"
+        },
+        {
+          "subject": "ci: complete CHECKSUMS in Gemfile.lock",
+          "date": "2026-05-20"
+        },
+        {
+          "subject": "feat(intro): textus intro verb + inject_intro builder flag",
+          "date": "2026-05-20"
+        },
+        {
+          "subject": "examples(claude-plugin): pending zone walkthrough (AI propose → human accept)",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "examples(claude-plugin): align with current library surface",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "feat(init): declare all five zones and pre-create their directories",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "fix(store): pass suggestions on UnknownKey from get/put/mv raise sites",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "feat(doctor): health-check verb + actionable error hints",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "feat(publish): publish_each for nested entries; example mirrors agents/skills/commands automatically",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "feat(uid): stable Textus UID + textus mv preserves identity across moves",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "refactor(publisher): move sentinels under .textus/sentinels/",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "examples(claude-plugin): real Claude plugin layout managed by textus",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "fix(projection): drop duplicate generated_at on Hash reducer results",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "docs(spec): per-entry formats, key grammar, envelope additions",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "examples(claude-plugin): json/yaml marketplace + deep nested working.network",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "feat(extensions): normalize fetcher results into {frontmatter, body, content}",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "refactor(publisher): rename Symlink → Publisher; copy-only publish",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "feat(builder): per-format build pipelines + _meta injection for structured outputs",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "feat(cli): textus migrate-keys helper for key-grammar migration",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "feat(manifest): per-entry format field + strict key grammar enforcement",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "feat(entry): add per-format storage strategies (markdown, json, yaml, text)",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "examples(claude-plugin): make bin/notify-build a real script",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "examples: showcase full 0.2 surface end-to-end",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "docs(readme): bump version reference to 0.2.0; disambiguate git hooks from Textus.hook",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "docs: rewrite §5.4/5.9/5.10/5.11 for extension surface; bump 0.2.0",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "chore: migrate example plugin extensions to new DSL",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "feat(init): scaffold .textus/extensions/ with README",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "feat(cli): add refresh + extensions list; rename --parse to --fetcher; remove hooks list",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "feat(manifest): validate event names against ExtensionRegistry::EVENTS",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "feat(audit): include pending_key/target_key in event_error extras",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "feat(audit): optional JSON extras column for event/error records",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "feat(events): fire :build after derived materialize and :accept after proposal",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "test(events): assert :refresh does not fire on unchanged bytes",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "feat(events): fire :refresh with change=:created/:updated",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "chore(store): grep-friendly TODO marker for hook-error audit gap",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "feat(events): fire :put and :delete after successful writes",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "feat(refresh): wrap fetcher exceptions with fetcher-name context",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "feat(refresh): in-process fetcher driver with 2s timeout",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "refactor(store_view): WRITE_METHODS loop, accept coverage, drift guard",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "feat(store_view): read-only proxy for extension code",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "refactor(projection): extract REDUCER_TIMEOUT_SECONDS; default config to {}",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "feat(projection): rename transform→reducer; route via store registry",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "refactor(manifest): fetcher_config always defaults to {}; fetcher.nil? is the discriminator",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "feat(manifest): source.fetcher/config/ttl with legacy-key rejection",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "chore(cli): mark --parse= bridge as temporary; timeout returns in task 14",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "feat(fetchers): port built-in parsers to BuiltinFetchers in new registry",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "feat(store): wrap extension load failures with filename context",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "fix(store): deterministic extension load order via Dir.glob.sort",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "feat(store): per-store ExtensionRegistry loaded from .textus/extensions/",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "refactor(dsl): private THREAD_REGISTRY_KEY; restructure DSL spec",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "feat(dsl): add Textus.fetcher/reducer/hook with thread-scoped registry",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "fix(registry): hooks() read should not auto-register the queried event",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "feat(registry): add ExtensionRegistry with fetcher/reducer/hook slots",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "scrub: replace 'envato' with 'acme' in fixtures and docs; sync README ruby versions",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "ci: drop ruby 3.1/3.2, target 3.3 and 3.4",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "release prep: CHANGELOG, gemspec metadata URIs, CI workflow, Brewfile for lefthook",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "quality: add rubocop config and lefthook git hooks; autocorrect existing code",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "gemspec: exclude internal plan docs from packaged gem",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "spec: align §6+ examples and keys with canon/working zone names",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "readme: rewrite for 0.1.0 release with current zone model and v1.1 features",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "entry: force UTF-8 on parsed content, reject invalid encoding",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "example: wire lowercase parser into intake.upstream.notes",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "cli: fix --zone=Z + --format=json flag combo on list/stale",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "example: README tour demonstrating parser, calculator, hooks, schema ownership",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "example: project schema with maintained_by per field",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "example: rank-by-recency calculator wired into derived.claude.root",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "example: register lowercase parser to demo .textus/parsers/*.rb auto-load",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "example: add intake zone with releases.rss source and on_stale hook",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "spec: §5.10 hooks declaration + §9 hooks verb",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "hooks: list verb exposes declared hooks; runners execute, textus declares",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "manifest: parse hooks: block on entries",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "spec: §5.9 document calculators extension point",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "projection: apply transform: NAME between pluck and sort",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "calculators: registry + auto-load with 2s timeout (mirrors parsers)",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "spec: document role_authority override (human always wins)",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "validate-all: cross-check field last-writer against schema.maintained_by",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "audit-log: expose last_writer_for(key)",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "spec: document schema fields.maintained_by and evolution block",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "schema-migrate: auto-apply evolution.migrate_from when --rename omitted",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "schema: parse maintained_by per field + evolution block",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "examples: ship refresh-intake.sh proving the runner-textus boundary",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "examples: 50-line MCP server wrapping textus get/list/put",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "examples: claude-plugin reference flow with templates, Rakefile, lefthook",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "schema-tools: init from entry, diff against entries, migrate field renames",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "init: textus init --profile= scaffolds .textus/ from bundled profiles",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "proposal: accept verb copies pending patch into target, deletes pending",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "put: --parse=NAME runs registered parser on stdin, stamps last_refreshed_at",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "stale: detect intake entries past their source.ttl",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "parsers: auto-load .textus/parsers/*.rb with 2s timeout bound",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "deps/rdeps/published: walk projection.select + generator.sources",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "builder: textus build materializes derived entries + publishes symlinks",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "symlink: publish_to with copy-mode fallback and sentinel",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "parsers: json, csv, markdown-links, ical-events, rss (stdlib-only)",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "projection: select/pluck/sort_by/limit engine, capped at 1000",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "mustache: vendor minimal stdlib-only engine with depth bound",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "list/stale: accept --zone=Z filter",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "cli: wire --as flag, delete verb, validate-all verb",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "store: validate-all walks every entry and reports violations",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "store: role-gated put, delete verb, audit log on every write",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "audit-log: append-only tsv with flock on every write",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "role: resolve from flag > env > .textus/role > default human",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "manifest: parse zones block with writable_by; synthesize legacy zones if absent",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "errors: add InvalidRole/InvalidProjection/TemplateError/PublishError/ProposalError",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "layout: move user content under .textus/zones/; manifest paths stay short",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "spec: rewrite CLI surface and conformance fixtures for v1.0",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "spec: add compute, publish, intake, pending, audit, security-bounds sections",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "spec: rewrite §1-5 for v1.0 general-purpose framing and role-based zones",
+          "date": "2026-05-19"
+        },
+        {
+          "subject": "Initial commit: textus/1 reference Ruby implementation",
+          "date": "2026-05-18"
+        }
+      ]
+    }
+  ]
+}

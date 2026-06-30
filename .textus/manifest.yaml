@@ -30,8 +30,30 @@ entries:
     kind: nested
     ignore: ["**/README.md"]
     publish: [{ tree: docs/architecture/decisions }]
-  - { key: knowledge.contributing, lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: CONTRIBUTING.md }] }
-  - { key: knowledge.security,     lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: SECURITY.md }] }
+  - key: artifacts.contributing
+    lane: artifacts
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
+    publish: [{ to: CONTRIBUTING.md, template: docs/meta/contributing.erb }]
+  - key: artifacts.security
+    lane: artifacts
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
+    publish: [{ to: SECURITY.md, template: docs/meta/security.erb }]
+  - key: artifacts.code-of-conduct
+    lane: artifacts
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
+    publish: [{ to: CODE_OF_CONDUCT.md, template: docs/meta/code-of-conduct.erb }]
+  - key: artifacts.changelog
+    lane: artifacts
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
+    publish: [{ to: CHANGELOG.md, template: docs/meta/changelog.erb }]
   - key: knowledge.readme
     lane: knowledge
     owner: human:self

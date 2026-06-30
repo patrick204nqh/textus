@@ -32,21 +32,53 @@ Architecture must route work to the actor that is naturally strongest at it.
 
 ## Rules
 
-### Rule 4 — Agent proposes, human decides
+### Human-centric by default
+
+Every feature must reduce unnecessary manual burden while preserving human control over important decisions.
+
+### Right work to the right actor
+
+Creative/synthesis tasks go to agents. Repeatable/fixed-step tasks go to automation. Direction and acceptance stay with humans.
+
+### Canon is human-owned
+
+Authoritative truth (`canon`) is never silently machine-promoted. Promotion always crosses explicit review (`propose -> accept`).
+
+### Agent proposes, human decides
 
 Agents can draft, summarize, and propose at high speed; they do not self-authorize canonical change.
 
-### Rule 5 — Automation runs the boring loops
+### Automation runs the boring loops
 
 Fetching feeds, scheduled materialization, sweeps, and other deterministic loops belong to automation, not ad hoc agent prompting.
 
-### Rule 6 — Avoid AI slop
+### Avoid AI slop
 
 Prefer structured outputs, traceable provenance, and explicit constraints over verbose ungrounded generation.
 
-### Rule 3 — Canon is human-owned
+### Protocol before convenience
 
-Authoritative truth (`canon`) is never silently machine-promoted. Promotion always crosses explicit review (`propose -> accept`).
+Keep `textus/4` deterministic and explicit. Do not introduce hidden behavior that makes results depend on who or what called it.
+
+### No hidden side effects on read
+
+Reads return state and freshness only. Convergence is explicit (`drain`, jobs, workflows).
+
+### Provenance is mandatory
+
+External inspiration/data should be referenceable from raw intake; canonical docs remain concise and goal/rule-focused.
+
+### Rule 10 — One clear path for recurring operations
+
+If a task repeats, encode it as workflow/schedule/automation. Do not normalize manual repeat prompting.
+
+### Rule 11 — Keep seams explicit
+
+Evolve via contracts, actions, rules, workflows, and ports. Avoid cross-layer shortcuts and dual paths.
+
+### Quality over volume
+
+Fewer accurate artifacts beat many low-signal artifacts. Ship only what improves shared understanding and action.
 
 ## Decision Test
 
@@ -70,36 +102,4 @@ When changing textus, these rules are mandatory:
 4. Never introduce hidden side effects on read paths.
 5. Keep deterministic output semantics and explicit freshness reporting.
 6. Prefer explicit seams over special-case branching.
-
-### Rule 1 — Human-centric by default
-
-Every feature must reduce unnecessary manual burden while preserving human control over important decisions.
-
-### Rule 11 — Keep seams explicit
-
-Evolve via contracts, actions, rules, workflows, and ports. Avoid cross-layer shortcuts and dual paths.
-
-### Rule 8 — No hidden side effects on read
-
-Reads return state and freshness only. Convergence is explicit (`drain`, jobs, workflows).
-
-### Rule 10 — One clear path for recurring operations
-
-If a task repeats, encode it as workflow/schedule/automation. Do not normalize manual repeat prompting.
-
-### Rule 7 — Protocol before convenience
-
-Keep `textus/4` deterministic and explicit. Do not introduce hidden behavior that makes results depend on who or what called it.
-
-### Rule 9 — Provenance is mandatory
-
-External inspiration/data should be referenceable from raw intake; canonical docs remain concise and goal/rule-focused.
-
-### Rule 12 — Quality over volume
-
-Fewer accurate artifacts beat many low-signal artifacts. Ship only what improves shared understanding and action.
-
-### Rule 2 — Right work to the right actor
-
-Creative/synthesis tasks go to agents. Repeatable/fixed-step tasks go to automation. Direction and acceptance stay with humans.
 
