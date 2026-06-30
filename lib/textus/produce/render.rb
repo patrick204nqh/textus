@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 require "erb"
-require_relative "../links/resolver"
-require_relative "../links/uri_rewriter"
 require_relative "render/context"
 
 module Textus

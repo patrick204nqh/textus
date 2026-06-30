@@ -1,5 +1,3 @@
-require_relative "../../produce/context_helpers"
-
 module Textus
   class Manifest
     class Entry

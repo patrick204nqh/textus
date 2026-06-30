@@ -1,5 +1,3 @@
-require_relative "../links/link_edge_store"
-
 module Textus
   module Produce
     class Engine
