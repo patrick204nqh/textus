@@ -12,11 +12,7 @@ Textus.workflow "boot" do
     project_env = fetch.call("knowledge.project")
     project = project_env&.meta || {}
 
-    runbook_keys = manifest.resolver.enumerate(prefix: "knowledge.runbooks").map { |r| r[:key] }
-    runbooks = runbook_keys.filter_map do |k|
-      env = fetch.call(k)
-      env&.meta
-    end
+    runbooks = ctx.container.read_family("knowledge.runbooks").filter_map(&:meta)
 
     # Lanes (was Boot.lanes_for)
     lanes = manifest.data.declared_lane_kinds.keys.map do |name|

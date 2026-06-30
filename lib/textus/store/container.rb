@@ -27,6 +27,16 @@ module Textus
         define_method(name) { @coord.public_send(name) }
       end
 
+      def read_family(prefix, include_keyless: false)
+        manifest.resolver
+                .enumerate(prefix: prefix, include_keyless: include_keyless)
+                .filter_map do |row|
+                  reader.read(row[:key])
+                rescue StandardError
+                  nil
+                end
+      end
+
       def wire!(pipeline:, reader:, writer:)
         @pipeline = pipeline
         @reader   = reader

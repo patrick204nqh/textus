@@ -5,15 +5,11 @@ Textus.workflow "invariants-assembler" do
     require "digest"
 
     read_atoms = lambda do |prefix|
-      ctx.container.manifest.resolver
-         .enumerate(prefix: prefix, include_keyless: true)
-         .reject { |r| r[:key] == prefix }
-         .uniq { |r| r[:key] }
-         .sort_by { |r| r[:key] }
-         .map do |r|
-           env = ctx.container.reader.read(r[:key])
-           { "key" => r[:key], "slug" => r[:key].split(".").last, "body" => env.body.to_s }
-         end
+      ctx.container.read_family(prefix, include_keyless: true)
+         .reject { |env| env.key == prefix }
+         .uniq(&:key)
+         .sort_by(&:key)
+         .map { |env| { "key" => env.key, "slug" => env.key.split(".").last, "body" => env.body.to_s } }
     end
 
     goals = read_atoms.call("knowledge.goals")

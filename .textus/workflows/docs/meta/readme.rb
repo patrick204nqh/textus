@@ -4,16 +4,11 @@ Textus.workflow "readme" do
   step :assemble do |_, ctx|
     order = %w[intro concept body].each_with_index.to_h.freeze
 
-    rows = ctx.container.manifest.resolver
-              .enumerate(prefix: "knowledge.readme")
-              .reject { |r| r[:key] == "knowledge.readme" }
-              .uniq { |r| r[:key] }
-              .sort_by { |r| order.fetch(r[:key].split(".").last, 99) }
-
-    sections = rows.map do |r|
-      env = ctx.container.reader.read(r[:key])
-      { "key" => r[:key], "body" => env.body.to_s }
-    end
+    sections = ctx.container.read_family("knowledge.readme")
+                  .reject { |env| env.key == "knowledge.readme" }
+                  .uniq(&:key)
+                  .sort_by { |env| order.fetch(env.key.split(".").last, 99) }
+                  .map { |env| { "key" => env.key, "body" => env.body.to_s } }
 
     { "content" => { "sections" => sections } }
   end

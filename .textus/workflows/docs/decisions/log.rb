@@ -9,23 +9,12 @@ Textus.workflow "decisions-log" do
 
     normalize = ->(s) { s.to_s.gsub(/\[([^\]]+)\]\([^)]+\)/, '\1').gsub(/\s+/, " ").strip }
 
-    keys = ctx.container.manifest.resolver
-              .enumerate(prefix: "knowledge.decisions", include_keyless: true)
-              .map { |row| row[:key] }
-
-    reader = ctx.container.reader
+    envelopes = ctx.container.read_family("knowledge.decisions", include_keyless: true)
 
     # Pull the ADRs in a separate helper to keep this block short for RuboCop
     build_adrs = lambda do
-      keys.filter_map do |k|
-        env = begin
-          reader.read(k)
-        rescue StandardError
-          nil
-        end
-        next unless env
-
-        slug = k.split(".").last
+      envelopes.filter_map do |env|
+        slug = env.key.split(".").last
         next unless (m = slug.match(/\A(\d{4})-(.+)\z/))
 
         text        = env.body.to_s
