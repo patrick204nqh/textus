@@ -4,19 +4,19 @@
       {
         "matcher": "startup",
         "hooks": [
-          { "type": "command", "command": "bundle exec exe/textus boot --lean" }
+          { "type": "command", "command": "bundle exec exe/textus boot" }
         ]
       },
       {
         "matcher": "clear",
         "hooks": [
-          { "type": "command", "command": "bundle exec exe/textus boot --lean" }
+          { "type": "command", "command": "bundle exec exe/textus boot" }
         ]
       },
       {
         "matcher": "compact",
         "hooks": [
-          { "type": "command", "command": "bundle exec exe/textus boot --lean" }
+          { "type": "command", "command": "bundle exec exe/textus boot" }
         ]
       }
     ]
