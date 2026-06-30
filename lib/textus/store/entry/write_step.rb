@@ -138,6 +138,66 @@ module Textus
           EnforceNameMatch, ValidateSchema, ValidateRaw,
           CheckEtag, WriteBytes, BuildEnvelope, AppendAudit
         ].freeze
+
+        DeleteContext = Data.define(
+          :key, :mentry, :if_etag,
+          :path,
+          :etag_before,
+        ) do
+          def with(**attrs) = self.class.new(**to_h, **attrs)
+        end
+
+        module AssertExists
+          def self.call(ctx, deps)
+            return ctx if deps.file_store.exists?(ctx.path)
+
+            raise UnknownKey.new(ctx.key, suggestions: deps.manifest.resolver.suggestions_for(ctx.key))
+          end
+        end
+
+        module DeleteFile
+          def self.call(ctx, deps)
+            deps.file_store.delete(ctx.path)
+            ctx
+          end
+        end
+
+        module PruneParents
+          def self.call(ctx, deps)
+            floor = deps.layout.lane_floor(ctx.path)
+            if floor
+              dir = File.dirname(ctx.path)
+              while dir.start_with?("#{floor}/") && deps.file_store.dir_empty?(dir)
+                deps.file_store.rmdir(dir)
+                dir = File.dirname(dir)
+              end
+            end
+            ctx
+          rescue SystemCallError
+            ctx
+          end
+        end
+
+        module AppendDeleteAudit
+          def self.call(ctx, deps)
+            extras = deps.call.correlation_id ? { "correlation_id" => deps.call.correlation_id } : nil
+            deps.audit_log.append(
+              role: deps.call.role, verb: "key_delete", key: ctx.key,
+              etag_before: ctx.etag_before, etag_after: nil,
+              extras:,
+            )
+            ctx
+          end
+        end
+
+        DEFAULT_DELETE = [
+          ResolvePath,
+          AssertExists,
+          CheckEtag,
+          DeleteFile,
+          PruneParents,
+          AppendDeleteAudit,
+        ].freeze
       end
     end
   end

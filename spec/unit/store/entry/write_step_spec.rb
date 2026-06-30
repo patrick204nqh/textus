@@ -45,4 +45,35 @@ RSpec.describe Textus::Store::Entry::WriteStep do
                           ])
     end
   end
+
+  describe "DeleteContext" do
+    it "holds key, mentry, if_etag inputs and path, etag_before outputs" do
+      ctx = described_class::DeleteContext.new(
+        key: "knowledge.demo", mentry: nil, if_etag: nil,
+        path: nil, etag_before: nil,
+      )
+      expect(ctx.key).to eq("knowledge.demo")
+      expect(ctx.path).to be_nil
+      expect(ctx.etag_before).to be_nil
+    end
+
+    it "supports immutable update via #with" do
+      ctx = described_class::DeleteContext.new(
+        key: "knowledge.demo", mentry: nil, if_etag: nil,
+        path: nil, etag_before: nil,
+      )
+      expect(ctx.with(path: "/tmp/demo.md").path).to eq("/tmp/demo.md")
+      expect(ctx.path).to be_nil
+    end
+  end
+
+  describe "DEFAULT_DELETE" do
+    it "contains exactly the expected steps in order" do
+      names = described_class::DEFAULT_DELETE.map(&:name).map { |n| n.split("::").last }
+      expect(names).to eq(%w[
+        ResolvePath AssertExists CheckEtag
+        DeleteFile PruneParents AppendDeleteAudit
+      ])
+    end
+  end
 end

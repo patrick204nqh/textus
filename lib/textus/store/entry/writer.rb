@@ -51,23 +51,17 @@ module Textus
           ctx.envelope
         end
 
-        def delete(key, mentry: nil, if_etag: nil) # rubocop:disable Lint/UnusedMethodArgument
-          # `mentry:` is accepted for symmetry with `put` / `move` and to
-          # leave room for future format-specific delete hooks; no field
-          # on it is needed today.
-          path = @manifest.resolver.resolve(key).path
-          raise UnknownKey.new(key, suggestions: @manifest.resolver.suggestions_for(key)) unless @file_store.exists?(path)
-
-          etag_before = @file_store.etag(path)
-          raise EtagMismatch.new(key, if_etag, etag_before) if if_etag && if_etag != etag_before
-
-          @file_store.delete(path)
-          prune_empty_parents(path)
-          @audit_log.append(
-            role: @call.role, verb: "key_delete", key: key,
-            etag_before: etag_before, etag_after: nil,
-            extras: @call.correlation_id ? { "correlation_id" => @call.correlation_id } : nil
+        def delete(key, mentry: nil, if_etag: nil)
+          ctx = WriteStep::DeleteContext.new(
+            key:, mentry:, if_etag:,
+            path: nil, etag_before: nil,
           )
+          deps = WriteStep::WriteDeps.new(
+            file_store: @file_store, manifest: @manifest, schemas: @schemas,
+            audit_log: @audit_log, call: @call, reader: @reader, layout: @layout,
+          )
+          WriteStep::DEFAULT_DELETE.reduce(ctx) { |c, step| step.call(c, deps) }
+          nil
         end
 
         def move(from_key:, to_key:, new_mentry:, if_etag: nil)
@@ -104,14 +98,8 @@ module Textus
 
         private
 
-        # After a file leaves a directory (delete or move-source), remove any
-        # now-empty parent dirs so bulk move/delete doesn't accrue orphan dirs
-        # (F3 of #161). Floored at the entry's *zone directory* — a zone is a
-        # declared, first-class container, so its own dir is preserved even when
-        # momentarily empty; only the sub-dirs the bulk op carved out are
-        # pruned. Stops at the first non-empty ancestor, so a dir holding a
-        # `.gitkeep` or sibling entries survives. Best-effort: a lost race or a
-        # non-empty dir is silently fine, never fatal to the write.
+        # After a move, prune now-empty source-side parent dirs. Floored at
+        # the zone directory. Best-effort, never fatal.
         def prune_empty_parents(path)
           floor = @layout.lane_floor(path)
           return unless floor
