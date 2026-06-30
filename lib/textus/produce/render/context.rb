@@ -16,7 +16,7 @@ module Textus
           @edge_store = edge_store
         end
 
-        def binding
+        def to_erb_binding
           mod = Module.new
           @locals.each { |k, v| mod.define_method(k.to_sym) { v } }
           obj = Object.new.extend(mod)

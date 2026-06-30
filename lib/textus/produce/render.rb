@@ -26,7 +26,7 @@ module Textus
           from_key: @entry_key,
           edge_store: @edge_store,
         )
-        raw = ERB.new(@template_loader.call(target.template), trim_mode: "-").result(ctx.binding)
+        raw = ERB.new(@template_loader.call(target.template), trim_mode: "-").result(ctx.to_erb_binding)
         rewrite(raw, target.to, resolver)
       end
 
