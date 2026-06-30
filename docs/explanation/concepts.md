@@ -103,5 +103,5 @@ Returns `changed`, `pending_review`, `contract_etag`, and an updated `cursor`. A
 
 ## Where to go from here
 
-- [`../reference/lanes.md`](../reference/lanes.md) — exact lane, role, and entry semantics
-- [`../how-to/agents-mcp.md`](../how-to/agents-mcp.md) — Claude Code quickstart and the operational agent loop
+- [lanes reference](../reference/lanes.md) — exact lane, role, and entry semantics
+- [agents-mcp guide](../how-to/agents-mcp.md) — Claude Code quickstart and the operational agent loop

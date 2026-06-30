@@ -111,6 +111,6 @@ The full schema lives in the entry schema (`textus get knowledge.specs.04-manife
 
 ## Where to go from here
 
-- [`../how-to/configuring-lanes.md`](../how-to/configuring-lanes.md) — lane-setup procedures
-- [`../architecture/README.md`](../architecture/README.md) — Ruby implementation layout
+- [configuring-lanes](../how-to/configuring-lanes.md) — lane-setup procedures
+- [architecture overview](../architecture/README.md) — Ruby implementation layout
 - [`conventions.md`](conventions.md) — store patterns and idiomatic choices

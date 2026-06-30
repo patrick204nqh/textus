@@ -290,4 +290,4 @@ Contract drift surfaces as `ContractDrift` (contract_etag mismatch); audit curso
 ## See also
 
 - [`decisions/README.md`](decisions/README.md) — curated decision reading guide
-- [`../decisions.md`](../decisions.md) — live decision log (all statuses)
+- [decision log](../decisions.md) — live decision log (all statuses)

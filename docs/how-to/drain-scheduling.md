@@ -42,5 +42,5 @@ textus drain artifacts.feeds.skills --as=automation
 
 ## Where to go from here
 
-- [`../reference/lanes.md`](../reference/lanes.md) — retention rule semantics
+- [lanes reference](../reference/lanes.md) — retention rule semantics
 - [`./configuring-lanes.md`](configuring-lanes.md) — declaring produced entries and retention rules

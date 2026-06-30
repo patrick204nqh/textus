@@ -7,7 +7,7 @@
 
 How to shape your context: declare your own lanes, wire external data through workflows, wire derived data out through projections and publishing, and a full worked example.
 
-For the exact lane, role, and entry semantics this guide builds on, see [`../reference/lanes.md`](../reference/lanes.md). For the wire protocol, see the wire protocol (`textus get knowledge.specs.*`).
+For the exact lane, role, and entry semantics this guide builds on, see [lanes reference](../reference/lanes.md). For the wire protocol, see the wire protocol (`textus get knowledge.specs.*`).
 
 ## Table of contents
 
@@ -158,4 +158,4 @@ publish:
 
 ## Where to go from here
 
-- [`../reference/lanes.md`](../reference/lanes.md) — the exact lane, role, and entry semantics
+- [lanes reference](../reference/lanes.md) — the exact lane, role, and entry semantics
