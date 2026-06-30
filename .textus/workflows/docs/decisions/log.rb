@@ -13,14 +13,15 @@ Textus.workflow "decisions-log" do
               .enumerate(prefix: "knowledge.decisions", include_keyless: true)
               .map { |row| row[:key] }
 
+    reader = ctx.container.reader
+
     # Pull the ADRs in a separate helper to keep this block short for RuboCop
     build_adrs = lambda do
       keys.filter_map do |k|
-        get_spec = Textus::VerbRegistry.for(:get)
-        begin
-          env = Textus::Dispatch.dispatch(container: ctx.container, spec: get_spec, inputs: { key: k }, role: ctx.call.role)
+        env = begin
+          reader.read(k)
         rescue StandardError
-          env = nil
+          nil
         end
         next unless env
 

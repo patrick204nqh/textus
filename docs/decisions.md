@@ -15,3 +15,123 @@ Live status of every architecture decision, derived from each file's `**Status:*
 
 | # | Title | Date | Status |
 |---|---|---|---|
+| [0120](architecture/decisions/0120-atomic-canon-composed-artifacts.md) | atomic canon composed artifacts |  |  |
+| [0119](architecture/decisions/0119-architecture-deepening-phase-2.md) | architecture deepening phase 2 |  |  |
+| [0118](architecture/decisions/0118-sources-first-class-envelope-field.md) | sources first class envelope field |  |  |
+| [0117](architecture/decisions/0117-textus-4-protocol-version-bump.md) | textus 4 protocol version bump | 2026-06-17 | Accepted |
+| [0117](architecture/decisions/0117-adopt-pipeline-handler-factory-registry.md) | adopt pipeline handler factory registry |  |  |
+| [0116](architecture/decisions/0116-raw-lane-and-ingest-verb.md) | raw lane and ingest verb | 2026-06-16 | Accepted |
+| [0115](architecture/decisions/0115-role-trust-model.md) | role trust model | 2026-06-14 | Accepted |
+| [0114](architecture/decisions/0114-foundation-refactor.md) | Foundation refactor: lanes, dispatch, core, surfaces | 2026-06-13 | Accepted |
+| [0113](architecture/decisions/0113-proposal-block-meta-key.md) | the proposal block speaks `_meta`, not `frontmatter` | 2026-06-09 | Accepted |
+| [0112](architecture/decisions/0112-produced-authority-reference.md) | the authority model is a produced reference doc | 2026-06-09 | Accepted |
+| [0111](architecture/decisions/0111-rename-reconcile-capability-to-converge.md) | rename the `reconcile` capability/lane token to `converge`; drop the dead `:reconcile_failed` event | 2026-06-08 | Accepted |
+| [0110](architecture/decisions/0110-job-queue-and-drain-serve.md) | job queue execution model; `reconcile` → `drain`/`serve`; async-only materialize | 2026-06-08 | Accepted |
+| [0109](architecture/decisions/0109-board-exact-schema-ports.md) | board-exact schema split + single port shape | 2026-06-08 | Accepted |
+| [0108](architecture/decisions/0108-port-shape-convention.md) | two port shapes, named and documented (not converted) | 2026-06-08 | Superseded by ADR 0109 — every port is now a single shape (an instantiable class); `Clock`/`Publisher` were converted. |
+| [0107](architecture/decisions/0107-split-manifest-schema.md) | split `manifest/schema.rb`: data vs validation walk | 2026-06-08 | Partially superseded by ADR 0109 (the constants it kept on `Schema` now live in `Schema::Vocabulary`/`Schema::Keys`, re-exported on `Schema`). |
+| [0106](architecture/decisions/0106-executable-layering-invariant.md) | the layering is executable, not just intended | 2026-06-08 | Accepted |
+| [0105](architecture/decisions/0105-verb-routing-contract-bijection.md) | the verb token has one home: route ⟺ contract | 2026-06-08 | Accepted |
+| [0104](architecture/decisions/0104-root-docs-canon-and-cleanup.md) | finish the root-doc canon move (CONTRIBUTING + SECURITY), clean up the drift | 2026-06-08 | Accepted |
+| [0103](architecture/decisions/0103-root-readme-is-canon.md) | the root README is canon, published out | 2026-06-08 | Accepted |
+| [0102](architecture/decisions/0102-produced-event-catalog.md) | produce the event catalog from the registry | 2026-06-08 | Proposed |
+| [0101](architecture/decisions/0101-interface-fossils.md) | interface-layer fossils | 2026-06-07 | Accepted |
+| [0100](architecture/decisions/0100-produce-topology.md) | `produce/` topology + de-fossilized names | 2026-06-07 | Accepted |
+| [0099](architecture/decisions/0099-one-freshness-evaluator.md) | one `Freshness` evaluator | 2026-06-07 | Accepted |
+| [0098](architecture/decisions/0098-docs-ssot-cleanup.md) | Docs SSoT/DRY/SOLID cleanup: produce vs guard, single-sourced status | 2026-06-07 | Accepted |
+| [0097](architecture/decisions/0097-produced-reference-docs.md) | Reference docs become produced (projected/introspected, published out) | 2026-06-07 | Accepted |
+| [0096](architecture/decisions/0096-conformance-tier-boundary.md) | Does the conformance tier earn a distinct category? | 2026-06-07 | Proposed |
+| [0095](architecture/decisions/0095-collapse-produced-kind.md) | collapse `derived`/`intake` into one `produced` kind | 2026-06-07 | Accepted |
+| [0094](architecture/decisions/0094-source-data-publish-render.md) | `source` produces data; one publish path renders | 2026-06-07 | Accepted |
+| [0093](architecture/decisions/0093-source-retention-over-one-reconcile-engine.md) | `source` + `retention` over one reconcile engine | 2026-06-06 | Accepted |
+| [0092](architecture/decisions/0092-spec-suite-churn-resistance.md) | Finish ADR 0080's cleanup: couple conformance to contract, not fixture spelling | 2026-06-06 | Accepted |
+| [0091](architecture/decisions/0091-fold-machine-zone.md) | One `machine` zone-kind; entry-kind is the single discriminator | 2026-06-06 | Accepted |
+| [0090](architecture/decisions/0090-fold-automation-capability-and-upkeep.md) | Automation is one capability + one `upkeep` policy | 2026-06-05 | Accepted |
+| [0089](architecture/decisions/0089-ingest-is-system-pushed.md) | Ingest is system-pushed: remove `get`'s read-through and `put --fetch` | 2026-06-05 | Accepted |
+| [0088](architecture/decisions/0088-rename-quarantine-capability-fetch-to-ingest.md) | Rename the quarantine capability `fetch` → `ingest`; name the verb/capability split | 2026-06-05 | Accepted |
+| [0087](architecture/decisions/0087-fold-build-into-reconcile.md) | Fold `build` into a single `reconcile` pass; materialization becomes system-pushed | 2026-06-05 | Accepted |
+| [0086](architecture/decisions/0086-textus-owns-agent-integration-config.md) | textus owns agent-integration config: consolidate the plugin manifest, fold MCP + hook into it, keep `init` as the no-plugin fallback | 2026-06-04 | Accepted (ships 0.50.0) |
+| [0085](architecture/decisions/0085-two-observability-verbs-remove-freshness.md) | Two observability verbs on orthogonal axes; remove the public `freshness` verb | 2026-06-04 | Accepted |
+| [0084](architecture/decisions/0084-boot-injected-at-session-start.md) | `boot` is delivered at session start via a SessionStart hook; textus ships the hook as a plugin | 2026-06-04 | Accepted (ships 0.50.0) |
+| [0083](architecture/decisions/0083-contract-guard-writes-only-boot-self-heals.md) | The contract-drift guard applies to writes only; `boot` and reads bypass it | 2026-06-04 | Accepted (ships 0.50.0) |
+| [0082](architecture/decisions/0082-normalize-key-verb-names.md) | Normalize the key-verb family stem (`key_mv`/`key_delete`) and remove the `migrate` orchestrator | 2026-06-04 | Accepted |
+| [0081](architecture/decisions/0081-docs-become-canon-published-out.md) | Docs become canon, published out to `docs/` | 2026-06-04 | Accepted |
+| [0080](architecture/decisions/0080-spec-suite-three-category-split.md) | Spec suite: a three-category physical split (unit / integration / conformance) over the lib mirror | 2026-06-04 | Accepted · Phase 4 (evidence-gated retirement) executed by ADR 0092 |
+| [0079](architecture/decisions/0079-unify-lifecycle-policy.md) | Unify staleness + retention into one `lifecycle` policy; collapse the upkeep verbs; lazy by default | 2026-06-04 | Accepted · §4 `freshness`-verb surface partially superseded by ADR 0085 (the unified lifecycle *policy* stands; the public `freshness` *verb* §4 kept is removed — its scan folds into `pulse` and goes Ruby-only) · the `tend` verb name + its destructive-only body are superseded by ADR 0087 (renamed `reconcile`, gains a materialize Phase 1; the "destructiveness decides execution site" thesis stands and is extended to source-change-decides-materialize-site) |
+| [0078](architecture/decisions/0078-tend-composite-upkeep-pass.md) | `tend`: a composite upkeep pass so the cleanup lifecycle can run unattended | 2026-06-04 | Partially superseded by 0079 — held before shipping. The `tend` verb and its authority stance (runs as the caller, never self-elevates) and the "scheduled, not a daemon" principle all stand; 0079 reshapes `tend`'s *body* from a composite of `fetch_all`+`retain`+`doctor` into the destructive-only sweep of the unified `lifecycle` model. This decision was reconsidered while still in review (never reached `main` as a composite verb); the reasoning is retained as the exploration that led to 0079. The verb *name* `tend` is retired by ADR 0087, which renames it `reconcile` and folds a materialize phase back in. |
+| [0077](architecture/decisions/0077-init-with-agent-profile.md) | `init --with-agent`: an opt-in profile that wires a fresh store to an agent | 2026-06-03 | Accepted |
+| [0076](architecture/decisions/0076-build-gates-by-capability-actor-surface-to-mcp.md) | `build` runs as the build actor, not the caller — surface it to MCP | 2026-06-03 | Accepted |
+| [0075](architecture/decisions/0075-session-opened-connect-event.md) | `session_opened`: a connect-time hook event carrying the resolved role | 2026-06-03 | Accepted |
+| [0074](architecture/decisions/0074-contract-etag-drift-guard.md) | The drift guard fingerprints the whole contract, not just the manifest | 2026-06-03 | Accepted |
+| [0073](architecture/decisions/0073-surfaces-declare-external-projections.md) | `surfaces` declares external projections; Ruby is the implicit base | 2026-06-03 | Accepted |
+| [0072](architecture/decisions/0072-accept-reject-gate-by-capability.md) | `accept`/`reject` gate by capability, not by transport — surface them to MCP | 2026-06-03 | Accepted |
+| [0071](architecture/decisions/0071-dry-run-is-opt-in.md) | `dry_run` is an opt-in preview, not a default — verbs apply by default on every surface | 2026-06-03 | Accepted |
+| [0070](architecture/decisions/0070-content-addressed-build-artifacts.md) | Built artifacts are content-addressed: no `generated_at` in the tracked output | 2026-06-03 | Accepted |
+| [0069](architecture/decisions/0069-single-path-lifecycle.md) | Single-path lifecycle: views self-shape, one normalizer home, validation is unconditional | 2026-06-03 | Accepted (ships 0.45.1) |
+| [0068](architecture/decisions/0068-declarative-facets-dissolve-escape-hatches.md) | Declarative `source:`/`coerce:`/`cli_stdin`/`around:`/`cli_default:` dissolve the acquisition & wrapper escape hatches | 2026-06-03 | Accepted (ships 0.45.0) |
+| [0067](architecture/decisions/0067-per-surface-views.md) | Per-surface `view`s replace `response`/`cli_response` and the arity hack | 2026-06-03 | Accepted (ships 0.45.0) |
+| [0066](architecture/decisions/0066-one-binder-required-is-a-surface-policy.md) | One argument binder; `required:` is a surface policy, not a contract invariant | 2026-06-03 | Accepted (ships 0.45.0) |
+| [0065](architecture/decisions/0065-finish-cli-response-shrink-escape-hatches.md) | Finish the `cli_response` projection: shrink the output-only escape hatches | 2026-06-03 | Accepted (ships 0.44.1) |
+| [0064](architecture/decisions/0064-derive-command-name-and-guard-dispatcher-key.md) | Derive the CLI command name; guard the dispatcher key against the contract verb | 2026-06-03 | Accepted (ships 0.44.0) |
+| [0063](architecture/decisions/0063-cli-is-a-projection-of-the-contract.md) | The CLI is a projection of the contract: close the last derive-or-guard gap | 2026-06-03 | Accepted (ships 0.44.0) |
+| [0062](architecture/decisions/0062-one-get-read-through.md) | One `get`: unify the public read verb on read-through; keep `Read::GetEntry` as the internal pure primitive | 2026-06-03 | Accepted (ships 0.44.0) |
+| [0061](architecture/decisions/0061-build-publish-vocabulary.md) | Reconcile the `build`/`publish` vocabulary: the verb is `build`, `publish` is the output-destination noun | 2026-06-03 | Accepted (ships 0.44.0) |
+| [0060](architecture/decisions/0060-agent-safety-graph-reads-and-default-dry-run.md) | Close the agent safety asymmetry: graph-reads on MCP + default-dry-run on bulk-destructive verbs | 2026-06-02 | Accepted (ships 0.44.0) · the default-dry-run half (decision §2) is **reversed by ADR 0071** — verbs apply by default again; the graph-reads-on-MCP half stands |
+| [0059](architecture/decisions/0059-one-rule-verb-two-depths.md) | One rule verb, two depths: merge `rules` + `policy_explain` into `rule_explain` | 2026-06-02 | Accepted (ships 0.44.0) |
+| [0058](architecture/decisions/0058-one-verb-name-across-surfaces.md) | One verb name across surfaces: align the MCP tool, the CLI command, and the use-case method | 2026-06-02 | Accepted (ships 0.44.0) |
+| [0057](architecture/decisions/0057-agent-legible-mcp-contracts.md) | Agent-legible MCP contracts: arg descriptions, `_meta` wire parity, derived `write_verbs` | 2026-06-02 | Accepted (ships 0.43.2) |
+| [0056](architecture/decisions/0056-boot-quickstart-speaks-the-mcp-catalog.md) | `boot`'s agent surface speaks the MCP catalog, not a CLI dialect | 2026-06-02 | Proposed |
+| [0054](architecture/decisions/0054-entry-level-desc.md) | Entry-level `desc`: the manifest as a navigable index | 2026-06-02 | Proposed |
+| [0053](architecture/decisions/0053-remove-index-filename.md) | Remove `index_filename`: nested entries enumerate files | 2026-06-02 | Accepted (ships 0.43.0) |
+| [0052](architecture/decisions/0052-typed-publish-block.md) | Fold `publish_to`/`publish_tree` into one typed `publish:` block | 2026-06-02 | Accepted (ships 0.43.0) |
+| [0051](architecture/decisions/0051-remove-publish-each.md) | Remove `publish_each`: collapse publish to two modes | 2026-06-02 | Accepted (ships 0.42.0) |
+| [0050](architecture/decisions/0050-native-authoring-and-content-identical-adoption.md) | Own multi-file artifacts by native in-store authoring; migrate by content-identical adoption | 2026-06-02 | Accepted · native authoring now rides **`publish_tree`** alone — `publish_each` was removed by ADR 0051 (the index-present `publish_each` references below are historical) |
+| [0049](architecture/decisions/0049-publish-modes-as-sum-type.md) | Publish modes as a resolved sum type + one shared subtree mirror | 2026-06-02 | Accepted |
+| [0048](architecture/decisions/0048-fetch-subsystem-three-concerns.md) | Fetch subsystem: separate intake invocation, deadline/async policy, and lifecycle events | 2026-06-02 | Accepted (ships 0.41.0) |
+| [0047](architecture/decisions/0047-publish-tree-keyless-subtree-mirror.md) | `publish_tree`: a key-less subtree mirror for a derived-index leaf | 2026-06-02 | Accepted (ships 0.41.0) |
+| [0046](architecture/decisions/0046-publish-leaf-subtrees.md) | `publish_each` publishes a leaf's whole subtree; siblings are opaque attachments, never keys | 2026-06-01 | Accepted · the "no third key" ruling is scoped to the index-*present* case by ADR 0047 |
+| [0045](architecture/decisions/0045-close-role-name-set.md) | Close the role-name set to {human, agent, automation}; keep capabilities open | 2026-06-01 | Accepted |
+| [0044](architecture/decisions/0044-system-actors-resolved-by-capability.md) | System-initiated actors are resolved by capability, never by a hardcoded role name | 2026-06-01 | Proposed |
+| [0043](architecture/decisions/0043-feed-ergonomics-without-breaking-core-purity.md) | Feed ergonomics without breaking core purity: an intake cookbook, and environment as a `feeds.machine` snapshot | 2026-06-01 | Proposed |
+| [0042](architecture/decisions/0042-native-ignore-patterns-for-entry-enumeration.md) | Native ignore patterns for entry enumeration (one shared filter seam, evaluated above legality) | 2026-06-01 | Accepted (ships 0.39.0) |
+| [0041](architecture/decisions/0041-dogfood-textus-in-its-own-repo.md) | Dogfood textus in its own repo: a self-development store + MCP wiring | 2026-05-31 | Accepted |
+| [0040](architecture/decisions/0040-mcp-connection-role-and-two-channels.md) | The MCP connection acts as `agent`; human authority is a separate channel | 2026-05-31 | Accepted — §1/§2/§4 ship 0.38.0; §3 (role-aware `surfaces`) tracked separately |
+| [0039](architecture/decisions/0039-mcp-catalog-derive-or-guard.md) | The MCP catalog derives from one declared verb contract; no unguarded hand-maintained mirror | 2026-05-31 | Accepted — ships 0.37.0 (**breaking**: MCP tool surface and core verb set change) |
+| [0038](architecture/decisions/0038-runtime-artifacts-under-run-and-layout.md) | Runtime artifacts live under `.run/`; one `Layout` owns the map | 2026-05-31 | Accepted · the `sentinels/` → `:config` classification (Decision §1) is **superseded by ADR 0070** — sentinels are machine-generated runtime state and move under `.run/sentinels/`; the `.run/` layout and `Layout`-as-map decisions stand |
+| [0037](architecture/decisions/0037-boot-pulse-derive-or-guard.md) | Boot/pulse: derive-or-guard, no unguarded hand-maintained mirror | 2026-05-31 | Accepted |
+| [0036](architecture/decisions/0036-transports-as-pure-framings.md) | Transports are pure framings: one verb vocabulary, one session, lifted to core | 2026-05-31 | Accepted — ships 0.36.0 (**breaking**: MCP tool names change) |
+| [0035](architecture/decisions/0035-proposal-target-zone-constraint.md) | Constrain a proposal's target zone; keep the accept/reject anchor-gate explicit | 2026-05-31 | Accepted — ships 0.35.0 |
+| [0034](architecture/decisions/0034-unify-lane-vocabulary.md) | Unify the zone-kind/capability bijection into a single Lane table | 2026-05-30 | Accepted — ships 0.34.0 |
+| [0033](architecture/decisions/0033-complete-primitives-and-vocabulary.md) | Complete the primitive set (`workspace` + `keep`) and clarify the vocabulary | 2026-05-30 | Accepted — ships 0.33.0 |
+| [0032](architecture/decisions/0032-drop-read-policy.md) | Drop `read_policy`: textus gates writes, not reads | 2026-05-30 | Accepted — shipped in 0.32.0, folded into the unified-guard work (ADR 0031) |
+| [0031](architecture/decisions/0031-unified-guard.md) | The unified Guard: one explainable authorization path for every transition | 2026-05-30 | Accepted — shipped in 0.32.0 (ADR 0028 moves 2 & 3); **sequenced after ADR 0030** (capability roles, 0.31.0). |
+| [0030](architecture/decisions/0030-capability-based-roles.md) | Capability-based roles: role = name + composable verbs | 2026-05-30 | Accepted |
+| [0029](architecture/decisions/0029-concept-vocabulary.md) | Concept vocabulary: coordination space → lanes → zones | 2026-05-30 | Accepted |
+| [0028](architecture/decisions/0028-coordination-planes.md) | Coordination space: closed topology, closed transitions, open policy | 2026-05-29 | Accepted — moves 1 & 4 shipped in 0.30.0 (zone kind + retention); moves 2 & 3 shipped in 0.32.0 (ADR 0031) |
+| [0027](architecture/decisions/0027-hook-signature-and-mcp-policy.md) | Hook-registry convergence and MCP transport de-leak | 2026-05-29 | Accepted |
+| [0026](architecture/decisions/0026-use-case-construction-seams.md) | Use-case construction seams (named constructors, one dispatch path, transport-side fetch helper) | 2026-05-29 | Accepted |
+| [0025](architecture/decisions/0025-boot-doctor-as-verbs-and-etag-via-port.md) | Boot/Doctor as dispatched verbs + manifest etag via FileStore port | 2026-05-29 | Accepted |
+| [0024](architecture/decisions/0024-domain-purity-ports.md) | Domain purity via FileStat/Clock ports | 2026-05-29 | Accepted |
+| [0023](architecture/decisions/0023-uniform-use-case-shape.md) | Uniform use-case shape | 2026-05-29 | Accepted |
+| [0022](architecture/decisions/0022-container-call-dispatcher.md) | Container + Call + Dispatcher | 2026-05-29 | Accepted |
+| [0021](architecture/decisions/0021-session-and-module-use-cases.md) | Session + module-function use-cases | 2026-05-28 | Partially superseded by ADR 0022 — the per-call `Session` is replaced by `RoleScope` under the 0.27.0 architecture; the use-case shape was refined by ADR 0023. |
+| [0020](architecture/decisions/0020-capability-records.md) | Replace Ports with ReadCaps, WriteCaps, HookCaps | 2026-05-28 | Accepted |
+| [0019](architecture/decisions/0019-hooks-bus-split.md) | Split Hooks::Bus into EventBus and RpcRegistry | 2026-05-28 | Accepted |
+| [0018](architecture/decisions/0018-manifest-carving.md) | Carve Manifest into Data, Resolver, Policy, Rules | 2026-05-28 | Accepted — shipped; `Manifest::Data` / `Resolver` / `Policy` / `Rules` are the live decomposition. |
+| [0017](architecture/decisions/0017-envelope-io-split.md) | Split EnvelopeIO into Reader and Writer | 2026-05-28 | Partially superseded by ADR 0022 — the Reader/Writer split shipped, but lives at `Envelope::IO::Reader` / `Envelope::IO::Writer` rather than the `Application::Writes::Envelope*` names proposed here. |
+| [0016](architecture/decisions/0016-application-ports-value.md) | Application Ports value object | 2026-05-28 | Superseded by ADR 0020 — the single `Application::Ports` value object proposed here is replaced by the `ReadCaps` / `WriteCaps` / `HookCaps` capability records. |
+| [0015](architecture/decisions/0015-agent-gate-mcp.md) | Agent gate (MCP-shaped surface) | 2026-05-28 | Accepted (Phase 0 + Phase 1 shipped in 0.23.0) |
+| [0014](architecture/decisions/0014-explicit-dependencies.md) | Explicit Dependencies | 2026-05-27 | Partially superseded by ADR 0022 (`Application::Context` renamed to `Call`; `Application::*` namespace flattened; `Infra::*` renamed to `Ports::*`). The explicit-dependencies principle stands. |
+| [0013](architecture/decisions/0013-port-extraction-store-as-root.md) | Port extraction: Store as composition root | 2026-05-27 | Partially superseded by ADR 0022 (`Infra::*` renamed to `Ports::*`; `Application::Writes::EnvelopeIO` flattened to `Envelope::IO`). The composition-root role of `Store` is unchanged. |
+| [0012](architecture/decisions/0012-explicit-hook-registration.md) | Explicit hook registration | 2026-05-27 | Accepted |
+| [0011](architecture/decisions/0011-authorize-bang-in-context.md) | Authorize-bang in Context | 2026-05-27 | Superseded by ADR 0031 — write authorization moves from `Context#authorize_write!` to the unified `Guard`, and the read side (`authorize_read!`) is dropped by ADR 0032. Ships 0.32.0. |
+| [0010](architecture/decisions/0010-flat-operations-api.md) | Flat Operations API | 2026-05-27 | Partially superseded by ADR 0022 — the flat one-method-per-use-case ergonomics stand, but the `Operations` class described here is replaced by `Container` + `RoleScope` under the 0.27.0 architecture. |
+| [0009](architecture/decisions/0009-audit-subscriber-split.md) | AuditSubscriber split from Hooks::Dispatcher | 2026-05-26 | Partially superseded by ADR 0022 (`Infra::AuditSubscriber` is now `Ports::AuditSubscriber`; `Application::Writes::Mv` is now `Write::Mv`). The subscriber-split decision stands. |
+| [0008](architecture/decisions/0008-freshness-and-resolution-types.md) | Freshness and Resolution value objects | 2026-05-26 | Accepted |
+| [0007](architecture/decisions/0007-envelope-data-class.md) | Envelope as Data.define + Build/Publish split | 2026-05-26 | Accepted |
+| [0006](architecture/decisions/0006-format-strategy-extraction.md) | Format-strategy extraction (Phase 2 of facade cleanup) | 2026-05-26 | Accepted |
+| [0005](architecture/decisions/0005-store-facade-final-removal.md) | Store facade final removal (Phase 1 completion) | 2026-05-26 | Accepted |
+| [0004](architecture/decisions/0004-operations-rename-and-store-facade-removal.md) | Operations rename + Store facade removal (v0.12.2) | 2026-05-26 | Partially superseded by ADR 0010 — the Store-facade removal shipped (v0.12.2); the `Operations` surface this ADR renamed was later flattened to one method per use case by 0010. |
+| [0003](architecture/decisions/0003-legacy-sweep.md) | Legacy Sweep (v0.12.0) | 2026-05-25 | Accepted |
+| [0002](architecture/decisions/0002-textus-3-vocabulary-redesign.md) | textus/3 Vocabulary Redesign |  | Accepted (2026-05-25) |
+| [0001](architecture/decisions/0001-skill-bundle-deferral.md) | Defer first-class skill-bundle support |  | Accepted (2026-05-24). Ships alongside the recipe at `docs/recipe-github-skill-bundle.md`. |
