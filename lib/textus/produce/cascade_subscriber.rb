@@ -28,6 +28,8 @@ module Textus
         trigger_cascade("proposal.rejected", event.proposal_key, event.role)
       end
 
+      ContainerProxy = Data.define(:manifest, :workflows, :job_store, :file_store)
+
       private
 
       def trigger_cascade(trigger_type, key, role)
@@ -39,8 +41,6 @@ module Textus
         queue = Textus::Store::Jobs::Queue.new(store: @job_store)
         jobs.each { |j| queue.enqueue(j) }
       end
-
-      ContainerProxy = Data.define(:manifest, :workflows, :job_store, :file_store)
 
       def build_container_proxy
         ContainerProxy.new(

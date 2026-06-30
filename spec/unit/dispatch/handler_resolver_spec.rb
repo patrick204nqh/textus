@@ -1,10 +1,12 @@
 require "spec_helper"
 
 RSpec.describe Textus::Dispatch::HandlerResolver do
-  FakeContract = Data.define(:key) unless defined?(FakeContract)
+  before do
+    stub_const("FakeContract", Data.define(:key))
+  end
 
-  let(:fake_manifest)   { instance_double(Textus::Manifest) }
-  let(:fake_job_store)  { instance_double(Textus::Port::Store) }
+  let(:fake_manifest)  { instance_double(Textus::Manifest) }
+  let(:fake_job_store) { instance_double(Textus::Port::Store) }
 
   let(:ctx) do
     Textus::Store::Ctx.new(

@@ -8,6 +8,58 @@
       "date": null,
       "commits": [
         {
+          "subject": "chore: fix 3 rubocop offenses and regenerate docs",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "fix: rule_trace verb category should be :read, not :maintenance",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "feat: add rule_trace verb — trace rule resolution candidates, winners, and effective RuleSet",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "refactor: decompose Writer#move into WriteStep::DEFAULT_MOVE chain",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "refactor: decompose Writer#delete into WriteStep::DEFAULT_DELETE chain",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "refactor: two-phase Manifest.build — derived_entry? now correct",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "refactor(store)!: delete deprecated Container, Assembler, Cascade middleware",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "refactor(store): build Ctx+HandlerResolver pipeline internally",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "refactor: convert all write and maintenance handlers to pure modules (HANDLES/NEEDS/self.call)",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "refactor: convert all read handlers to pure modules (HANDLES/NEEDS/self.call)",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "feat: add HandlerResolver — discovers pure handler modules by convention",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "feat: add CascadeSubscriber — event-driven replacement for Cascade middleware",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "feat: add Store::Ctx, typed Event structs, and session-scoped Event::Bus",
+          "date": "2026-07-01"
+        },
+        {
           "subject": "feat: Introduce Boot.wire and Typed Events",
           "date": "2026-06-30"
         },

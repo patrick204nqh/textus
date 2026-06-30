@@ -39,7 +39,7 @@ module Textus
       File.directory?(dir) && File.exist?(File.join(dir, "manifest.yaml"))
     end
 
-    def initialize(root, role: Value::Role::DEFAULT, correlation_id: nil, dry_run: false, container: nil)
+    def initialize(root, role: Value::Role::DEFAULT, correlation_id: nil, dry_run: false)
       @root = File.expand_path(root)
       @ctx = build_ctx(@root)
       @container = build_container_proxy(@ctx)
