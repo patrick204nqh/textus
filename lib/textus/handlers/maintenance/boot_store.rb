@@ -1,13 +1,19 @@
 module Textus
   module Handlers
     module Maintenance
-      class BootStore
-        def initialize(container:)
-          @container = container
-        end
+      module BootStore
+        HANDLES = Dispatch::Contracts::BootStore
+        NEEDS   = %i[manifest file_store schemas audit_log layout pipeline].freeze
 
-        def call(_command, _call)
-          Value::Result.success(Textus::Boot.build(container: @container))
+        def self.call(_command, _call, deps)
+          proxy = Store::ContainerProxy.new(
+            manifest: deps.manifest, file_store: deps.file_store,
+            schemas: deps.schemas, audit_log: deps.audit_log,
+            layout: deps.layout, pipeline: deps.pipeline,
+            job_store: nil, workflows: nil,
+            root: deps.layout.root
+          )
+          Value::Result.success(Textus::Boot.build(container: proxy))
         end
       end
     end

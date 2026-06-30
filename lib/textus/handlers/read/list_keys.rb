@@ -9,7 +9,10 @@ module Textus
           q      = command.respond_to?(:q)      ? command.q      : nil
           schema = command.respond_to?(:schema) ? command.schema : nil
 
-          return sqlite_list(q: q, schema: schema, lane: command.lane, prefix: command.prefix, deps: deps) if deps.job_store && (q || schema)
+          if deps.job_store && (q || schema)
+            return sqlite_list(q: q, schema: schema, lane: command.lane, prefix: command.prefix,
+                               deps: deps)
+          end
 
           manifest_list(prefix: command.prefix, lane: command.lane, deps: deps)
         end

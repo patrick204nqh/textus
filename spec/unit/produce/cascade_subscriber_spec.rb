@@ -8,7 +8,7 @@ RSpec.describe Textus::Produce::CascadeSubscriber do
   let(:subscriber) do
     described_class.new(
       manifest: manifest, workflows: workflows,
-      job_store: job_store, file_store: file_store,
+      job_store: job_store, file_store: file_store
     )
   end
 
@@ -17,7 +17,7 @@ RSpec.describe Textus::Produce::CascadeSubscriber do
       planner = instance_double(Textus::Store::Jobs::Planner, plan: [])
       allow(Textus::Store::Jobs::Planner).to receive(:new).and_return(planner)
       allow(Textus::Store::Jobs::Queue).to receive(:new).and_return(
-        instance_double(Textus::Store::Jobs::Queue, enqueue: nil)
+        instance_double(Textus::Store::Jobs::Queue, enqueue: nil),
       )
 
       ev = Textus::Event::EntryWritten.new(

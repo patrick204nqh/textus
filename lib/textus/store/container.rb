@@ -69,10 +69,20 @@ module Textus
         audit_deps = Data.define(:manifest, :audit_log).new(
           manifest: container.manifest, audit_log: container.audit_log,
         )
+        move_deps = Data.define(:file_store, :manifest, :schemas, :audit_log, :layout).new(
+          file_store: container.file_store, manifest: container.manifest,
+          schemas: container.schemas, audit_log: container.audit_log,
+          layout: container.layout
+        )
+        delete_deps = Data.define(:file_store, :manifest, :schemas, :audit_log, :layout).new(
+          file_store: container.file_store, manifest: container.manifest,
+          schemas: container.schemas, audit_log: container.audit_log,
+          layout: container.layout
+        )
         Orchestration.new(
           list_keys: ->(command, call) { Handlers::Read::ListKeys.call(command, call, list_deps) },
-          move_key: Handlers::Write::MoveKey.new(container: container, manifest: container.manifest),
-          delete_key: Handlers::Write::DeleteKey.new(container: container),
+          move_key: ->(command, call) { Handlers::Write::MoveKey.call(command, call, move_deps) },
+          delete_key: ->(command, call) { Handlers::Write::DeleteKey.call(command, call, delete_deps) },
           audit_entries: ->(command, call) { Handlers::Read::AuditEntries.call(command, call, audit_deps) },
         )
       end

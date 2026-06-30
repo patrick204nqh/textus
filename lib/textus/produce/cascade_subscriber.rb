@@ -45,7 +45,7 @@ module Textus
       def build_container_proxy
         ContainerProxy.new(
           manifest: @manifest, workflows: @workflows,
-          job_store: @job_store, file_store: @file_store,
+          job_store: @job_store, file_store: @file_store
         )
       end
     end

@@ -10,7 +10,7 @@ RSpec.describe Textus::Dispatch::HandlerResolver do
     Textus::Store::Ctx.new(
       manifest: fake_manifest, file_store: :fs, schemas: :sc,
       audit_log: :al, job_store: fake_job_store, layout: :ly,
-      link_edge_store: :les, workflows: :wf, event_bus: :eb, pipeline: nil,
+      link_edge_store: :les, workflows: :wf, event_bus: :eb, pipeline: nil
     )
   end
 
@@ -19,7 +19,7 @@ RSpec.describe Textus::Dispatch::HandlerResolver do
       const_set(:HANDLES, FakeContract)
       const_set(:NEEDS, %i[manifest job_store].freeze)
 
-      def self.call(command, call, deps)
+      def self.call(_command, _call, deps)
         Textus::Value::Result.success({ "deps_manifest" => deps.manifest })
       end
     end

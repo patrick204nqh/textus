@@ -1,18 +1,17 @@
 module Textus
   module Handlers
     module Write
-      class KeyMvPrefix
-        def initialize(orchestration:)
-          @orchestration = orchestration
-        end
+      module KeyMvPrefix
+        HANDLES = Dispatch::Contracts::KeyMvPrefix
+        NEEDS   = %i[orchestration].freeze
 
-        def call(command, call)
+        def self.call(command, call, deps)
           if command.from_prefix.nil? || command.to_prefix.nil?
             return Value::Result.failure(:usage_error,
                                          "from_prefix and to_prefix required")
           end
 
-          list = @orchestration.list_keys(prefix: command.from_prefix, lane: nil, call: call)
+          list = deps.orchestration.list_keys(prefix: command.from_prefix, lane: nil, call: call)
           return list if list.failure?
 
           leaves = list.value.fetch("rows")
@@ -34,7 +33,7 @@ module Textus
           return Value::Result.success(plan) if command.dry_run
 
           steps.each do |step|
-            move = @orchestration.move_key(old_key: step["from"], new_key: step["to"], call: call)
+            move = deps.orchestration.move_key(old_key: step["from"], new_key: step["to"], call: call)
             return move if move.failure?
           end
           Value::Result.success(plan)

@@ -1,15 +1,14 @@
 module Textus
   module Handlers
     module Write
-      class KeyDeletePrefix
-        def initialize(orchestration:)
-          @orchestration = orchestration
-        end
+      module KeyDeletePrefix
+        HANDLES = Dispatch::Contracts::KeyDeletePrefix
+        NEEDS   = %i[orchestration].freeze
 
-        def call(command, call)
+        def self.call(command, call, deps)
           return Value::Result.failure(:usage_error, "prefix required") if command.prefix.nil? || command.prefix.empty?
 
-          list = @orchestration.list_keys(prefix: command.prefix, lane: nil, call: call)
+          list = deps.orchestration.list_keys(prefix: command.prefix, lane: nil, call: call)
           return list if list.failure?
 
           leaves = list.value.fetch("rows")
@@ -21,7 +20,7 @@ module Textus
           return Value::Result.success(plan) if command.dry_run
 
           steps.each do |step|
-            delete = @orchestration.delete_key(key: step["key"], call: call)
+            delete = deps.orchestration.delete_key(key: step["key"], call: call)
             return delete if delete.failure?
           end
           Value::Result.success(plan)

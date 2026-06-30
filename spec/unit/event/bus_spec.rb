@@ -6,7 +6,7 @@ RSpec.describe Textus::Event::Bus do
   describe "typed events" do
     it "EntryWritten has expected fields" do
       ev = Textus::Event::EntryWritten.new(
-        key: "k", role: "human", etag_before: nil, etag_after: "a", occurred_at: Time.now
+        key: "k", role: "human", etag_before: nil, etag_after: "a", occurred_at: Time.now,
       )
       expect(ev.key).to eq("k")
       expect(ev.role).to eq("human")
@@ -18,7 +18,7 @@ RSpec.describe Textus::Event::Bus do
       received = []
       bus.subscribe(Textus::Event::EntryWritten) { |e| received << e }
       ev = Textus::Event::EntryWritten.new(
-        key: "k", role: "human", etag_before: nil, etag_after: "a", occurred_at: Time.now
+        key: "k", role: "human", etag_before: nil, etag_after: "a", occurred_at: Time.now,
       )
       bus.emit(ev)
       expect(received).to eq([ev])
@@ -28,8 +28,8 @@ RSpec.describe Textus::Event::Bus do
       received = []
       bus.subscribe(Textus::Event::EntryDeleted) { |e| received << e }
       bus.emit(Textus::Event::EntryWritten.new(
-        key: "k", role: "human", etag_before: nil, etag_after: "a", occurred_at: Time.now
-      ))
+                 key: "k", role: "human", etag_before: nil, etag_after: "a", occurred_at: Time.now,
+               ))
       expect(received).to be_empty
     end
 
@@ -38,8 +38,8 @@ RSpec.describe Textus::Event::Bus do
       received = []
       bus.subscribe(Textus::Event::EntryWritten) { |e| received << e }
       bus2.emit(Textus::Event::EntryWritten.new(
-        key: "k", role: "human", etag_before: nil, etag_after: "a", occurred_at: Time.now
-      ))
+                  key: "k", role: "human", etag_before: nil, etag_after: "a", occurred_at: Time.now,
+                ))
       expect(received).to be_empty
     end
 
@@ -48,8 +48,8 @@ RSpec.describe Textus::Event::Bus do
       bus.subscribe(Textus::Event::EntryWritten) { |_e| calls << 1 }
       bus.subscribe(Textus::Event::EntryWritten) { |_e| calls << 2 }
       bus.emit(Textus::Event::EntryWritten.new(
-        key: "k", role: "human", etag_before: nil, etag_after: "a", occurred_at: Time.now
-      ))
+                 key: "k", role: "human", etag_before: nil, etag_after: "a", occurred_at: Time.now,
+               ))
       expect(calls).to eq([1, 2])
     end
   end

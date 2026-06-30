@@ -1,19 +1,20 @@
 module Textus
   module Boot
-    DepNotFound = Class.new(Textus::Error)
+    class DepNotFound < Textus::Error
+    end
   end
 
   module Dispatch
     module HandlerResolver
       HANDLER_NAMESPACES = [
-        Handlers::Read, Handlers::Write, Handlers::Maintenance,
+        Handlers::Read, Handlers::Write, Handlers::Maintenance
       ].freeze
 
       module_function
 
       def eager_load!
-        handlers_dir = File.expand_path("../../handlers", __FILE__)
-        Dir[File.join(handlers_dir, "**", "*.rb")].sort.each { |f| require f }
+        handlers_dir = File.expand_path("../handlers", __dir__)
+        Dir[File.join(handlers_dir, "**", "*.rb")].each { |f| require f }
       end
 
       def build(ctx, handlers: nil)
@@ -46,7 +47,7 @@ module Textus
 
       def discover_all
         HANDLER_NAMESPACES.flat_map do |ns|
-          ns.constants(false).filter_map { |c| ns.const_get(c) }.select { |v| v.is_a?(Module) }
+          ns.constants(false).filter_map { |c| ns.const_get(c) }.grep(Module)
         end
       end
     end

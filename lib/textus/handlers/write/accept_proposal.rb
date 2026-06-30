@@ -1,13 +1,12 @@
 module Textus
   module Handlers
     module Write
-      class AcceptProposal
-        def initialize(container:)
-          @container = container
-        end
+      module AcceptProposal
+        HANDLES = Dispatch::Contracts::AcceptProposal
+        NEEDS   = %i[file_store manifest schemas audit_log layout event_bus].freeze
 
-        def call(command, call)
-          reader = Store::Entry::Reader.from(container: @container)
+        def self.call(command, call, deps)
+          reader = Store::Entry::Reader.new(file_store: deps.file_store, manifest: deps.manifest, layout: deps.layout)
           env = reader.read(command.pending_key)
           proposal = env&.meta&.dig("proposal") or
             return Value::Result.failure(:proposal_error, "entry has no proposal block: #{command.pending_key}")
@@ -15,10 +14,14 @@ module Textus
             return Value::Result.failure(:proposal_error, "proposal missing target_key")
           action = proposal["action"] || "put"
 
-          writer = Store::Entry::Writer.from(container: @container, call: call)
+          writer = Store::Entry::Writer.new(
+            file_store: deps.file_store, manifest: deps.manifest,
+            schemas: deps.schemas, audit_log: deps.audit_log,
+            call: call, reader: reader, layout: deps.layout
+          )
           case action
           when "put"
-            mentry = @container.manifest.resolver.resolve(target).entry
+            mentry = deps.manifest.resolver.resolve(target).entry
             writer.put(
               target, mentry: mentry,
                       payload: Textus::Value::Payload.new(meta: env.meta["_meta"] || {}, body: env.body, content: nil)
@@ -30,6 +33,14 @@ module Textus
           end
 
           writer.delete(command.pending_key)
+          if deps.respond_to?(:event_bus) && deps.event_bus
+            deps.event_bus.emit(Textus::Event::ProposalAccepted.new(
+                                  proposal_key: command.pending_key,
+                                  target_key: target,
+                                  role: call.role,
+                                  occurred_at: call.now,
+                                ))
+          end
           Value::Result.success("protocol" => Textus::PROTOCOL, "accepted" => command.pending_key,
                                 "target_key" => target, "action" => action, "cascade_key" => target)
         end

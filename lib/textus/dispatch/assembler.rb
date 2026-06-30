@@ -4,6 +4,7 @@ module Textus
       COMPUTED_KEYS = %i[
         container manifest audit_log file_store job_store schemas
         link_edge_store layout freshness_evaluator orchestration
+        reader event_bus workflows pipeline
       ].to_set.freeze
 
       # One row per verb: [ContractClass, HandlerClass, { kwarg_name: :computed_key }]
@@ -11,33 +12,53 @@ module Textus
         [Contracts::GetEntry,        Handlers::Read::GetEntry,
          { file_store: :file_store, manifest: :manifest, layout: :layout,
            freshness_evaluator: :freshness_evaluator }],
-        [Contracts::PutEntry,        Handlers::Write::PutEntry,        { container: :container }],
-        [Contracts::ListKeys,        Handlers::Read::ListKeys,         { manifest: :manifest, job_store: :job_store }],
-        [Contracts::DeleteKey,       Handlers::Write::DeleteKey,       { container: :container }],
-        [Contracts::MoveKey,         Handlers::Write::MoveKey,         { container: :container, manifest: :manifest }],
-        [Contracts::ProposeEntry,    Handlers::Write::ProposeEntry,    { container: :container }],
-        [Contracts::AcceptProposal,  Handlers::Write::AcceptProposal,  { container: :container }],
-        [Contracts::RejectProposal,  Handlers::Write::RejectProposal,  { container: :container }],
+        [Contracts::PutEntry,        Handlers::Write::PutEntry,
+         { file_store: :file_store, manifest: :manifest, schemas: :schemas,
+           audit_log: :audit_log, layout: :layout, event_bus: :event_bus }],
+        [Contracts::ListKeys,        Handlers::Read::ListKeys, { manifest: :manifest, job_store: :job_store }],
+        [Contracts::DeleteKey,       Handlers::Write::DeleteKey,
+         { file_store: :file_store, manifest: :manifest, schemas: :schemas,
+           audit_log: :audit_log, layout: :layout, event_bus: :event_bus }],
+        [Contracts::MoveKey,         Handlers::Write::MoveKey,
+         { file_store: :file_store, manifest: :manifest, schemas: :schemas,
+           audit_log: :audit_log, layout: :layout }],
+        [Contracts::ProposeEntry,    Handlers::Write::ProposeEntry,
+         { file_store: :file_store, manifest: :manifest, schemas: :schemas,
+           audit_log: :audit_log, layout: :layout, event_bus: :event_bus }],
+        [Contracts::AcceptProposal,  Handlers::Write::AcceptProposal,
+         { file_store: :file_store, manifest: :manifest, schemas: :schemas,
+           audit_log: :audit_log, layout: :layout, event_bus: :event_bus }],
+        [Contracts::RejectProposal,  Handlers::Write::RejectProposal,
+         { file_store: :file_store, manifest: :manifest, schemas: :schemas,
+           audit_log: :audit_log, layout: :layout, event_bus: :event_bus }],
         [Contracts::EnqueueJob,      Handlers::Write::EnqueueJob,      { job_store: :job_store }],
         [Contracts::WhereEntry,      Handlers::Read::WhereEntry,       { manifest: :manifest }],
         [Contracts::UidEntry,        Handlers::Read::UidEntry,
          { file_store: :file_store, manifest: :manifest, layout: :layout }],
-        [Contracts::DepsEntry,       Handlers::Read::DepsEntry,        { manifest: :manifest }],
+        [Contracts::DepsEntry,       Handlers::Read::DepsEntry, { manifest: :manifest }],
         [Contracts::RdepsEntry,      Handlers::Read::RdepsEntry,
          { manifest: :manifest, link_edge_store: :link_edge_store }],
-        [Contracts::BootStore,       Handlers::Maintenance::BootStore,       { container: :container }],
-        [Contracts::DoctorStore,     Handlers::Maintenance::DoctorStore,     { container: :container }],
+        [Contracts::BootStore,       Handlers::Maintenance::BootStore,
+         { manifest: :manifest, file_store: :file_store, schemas: :schemas,
+           audit_log: :audit_log, layout: :layout, pipeline: :pipeline }],
+        [Contracts::DoctorStore,     Handlers::Maintenance::DoctorStore,
+         { manifest: :manifest, file_store: :file_store, layout: :layout,
+           pipeline: :pipeline, audit_log: :audit_log, schemas: :schemas }],
         [Contracts::PublishedEntries, Handlers::Maintenance::PublishedEntries, { manifest: :manifest }],
         [Contracts::RuleExplain,     Handlers::Maintenance::RuleExplain,     { manifest: :manifest }],
         [Contracts::RuleList,        Handlers::Maintenance::RuleList,        { manifest: :manifest }],
         [Contracts::SchemaEnvelope,  Handlers::Maintenance::SchemaEnvelope,
          { manifest: :manifest, schemas: :schemas }],
         [Contracts::DrainStore,      Handlers::Maintenance::DrainStore,
-         { container: :container, job_store: :job_store }],
-        [Contracts::IngestEntry,     Handlers::Maintenance::IngestEntry,     { container: :container }],
+         { manifest: :manifest, file_store: :file_store, schemas: :schemas,
+           audit_log: :audit_log, job_store: :job_store, layout: :layout,
+           workflows: :workflows }],
+        [Contracts::IngestEntry,     Handlers::Maintenance::IngestEntry,
+         { manifest: :manifest, file_store: :file_store, schemas: :schemas,
+           audit_log: :audit_log, job_store: :job_store, layout: :layout }],
         [Contracts::JobsAction,      Handlers::Maintenance::JobsAction,      { job_store: :job_store }],
         [Contracts::RuleLint,        Handlers::Maintenance::RuleLint,        { manifest: :manifest }],
-        [Contracts::DataMv,          Handlers::Write::DataMv,                { container: :container }],
+        [Contracts::DataMv,          Handlers::Write::DataMv,                { manifest: :manifest, layout: :layout }],
         [Contracts::AuditEntries,    Handlers::Read::AuditEntries,
          { manifest: :manifest, audit_log: :audit_log }],
         [Contracts::PulseEntries,    Handlers::Read::PulseEntries,
@@ -59,6 +80,10 @@ module Textus
       def self.build_pipeline(container:)
         fe   = freshness_evaluator(container)
         orch = Store::Container.orchestration_for(container)
+        rdr  = Textus::Store::Entry::Reader.new(
+          file_store: container.file_store, manifest: container.manifest,
+          layout: container.layout
+        )
 
         computed = {
           container:,
@@ -71,6 +96,10 @@ module Textus
           link_edge_store: container.link_edge_store,
           freshness_evaluator: fe,
           orchestration: orch,
+          reader: rdr,
+          event_bus: Textus::Event::Bus.new,
+          workflows: container.workflows,
+          pipeline: container.pipeline,
         }
 
         registry = HandlerRegistry.new
