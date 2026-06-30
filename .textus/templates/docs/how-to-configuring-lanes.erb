@@ -24,7 +24,7 @@ Edit `.textus/manifest.yaml` and add entries under `lanes:`. A lane declares onl
 
 ```yaml
 lanes:
-  - { name: <lane-name>, kind: <canon|workspace|machine|queue|raw> }
+  - { name: <lane-name>, kind: <<%=  kind_capability_map.keys.join("|") %>> }
 ```
 
 ### Lane kinds and their capabilities
@@ -33,11 +33,9 @@ The kind→capability bijection (ADR 0091/0116):
 
 | Kind | Capability | Writers in this store |
 |---|---|---|
-| `canon` | `author` | `human` |
-| `workspace` | `keep` | `agent` |
-| `queue` | `propose` | `human`, `agent` |
-| `machine` | `converge` | `automation` |
-| `raw` | `ingest` | `human`, `agent`, `automation` |
+<% lanes.each do |lane| -%>
+| `<%= lane["kind"] %>` | `<%= lane["capability"] %>` | <%= lane["writers"].map{|w| "`#{w}`"}.join(", ") %> |
+<% end -%>
 
 `kind:` is required — a manifest with a kind-less lane is rejected at load. The kind fixes the capability a writer must hold. This is a **bijection**: one kind maps to exactly one capability.
 
@@ -47,11 +45,9 @@ Rules: at most one `queue` lane, at most one `machine` lane, and at most one rol
 
 ```yaml
 lanes:
-  - { name: knowledge, kind: canon, desc: "the maintained source of truth about the repo" }
-  - { name: scratchpad, kind: workspace, desc: "the agent's own durable scratchpad (working memory)" }
-  - { name: proposals, kind: queue, desc: "changes awaiting a human accept" }
-  - { name: artifacts, kind: machine, desc: "machine-maintained computed outputs" }
-  - { name: raw, kind: raw, desc: "ingested external source material (write-once)" }
+<% lanes.each do |lane| -%>
+  - { name: <%= lane["name"] %>, kind: <%= lane["kind"] %><%= lane["purpose"].empty? ? "" : ", desc: \"#{lane["purpose"]}\"" %> }
+<% end -%>
 ```
 
 ### Renaming defaults
@@ -72,9 +68,9 @@ Role **names** are a closed set — `human`, `agent`, `automation` — but each 
 
 ```yaml
 roles:
-  - { name: human, can: [author, propose, ingest] }
-  - { name: agent, can: [propose, keep, ingest] }
-  - { name: automation, can: [converge, ingest] }
+<% roles.each do |role| -%>
+  - { name: <%= role["name"] %>, can: [<%= role["capabilities"].join(", ") %>] }
+<% end -%>
 ```
 
 ### Rules to keep in mind

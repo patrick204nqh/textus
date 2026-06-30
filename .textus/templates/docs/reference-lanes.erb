@@ -24,9 +24,9 @@ A role holds a set of **capabilities** from the closed five-element set. Write a
 
 | Role | Capabilities |
 |---|---|
-| `human` | `author`, `propose`, `ingest` |
-| `agent` | `propose`, `keep`, `ingest` |
-| `automation` | `converge`, `ingest` |
+<% roles.each do |role| -%>
+| `<%= role["name"] %>` | <%= role["capabilities"].map{|c| "`#{c}`"}.join(", ") %> |
+<% end -%>
 
 What each capability **means**:
 
@@ -46,21 +46,17 @@ Note: `accept` and `reject` are **transition verbs**, not capabilities. Both req
 
 | Kind | Required capability | Writers in this store |
 |---|---|---|
-| `canon` | `author` | `human` |
-| `workspace` | `keep` | `agent` |
-| `queue` | `propose` | `human`, `agent` |
-| `machine` | `converge` | `automation` |
-| `raw` | `ingest` | `human`, `agent`, `automation` |
+<% lanes.each do |lane| -%>
+| `<%= lane["kind"] %>` | `<%= lane["capability"] %>` | <%= lane["writers"].map{|w| "`#{w}`"}.join(", ") %> |
+<% end -%>
 
 ### Declared lanes
 
 | Name | Kind | Purpose |
 |---|---|---|
-| `knowledge` | `canon` | the maintained source of truth about the repo |
-| `scratchpad` | `workspace` | the agent's own durable scratchpad (working memory) |
-| `proposals` | `queue` | changes awaiting a human accept |
-| `artifacts` | `machine` | machine-maintained computed outputs |
-| `raw` | `raw` | ingested external source material (write-once) |
+<% lanes.each do |lane| -%>
+| `<%= lane["name"] %>` | `<%= lane["kind"] %>` | <%= lane["purpose"] %> |
+<% end -%>
 
 `owner:` on a lane is **optional, informational** metadata. Write authority is **derived** — there is no `write_policy:`.
 

@@ -17,7 +17,7 @@ entries:
     owner: human:self
     nested: true
     kind: nested
-    ignore: ["**/verbs.md", "**/schema.md", "**/adr-log.md", "**/authority.md", "**/events.md", "**/mcp.md", "**/skills.md"]
+    ignore: ["**/verbs.md", "**/schema.md", "**/adr-log.md", "**/authority.md", "**/events.md", "**/mcp.md", "**/skills.md", "**/lanes.md", "**/conventions.md", "**/testing.md", "**/engineering-skills.md", "**/contributor-conventions.md"]
     publish:
       - { tree: docs/reference }
   - key: knowledge.how-to
@@ -25,13 +25,14 @@ entries:
     owner: human:self
     nested: true
     kind: nested
-    ignore: ["**/agents-mcp.md"]
+    ignore: ["**/agents-mcp.md", "**/configuring-lanes.md", "**/drain-scheduling.md", "**/migrations.md"]
     publish: [{ tree: docs/how-to }]
   - key: knowledge.explanation
     lane: knowledge
     owner: human:self
     nested: true
     kind: nested
+    ignore: ["**/concepts.md"]
     publish: [{ tree: docs/explanation }]
   - key: knowledge.design
     lane: knowledge
@@ -45,7 +46,7 @@ entries:
     owner: human:self
     nested: true
     kind: nested
-    ignore: ["**/README.md"]
+    ignore: ["**/README.md", "**/environment-scan.md"]
     publish: [{ tree: docs/cookbook }]
   - key: knowledge.decisions
     lane: knowledge
@@ -133,6 +134,76 @@ entries:
     source: { from: external, command: "true", sources: [] }
     publish: [{ to: .claude-plugin/plugin.json }]
   # Docs — generated reference documentation
+  - key: artifacts.how-to.configuring-lanes
+    lane: artifacts
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
+    publish:
+      - { to: docs/how-to/configuring-lanes.md, template: docs/how-to-configuring-lanes.erb }
+  - key: artifacts.how-to.drain-scheduling
+    lane: artifacts
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
+    publish:
+      - { to: docs/how-to/drain-scheduling.md, template: docs/how-to-drain-scheduling.erb }
+  - key: artifacts.how-to.migrations
+    lane: artifacts
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
+    publish:
+      - { to: docs/how-to/migrations.md, template: docs/how-to-migrations.erb }
+  - key: artifacts.reference.lanes
+    lane: artifacts
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
+    publish:
+      - { to: docs/reference/lanes.md, template: docs/reference-lanes.erb }
+  - key: artifacts.reference.conventions
+    lane: artifacts
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
+    publish:
+      - { to: docs/reference/conventions.md, template: docs/reference-conventions.erb }
+  - key: artifacts.reference.testing
+    lane: artifacts
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
+    publish:
+      - { to: docs/reference/testing.md, template: docs/reference-testing.erb }
+  - key: artifacts.reference.engineering-skills
+    lane: artifacts
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
+    publish:
+      - { to: docs/reference/engineering-skills.md, template: docs/reference-engineering-skills.erb }
+  - key: artifacts.reference.contributor-conventions
+    lane: artifacts
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
+    publish:
+      - { to: docs/reference/contributor-conventions.md, template: docs/reference-contributor-conventions.erb }
+  - key: artifacts.cookbook.environment-scan
+    lane: artifacts
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
+    publish:
+      - { to: docs/cookbook/environment-scan.md, template: docs/cookbook-environment-scan.erb }
+  - key: artifacts.explanation.concepts
+    lane: artifacts
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
+    publish:
+      - { to: docs/explanation/concepts.md, template: docs/explanation-concepts.erb }
   - key: artifacts.how-to.agents-mcp
     lane: artifacts
     kind: produced

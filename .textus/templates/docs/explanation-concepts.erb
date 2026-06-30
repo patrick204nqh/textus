@@ -42,19 +42,17 @@ Two ideas do all the work:
 
 | Lane | Kind | Capability required | Writers |
 |---|---|---|---|
-| `knowledge` | `canon` | `author` | `human` |
-| `scratchpad` | `workspace` | `keep` | `agent` |
-| `proposals` | `queue` | `propose` | `human`, `agent` |
-| `artifacts` | `machine` | `converge` | `automation` |
-| `raw` | `raw` | `ingest` | `human`, `agent`, `automation` |
+<% lanes.each do |lane| -%>
+| `<%= lane["name"] %>` | `<%= lane["kind"] %>` | `<%= lane["capability"] %>` | <%= lane["writers"].map{|w| "`#{w}`"}.join(", ") %> |
+<% end -%>
 
 ### Current role capabilities
 
 | Role | Capabilities |
 |---|---|
-| `human` | `author`, `propose`, `ingest` |
-| `agent` | `propose`, `keep`, `ingest` |
-| `automation` | `converge`, `ingest` |
+<% roles.each do |role| -%>
+| `<%= role["name"] %>` | <%= role["capabilities"].map{|c| "`#{c}`"}.join(", ") %> |
+<% end -%>
 
 Everything else — workflows, publishing, schemas — is layered on top of those two ideas.
 
@@ -62,7 +60,7 @@ Everything else — workflows, publishing, schemas — is layered on top of thos
 
 ## The proposal trust path
 
-The single edge from `proposals` to `knowledge` is where the human-in-the-loop lives. It is the only way bytes reach a `canon` lane without already holding `author` — a two-capability path: an agent can *queue* a change, but only a human can *land* it.
+The single edge from `<%= propose_lane %>` to `knowledge` is where the human-in-the-loop lives. It is the only way bytes reach a `canon` lane without already holding `author` — a two-capability path: an agent can *queue* a change, but only a human can *land* it.
 
 Three ideas make this a *trust* path, not just a copy:
 
