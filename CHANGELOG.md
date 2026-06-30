@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+- refactor: clean up textus.rb — inline MCP namespace stub, remove dead ignores, drop duplicate Textus.workflow
+- fix: gemspec — drop partial docs/ from shipped files, ship code + README + CHANGELOG only
+- fix: gemspec — remove stale SPEC.md reference, update protocol version to textus/4, point docs_uri to README
+- feat: Claude Code hooks — block direct writes to textus-managed artifacts
 - chore: add textus drain to pre-push hook + docs-protocol-guard on pre-commit
 - refactor(Move1): rename Produce::ContextHelpers → Textus::ContainerHelpers — neutral top-level module used by both publish and workflow contexts
 - refactor(M3): rename Render::Context#binding → #to_erb_binding — avoids shadowing Ruby built-in

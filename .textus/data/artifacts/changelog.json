@@ -1,12 +1,28 @@
 {
   "_meta": {
-    "uid": "6642a56ccf6f2286"
+    "uid": "8ad562eebbed90a5"
   },
   "entries": [
     {
       "tag": "Unreleased",
       "date": null,
       "commits": [
+        {
+          "subject": "refactor: clean up textus.rb — inline MCP namespace stub, remove dead ignores, drop duplicate Textus.workflow",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "fix: gemspec — drop partial docs/ from shipped files, ship code + README + CHANGELOG only",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "fix: gemspec — remove stale SPEC.md reference, update protocol version to textus/4, point docs_uri to README",
+          "date": "2026-06-30"
+        },
+        {
+          "subject": "feat: Claude Code hooks — block direct writes to textus-managed artifacts",
+          "date": "2026-06-30"
+        },
         {
           "subject": "chore: add textus drain to pre-push hook + docs-protocol-guard on pre-commit",
           "date": "2026-06-30"
