@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+- fix: changelog filters merge commits (--no-merges), delete unmanaged CHANGELOG/COC files
 - fix: remove orphaned docs/design/architecture.md sentinel
 - refactor: rules key ordering, contributing/security/changelog/coc as artifacts
 - fix: decisions log workflow — use container.reader.read, fix relative links in template

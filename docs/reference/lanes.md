@@ -93,7 +93,7 @@ entries:
 | `publish:` | no | A list of publish targets. `{ to:, template?: }` or `{ tree: "dir" }`. |
 | `ignore:` | no | For `nested:` entries — gitignore-style globs excluded from enumeration. |
 
-The full schema lives in [`SPEC.md §4`](../../SPEC.md).
+The full schema lives in the entry schema (`textus get knowledge.specs.04-manifest`).
 
 ---
 
@@ -111,7 +111,6 @@ The full schema lives in [`SPEC.md §4`](../../SPEC.md).
 
 ## Where to go from here
 
-- [`../../SPEC.md`](../../SPEC.md) — the normative wire-protocol spec
 - [`../how-to/configuring-lanes.md`](../how-to/configuring-lanes.md) — lane-setup procedures
 - [`../architecture/README.md`](../architecture/README.md) — Ruby implementation layout
 - [`conventions.md`](conventions.md) — store patterns and idiomatic choices

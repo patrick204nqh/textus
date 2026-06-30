@@ -8,7 +8,7 @@
 
 How an AI agent reads from and writes to a textus store over MCP — setup, the session protocol, and the operational loop.
 
-For the normative wire protocol and full verb table, see [`../../SPEC.md`](../../SPEC.md).
+For the normative wire protocol and full verb table, see the wire protocol (`textus get knowledge.specs.*`).
 
 > New here? Start with [Concepts](../explanation/concepts.md).
 
@@ -179,5 +179,4 @@ drain(lane: "artifacts")   # → materialize + sweep
 
 ## See also
 
-- [`../../SPEC.md`](../../SPEC.md) — normative wire-protocol spec
 - [`.textus/`](../../.textus/) — textus's own self-development store (same setup with `bundle exec exe/textus`)

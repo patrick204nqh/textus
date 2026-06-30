@@ -64,13 +64,7 @@ entries:
     owner: human:self
     nested: true
     kind: nested
-  - key: artifacts.spec
-    lane: artifacts
-    kind: produced
-    format: json
-    source: { from: external, command: "true", sources: [] }
-    publish:
-      - { to: SPEC.md, template: docs/meta/spec.erb }
+
   # Scratchpad / proposals / raw
   - { key: scratchpad.notes,  lane: scratchpad,  owner: agent:self, nested: true, kind: nested }
   - { key: proposals.notes, lane: proposals, owner: agent:self, nested: true, kind: nested }

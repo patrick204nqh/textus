@@ -44,4 +44,3 @@ textus drain artifacts.feeds.skills --as=automation
 
 - [`../reference/lanes.md`](../reference/lanes.md) — retention rule semantics
 - [`./configuring-lanes.md`](configuring-lanes.md) — declaring produced entries and retention rules
-- [`../../SPEC.md`](../../SPEC.md) — the normative wire-protocol spec

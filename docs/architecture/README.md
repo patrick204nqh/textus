@@ -291,4 +291,3 @@ Contract drift surfaces as `ContractDrift` (contract_etag mismatch); audit curso
 
 - [`decisions/README.md`](decisions/README.md) — curated decision reading guide
 - [`../decisions.md`](../decisions.md) — live decision log (all statuses)
-- [`../../SPEC.md`](../../SPEC.md) — normative wire-protocol spec

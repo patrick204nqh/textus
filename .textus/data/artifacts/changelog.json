@@ -8,6 +8,10 @@
       "date": null,
       "commits": [
         {
+          "subject": "fix: changelog filters merge commits (--no-merges), delete unmanaged CHANGELOG/COC files",
+          "date": "2026-06-30"
+        },
+        {
           "subject": "fix: remove orphaned docs/design/architecture.md sentinel",
           "date": "2026-06-30"
         },

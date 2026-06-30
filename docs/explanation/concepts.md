@@ -105,4 +105,3 @@ Returns `changed`, `pending_review`, `contract_etag`, and an updated `cursor`. A
 
 - [`../reference/lanes.md`](../reference/lanes.md) — exact lane, role, and entry semantics
 - [`../how-to/agents-mcp.md`](../how-to/agents-mcp.md) — Claude Code quickstart and the operational agent loop
-- [`../../SPEC.md`](../../SPEC.md) — normative wire-protocol spec

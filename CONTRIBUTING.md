@@ -6,7 +6,7 @@ textus is a young project. Bugs, missing fixtures, and rough edges are expected.
 
 ## Before you open a PR
 
-1. Read [`SPEC.md`](SPEC.md) — it is the source of truth for the wire format. Implementation can change; the protocol stays put unless we bump the version.
+1. Read the wire protocol (`textus get knowledge.specs.*`) — the source of truth for the wire format. Implementation can change; the protocol stays put unless we bump the version.
 2. Run the suite:
    ```sh
    bundle install
@@ -14,7 +14,7 @@ textus is a young project. Bugs, missing fixtures, and rough edges are expected.
    bundle exec rubocop      # zero offenses expected
    ```
 3. If you're adding a feature, add a spec. If you're fixing a bug, add the regression test first.
-4. **If the change alters protocol behavior** (wire format, manifest grammar, zone/capability semantics, CLI envelope, error codes), it MUST land with **both** an update to [`SPEC.md`](SPEC.md) reflecting the new current truth **and** an ADR in [`docs/architecture/decisions/`](docs/architecture/decisions/) recording the decision — in the same PR. SPEC.md is the *what*; the ADR is the *why*. They drift apart the moment they're split across PRs.
+4. **If the change alters protocol behavior** (wire format, manifest grammar, zone/capability semantics, CLI envelope, error codes), it MUST land with **both** an update to the wire protocol spec (`knowledge.specs.*`) reflecting the new current truth **and** an ADR in [`docs/architecture/decisions/`](docs/architecture/decisions/) recording the decision — in the same PR. SPEC.md is the *what*; the ADR is the *why*. They drift apart the moment they're split across PRs.
 
 ## Local hooks
 
@@ -51,6 +51,6 @@ See [`SECURITY.md`](SECURITY.md).
 
 ## Sources of truth
 
-`docs/architecture/README.md` — read this first for orientation. `SPEC.md` is the wire contract you reach for once you know the layout. Treat `SPEC.md`, `docs/architecture/README.md`, and `docs/` as current. `CHANGELOG.md` is the canonical record of what shipped per version.
+`docs/architecture/README.md` — read this first for orientation. the wire protocol (`textus get knowledge.specs.*`) is the spec to reach for once you know the layout. Treat the spec sections, `docs/architecture/README.md`, and `docs/` as current. `CHANGELOG.md` is the canonical record of what shipped per version.
 
 [`docs/architecture/decisions/`](docs/architecture/decisions/) is the append-only decision log — *why* the code and spec are shaped the way they are. Start at its [`README.md`](docs/architecture/decisions/README.md) index.

@@ -8,7 +8,7 @@ Live status of every architecture decision, derived from each file's `**Status:*
 
 | Status | Meaning |
 |---|---|
-| **Accepted** | In force; reflected in `SPEC.md` and/or the implementation. |
+| **Accepted** | In force; reflected in the wire protocol spec and/or the implementation. |
 | **Proposed** | Drafted, not yet ratified/shipped. |
 | **Partially superseded by NNNN** | Core decision stands; specifics changed by a later ADR. |
 | **Superseded by NNNN** | Fully replaced; read the named ADR for current truth. |
