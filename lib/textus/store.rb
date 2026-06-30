@@ -133,6 +133,15 @@ module Textus
         clock: Port::Clock.new,
       )
 
+      cascade_subscriber = Produce::CascadeSubscriber.new(
+        manifest:, workflows:, job_store:, file_store:,
+      )
+      event_bus.subscribe(Event::EntryWritten,     &cascade_subscriber.method(:on_entry_written))
+      event_bus.subscribe(Event::EntryDeleted,     &cascade_subscriber.method(:on_entry_deleted))
+      event_bus.subscribe(Event::EntryMoved,       &cascade_subscriber.method(:on_entry_moved))
+      event_bus.subscribe(Event::ProposalAccepted, &cascade_subscriber.method(:on_proposal_accepted))
+      event_bus.subscribe(Event::ProposalRejected, &cascade_subscriber.method(:on_proposal_rejected))
+
       orchestration = build_orchestration(
         manifest:, file_store:, schemas:, audit_log:, job_store:, layout:,
       )
@@ -147,7 +156,6 @@ module Textus
         Dispatch::Middleware::Binder.new,
         Dispatch::Middleware::Auth.new,
         Dispatch::Middleware::AuditIndex.new(job_store: partial.job_store, audit_log: partial.audit_log),
-        Dispatch::Middleware::Cascade.new,
       ]
 
       Dispatch::HandlerResolver.eager_load!

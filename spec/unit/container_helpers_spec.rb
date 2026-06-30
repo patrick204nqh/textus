@@ -3,7 +3,7 @@ require "spec_helper"
 RSpec.describe Textus::ContainerHelpers do
   let(:manifest) { instance_double(Textus::Manifest) }
   let(:container) do
-    instance_double(Textus::Store::Container,
+    instance_double(Textus::Store::ContainerProxy,
                     manifest: manifest,
                     root: "/store/.textus")
   end
