@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Produce::ContextHelpers do
+RSpec.describe Textus::ContainerHelpers do
   let(:manifest) { instance_double(Textus::Manifest) }
   let(:container) do
     instance_double(Textus::Store::Container,
@@ -9,7 +9,7 @@ RSpec.describe Textus::Produce::ContextHelpers do
   end
   let(:includer) do
     klass = Class.new do
-      include Textus::Produce::ContextHelpers
+      include Textus::ContainerHelpers
 
       attr_reader :container
 

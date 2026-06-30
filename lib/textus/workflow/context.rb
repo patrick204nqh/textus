@@ -3,7 +3,7 @@
 module Textus
   module Workflow
     Context = Data.define(:key, :entry, :config, :lane, :container, :call) do
-      include Textus::Produce::ContextHelpers
+      include Textus::ContainerHelpers
     end
   end
 end
