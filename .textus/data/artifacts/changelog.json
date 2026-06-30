@@ -8,6 +8,10 @@
       "date": null,
       "commits": [
         {
+          "subject": "refactor: rules key ordering, contributing/security/changelog/coc as artifacts",
+          "date": "2026-06-30"
+        },
+        {
           "subject": "fix: decisions log workflow — use container.reader.read, fix relative links in template",
           "date": "2026-06-30"
         },
