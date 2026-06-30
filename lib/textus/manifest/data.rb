@@ -14,7 +14,7 @@ module Textus
 
       attr_reader :raw, :root, :entries, :declared_lane_kinds,
                   :lane_descs, :lane_owners,
-                  :audit_config, :worker_config, :role_caps, :policy
+                  :audit_config, :worker_config, :role_caps
 
       def self.validate_key!(key)
         raise UsageError.new("empty key") if key.nil? || key.empty?
@@ -50,10 +50,6 @@ module Textus
         @audit_config = build_audit_config(raw)
         @worker_config = build_worker_config(raw)
         @role_caps = Capabilities.resolve(raw["roles"])
-        # Policy is constructed before entries because Entry validators
-        # use the entry's own `derived?` and similar helpers that call into
-        # Policy; Policy must exist before entries are built.
-        @policy = Policy.new(self)
         @entries = build_entries(raw)
         validate_declared_keys!
         freeze
@@ -83,11 +79,7 @@ module Textus
       end
 
       def build_entries(raw)
-        Array(raw["entries"]).map do |e|
-          entry = Manifest::Entry::Parser.call(e)
-          Manifest::Entry::Validators.run_all(entry, policy: @policy)
-          entry
-        end.freeze
+        Array(raw["entries"]).map { |e| Manifest::Entry::Parser.call(e) }.freeze
       end
 
       def validate_declared_keys!

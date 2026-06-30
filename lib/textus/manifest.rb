@@ -43,11 +43,18 @@ module Textus # rubocop:disable Style/OneClassPerFile
       private
 
       def build(raw, root)
-        data = Manifest::Data.parse(raw, root: root)
+        # Phase 1: structural data + authority policy (no entry validation)
+        data   = Manifest::Data.parse(raw, root: root)
+        policy = Manifest::Policy.new(data)
+
+        # Phase 2: validate entries with fully-formed Policy
+        data.entries.each { |entry| Manifest::Entry::Validators.run_all(entry, policy:) }
+        policy.entries = data.entries
+
         new(
-          data: data,
+          data:,
           resolver: Manifest::Resolver.new(data),
-          policy: data.policy,
+          policy:,
           rules: Manifest::Rules.parse(raw["rules"] || []),
         )
       end
