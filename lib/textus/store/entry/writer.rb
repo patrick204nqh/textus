@@ -1,4 +1,5 @@
 require "fileutils"
+require_relative "write_step"
 
 module Textus
   class Store
@@ -36,26 +37,18 @@ module Textus
         end
 
         def put(key, mentry:, payload:, if_etag: nil)
-          path  = resolve_path(key)
-          meta  = payload.meta || {}
-          content = payload.content
-
-          existing_env   = read_existing(key)
-          existing_meta  = existing_env ? existing_env.meta : {}
-          meta, content  = inject_meta(meta, content, existing_meta, mentry.format)
-
-          bytes, eff_meta, eff_body, eff_content = serialize_entry(mentry, path, meta, payload, content)
-
-          enforce_name_match!(path, eff_meta, mentry.format)
-          validate_schema(mentry, eff_meta, eff_content)
-          validate_raw(eff_meta, eff_content, mentry.lane, mentry.format)
-
-          etag_before = check_etag!(path, key, if_etag)
-          write_bytes(path, bytes)
-
-          envelope = build_envelope(key, mentry, path, eff_meta, eff_body, eff_content, bytes)
-          audit_put(key, etag_before, envelope.etag)
-          envelope
+          ctx = WriteStep::WriteContext.new(
+            key:, mentry:, payload:, if_etag:,
+            path: nil, existing_env: nil, meta: nil, content: nil,
+            bytes: nil, eff_meta: nil, eff_body: nil, eff_content: nil,
+            etag_before: nil, envelope: nil
+          )
+          deps = WriteStep::WriteDeps.new(
+            file_store: @file_store, manifest: @manifest, schemas: @schemas,
+            audit_log: @audit_log, call: @call, reader: @reader, layout: @layout
+          )
+          ctx = WriteStep::DEFAULT_PUT.reduce(ctx) { |c, step| step.call(c, deps) }
+          ctx.envelope
         end
 
         def delete(key, mentry: nil, if_etag: nil) # rubocop:disable Lint/UnusedMethodArgument
@@ -130,88 +123,6 @@ module Textus
           end
         rescue SystemCallError
           nil
-        end
-
-        def read_existing(key)
-          @reader.read(key)
-        end
-
-        def inject_meta(meta, content, existing_meta, format)
-          Envelope::Meta.inject_all(
-            meta, content, existing_meta,
-            format: format,
-            etag_for: method(:resolve_source_etag)
-          )
-        end
-
-        def resolve_source_etag(key)
-          path = @manifest.resolver.resolve(key).path
-          return nil unless @file_store.exists?(path)
-
-          Value::Etag.for_file(path)
-        rescue Textus::Error
-          nil
-        end
-
-        def resolve_path(key)
-          @manifest.resolver.resolve(key).path
-        end
-
-        def serialize_entry(mentry, path, meta, payload, content)
-          Textus::Format.for(mentry.format).serialize_for_put(
-            meta: meta, body: payload.body, content: content, path: path,
-          )
-        end
-
-        def enforce_name_match!(path, meta, format)
-          Textus::Format.for(format).enforce_name_match!(path, meta)
-        end
-
-        def validate_schema(mentry, eff_meta, eff_content)
-          schema = @schemas.fetch_or_nil(mentry.schema)
-          return unless schema
-
-          Format.for(mentry.format).validate_against(
-            schema,
-            { "_meta" => eff_meta, "content" => eff_content },
-          )
-        end
-
-        def validate_raw(eff_meta, eff_content, lane, format)
-          Textus::Format.for(format).validate_raw_entry!(
-            { "_meta" => eff_meta, "content" => eff_content },
-            lane,
-          )
-        end
-
-        def check_etag!(path, key, if_etag)
-          etag_before = @file_store.exists?(path) ? @file_store.etag(path) : nil
-          raise EtagMismatch.new(key, if_etag, etag_before) if if_etag && (etag_before != if_etag)
-
-          etag_before
-        end
-
-        def write_bytes(path, bytes)
-          @file_store.write(path, bytes)
-        end
-
-        def build_envelope(key, mentry, path, eff_meta, eff_body, eff_content, bytes = nil)
-          raw = bytes || @file_store.read(path)
-          Textus::Value::Envelope.build(
-            key: key, mentry: mentry, path: path,
-            meta: eff_meta, body: eff_body,
-            etag: Value::Etag.for_bytes(raw),
-            content: eff_content
-          )
-        end
-
-        def audit_put(key, etag_before, etag_after)
-          extras = @call.correlation_id ? { "correlation_id" => @call.correlation_id } : nil
-          @audit_log.append(
-            role: @call.role, verb: "put", key: key,
-            etag_before: etag_before, etag_after: etag_after,
-            extras: extras
-          )
         end
       end
     end
