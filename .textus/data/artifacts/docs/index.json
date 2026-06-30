@@ -36,6 +36,11 @@
       "link": "reference/conventions.md"
     },
     {
+      "title": "Engineering Skills Process Contract",
+      "desc": "· for maintainers and AFK agents · **read when** running `to-prd`, `to-issues`, `triage`, or `qa`",
+      "link": "reference/engineering-skills.md"
+    },
+    {
       "title": "Lanes — reference",
       "desc": "· for integrators · **read when** you need the exact lane, role, and entry semantics",
       "link": "reference/lanes.md"

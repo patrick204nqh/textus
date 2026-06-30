@@ -1,13 +1,13 @@
+# rubocop:disable Metrics/BlockLength
 Textus.workflow "docs-index" do
   match "artifacts.docs.index"
 
-  step :scan do |_, ctx|
+  step :scan do |_, ctx| # rubocop:disable Metrics/BlockLength
     resolver = ctx.container.manifest.resolver
-    call = ctx.call
+    ctx.call
 
-    extract = ->(entry) {
-      env = Textus::Action::Get.new(key: entry[:key])
-              .call(container: ctx.container, call: call)
+    extract = lambda { |entry|
+      env = ctx.container.reader.read(entry[:key])
       body = env.body.to_s
       body = body.sub(/\A---\s*\n.*?^---\s*\n/m, "")
       title = body.lines.first&.sub(/\A#\s+/, "")&.strip || entry[:key]
@@ -56,3 +56,4 @@ Textus.workflow "docs-index" do
 
   publish
 end
+# rubocop:enable Metrics/BlockLength

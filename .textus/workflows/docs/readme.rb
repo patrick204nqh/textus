@@ -11,8 +11,7 @@ Textus.workflow "readme" do
               .sort_by { |r| order.fetch(r[:key].split(".").last, 99) }
 
     sections = rows.map do |r|
-      env = Textus::Action::Get.new(key: r[:key])
-              .call(container: ctx.container, call: ctx.call)
+      env = ctx.container.reader.read(r[:key])
       { "key" => r[:key], "body" => env.body.to_s }
     end
 
