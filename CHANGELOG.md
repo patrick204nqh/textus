@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+- fix(ci): stable uid in architecture-index — use JSON.generate instead of Hash#inspect (Ruby 3.3 vs 3.4 diverge)
 - fix(ci): fetch-depth: 0 on docs job — git log needs full history for changelog workflow
 - refactor: clean up textus.rb — inline MCP namespace stub, remove dead ignores, drop duplicate Textus.workflow
 - fix: gemspec — drop partial docs/ from shipped files, ship code + README + CHANGELOG only

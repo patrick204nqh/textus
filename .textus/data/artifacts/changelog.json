@@ -1,12 +1,16 @@
 {
   "_meta": {
-    "uid": "22203c7061d770b9"
+    "uid": "75eac2c3390f9682"
   },
   "entries": [
     {
       "tag": "Unreleased",
       "date": null,
       "commits": [
+        {
+          "subject": "fix(ci): stable uid in architecture-index — use JSON.generate instead of Hash#inspect (Ruby 3.3 vs 3.4 diverge)",
+          "date": "2026-06-30"
+        },
         {
           "subject": "fix(ci): fetch-depth: 0 on docs job — git log needs full history for changelog workflow",
           "date": "2026-06-30"
