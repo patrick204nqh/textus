@@ -71,7 +71,7 @@ module Textus
 
         def handle_resource_read(uri, _server_context)
           key  = uri.delete_prefix("textus://").tr("/", ".")
-          env  = @store.get(key:)
+          env  = @store.entry(:get, key:)
           text = env.content.is_a?(Hash) ? JSON.dump(env.content) : (env.body || "").to_s
           mime = mime_for_format(env.format)
           [{ uri: uri, mimeType: mime, text: text }]

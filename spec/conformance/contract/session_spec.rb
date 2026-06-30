@@ -59,10 +59,11 @@ RSpec.describe "session contract" do
     let(:store) { Textus::Store.new(root) }
     let(:sess)  { store.with_role("human") }
 
-    it "exposes key_mv_prefix, key_delete_prefix, data_mv, rule_lint" do
-      %i[key_mv_prefix key_delete_prefix data_mv rule_lint].each do |m|
-        expect(sess).to respond_to(m)
-      end
+    it "exposes key_mv_prefix, key_delete_prefix, data_mv, rule_lint via ops/rule domain methods" do
+      expect(sess).to respond_to(:ops)
+      expect(sess).to respond_to(:rule)
+      expect(Textus::VerbRegistry::OPS_VERBS).to include(:key_mv_prefix, :key_delete_prefix, :data_mv)
+      expect(Textus::VerbRegistry::RULE_VERBS).to include(:rule_lint)
     end
   end
 end

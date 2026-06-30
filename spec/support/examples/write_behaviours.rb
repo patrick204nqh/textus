@@ -4,13 +4,13 @@
 
 # Asserts the action writes an audit row for `verb`. Host defines:
 #   let(:store)   { ... }
-#   let(:perform) { -> { store.with_role("automation").put("feeds.foo", meta: {}, body: "x") } }
+#   let(:perform) { -> { store.with_role("automation").entry(:put, "feeds.foo", meta: {}, body: "x") } }
 #
 #   it_behaves_like "an audited write", "put"
 # Asserts the action is refused for a canon-zone write when the role lacks the
 # `author` capability. Host defines:
 #   let(:store) { ... }
-#   let(:canon_forbidden_action) { -> { store.with_role("automation").put("knowledge.bar", …) } }
+#   let(:canon_forbidden_action) { -> { store.with_role("automation").entry(:put, "knowledge.bar", …) } }
 RSpec.shared_examples "a canon-write refused" do
   it "raises WriteForbidden when role lacks the capability the zone-kind requires" do
     expect { canon_forbidden_action.call }

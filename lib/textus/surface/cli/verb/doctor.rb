@@ -10,7 +10,7 @@ module Textus
             Textus::VerbRegistry.for(:doctor)
             inputs = { checks: checks&.split(",")&.map(&:strip) }
             s = store.with_role(resolved_role(store))
-            res = s.doctor(**inputs)
+            res = s.ops(:doctor, **inputs)
             emit(res, exit_code: res["ok"] ? 0 : 1)
           end
         end

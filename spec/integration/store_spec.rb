@@ -74,4 +74,45 @@ RSpec.describe Textus::Store do
   it "exposes container.workflows as a Workflow::Registry" do
     expect(described_class.new(root).container.workflows).to be_a(Textus::Workflow::Registry)
   end
+
+  describe "noun-domain API" do
+    let(:store) { described_class.new(root) }
+
+    describe "#entry" do
+      it "dispatches :list without arguments" do
+        result = store.entry(:list)
+        expect(result).to be_an(Array)
+      end
+
+      it "raises ArgumentError for a non-entry verb" do
+        expect { store.entry(:drain) }.to raise_error(ArgumentError, /drain.*not in this domain/)
+      end
+
+      it "raises ArgumentError for a verb not in any domain" do
+        expect { store.entry(:frobnicate) }.to raise_error(ArgumentError, /frobnicate.*not in this domain/)
+      end
+    end
+
+    describe "#ops" do
+      it "dispatches :boot" do
+        result = store.ops(:boot)
+        expect(result).to be_a(Hash)
+      end
+
+      it "raises ArgumentError for a non-ops verb" do
+        expect { store.ops(:get) }.to raise_error(ArgumentError, /get.*not in this domain/)
+      end
+    end
+
+    describe "#rule" do
+      it "dispatches :rule_list" do
+        result = store.rule(:rule_list)
+        expect(result).to be_an(Array)
+      end
+
+      it "raises ArgumentError for a non-rule verb" do
+        expect { store.rule(:put) }.to raise_error(ArgumentError, /put.*not in this domain/)
+      end
+    end
+  end
 end

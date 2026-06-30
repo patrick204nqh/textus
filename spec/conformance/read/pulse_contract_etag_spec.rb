@@ -20,12 +20,12 @@ RSpec.describe "Pulse contract_etag" do
   let(:expected_etag) { Textus::Value::Etag.for_contract(store.root) }
 
   it "includes contract_etag in the pulse envelope" do
-    result = store.with_role("human").pulse(since: 0)
+    result = store.with_role("human").ops(:pulse, since: 0)
     expect(result["contract_etag"]).to eq(expected_etag)
   end
 
   it "no longer emits the old manifest_etag key" do
-    result = store.with_role("human").pulse(since: 0)
+    result = store.with_role("human").ops(:pulse, since: 0)
     expect(result).not_to have_key("manifest_etag")
   end
 end

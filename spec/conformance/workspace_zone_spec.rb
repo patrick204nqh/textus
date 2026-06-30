@@ -19,13 +19,13 @@ RSpec.describe "workspace lane-kind + keep capability (ADR 0033)" do
   end
 
   it "lets a keep-holder write its workspace directly — no accept needed (closes the agent-memory gap)" do
-    store.with_role("agent").put("notebook.notes.session1", meta: { "name" => "session1" }, body: "learned X\n")
-    expect(store.with_role("agent").get("notebook.notes.session1").body).to eq("learned X\n")
+    store.with_role("agent").entry(:put, "notebook.notes.session1", meta: { "name" => "session1" }, body: "learned X\n")
+    expect(store.with_role("agent").entry(:get, "notebook.notes.session1").body).to eq("learned X\n")
   end
 
   it "refuses a role that lacks the keep capability" do
     expect do
-      store.with_role("human").put("notebook.notes.x", meta: { "name" => "x" }, body: "")
+      store.with_role("human").entry(:put, "notebook.notes.x", meta: { "name" => "x" }, body: "")
     end.to raise_error(Textus::WriteForbidden, /capability 'keep'/)
   end
 
