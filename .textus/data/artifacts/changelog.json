@@ -1,12 +1,16 @@
 {
   "_meta": {
-    "uid": "8ad562eebbed90a5"
+    "uid": "22203c7061d770b9"
   },
   "entries": [
     {
       "tag": "Unreleased",
       "date": null,
       "commits": [
+        {
+          "subject": "fix(ci): fetch-depth: 0 on docs job — git log needs full history for changelog workflow",
+          "date": "2026-06-30"
+        },
         {
           "subject": "refactor: clean up textus.rb — inline MCP namespace stub, remove dead ignores, drop duplicate Textus.workflow",
           "date": "2026-06-30"

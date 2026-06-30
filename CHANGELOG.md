@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+- fix(ci): fetch-depth: 0 on docs job — git log needs full history for changelog workflow
 - refactor: clean up textus.rb — inline MCP namespace stub, remove dead ignores, drop duplicate Textus.workflow
 - fix: gemspec — drop partial docs/ from shipped files, ship code + README + CHANGELOG only
 - fix: gemspec — remove stale SPEC.md reference, update protocol version to textus/4, point docs_uri to README
