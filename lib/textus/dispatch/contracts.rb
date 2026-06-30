@@ -53,6 +53,8 @@ module Textus
 
       RuleLint = Data.define(:candidate_yaml)
 
+      RuleTrace = Data.define(:key)
+
       DataMv = Data.define(:from, :to, :dry_run)
 
       KeyMvPrefix = Data.define(:from_prefix, :to_prefix, :dry_run)

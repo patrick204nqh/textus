@@ -86,6 +86,7 @@ module Textus
       ingest: Dispatch::Contracts::IngestEntry,
       jobs: Dispatch::Contracts::JobsAction,
       rule_lint: Dispatch::Contracts::RuleLint,
+      rule_trace: Dispatch::Contracts::RuleTrace,
       data_mv: Dispatch::Contracts::DataMv,
       key_mv_prefix: Dispatch::Contracts::KeyMvPrefix,
       key_delete_prefix: Dispatch::Contracts::KeyDeletePrefix,
@@ -105,7 +106,7 @@ module Textus
       key_mv_prefix key_delete_prefix published
     ].freeze
 
-    RULE_VERBS = %i[rule_explain rule_list schema_show rule_lint].freeze
+    RULE_VERBS = %i[rule_explain rule_list schema_show rule_lint rule_trace].freeze
 
     VERB_DOMAIN = ENTRY_VERBS.to_h { |v| [v, :entry] }
                              .merge(OPS_VERBS.to_h { |v| [v, :ops] })
@@ -408,6 +409,17 @@ module Textus
                    wire_name: :against, source: :file,
                    description: "path to candidate manifest YAML")],
       %i[cli mcp], { default: ->(v, _) { v.to_h } }, "rule lint", nil, :maintenance
+    )
+
+    # ── rule_trace ───────────────────────────────────────
+    register VerbSpec.new(
+      :rule_trace, "Trace rule resolution for a key — all candidates, winners, and the effective RuleSet.",
+      [ArgSpec.arg(name: :key, required: true, positional: true,
+                   description: "dotted key whose rule resolution to trace")],
+      %i[cli mcp], {
+        cli: ->(r, _) { r },
+        default: ->(r, _) { r },
+      }, "rule trace", nil, :maintenance
     )
   end
 end

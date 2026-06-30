@@ -109,6 +109,31 @@ RSpec.describe "textus rule group" do
     end
   end
 
+  describe "textus rule trace KEY" do
+    it "emits candidates, winners, and effective for a key" do
+      rc = run(%w[rule trace knowledge.doc])
+      expect(rc).to eq(0)
+      payload = JSON.parse(stdout.string)
+      aggregate_failures "trace shape" do
+        expect(payload["verb"]).to eq("rule_trace")
+        expect(payload["key"]).to eq("knowledge.doc")
+        expect(payload["candidates"].size).to eq(2)
+        expect(payload["winners"].size).to eq(2)
+        expect(payload["effective"]).to be_a(Hash)
+        expect(payload["winners"].first["pattern"]).to eq("knowledge.doc")
+        expect(payload["winners"].first["specificity"]).to eq(20)
+        expect(payload["winners"].first["fields"]).to have_key("retention")
+      end
+    end
+
+    it "raises UsageError when no key is supplied" do
+      rc = run(%w[rule trace])
+      expect(rc).not_to eq(0)
+      err = JSON.parse(stdout.string)
+      expect(err["code"]).to eq("usage")
+    end
+  end
+
   describe "textus rule (no subcommand)" do
     it "lists valid subcommands" do
       run(["rule"])

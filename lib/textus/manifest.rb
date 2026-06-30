@@ -18,6 +18,7 @@ require_relative "manifest/schema"
 require_relative "manifest/data"
 require_relative "manifest/policy"
 require_relative "manifest/resolver"
+require_relative "manifest/rule_trace"
 require_relative "manifest/capabilities"
 
 # Reopen Textus::Manifest (defined above as a Data.define) to attach
