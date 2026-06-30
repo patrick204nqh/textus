@@ -2,23 +2,15 @@ module Textus
   module Dispatch
     class Assembler
       COMPUTED_KEYS = %i[
-        container manifest audit_log file_store job_store schemas link_edge_store fe orch
+        container manifest audit_log file_store job_store schemas
+        link_edge_store layout freshness_evaluator orchestration
       ].to_set.freeze
 
       # One row per verb: [ContractClass, HandlerClass, { kwarg_name: :computed_key }]
-      # Computed key legend:
-      #   :container       → the Container itself
-      #   :manifest        → container.manifest
-      #   :audit_log       → container.audit_log
-      #   :file_store      → container.file_store
-      #   :job_store       → container.job_store
-      #   :schemas         → container.schemas
-      #   :link_edge_store → container.link_edge_store
-      #   :fe              → TtlEvaluator (built once)
-      #   :orch            → Orchestration (built once, shared by 4 handlers)
       HANDLER_MANIFEST = [
         [Contracts::GetEntry,        Handlers::Read::GetEntry,
-         { container: :container, freshness_evaluator: :fe }],
+         { file_store: :file_store, manifest: :manifest, layout: :layout,
+           freshness_evaluator: :freshness_evaluator }],
         [Contracts::PutEntry,        Handlers::Write::PutEntry,        { container: :container }],
         [Contracts::ListKeys,        Handlers::Read::ListKeys,         { manifest: :manifest, job_store: :job_store }],
         [Contracts::DeleteKey,       Handlers::Write::DeleteKey,       { container: :container }],
@@ -28,7 +20,8 @@ module Textus
         [Contracts::RejectProposal,  Handlers::Write::RejectProposal,  { container: :container }],
         [Contracts::EnqueueJob,      Handlers::Write::EnqueueJob,      { job_store: :job_store }],
         [Contracts::WhereEntry,      Handlers::Read::WhereEntry,       { manifest: :manifest }],
-        [Contracts::UidEntry,        Handlers::Read::UidEntry,         { container: :container }],
+        [Contracts::UidEntry,        Handlers::Read::UidEntry,
+         { file_store: :file_store, manifest: :manifest, layout: :layout }],
         [Contracts::DepsEntry,       Handlers::Read::DepsEntry,        { manifest: :manifest }],
         [Contracts::RdepsEntry,      Handlers::Read::RdepsEntry,
          { manifest: :manifest, link_edge_store: :link_edge_store }],
@@ -49,11 +42,11 @@ module Textus
          { manifest: :manifest, audit_log: :audit_log }],
         [Contracts::PulseEntries,    Handlers::Read::PulseEntries,
          { manifest: :manifest, audit_log: :audit_log,
-           file_store: :file_store, job_store: :job_store, orchestration: :orch }],
+           file_store: :file_store, job_store: :job_store, orchestration: :orchestration }],
         [Contracts::BlameEntry,      Handlers::Read::BlameEntry,
-         { manifest: :manifest, orchestration: :orch }],
-        [Contracts::KeyMvPrefix,     Handlers::Write::KeyMvPrefix,     { orchestration: :orch }],
-        [Contracts::KeyDeletePrefix, Handlers::Write::KeyDeletePrefix, { orchestration: :orch }],
+         { manifest: :manifest, orchestration: :orchestration }],
+        [Contracts::KeyMvPrefix,     Handlers::Write::KeyMvPrefix,     { orchestration: :orchestration }],
+        [Contracts::KeyDeletePrefix, Handlers::Write::KeyDeletePrefix, { orchestration: :orchestration }],
       ].freeze
 
       MIDDLEWARE_MANIFEST = [
@@ -73,16 +66,22 @@ module Textus
           audit_log: container.audit_log,
           file_store: container.file_store,
           job_store: container.job_store,
+          layout: container.layout,
           schemas: container.schemas,
           link_edge_store: container.link_edge_store,
-          fe:,
-          orch:,
+          freshness_evaluator: fe,
+          orchestration: orch,
         }
 
         registry = HandlerRegistry.new
         HANDLER_MANIFEST.each do |contract_class, handler_class, dep_map|
           deps = dep_map.transform_values { |key| computed.fetch(key) }
-          registry.register(contract_class, handler_class.new(**deps))
+          if handler_class.instance_of?(Module)
+            dep_struct = Data.define(*dep_map.keys).new(**deps)
+            registry.register(contract_class, ->(command, call) { handler_class.call(command, call, dep_struct) })
+          else
+            registry.register(contract_class, handler_class.new(**deps))
+          end
         end
 
         middleware = MIDDLEWARE_MANIFEST.map { |factory| factory.call(container) }

@@ -1,62 +1,53 @@
 module Textus
   module Handlers
     module Read
-      class PulseEntries
-        def initialize(manifest:, audit_log:, file_store:, orchestration:, job_store: nil)
-          @manifest = manifest
-          @audit_log = audit_log
-          @file_store = file_store
-          @orchestration = orchestration
-          @job_store = job_store
-        end
+      module PulseEntries
+        HANDLES = Dispatch::Contracts::PulseEntries
+        NEEDS   = %i[manifest audit_log file_store orchestration job_store].freeze
 
-        def call(command, call)
-          root  = @manifest.data.root
+        def self.call(command, call, deps)
+          root  = deps.manifest.data.root
           since = command.since || Textus::Store::Cursor.new(root: root, role: call.role).read
 
-          changed = changed_since(since, call)
+          changed = changed_since(since, call, deps)
 
           result = {
-            "cursor" => @audit_log.latest_seq,
+            "cursor" => deps.audit_log.latest_seq,
             "changed" => changed,
-            "pending_review" => review_keys(call),
+            "pending_review" => review_keys(call, deps),
             "contract_etag" => Textus::Value::Etag.for_contract(root),
-            "index_etag" => index_etag,
+            "index_etag" => index_etag(deps),
           }
 
           Textus::Store::Cursor.new(root: root, role: call.role).write(result["cursor"])
           Value::Result.success(result)
         end
 
-        private
-
-        def changed_since(since, call)
-          if @job_store
-            sqlite_rows = @job_store.audit_events_since(seq: since)
+        def self.changed_since(since, call, deps)
+          if deps.job_store
+            sqlite_rows = deps.job_store.audit_events_since(seq: since)
             return sqlite_rows.map { |r| { "key" => r["key"], "verb" => r["verb"], "seq" => r["seq"] } } if sqlite_rows.any?
           end
 
-          # Fall back to flat-log scan when SQLite index is empty for this window
-          # (writes that bypassed dispatch, fresh stores, or pre-migration entries).
-          audit = @orchestration.audit_entries(seq_since: since, call: call)
+          audit = deps.orchestration.audit_entries(seq_since: since, call: call)
           return [] if audit.failure?
 
           audit.value.fetch("rows") || []
         end
 
-        def review_keys(call)
-          queue = @manifest.policy.queue_lane
+        def self.review_keys(call, deps)
+          queue = deps.manifest.policy.queue_lane
           return [] unless queue
 
-          result = @orchestration.list_keys(prefix: nil, lane: queue, call: call)
+          result = deps.orchestration.list_keys(prefix: nil, lane: queue, call: call)
           return [] unless result.success?
 
           result.value.fetch("rows").map { |r| r["key"] }
         end
 
-        def index_etag
-          path = @manifest.resolver.resolve("artifacts.system.index").path
-          File.exist?(path) ? @file_store.etag(path) : nil
+        def self.index_etag(deps)
+          path = deps.manifest.resolver.resolve("artifacts.system.index").path
+          File.exist?(path) ? deps.file_store.etag(path) : nil
         rescue Textus::Error
           nil
         end

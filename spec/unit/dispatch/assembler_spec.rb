@@ -19,7 +19,7 @@ RSpec.describe Textus::Dispatch::Assembler do
       described_class::HANDLER_MANIFEST.each do |row|
         expect(row.size).to eq(3), "row for #{row.first} has #{row.size} elements"
         expect(row[0]).to be_a(Class)
-        expect(row[1]).to be_a(Class)
+        expect(row[1]).to be_a(Module)
         expect(row[2]).to be_a(Hash)
       end
     end

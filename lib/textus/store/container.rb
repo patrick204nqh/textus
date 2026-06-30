@@ -63,11 +63,17 @@ module Textus
       end
 
       def self.orchestration_for(container)
+        list_deps = Data.define(:manifest, :job_store).new(
+          manifest: container.manifest, job_store: container.job_store,
+        )
+        audit_deps = Data.define(:manifest, :audit_log).new(
+          manifest: container.manifest, audit_log: container.audit_log,
+        )
         Orchestration.new(
-          list_keys: Handlers::Read::ListKeys.new(manifest: container.manifest, job_store: container.job_store),
+          list_keys: ->(command, call) { Handlers::Read::ListKeys.call(command, call, list_deps) },
           move_key: Handlers::Write::MoveKey.new(container: container, manifest: container.manifest),
           delete_key: Handlers::Write::DeleteKey.new(container: container),
-          audit_entries: Handlers::Read::AuditEntries.new(manifest: container.manifest, audit_log: container.audit_log),
+          audit_entries: ->(command, call) { Handlers::Read::AuditEntries.call(command, call, audit_deps) },
         )
       end
 

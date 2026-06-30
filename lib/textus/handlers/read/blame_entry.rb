@@ -1,36 +1,32 @@
 module Textus
   module Handlers
     module Read
-      class BlameEntry
-        def initialize(manifest:, orchestration:)
-          @manifest = manifest
-          @orchestration = orchestration
-        end
+      module BlameEntry
+        HANDLES = Dispatch::Contracts::BlameEntry
+        NEEDS   = %i[manifest orchestration].freeze
 
-        def call(command, call)
-          root = @manifest.data.root
-          audit = @orchestration.audit_entries(key: command.key, limit: command.limit, call: call)
+        def self.call(command, call, deps)
+          root = deps.manifest.data.root
+          audit = deps.orchestration.audit_entries(key: command.key, limit: command.limit, call: call)
           return audit if audit.failure?
 
           audit_rows = audit.value.fetch("rows")
 
-          path = resolve_path(command.key)
+          path = resolve_path(command.key, deps)
           return Value::Result.success(audit_rows.map { |row| row.merge("git" => nil) }) unless git_tracked?(path, root: root)
 
           Value::Result.success(audit_rows.map { |row| row.merge("git" => git_commit_at(path, timestamp: row["ts"], root: root)) })
         end
 
-        private
-
-        def resolve_path(key)
-          res = @manifest.resolver.resolve(key)
+        def self.resolve_path(key, deps)
+          res = deps.manifest.resolver.resolve(key)
           path = res.path
-          path || Textus::Key::Path.resolve(@manifest.data, res.entry)
+          path || Textus::Key::Path.resolve(deps.manifest.data, res.entry)
         rescue Textus::Error
           nil
         end
 
-        def git_tracked?(path, root:)
+        def self.git_tracked?(path, root:)
           return false if path.nil? || !File.exist?(path) || !git_repo?(root)
 
           _out, _err, status = Open3.capture3("git", "ls-files", "--error-unmatch", path, chdir: root)
@@ -39,7 +35,7 @@ module Textus
           false
         end
 
-        def git_repo?(root)
+        def self.git_repo?(root)
           dir = root
           loop do
             return true if File.directory?(File.join(dir, ".git"))
@@ -51,7 +47,7 @@ module Textus
           end
         end
 
-        def git_commit_at(path, timestamp:, root:)
+        def self.git_commit_at(path, timestamp:, root:)
           args = ["git", "log", "-1"]
           args << "--before=#{timestamp}" if timestamp
           args += ["--format=%H%x09%an%x09%aI%x09%s", "--", path]
