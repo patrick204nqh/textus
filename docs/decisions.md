@@ -15,6 +15,7 @@ Live status of every architecture decision, derived from each file's `**Status:*
 
 | # | Title | Date | Status |
 |---|---|---|---|
+| [0121](architecture/decisions/0121-textus-native-links.md) | textus native links |  |  |
 | [0120](architecture/decisions/0120-atomic-canon-composed-artifacts.md) | atomic canon composed artifacts |  |  |
 | [0119](architecture/decisions/0119-architecture-deepening-phase-2.md) | architecture deepening phase 2 |  |  |
 | [0118](architecture/decisions/0118-sources-first-class-envelope-field.md) | sources first class envelope field |  |  |
