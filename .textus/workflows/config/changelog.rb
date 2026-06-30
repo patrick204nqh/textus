@@ -5,7 +5,7 @@ Textus.workflow "changelog" do
   step :build do |_, _|
     require "digest"
 
-    raw = `git log --pretty=format:"%D|||%s|||%ad" --date=short 2>/dev/null`.strip
+    raw = `git log --no-merges --pretty=format:"%D|||%s|||%ad" --date=short 2>/dev/null`.strip
     lines = raw.split("\n").map { |l| l.split("|||") }
 
     entries = []

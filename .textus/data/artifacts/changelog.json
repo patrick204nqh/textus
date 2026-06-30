@@ -1,12 +1,16 @@
 {
   "_meta": {
-    "uid": "f5683fb03fa03aab"
+    "uid": "8c13903a73559e46"
   },
   "entries": [
     {
       "tag": "Unreleased",
       "date": null,
       "commits": [
+        {
+          "subject": "fix: remove orphaned docs/design/architecture.md sentinel",
+          "date": "2026-06-30"
+        },
         {
           "subject": "refactor: rules key ordering, contributing/security/changelog/coc as artifacts",
           "date": "2026-06-30"
@@ -218,19 +222,11 @@
           "date": "2026-06-29"
         },
         {
-          "subject": "Merge pull request #244 from patrick204nqh/api-interface-hygiene",
-          "date": "2026-06-26"
-        },
-        {
           "subject": "style(rubocop): align ADR-0121 refactor formatting",
           "date": "2026-06-26"
         },
         {
           "subject": "refactor: api and interface hygiene consolidation (ADR-0121)",
-          "date": "2026-06-23"
-        },
-        {
-          "subject": "Merge pull request #243 from patrick204nqh/bus-pipeline-design-b",
           "date": "2026-06-23"
         },
         {
@@ -243,10 +239,6 @@
         },
         {
           "subject": "workflow(adr_log): produce deterministic uid for adr-log to avoid CI drift",
-          "date": "2026-06-23"
-        },
-        {
-          "subject": "Merge remote-tracking branch 'origin/main' into bus-pipeline-design-b",
           "date": "2026-06-23"
         },
         {
@@ -310,10 +302,6 @@
           "date": "2026-06-23"
         },
         {
-          "subject": "Merge pull request #237 from patrick204nqh/bus-pipeline-architecture",
-          "date": "2026-06-23"
-        },
-        {
           "subject": "docs: add engineering skills process contract",
           "date": "2026-06-23"
         },
@@ -362,21 +350,7 @@
           "date": "2026-06-22"
         },
         {
-          "subject": "Merge pull request #236 from patrick204nqh/architecture-deepening-phase-3",
-          "date": "2026-06-22"
-        },
-        {
           "subject": "Architecture deepening phase 3 — write-path standardisation, container fix, format dedup",
-          "date": "2026-06-22"
-        }
-      ]
-    },
-    {
-      "tag": "v0.55.1",
-      "date": "2026-06-22",
-      "commits": [
-        {
-          "subject": "textus 0.55.1 — CI fix: converge_now purges done jobs",
           "date": "2026-06-22"
         },
         {
@@ -454,10 +428,6 @@
           "date": "2026-06-17"
         },
         {
-          "subject": "Merge pull request #222 from patrick204nqh/feat/docs-knowledge-pipeline",
-          "date": "2026-06-17"
-        },
-        {
           "subject": "fix: use Time.now.utc in ingest spec to match action's key derivation",
           "date": "2026-06-17"
         },
@@ -492,16 +462,6 @@
         {
           "subject": "chore: adopt contributor-conventions.md into knowledge zone",
           "date": "2026-06-16"
-        }
-      ]
-    },
-    {
-      "tag": "v0.54.0",
-      "date": "2026-06-16",
-      "commits": [
-        {
-          "subject": "Merge pull request #221 from patrick204nqh/fix/mcp-resources-capability",
-          "date": "2026-06-16"
         },
         {
           "subject": "fix: correct ADR filenames in CHANGELOG links (0114/0115/0116)",
@@ -521,10 +481,6 @@
         },
         {
           "subject": "fix: advertise resources capability in MCP initialize handshake",
-          "date": "2026-06-16"
-        },
-        {
-          "subject": "Merge pull request #220 from patrick204nqh/agent-session-lifecycle",
           "date": "2026-06-16"
         },
         {
@@ -592,10 +548,6 @@
           "date": "2026-06-16"
         },
         {
-          "subject": "Merge pull request #219 from patrick204nqh/raw-ingest-pipeline",
-          "date": "2026-06-16"
-        },
-        {
           "subject": "style: fix extra blank lines left by BURN deletion (rubocop)",
           "date": "2026-06-16"
         },
@@ -641,10 +593,6 @@
         },
         {
           "subject": "remove Jobs::Refresh — workflow covers periodic re-derivation (ADR 0115)",
-          "date": "2026-06-16"
-        },
-        {
-          "subject": "Merge pull request #218 from patrick204nqh/workflow-redesign",
           "date": "2026-06-16"
         },
         {
@@ -790,19 +738,11 @@
           "date": "2026-06-15"
         },
         {
-          "subject": "Merge pull request #217 from patrick204nqh/bump-v0.53.0",
-          "date": "2026-06-15"
-        },
-        {
           "subject": "chore: regenerate generated files via textus drain",
           "date": "2026-06-15"
         },
         {
           "subject": "chore: bump to 0.53.0",
-          "date": "2026-06-15"
-        },
-        {
-          "subject": "Merge pull request #216 from patrick204nqh/sandi-metz-refactoring",
           "date": "2026-06-15"
         },
         {
@@ -850,10 +790,6 @@
           "date": "2026-06-15"
         },
         {
-          "subject": "Merge pull request #215 from patrick204nqh/auth-gate-cleanup",
-          "date": "2026-06-15"
-        },
-        {
           "subject": "fix(cli): restore role_filter in RoleScope verb dispatch",
           "date": "2026-06-15"
         },
@@ -875,10 +811,6 @@
         },
         {
           "subject": "refactor: remove double auth in Accept; drop dead UnknownKey rescue from check_action!",
-          "date": "2026-06-14"
-        },
-        {
-          "subject": "Merge pull request #214 from patrick204nqh/auth-consolidation",
           "date": "2026-06-14"
         },
         {
@@ -939,10 +871,6 @@
         },
         {
           "subject": "refactor: replace command_to_action regex with VERB_COMMAND.invert constant",
-          "date": "2026-06-14"
-        },
-        {
-          "subject": "Merge pull request #213 from patrick204nqh/refactor/layer-redesign",
           "date": "2026-06-14"
         },
         {
@@ -1023,10 +951,6 @@
         },
         {
           "subject": "test: delete specs for dispatch layer being replaced",
-          "date": "2026-06-14"
-        },
-        {
-          "subject": "Merge pull request #212 from patrick204nqh/dispatch-consolidation",
           "date": "2026-06-14"
         },
         {
@@ -1134,10 +1058,6 @@
           "date": "2026-06-14"
         },
         {
-          "subject": "Merge pull request #211 from patrick204nqh/feat/actions-migration-2026-06-13",
-          "date": "2026-06-14"
-        },
-        {
           "subject": "test(dispatch): migrate verb specs to actions layout",
           "date": "2026-06-14"
         },
@@ -1146,19 +1066,7 @@
           "date": "2026-06-14"
         },
         {
-          "subject": "Merge pull request #210 from patrick204nqh/refactor/foundation-refactor-2026-06-13",
-          "date": "2026-06-14"
-        },
-        {
           "subject": "refactor!: complete foundation refactor and dispatch gate rollout",
-          "date": "2026-06-13"
-        },
-        {
-          "subject": "Merge pull request #209 from patrick204nqh/feat/data-watch-rules-redesign",
-          "date": "2026-06-13"
-        },
-        {
-          "subject": "Merge pull request #208 from patrick204nqh/feat/step-model-full-suite-green",
           "date": "2026-06-13"
         },
         {
@@ -1194,15 +1102,7 @@
           "date": "2026-06-10"
         },
         {
-          "subject": "Merge pull request #207 from patrick204nqh/feat/opencode-config",
-          "date": "2026-06-10"
-        },
-        {
           "subject": "Configure opencode.json and enhance agent orientation",
-          "date": "2026-06-10"
-        },
-        {
-          "subject": "Merge pull request #206 from patrick204nqh/feat/opencode-integration",
           "date": "2026-06-10"
         },
         {
@@ -1210,25 +1110,11 @@
           "date": "2026-06-10"
         },
         {
-          "subject": "Merge pull request #205 from patrick204nqh/feat/adr-0113-proposal-block-meta",
-          "date": "2026-06-09"
-        },
-        {
           "subject": "docs: publish ADR 0113 + regenerate adr-log (drain)",
           "date": "2026-06-09"
         },
         {
           "subject": "feat: proposal block speaks _meta, not frontmatter (ADR 0113)",
-          "date": "2026-06-09"
-        }
-      ]
-    },
-    {
-      "tag": "v0.52.0",
-      "date": "2026-06-09",
-      "commits": [
-        {
-          "subject": "Merge pull request #204 from patrick204nqh/feat/authority-reference-projection",
           "date": "2026-06-09"
         },
         {
@@ -1248,10 +1134,6 @@
           "date": "2026-06-09"
         },
         {
-          "subject": "Merge pull request #203 from patrick204nqh/refactor/converge-vocabulary-cleanup",
-          "date": "2026-06-08"
-        },
-        {
           "subject": "refactor: finish converge rename in SPEC.md + example manifest (ADR 0111)",
           "date": "2026-06-08"
         },
@@ -1260,43 +1142,7 @@
           "date": "2026-06-08"
         },
         {
-          "subject": "Merge pull request #201 from patrick204nqh/feat/job-worker-enqueue",
-          "date": "2026-06-08"
-        },
-        {
-          "subject": "Merge pull request #200 from patrick204nqh/feat/job-worker-rename",
-          "date": "2026-06-08"
-        },
-        {
-          "subject": "Merge pull request #199 from patrick204nqh/feat/job-worker-reactive",
-          "date": "2026-06-08"
-        },
-        {
-          "subject": "Merge pull request #202 from patrick204nqh/feat/job-worker-verbs",
-          "date": "2026-06-08"
-        },
-        {
-          "subject": "Merge pull request #197 from patrick204nqh/feat/job-worker-substrate",
-          "date": "2026-06-08"
-        },
-        {
-          "subject": "Merge branch 'feat/job-worker-rename' into feat/job-worker-enqueue",
-          "date": "2026-06-08"
-        },
-        {
-          "subject": "Merge branch 'feat/job-worker-reactive' into feat/job-worker-rename",
-          "date": "2026-06-08"
-        },
-        {
-          "subject": "Merge branch 'feat/job-worker-verbs' into feat/job-worker-reactive",
-          "date": "2026-06-08"
-        },
-        {
           "subject": "test(queue): make #198 conformance green for added drain/jobs/serve surface",
-          "date": "2026-06-08"
-        },
-        {
-          "subject": "Merge branch 'feat/job-worker-rename' into feat/job-worker-enqueue",
           "date": "2026-06-08"
         },
         {
@@ -1305,18 +1151,6 @@
         },
         {
           "subject": "docs(queue): complete reconcile→drain rename in canon docs + templates",
-          "date": "2026-06-08"
-        },
-        {
-          "subject": "Merge branch 'feat/job-worker-rename' into feat/job-worker-enqueue",
-          "date": "2026-06-08"
-        },
-        {
-          "subject": "Merge branch 'feat/job-worker-reactive' into feat/job-worker-rename",
-          "date": "2026-06-08"
-        },
-        {
-          "subject": "Merge branch 'feat/job-worker-verbs' into feat/job-worker-reactive",
           "date": "2026-06-08"
         },
         {
@@ -2378,16 +2212,6 @@
         {
           "subject": "v0.4.0: extension API redesign — action primitive + doctor_check (#4) (#5)",
           "date": "2026-05-20"
-        }
-      ]
-    },
-    {
-      "tag": "v0.3.0",
-      "date": "2026-05-20",
-      "commits": [
-        {
-          "subject": "Merge pull request #3 from patrick204nqh/feat/store-root-flag",
-          "date": "2026-05-20"
         },
         {
           "subject": "chore(release): refresh Gemfile.lock for 0.3.0",
@@ -2429,10 +2253,6 @@
       "commits": [
         {
           "subject": "release: prep 0.2.0 (workflow + changelog + gemspec cleanup)",
-          "date": "2026-05-20"
-        },
-        {
-          "subject": "Merge pull request #2 from patrick204nqh/feat/textus-0.2",
           "date": "2026-05-20"
         },
         {
