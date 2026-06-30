@@ -8,6 +8,10 @@
       "date": null,
       "commits": [
         {
+          "subject": "refactor: remove manual uid from all workflows — textus manages uid natively via inject_all",
+          "date": "2026-06-30"
+        },
+        {
           "subject": "fix(ci): stable uid in architecture-index — use JSON.generate instead of Hash#inspect (Ruby 3.3 vs 3.4 diverge)",
           "date": "2026-06-30"
         },
