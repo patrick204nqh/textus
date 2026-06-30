@@ -124,6 +124,13 @@ entries:
     source: { from: external, command: "true", sources: [] }
     publish: [{ to: .claude-plugin/plugin.json }]
   # Docs — generated reference documentation
+  - key: artifacts.design.invariants
+    lane: artifacts
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
+    publish:
+      - { to: docs/design/invariants.md, template: docs/invariants.erb }
   - key: artifacts.docs.adr-log
     lane: artifacts
     kind: produced
