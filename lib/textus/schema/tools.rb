@@ -65,7 +65,7 @@ module Textus
           end
           next unless changed
 
-          ops.entry(:put, key: row[:key], meta: meta, body: env.body)
+          ops.put(key: row[:key], meta: meta, body: env.body)
           touched << row[:key]
         end
         { "protocol" => PROTOCOL, "migrated" => touched, "renames" => renames }
@@ -85,7 +85,7 @@ module Textus
       # Orchestrator-free read: schema tooling must never trigger a fetch
       # while inspecting/migrating entries (ADR 0062).
       def self.pure_get(store, role, key)
-        store.with_role(role).entry(:get, key: key)
+        store.with_role(role).get(key: key)
       end
 
       def self.load_schema(store, name)

@@ -75,44 +75,37 @@ RSpec.describe Textus::Store do
     expect(described_class.new(root).container.workflows).to be_a(Textus::Workflow::Registry)
   end
 
-  describe "noun-domain API" do
+  describe "unified dispatch via method_missing" do
     let(:store) { described_class.new(root) }
 
-    describe "#entry" do
-      it "dispatches :list without arguments" do
-        result = store.entry(:list)
-        expect(result).to be_an(Array)
-      end
-
-      it "raises ArgumentError for a non-entry verb" do
-        expect { store.entry(:drain) }.to raise_error(ArgumentError, /drain.*not in this domain/)
-      end
-
-      it "raises ArgumentError for a verb not in any domain" do
-        expect { store.entry(:frobnicate) }.to raise_error(ArgumentError, /frobnicate.*not in this domain/)
-      end
+    it "dispatches a read verb via method name" do
+      result = store.list
+      expect(result).to be_an(Array)
     end
 
-    describe "#ops" do
-      it "dispatches :boot" do
-        result = store.ops(:boot)
-        expect(result).to be_a(Hash)
-      end
-
-      it "raises ArgumentError for a non-ops verb" do
-        expect { store.ops(:get) }.to raise_error(ArgumentError, /get.*not in this domain/)
-      end
+    it "dispatches :boot" do
+      result = store.boot
+      expect(result).to be_a(Hash)
     end
 
-    describe "#rule" do
-      it "dispatches :rule_list" do
-        result = store.rule(:rule_list)
-        expect(result).to be_an(Array)
-      end
+    it "dispatches :rule_list" do
+      result = store.rule_list
+      expect(result).to be_an(Array)
+    end
 
-      it "raises ArgumentError for a non-rule verb" do
-        expect { store.rule(:put) }.to raise_error(ArgumentError, /put.*not in this domain/)
-      end
+    it "responds_to any registered verb" do
+      expect(store).to respond_to(:list)
+      expect(store).to respond_to(:get)
+      expect(store).to respond_to(:boot)
+      expect(store).to respond_to(:rule_list)
+    end
+
+    it "does not respond_to an unknown verb" do
+      expect(store).not_to respond_to(:frobnicate)
+    end
+
+    it "requires keyword arguments for verbs" do
+      expect { store.list("knowledge") }.to raise_error(ArgumentError, /keyword arguments only/)
     end
   end
 end

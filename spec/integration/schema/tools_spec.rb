@@ -20,10 +20,9 @@ RSpec.describe Textus::Schema::Tools do
 
   it "schema-init infers a schema from an entry's frontmatter" do
     s = store
-    s.with_role("human").entry(:put,
-                               key: "knowledge.people.alice",
-                               meta: { "name" => "alice", "org" => "acme", "age" => 30 },
-                               body: "")
+    s.with_role("human").put(key: "knowledge.people.alice",
+                             meta: { "name" => "alice", "org" => "acme", "age" => 30 },
+                             body: "")
 
     res = Textus::Schema::Tools.init(s, name: "person", from: "knowledge.people.alice")
     expect(res["schema_name"]).to eq("person")
@@ -35,14 +34,12 @@ RSpec.describe Textus::Schema::Tools do
 
   it "schema-diff reports entries that violate the schema" do
     s = store
-    s.with_role("human").entry(:put,
-                               key: "knowledge.people.alice",
-                               meta: { "name" => "alice", "org" => "acme" },
-                               body: "")
-    s.with_role("human").entry(:put,
-                               key: "knowledge.people.bob",
-                               meta: { "name" => "bob" },
-                               body: "")
+    s.with_role("human").put(key: "knowledge.people.alice",
+                             meta: { "name" => "alice", "org" => "acme" },
+                             body: "")
+    s.with_role("human").put(key: "knowledge.people.bob",
+                             meta: { "name" => "bob" },
+                             body: "")
 
     File.write(File.join(root, "schemas", "person.yaml"), YAML.dump({
                                                                       "name" => "person",
@@ -60,10 +57,9 @@ RSpec.describe Textus::Schema::Tools do
 
   it "auto-applies migrate_from on schema-migrate without --rename" do
     s = store
-    s.with_role("human").entry(:put,
-                               key: "knowledge.people.alice",
-                               meta: { "name" => "alice" },
-                               body: "hello")
+    s.with_role("human").put(key: "knowledge.people.alice",
+                             meta: { "name" => "alice" },
+                             body: "hello")
 
     File.write(File.join(root, "schemas", "person.yaml"), YAML.dump({
                                                                       "name" => "person",
@@ -74,26 +70,24 @@ RSpec.describe Textus::Schema::Tools do
 
     res = Textus::Schema::Tools.migrate(store, name: "person", rename: nil)
     expect(res["migrated"]).not_to be_empty
-    env = store.with_role(Textus::Value::Role::DEFAULT).entry(:get, key: res["migrated"].first)
+    env = store.with_role(Textus::Value::Role::DEFAULT).get(key: res["migrated"].first)
     expect(env.meta).to have_key("full_name")
     expect(env.meta).not_to have_key("name")
   end
 
   it "schema-migrate renames a frontmatter field across entries that have it" do
     s = store
-    s.with_role("human").entry(:put,
-                               key: "knowledge.people.alice",
-                               meta: { "name" => "alice", "org" => "acme" },
-                               body: "hello")
-    s.with_role("human").entry(:put,
-                               key: "knowledge.people.bob",
-                               meta: { "name" => "bob", "company" => "other" },
-                               body: "world")
+    s.with_role("human").put(key: "knowledge.people.alice",
+                             meta: { "name" => "alice", "org" => "acme" },
+                             body: "hello")
+    s.with_role("human").put(key: "knowledge.people.bob",
+                             meta: { "name" => "bob", "company" => "other" },
+                             body: "world")
 
     res = Textus::Schema::Tools.migrate(store, name: "person", rename: "org:organization")
     expect(res["migrated"]).to eq(["knowledge.people.alice"])
 
-    env = store.with_role(Textus::Value::Role::DEFAULT).entry(:get, key: "knowledge.people.alice")
+    env = store.with_role(Textus::Value::Role::DEFAULT).get(key: "knowledge.people.alice")
     expect(env.meta["organization"]).to eq("acme")
     expect(env.meta).not_to have_key("org")
   end

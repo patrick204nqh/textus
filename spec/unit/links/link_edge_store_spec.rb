@@ -2,12 +2,15 @@ require "spec_helper"
 require "tmpdir"
 
 RSpec.describe Textus::Links::LinkEdgeStore do
+  subject(:store) { described_class.new(db:) }
+
   let(:tmp) { Dir.mktmpdir }
   let(:db)  { Textus::Port::Store.new(root: File.join(tmp, ".textus")).setup! }
 
-  after { db.close; FileUtils.rm_rf(tmp) }
-
-  subject(:store) { described_class.new(db:) }
+  after do
+    db.close
+    FileUtils.rm_rf(tmp)
+  end
 
   it "records a link from source to target key" do
     store.record(from_key: "artifacts.how-to.guide", to_key: "artifacts.reference.lanes")

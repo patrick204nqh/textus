@@ -30,10 +30,10 @@ module Textus
           @steps << Step.new(name: name, callable: callable, timeout: t)
         end
 
-        def parallel(&block)
+        def parallel(&)
           saved = @steps
           @steps = []
-          instance_eval(&block)
+          instance_eval(&)
           parallel_steps = @steps.dup
           @steps = saved << Parallel.new(steps: parallel_steps)
         end

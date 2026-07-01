@@ -19,8 +19,8 @@ RSpec.describe "doctor verb dispatch" do
 
   let(:store) { Textus::Store.new(root) }
 
-  it "dispatches store.ops(:doctor) to Read::Doctor and returns the report envelope" do
-    res = store.ops(:doctor)
+  it "dispatches store.doctor to DoctorStore and returns the report envelope" do
+    res = store.doctor
     expect(res["protocol"]).to eq(Textus::PROTOCOL)
     expect(res).to have_key("ok")
     expect(res).to have_key("issues")
@@ -28,11 +28,11 @@ RSpec.describe "doctor verb dispatch" do
   end
 
   it "forwards the checks: filter through the verb" do
-    res = store.with_role("human").ops(:doctor, checks: ["protocol_version"])
+    res = store.with_role("human").doctor(checks: ["protocol_version"])
     expect(res).to have_key("issues")
   end
 
   it "raises on an unknown check (delegated to Doctor.build)" do
-    expect { store.ops(:doctor, checks: ["nope"]) }.to raise_error(Textus::UsageError, /unknown doctor check/)
+    expect { store.doctor(checks: ["nope"]) }.to raise_error(Textus::UsageError, /unknown doctor check/)
   end
 end

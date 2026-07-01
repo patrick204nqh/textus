@@ -10,11 +10,15 @@ module Textus
 
           Dir.glob(File.join(root, ".state", "ephemeral", "cursors", "*")).each do |cursor_path|
             role = File.basename(cursor_path)
-            cursor_seq = Integer(File.read(cursor_path).strip) rescue next
+            cursor_seq = begin
+              Integer(File.read(cursor_path).strip)
+            rescue StandardError
+              next
+            end
             next if cursor_seq <= 0
 
             audit_log = Port::AuditLog.new(root, layout: geometry,
-                                            keep: manifest.data.audit_config[:keep])
+                                                 keep: manifest.data.audit_config[:keep])
             min_avail = audit_log.send(:min_available_seq)
 
             if min_avail && cursor_seq < min_avail
@@ -24,11 +28,15 @@ module Textus
 
             keep = manifest.data.audit_config[:keep]
             oldest_meta_path = geometry.audit_rotated_meta_path(keep)
-            if File.exist?(oldest_meta_path)
-              meta = JSON.parse(File.read(oldest_meta_path)) rescue nil
-              if meta && cursor_seq >= meta["min_seq"] && cursor_seq <= meta["max_seq"]
-                issues << at_risk_issue(role, cursor_seq, meta["min_seq"], meta["max_seq"])
-              end
+            next unless File.exist?(oldest_meta_path)
+
+            meta = begin
+              JSON.parse(File.read(oldest_meta_path))
+            rescue StandardError
+              nil
+            end
+            if meta && cursor_seq >= meta["min_seq"] && cursor_seq <= meta["max_seq"]
+              issues << at_risk_issue(role, cursor_seq, meta["min_seq"], meta["max_seq"])
             end
           end
 

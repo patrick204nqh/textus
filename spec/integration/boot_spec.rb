@@ -108,7 +108,7 @@ RSpec.describe Textus::Boot do
     expect(env).not_to have_key("orientation")
   end
 
-  it "omits context when knowledge.ops(:boot) does not exist" do
+  it "omits context when knowledge.boot does not exist" do
     env = described_class.build(container: store.container)
     expect(env).not_to have_key("context")
   end

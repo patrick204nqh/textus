@@ -9,9 +9,7 @@ module Textus
       module_function
 
       def eager_load!
-        [File.expand_path("../handlers", __dir__), File.expand_path("../../use_cases", __dir__)].each do |dir|
-          Dir[File.join(dir, "**", "*.rb")].each { |f| require f }
-        end
+        Dir[File.expand_path("../../use_cases/**/*.rb", __dir__)].each { |f| require f }
       end
 
       def build(ctx, handlers: nil)
@@ -45,7 +43,7 @@ module Textus
       end
 
       def discover_all
-        [Textus::Dispatch::Handlers].flat_map do |ns|
+        [Textus::UseCases::Read, Textus::UseCases::Write, Textus::UseCases::Ops].flat_map do |ns|
           ns.constants(false).filter_map { |c| ns.const_get(c) }.grep(Module)
         end
       end

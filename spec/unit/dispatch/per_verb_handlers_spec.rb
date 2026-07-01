@@ -18,61 +18,61 @@ RSpec.describe "dispatch routing" do
   before { Textus::Dispatch::HandlerResolver.eager_load! }
 
   it "routes get through the read concern" do
-    store.entry(:put, key: "knowledge.foo", _meta: {}, body: "v1")
-    env = store.entry(:get, key: "knowledge.foo")
+    store.put(key: "knowledge.foo", _meta: {}, body: "v1")
+    env = store.get(key: "knowledge.foo")
     expect(env).to be_a(Textus::Value::Envelope)
     expect(env.body.to_s.chomp).to eq("v1")
   end
 
   it "routes put through the write concern" do
-    result = store.entry(:put, key: "knowledge.foo", _meta: {}, body: "v2")
+    result = store.put(key: "knowledge.foo", _meta: {}, body: "v2")
     expect(result).to be_a(Textus::Value::Envelope)
-    expect(store.entry(:get, key: "knowledge.foo").body.to_s.chomp).to eq("v2")
+    expect(store.get(key: "knowledge.foo").body.to_s.chomp).to eq("v2")
   end
 
   it "routes list through the read concern" do
-    rows = store.entry(:list, prefix: "knowledge")
+    rows = store.list(prefix: "knowledge")
     expect(rows).to be_an(Array)
   end
 
   it "routes key_mv through the write concern" do
-    mv_store.entry(:put, key: "knowledge.foo", _meta: {}, body: "mv")
-    result = mv_store.entry(:key_mv, old_key: "knowledge.foo", new_key: "knowledge.moved", if_etag: nil, dry_run: false)
+    mv_store.put(key: "knowledge.foo", _meta: {}, body: "mv")
+    result = mv_store.key_mv(old_key: "knowledge.foo", new_key: "knowledge.moved", if_etag: nil, dry_run: false)
 
     expect(result).to be_a(Hash)
     expect(result["to_key"]).to eq("knowledge.moved")
-    expect(mv_store.entry(:get, key: "knowledge.moved").body.to_s.chomp).to eq("mv")
+    expect(mv_store.get(key: "knowledge.moved").body.to_s.chomp).to eq("mv")
   end
 
   it "routes key_delete through the write concern" do
-    store.entry(:put, key: "knowledge.foo", _meta: {}, body: "delete")
-    result = store.entry(:key_delete, key: "knowledge.foo", if_etag: nil)
+    store.put(key: "knowledge.foo", _meta: {}, body: "delete")
+    result = store.key_delete(key: "knowledge.foo", if_etag: nil)
 
     expect(result).to be_a(Hash)
     expect(result["deleted"]).to be(true)
-    expect { store.entry(:get, key: "knowledge.foo") }.to raise_error(Textus::ActionError)
+    expect { store.get(key: "knowledge.foo") }.to raise_error(Textus::ActionError)
   end
 
   it "routes data_mv through the write concern" do
-    result = store.ops(:data_mv, from: "knowledge", to: "knowledge_renamed", dry_run: true)
+    result = store.data_mv(from: "knowledge", to: "knowledge_renamed", dry_run: true)
     expect(result).to be_a(Textus::Store::Jobs::Plan)
     expect(result.steps.first["op"]).to eq("rename_zone")
   end
 
   it "routes jobs through the maintenance concern" do
-    result = store.ops(:jobs, state: "ready", action: nil, job_id: nil)
+    result = store.jobs(state: "ready", action: nil, job_id: nil)
     expect(result).to be_a(Hash)
     expect(result["ok"]).to be(true)
   end
 
   it "routes drain through the maintenance concern" do
-    result = store.ops(:drain, prefix: nil, lane: nil)
+    result = store.drain(prefix: nil, lane: nil)
     expect(result).to be_a(Hash)
     expect(result).to include("ok")
   end
 
   it "routes pulse through the read concern" do
-    result = store.ops(:pulse, since: nil)
+    result = store.pulse(since: nil)
     expect(result).to be_a(Hash)
     expect(result).to include("cursor")
     expect(result).to include("changed")

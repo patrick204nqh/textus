@@ -64,13 +64,13 @@ module Textus
       []
     end
 
-    def backtrack(trace, a, b, x, y)
+    def backtrack(trace, _a, _b, x, y)
       script = []
       d = trace.size - 1
-      return script if d < 0
+      return script if d.negative?
 
       k = x - y
-      while d > 0
+      while d.positive?
         prev_v = trace[d - 1]
         prev_k = if k == -d || (k != d && (prev_v[k - 1] || -1) < (prev_v[k + 1] || -1))
                    k + 1
@@ -139,7 +139,7 @@ module Textus
 
         hunks << {
           "a_start" => a_start, "b_start" => b_start,
-          "a_lines" => a_lines_hunk, "b_lines" => b_lines_hunk,
+          "a_lines" => a_lines_hunk, "b_lines" => b_lines_hunk
         }
 
         i = hunk_end + 1

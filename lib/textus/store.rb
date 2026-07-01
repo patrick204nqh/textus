@@ -8,6 +8,8 @@ module Textus
       define_method(field) { @ctx.public_send(field) }
     end
 
+    DOMAIN_VERBS = (VerbRegistry::ENTRY_VERBS + VerbRegistry::OPS_VERBS + VerbRegistry::RULE_VERBS).to_set.freeze
+
     def self.discover(start_dir = Dir.pwd, root: nil)
       explicit = root || ENV.fetch("TEXTUS_ROOT", nil)
       return discover_explicit(explicit) if explicit
@@ -51,9 +53,23 @@ module Textus
 
     def dry_run? = @dry_run
 
-    def entry(verb, **) = _dispatch_in_domain(verb, VerbRegistry::ENTRY_VERBS, **)
-    def ops(verb, **)   = _dispatch_in_domain(verb, VerbRegistry::OPS_VERBS, **)
-    def rule(verb, **)  = _dispatch_in_domain(verb, VerbRegistry::RULE_VERBS, **)
+    def method_missing(name, *args, **kwargs)
+      return super unless DOMAIN_VERBS.include?(name)
+
+      raise ArgumentError.new("#{name} accepts keyword arguments only") unless args.empty?
+
+      spec = VerbRegistry.for(name)
+      raise NoMethodError.new("unknown verb: #{name}") unless spec
+
+      pending = Dispatch::Binder.command(spec, kwargs)
+      call_obj = Value::Call.build(role: @role, correlation_id: @correlation_id)
+      result = @ctx.pipeline.dispatch(pending, call: call_obj)
+      Value::Result.extract(result)
+    end
+
+    def respond_to_missing?(name, include_private = false)
+      DOMAIN_VERBS.include?(name) || super
+    end
 
     def with_role(new_role)
       _rebuild(role: new_role)
@@ -79,18 +95,6 @@ module Textus
     end
 
     private
-
-    def _dispatch_in_domain(verb, allowed, **opts)
-      raise ArgumentError.new("#{verb} is not in this domain (allowed: #{allowed.first(4).join(", ")}...)") unless allowed.include?(verb)
-
-      spec = VerbRegistry.for(verb)
-      raise ArgumentError.new("unknown verb: #{verb}") unless spec
-
-      pending = Dispatch::Binder.command(spec, opts)
-      call    = Value::Call.build(role: @role, correlation_id: @correlation_id)
-      result  = @ctx.pipeline.dispatch(pending, call: call)
-      Value::Result.extract(result)
-    end
 
     def _rebuild(role: @role, correlation_id: @correlation_id, dry_run: @dry_run)
       self.class.allocate.tap do |s|

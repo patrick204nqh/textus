@@ -25,7 +25,7 @@ RSpec.describe Textus::Store do
         stdin: StringIO.new(""), stdout: StringIO.new, stderr: StringIO.new, cwd: tmp,
       )
       store = Textus::Store.new(dir)
-      result = store.entry(:list, prefix: nil)
+      result = store.list(prefix: nil)
       expect(result).to be_an(Array)
     end
   end

@@ -59,7 +59,7 @@ module Textus
           role = verb_instance.resolved_role(store)
 
           s = store.with_role(role)
-          result = Textus::Dispatch::VerbDispatch.call(store: s, verb: spec.verb, inputs: inputs)
+          result = s.public_send(spec.verb, **inputs)
           result = spec.view(:cli).call(result, inputs) if spec.view(:cli)
           verb_instance.emit(result)
         rescue Textus::Dispatch::MissingArgs => e

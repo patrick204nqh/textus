@@ -18,41 +18,41 @@ RSpec.describe "Sources integration" do
   end
 
   it "stores sources as objects with key after put" do
-    result = store.with_role(:human).entry(:put, key: "knowledge.notes.test",
-                                                 meta: { "sources" => ["raw.2026.06.20.url-test"] },
-                                                 body: "test content\n")
+    result = store.with_role(:human).put(key: "knowledge.notes.test",
+                                         meta: { "sources" => ["raw.2026.06.20.url-test"] },
+                                         body: "test content\n")
     expect(result.sources).to eq([{ "key" => "raw.2026.06.20.url-test" }])
   end
 
   it "preserves source objects across writes when sources not re-declared" do
-    store.with_role(:human).entry(:put, key: "knowledge.notes.test",
-                                        meta: { "sources" => ["raw.2026.06.20.url-a"] },
-                                        body: "version 1\n")
-    result = store.with_role(:human).entry(:put, key: "knowledge.notes.test",
-                                                 meta: {}, body: "version 2\n")
+    store.with_role(:human).put(key: "knowledge.notes.test",
+                                meta: { "sources" => ["raw.2026.06.20.url-a"] },
+                                body: "version 1\n")
+    result = store.with_role(:human).put(key: "knowledge.notes.test",
+                                         meta: {}, body: "version 2\n")
     expect(result.sources).to eq([{ "key" => "raw.2026.06.20.url-a" }])
   end
 
   it "replaces sources on explicit re-declaration" do
-    store.with_role(:human).entry(:put, key: "knowledge.notes.test",
-                                        meta: { "sources" => ["raw.2026.06.20.url-old"] },
-                                        body: "old\n")
-    result = store.with_role(:human).entry(:put, key: "knowledge.notes.test",
-                                                 meta: { "sources" => ["raw.2026.06.20.url-new"] },
-                                                 body: "new\n")
+    store.with_role(:human).put(key: "knowledge.notes.test",
+                                meta: { "sources" => ["raw.2026.06.20.url-old"] },
+                                body: "old\n")
+    result = store.with_role(:human).put(key: "knowledge.notes.test",
+                                         meta: { "sources" => ["raw.2026.06.20.url-new"] },
+                                         body: "new\n")
     expect(result.sources).to eq([{ "key" => "raw.2026.06.20.url-new" }])
   end
 
   it "omits sources from envelope when absent" do
-    result = store.with_role(:human).entry(:put, key: "knowledge.notes.test",
-                                                 meta: {}, body: "no sources\n")
+    result = store.with_role(:human).put(key: "knowledge.notes.test",
+                                         meta: {}, body: "no sources\n")
     expect(result.sources).to be_nil
   end
 
   it "rejects put with non-array sources" do
     expect do
-      store.with_role(:human).entry(:put, key: "knowledge.notes.test",
-                                          meta: { "sources" => "bad" }, body: "test\n")
+      store.with_role(:human).put(key: "knowledge.notes.test",
+                                  meta: { "sources" => "bad" }, body: "test\n")
     end.to raise_error(Textus::BadContent)
   end
 
@@ -69,15 +69,15 @@ RSpec.describe "Sources integration" do
         - { key: knowledge.notes, lane: knowledge, owner: human:self, nested: true, kind: nested }
     YAML
 
-    raw_store.with_role(:human).entry(:ingest, kind: "file", slug: "test-article",
-                                               path: __FILE__, lane: "raw", label: "Test")
+    raw_store.with_role(:human).ingest(kind: "file", slug: "test-article",
+                                       path: __FILE__, lane: "raw", label: "Test")
 
-    raw_key = raw_store.entry(:list, lane: "raw").first["key"]
-    raw_etag = raw_store.entry(:get, key: raw_key).etag
+    raw_key = raw_store.list(lane: "raw").first["key"]
+    raw_etag = raw_store.get(key: raw_key).etag
 
-    result = raw_store.with_role(:human).entry(:put, key: "knowledge.notes.article",
-                                                     meta: { "sources" => [raw_key] },
-                                                     body: "derived\n")
+    result = raw_store.with_role(:human).put(key: "knowledge.notes.article",
+                                             meta: { "sources" => [raw_key] },
+                                             body: "derived\n")
 
     expect(result.sources).to eq([{ "key" => raw_key, "etag" => raw_etag }])
   end

@@ -11,11 +11,7 @@ module Textus
           raise Textus::UsageError.new("unknown verb: #{verb_name}") unless spec
 
           bound = Textus::Dispatch::Binder.inputs_from_wire(spec, inputs)
-          result = Textus::Dispatch::VerbDispatch.call(
-            store: store,
-            verb: verb_name.to_sym,
-            inputs: bound,
-          )
+          result = store.public_send(verb_name.to_sym, **bound)
           spec.view(@view_key).call(result, bound)
         end
       end
