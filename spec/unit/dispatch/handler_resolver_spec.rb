@@ -9,7 +9,7 @@ RSpec.describe Textus::Dispatch::HandlerResolver do
   let(:fake_job_store) { instance_double(Textus::Port::Store) }
 
   let(:ctx) do
-    Textus::Store::Ctx.new(
+    Textus::Store::Infrastructure.new(
       manifest: fake_manifest, file_store: :fs, schemas: :sc,
       audit_log: :al, job_store: fake_job_store, layout: :ly,
       link_edge_store: :les, workflows: :wf, event_bus: :eb,

@@ -15,6 +15,5 @@ module Textus
       :pipeline, # Dispatch::Pipeline (nil until wired)
     )
 
-    Ctx = Infrastructure
-  end
+end
 end

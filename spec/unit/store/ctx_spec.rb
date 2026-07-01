@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Store::Ctx do
+RSpec.describe Textus::Store::Infrastructure do
   it "is a Data.define with all fields" do
     expect(described_class.members).to contain_exactly(
       :manifest, :file_store, :schemas, :audit_log,
