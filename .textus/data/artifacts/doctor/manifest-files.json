@@ -1,0 +1,44 @@
+{
+  "_meta": {
+    "uid": "eb3870da9badbab4"
+  },
+  "ok": false,
+  "issues": [
+    {
+      "code": "manifest.missing_file",
+      "severity": "info",
+      "subject": "artifacts.doctor.manifest-files",
+      "message": "declared entry has no file on disk at /Users/patrick/Development/sandbox/textus/.textus/data/artifacts/doctor/manifest-files.json",
+      "fix": "create the entry with 'textus put artifacts.doctor.manifest-files --stdin --as=<role>'"
+    },
+    {
+      "code": "manifest.missing_file",
+      "severity": "info",
+      "subject": "artifacts.doctor.templates",
+      "message": "declared entry has no file on disk at /Users/patrick/Development/sandbox/textus/.textus/data/artifacts/doctor/templates.json",
+      "fix": "create the entry with 'textus put artifacts.doctor.templates --stdin --as=<role>'"
+    },
+    {
+      "code": "manifest.missing_file",
+      "severity": "info",
+      "subject": "artifacts.doctor.schemas",
+      "message": "declared entry has no file on disk at /Users/patrick/Development/sandbox/textus/.textus/data/artifacts/doctor/schemas.json",
+      "fix": "create the entry with 'textus put artifacts.doctor.schemas --stdin --as=<role>'"
+    },
+    {
+      "code": "manifest.missing_file",
+      "severity": "info",
+      "subject": "artifacts.doctor.publish-tree-overlap",
+      "message": "declared entry has no file on disk at /Users/patrick/Development/sandbox/textus/.textus/data/artifacts/doctor/publish-tree-overlap.json",
+      "fix": "create the entry with 'textus put artifacts.doctor.publish-tree-overlap --stdin --as=<role>'"
+    },
+    {
+      "code": "manifest.missing_file",
+      "severity": "info",
+      "subject": "artifacts.system.index",
+      "message": "declared entry has no file on disk at /Users/patrick/Development/sandbox/textus/.textus/data/artifacts/system/index.json",
+      "fix": "create the entry with 'textus put artifacts.system.index --stdin --as=<role>'"
+    }
+  ],
+  "count": 5
+}

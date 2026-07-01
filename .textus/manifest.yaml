@@ -218,6 +218,26 @@ entries:
     kind: produced
     format: json
     source: { from: external, command: "true", sources: [] }
+  - key: artifacts.doctor.manifest-files
+    lane: artifacts
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
+  - key: artifacts.doctor.templates
+    lane: artifacts
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
+  - key: artifacts.doctor.schemas
+    lane: artifacts
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
+  - key: artifacts.doctor.publish-tree-overlap
+    lane: artifacts
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
   # System / feeds
   - key: artifacts.system.index
     lane: artifacts
