@@ -8,6 +8,62 @@
       "date": null,
       "commits": [
         {
+          "subject": "docs: document 6 intentional Reader/Writer bypass sites (P3)",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "refactor: drop Ctx alias, rename ctx.rb → infrastructure.rb",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "refactor: clean up P0-P2 anti-patterns — HANDLES_ALL, boot.rb layering, InfrastructureProxy rename, Store::Builder",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "feat(knowledge): enforce pipeline structure with conformance spec + agent protocol",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "feat(observability): Trace middleware — auto-instrumented dispatch with ring buffer (Phase 5)",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "feat(conformance): verb completeness, downward layer import, port contract guards (Phase 4)",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "feat(ports): formal port interfaces with conformance verification (Phase 3)",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "feat(domain): extract Domain::Key, Domain::Lane, Domain::Envelope — pure domain layer (Phase 2)",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "feat: land ADR-0120, ADR-0121, ADR-0125 — unified dispatch, bounded use cases, interface hygiene",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "refactor: remove unused handler modules and simplify dispatch logic",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "docs: refresh generated changelog and skills feed",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "refactor: simplify entry read handlers and pulse fallback",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "fix: align trigger catalog and etag conformance guards",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "docs: add dependency adoption gate guidance",
+          "date": "2026-07-01"
+        },
+        {
           "subject": "docs: add architecture patterns for triggers and adapters",
           "date": "2026-07-01"
         },
