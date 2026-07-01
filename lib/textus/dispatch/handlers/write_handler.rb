@@ -8,6 +8,8 @@ module Textus
         module_function
 
         def call(command, call, deps)
+          return Write::PutHandler.call(command, call, deps) if command.instance_of?(Dispatch::Contracts::PutEntry)
+
           Textus::UseCases::EntryWrite.call(command, call, deps)
         end
       end
