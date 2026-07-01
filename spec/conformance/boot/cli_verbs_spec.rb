@@ -5,7 +5,7 @@ require "spec_helper"
 # `watch` is the long-running convergence daemon — a process, not an agent-facing
 # command — so it is deliberately omitted from the boot catalog.
 BOOT_GUARD_INTENTIONALLY_OMITTED =
-  %w[deps rdeps init mcp published reject data watch].freeze
+  %w[deps rdeps graph diff init mcp published reject data watch].freeze
 
 RSpec.describe "Boot::CLI_VERBS — the agent-facing command catalog" do
   # Guard (ADR 0039): a verb's summary is a fact derived from its contract, not

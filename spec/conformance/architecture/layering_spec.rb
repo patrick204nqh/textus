@@ -16,7 +16,7 @@ RSpec.describe "layering invariant (ADR 0106)" do
   end
 
   it "has domain files to check (guard is wired to a real tree)" do
-    skip "domain/ is empty — layer dissolved into dispatch/" if domain_files.empty?
+    expect(domain_files).not_to be_empty, "domain/ is empty — run Phase 2 of the architecture deepening"
   end
 
   layers_above_domain.each do |layer|
@@ -27,6 +27,26 @@ RSpec.describe "layering invariant (ADR 0106)" do
                            "#{offenders.map { |f| f.sub(%r{.*/lib/}, "lib/") }.join("\n  ")}\n" \
                            "Domain is the pure core (ADR 0106) — invert the dependency or move " \
                            "the logic into the use-case layer that owns it."
+    end
+  end
+
+  # rubocop:disable RSpec/LeakyLocalVariable
+  downward_forbidden = [
+    { from: "dispatch", must_not_import: %w[Surface CLI MCP] },
+    { from: "manifest", must_not_import: %w[Surface Dispatch UseCases] },
+    { from: "domain",   must_not_import: %w[Surface Dispatch UseCases Store Manifest Ports] },
+  ]
+
+  downward_forbidden.each do |rule|
+    layer_files = Dir["lib/textus/#{rule[:from]}/**/*.rb"]
+    # rubocop:enable RSpec/LeakyLocalVariable
+    rule[:must_not_import].each do |forbidden|
+      it "lib/textus/#{rule[:from]}/ never references Textus::#{forbidden}::" do
+        offenders = layer_files.select { |f| File.read(f).match?(/\bTextus::#{forbidden}::/) }
+        expect(offenders).to be_empty,
+                             "lib/textus/#{rule[:from]}/ reaches up into Textus::#{forbidden}:: in:\n  " \
+                             "#{offenders.map { |f| f.sub(%r{.*/lib/}, "lib/") }.join("\n  ")}"
+      end
     end
   end
 end

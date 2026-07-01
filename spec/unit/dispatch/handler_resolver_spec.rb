@@ -9,11 +9,11 @@ RSpec.describe Textus::Dispatch::HandlerResolver do
   let(:fake_job_store) { instance_double(Textus::Port::Store) }
 
   let(:ctx) do
-    Textus::Store::Ctx.new(
+    Textus::Store::Infrastructure.new(
       manifest: fake_manifest, file_store: :fs, schemas: :sc,
       audit_log: :al, job_store: fake_job_store, layout: :ly,
       link_edge_store: :les, workflows: :wf, event_bus: :eb,
-      freshness_evaluator: :fe, orchestration: :orch, pipeline: nil
+      freshness_evaluator: :fe, trace_buffer: :tb, pipeline: nil
     )
   end
 
@@ -34,11 +34,14 @@ RSpec.describe Textus::Dispatch::HandlerResolver do
       handler_fn = registry.for(FakeContract)
       expect(handler_fn).not_to be_nil
 
-      result = handler_fn.call(FakeContract.new(key: "x"), Textus::Value::Call.build(role: "human"))
+      result = handler_fn.call(
+        command: FakeContract.new(key: "x"),
+        call: Textus::Value::Call.build(role: "human"),
+      )
       expect(result.value["deps_manifest"]).to eq(fake_manifest)
     end
 
-    it "raises Boot::DepNotFound when a NEEDS field is missing from Ctx" do
+    it "raises Boot::DepNotFound when a NEEDS field is missing from Infrastructure" do
       bad_handler = Module.new do
         const_set(:HANDLES, FakeContract)
         const_set(:NEEDS, %i[nonexistent_field].freeze)

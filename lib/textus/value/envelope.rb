@@ -21,35 +21,25 @@ module Textus
       attribute :freshness,  Types::Any.optional
 
       def self.build(key:, mentry:, path:, meta:, body:, etag:, content: nil, freshness: nil)
-        new(
-          protocol: Textus::PROTOCOL,
-          key: key,
-          lane: mentry.lane,
-          owner: mentry.owner,
-          path: path,
-          format: mentry.format,
-          uid: extract_uid(meta),
-          sources: extract_sources(meta),
-          etag: etag,
-          schema_ref: mentry.schema,
-          meta: meta,
-          body: body,
-          content: content,
-          freshness: freshness,
+        raw = Domain::Envelope.build(
+          key:, mentry:, path:, meta:, body:, etag:, content:, freshness:,
         )
-      end
-
-      def self.extract_uid(meta)
-        v = meta.is_a?(Hash) ? meta["uid"] : nil
-        v.is_a?(String) ? v : nil
-      end
-
-      def self.extract_sources(meta)
-        v = meta.is_a?(Hash) ? meta["sources"] : nil
-        return nil unless v.is_a?(Array) && !v.empty?
-
-        valid = v.select { |s| s.is_a?(String) || (s.is_a?(Hash) && s["key"].is_a?(String)) }
-        valid.empty? ? nil : valid
+        new(
+          protocol: raw["protocol"],
+          key: raw["key"],
+          lane: raw["lane"],
+          owner: raw["owner"],
+          path: raw["path"],
+          format: raw["format"],
+          uid: raw["uid"],
+          sources: raw["sources"],
+          etag: raw["etag"],
+          schema_ref: raw["schema_ref"],
+          meta: raw["_meta"],
+          body: raw["body"],
+          content: raw["content"],
+          freshness: raw["freshness"],
+        )
       end
 
       def with(**attrs) = self.class.new(to_h.merge(attrs))

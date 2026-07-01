@@ -13,9 +13,9 @@ module Textus
 
       ProposeEntry = Data.define(:key, :meta, :body, :content)
 
-      AcceptProposal = Data.define(:pending_key)
+      AcceptProposal = Data.define(:pending_key, :dry_run)
 
-      RejectProposal = Data.define(:pending_key)
+      RejectProposal = Data.define(:pending_key, :reason)
 
       EnqueueJob = Data.define(:type, :args)
 
@@ -32,6 +32,10 @@ module Textus
       DepsEntry = Data.define(:key)
 
       RdepsEntry = Data.define(:key)
+
+      GraphEntry = Data.define(:key, :depth)
+
+      DiffEntry = Data.define(:pending_key)
 
       BootStore = Data.define
 

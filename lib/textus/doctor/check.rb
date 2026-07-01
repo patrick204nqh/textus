@@ -29,13 +29,11 @@ module Textus
       def geometry = @container.layout
       def manifest = @container.manifest
 
-      def dispatch(verb, *args, **kwargs)
-        contract_class = Textus::VerbRegistry.contract_class_for(verb)
-        members = contract_class.members
-        command_kwargs = members.each_with_index.to_h { |m, i| [m, args[i] || kwargs[m]] }
-        command = contract_class.new(**command_kwargs)
+      def dispatch(verb, **kwargs)
+        spec = Textus::VerbRegistry.for(verb)
+        pending = Textus::Dispatch::Binder.command(spec, kwargs)
         call = Textus::Value::Call.build(role: @role)
-        result = @container.pipeline.dispatch(command, call: call)
+        result = @container.pipeline.dispatch(pending, call: call)
         Textus::Value::Result.extract(result)
       end
     end

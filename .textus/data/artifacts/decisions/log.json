@@ -4,6 +4,34 @@
   },
   "adrs": [
     {
+      "number": "0125",
+      "title": "bounded use case objects",
+      "date": null,
+      "status": "",
+      "slug": "0125-bounded-use-case-objects"
+    },
+    {
+      "number": "0124",
+      "title": "workflow parallel steps",
+      "date": null,
+      "status": "",
+      "slug": "0124-workflow-parallel-steps"
+    },
+    {
+      "number": "0123",
+      "title": "mcp session resilience",
+      "date": null,
+      "status": "",
+      "slug": "0123-mcp-session-resilience"
+    },
+    {
+      "number": "0122",
+      "title": "proposal diff preview",
+      "date": null,
+      "status": "",
+      "slug": "0122-proposal-diff-preview"
+    },
+    {
       "number": "0121",
       "title": "textus native links",
       "date": null,

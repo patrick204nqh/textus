@@ -157,6 +157,9 @@ module Textus
       end
     end
 
+    # Intentionally bypasses use-case layer — boot reads are internal context
+    # assembly, not user-facing reads. No auth/audit needed for loading the
+    # boot envelope during Store initialization.
     def self.read_artifact_content(container, key)
       res = container.manifest.resolver.resolve(key)
       return nil unless res.path && File.exist?(res.path)
@@ -167,6 +170,8 @@ module Textus
       nil
     end
 
+    # Same intentional bypass as read_artifact_content — boot context reads
+    # are internal Store initialization, not user-facing reads.
     def self.read_boot_context(container)
       res = container.manifest.resolver.resolve("knowledge.boot")
       return nil unless res.path && File.exist?(res.path)

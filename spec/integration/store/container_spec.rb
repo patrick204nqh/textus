@@ -1,7 +1,7 @@
 require "spec_helper"
 
 RSpec.describe Textus::Store do
-  it "backs the Store via ContainerProxy with expected accessors", :aggregate_failures do
+  it "backs the Store via UseCaseContainer with expected accessors", :aggregate_failures do
     Dir.mktmpdir do |tmp|
       Textus::Surface::CLI.run(
         ["--root=#{tmp}/.textus", "init"],
@@ -10,7 +10,7 @@ RSpec.describe Textus::Store do
       store = Textus::Store.new(File.join(tmp, ".textus"))
       container = store.container
 
-      expect(container).to be_a(Textus::Store::ContainerProxy)
+      expect(container).to be_a(Textus::Store::UseCaseContainer)
       expect(container.manifest).to be_a(Textus::Manifest)
       expect(container.root).to be_a(String)
       expect(container.pipeline).not_to be_nil
@@ -25,7 +25,7 @@ RSpec.describe Textus::Store do
         stdin: StringIO.new(""), stdout: StringIO.new, stderr: StringIO.new, cwd: tmp,
       )
       store = Textus::Store.new(dir)
-      result = store.entry(:list, prefix: nil)
+      result = store.list(prefix: nil)
       expect(result).to be_an(Array)
     end
   end

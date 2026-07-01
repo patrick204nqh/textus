@@ -13,6 +13,12 @@ module Textus
     #
     # An instantiable class (ADR 0109).
     class Publisher
+      module Interface
+        def publish(source:, target:, store_root:, provenance_source: nil) = raise NotImplementedError
+        def unpublish(target:, store_root:) = raise NotImplementedError
+      end
+      include Interface
+
       def publish(source:, target:, store_root:, provenance_source: source)
         FileUtils.mkdir_p(File.dirname(target))
         guard_clobber(source, target, store_root)

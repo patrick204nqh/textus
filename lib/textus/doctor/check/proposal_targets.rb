@@ -17,7 +17,7 @@ module Textus
         private
 
         def issue_for(key)
-          target = dispatch(:get, key).meta&.dig("proposal", "target_key")
+          target = dispatch(:get, key: key).meta&.dig("proposal", "target_key")
           return nil if target.nil? # not a proposal entry — skip
 
           zone = manifest.resolver.resolve(target).entry.lane

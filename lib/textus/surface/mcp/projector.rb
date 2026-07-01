@@ -11,10 +11,7 @@ module Textus
           raise Textus::UsageError.new("unknown verb: #{verb_name}") unless spec
 
           bound = Textus::Dispatch::Binder.inputs_from_wire(spec, inputs)
-          domain = Textus::VerbRegistry::VERB_DOMAIN.fetch(verb_name.to_sym) do
-            raise Textus::UsageError.new("#{verb_name} has no domain assignment")
-          end
-          result = store.public_send(domain, verb_name.to_sym, **bound)
+          result = store.public_send(verb_name.to_sym, **bound)
           spec.view(@view_key).call(result, bound)
         end
       end

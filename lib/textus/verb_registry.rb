@@ -76,6 +76,8 @@ module Textus
       uid: Dispatch::Contracts::UidEntry,
       deps: Dispatch::Contracts::DepsEntry,
       rdeps: Dispatch::Contracts::RdepsEntry,
+      graph: Dispatch::Contracts::GraphEntry,
+      diff: Dispatch::Contracts::DiffEntry,
       boot: Dispatch::Contracts::BootStore,
       doctor: Dispatch::Contracts::DoctorStore,
       published: Dispatch::Contracts::PublishedEntries,
@@ -98,7 +100,7 @@ module Textus
 
     ENTRY_VERBS = %i[
       get put list key_delete key_mv propose accept reject
-      audit blame where uid deps rdeps ingest
+      audit blame where uid deps rdeps graph diff ingest
     ].freeze
 
     OPS_VERBS = %i[
@@ -199,7 +201,9 @@ module Textus
     register VerbSpec.new(
       :accept, "Apply a queued proposal to its target zone; requires author.",
       [ArgSpec.arg(name: :pending_key, required: true, positional: true,
-                   description: "the queued proposal's key")],
+                   description: "the queued proposal's key"),
+       ArgSpec.arg(name: :dry_run, type: :boolean, default: false,
+                   description: "when true, compute diff without promoting")],
       %i[cli mcp], { default: identity }, "accept", nil, :write
     )
 
@@ -207,7 +211,8 @@ module Textus
     register VerbSpec.new(
       :reject, "Discard a queued proposal without applying it.",
       [ArgSpec.arg(name: :pending_key, required: true, positional: true,
-                   description: "the queued proposal's key")],
+                   description: "the queued proposal's key"),
+       ArgSpec.arg(name: :reason, description: "optional explanation for the rejection")],
       %i[cli mcp], { default: identity }, "reject", nil, :write
     )
 
@@ -294,6 +299,24 @@ module Textus
       :rdeps, "List the derived entries that depend on a key (reverse deps).",
       [ArgSpec.arg(name: :key, required: true, positional: true,
                    description: "dotted key whose dependents you want")],
+      %i[cli mcp], { default: identity }, nil, nil, :read
+    )
+
+    # ── graph ────────────────────────────────────────────
+    register VerbSpec.new(
+      :graph, "Query the link graph — neighbors (direct links) or reachable (transitive, with optional depth limit).",
+      [ArgSpec.arg(name: :key, required: true, positional: true,
+                   description: "entry key to query"),
+       ArgSpec.arg(name: :depth, type: Integer,
+                   description: "max traversal depth for reachable query (unlimited when omitted)")],
+      %i[cli mcp], { default: identity }, nil, nil, :read
+    )
+
+    # ── diff ─────────────────────────────────────────────
+    register VerbSpec.new(
+      :diff, "Preview the diff between a proposal and its target — body, meta, and schema.",
+      [ArgSpec.arg(name: :pending_key, required: true, positional: true,
+                   description: "the queued proposal's key")],
       %i[cli mcp], { default: identity }, nil, nil, :read
     )
 

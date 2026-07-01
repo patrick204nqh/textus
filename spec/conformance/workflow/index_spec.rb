@@ -52,8 +52,8 @@ RSpec.describe "artifacts.system.index workflow" do
   end
 
   before do
-    store.with_role("human").entry(:put, key: "knowledge.project",
-                                         meta: { "description" => "test" }, body: "")
+    store.with_role("human").put(key: "knowledge.project",
+                                 meta: { "description" => "test" }, body: "")
   end
 
   it "no longer generates the old system index workflow" do
@@ -66,7 +66,7 @@ RSpec.describe "artifacts.system.index workflow" do
       call: Textus::Value::Call.build(role: "automation"),
       keys: ["artifacts.system.index"],
     )
-    env = store.with_role("human").entry(:get, key: "artifacts.system.index")
+    env = store.with_role("human").get(key: "artifacts.system.index")
     expect(env).not_to be_nil
     expect(env.content).to include("entries", "generated_at")
     expect(env.content["entries"]).to be_an(Array)
@@ -78,7 +78,7 @@ RSpec.describe "artifacts.system.index workflow" do
       call: Textus::Value::Call.build(role: "automation"),
       keys: ["artifacts.system.index"],
     )
-    env = store.with_role("human").entry(:get, key: "artifacts.system.index")
+    env = store.with_role("human").get(key: "artifacts.system.index")
     project_row = env.content["entries"].find { |r| r["key"] == "knowledge.project" }
     expect(project_row).to include("key", "lane", "format", "etag")
     expect(project_row["lane"]).to eq("knowledge")

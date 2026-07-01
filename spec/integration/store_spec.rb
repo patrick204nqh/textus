@@ -30,19 +30,6 @@ RSpec.describe Textus::Store do
       expect(store.container.workflows).to be_a(Textus::Workflow::Registry)
     end
 
-    it "no longer responds to reader/writer/schema_for" do
-      store = described_class.new(root)
-      expect(store).not_to respond_to(:reader)
-      expect(store).not_to respond_to(:writer)
-      expect(store).not_to respond_to(:schema_for)
-      expect { store.reader }.to raise_error(NoMethodError)
-      expect { store.writer }.to raise_error(NoMethodError)
-      expect { store.schema_for(:any) }.to raise_error(NoMethodError)
-    end
-
-    it "no longer exposes load_hooks (inlined into initialize in 0.18.0)" do
-      expect(described_class.instance_methods).not_to include(:load_hooks)
-    end
   end
 
   describe ".discover" do
@@ -75,44 +62,18 @@ RSpec.describe Textus::Store do
     expect(described_class.new(root).container.workflows).to be_a(Textus::Workflow::Registry)
   end
 
-  describe "noun-domain API" do
+  describe "unified dispatch" do
     let(:store) { described_class.new(root) }
 
-    describe "#entry" do
-      it "dispatches :list without arguments" do
-        result = store.entry(:list)
-        expect(result).to be_an(Array)
-      end
-
-      it "raises ArgumentError for a non-entry verb" do
-        expect { store.entry(:drain) }.to raise_error(ArgumentError, /drain.*not in this domain/)
-      end
-
-      it "raises ArgumentError for a verb not in any domain" do
-        expect { store.entry(:frobnicate) }.to raise_error(ArgumentError, /frobnicate.*not in this domain/)
-      end
+    it "dispatches read/write/ops/rule verbs" do
+      expect(store.list).to be_an(Array)
+      expect(store.boot).to be_a(Hash)
+      expect(store.rule_list).to be_an(Array)
     end
 
-    describe "#ops" do
-      it "dispatches :boot" do
-        result = store.ops(:boot)
-        expect(result).to be_a(Hash)
-      end
-
-      it "raises ArgumentError for a non-ops verb" do
-        expect { store.ops(:get) }.to raise_error(ArgumentError, /get.*not in this domain/)
-      end
-    end
-
-    describe "#rule" do
-      it "dispatches :rule_list" do
-        result = store.rule(:rule_list)
-        expect(result).to be_an(Array)
-      end
-
-      it "raises ArgumentError for a non-rule verb" do
-        expect { store.rule(:put) }.to raise_error(ArgumentError, /put.*not in this domain/)
-      end
+    it "rejects unknown verbs" do
+      expect(store).not_to respond_to(:frobnicate)
+      expect { store.list("knowledge") }.to raise_error(ArgumentError, /keyword arguments/)
     end
   end
 end

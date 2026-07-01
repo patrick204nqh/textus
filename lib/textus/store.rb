@@ -8,6 +8,8 @@ module Textus
       define_method(field) { @ctx.public_send(field) }
     end
 
+    DOMAIN_VERBS = (VerbRegistry::ENTRY_VERBS + VerbRegistry::OPS_VERBS + VerbRegistry::RULE_VERBS).to_set.freeze
+
     def self.discover(start_dir = Dir.pwd, root: nil)
       explicit = root || ENV.fetch("TEXTUS_ROOT", nil)
       return discover_explicit(explicit) if explicit
@@ -41,7 +43,7 @@ module Textus
 
     def initialize(root, role: Value::Role::DEFAULT, correlation_id: nil, dry_run: false)
       @root = File.expand_path(root)
-      @ctx = build_ctx(@root)
+      @ctx = Store::Builder.new.call(@root)
       @container = build_container_proxy(@ctx)
       @role = role.to_s
       @correlation_id = correlation_id || SecureRandom.uuid
@@ -51,9 +53,23 @@ module Textus
 
     def dry_run? = @dry_run
 
-    def entry(verb, **) = _dispatch_in_domain(verb, VerbRegistry::ENTRY_VERBS, **)
-    def ops(verb, **)   = _dispatch_in_domain(verb, VerbRegistry::OPS_VERBS, **)
-    def rule(verb, **)  = _dispatch_in_domain(verb, VerbRegistry::RULE_VERBS, **)
+    def method_missing(name, *args, **kwargs)
+      return super unless DOMAIN_VERBS.include?(name)
+
+      raise ArgumentError.new("#{name} accepts keyword arguments only") unless args.empty?
+
+      spec = VerbRegistry.for(name)
+      raise NoMethodError.new("unknown verb: #{name}") unless spec
+
+      pending = Dispatch::Binder.command(spec, kwargs)
+      call_obj = Value::Call.build(role: @role, correlation_id: @correlation_id)
+      result = @ctx.pipeline.dispatch(pending, call: call_obj)
+      Value::Result.extract(result)
+    end
+
+    def respond_to_missing?(name, include_private = false)
+      DOMAIN_VERBS.include?(name) || super
+    end
 
     def with_role(new_role)
       _rebuild(role: new_role)
@@ -80,18 +96,6 @@ module Textus
 
     private
 
-    def _dispatch_in_domain(verb, allowed, **opts)
-      raise ArgumentError.new("#{verb} is not in this domain (allowed: #{allowed.first(4).join(", ")}...)") unless allowed.include?(verb)
-
-      spec = VerbRegistry.for(verb)
-      raise ArgumentError.new("unknown verb: #{verb}") unless spec
-
-      pending = Dispatch::Binder.command(spec, opts)
-      call    = Value::Call.build(role: @role, correlation_id: @correlation_id)
-      result  = @ctx.pipeline.dispatch(pending, call: call)
-      Value::Result.extract(result)
-    end
-
     def _rebuild(role: @role, correlation_id: @correlation_id, dry_run: @dry_run)
       self.class.allocate.tap do |s|
         s.instance_variable_set(:@root, @root)
@@ -112,78 +116,8 @@ module Textus
 
     def short_etag(etag) = etag.to_s.delete_prefix("sha256:")[0, 8]
 
-    def build_ctx(root)
-      manifest = Manifest.load(root)
-      job_store = Port::Store.new(root: root).setup!
-      layout = Store::Layout.new(root)
-      file_store = Port::Storage::FileStore.new
-      schemas = Schema::Registry.new(layout.schemas_dir)
-      audit_log = Port::AuditLog.new(
-        layout:,
-        max_size: manifest.data.audit_config[:max_size],
-        keep: manifest.data.audit_config[:keep],
-      )
-      link_edge_store = Links::LinkEdgeStore.new
-      workflows = Workflow::Loader.load_all(root)
-      event_bus = Event::Bus.new
-
-      freshness_evaluator = Store::Freshness::TtlEvaluator.new(
-        manifest:,
-        file_stat: Port::Storage::FileStat.new,
-        clock: Port::Clock.new,
-      )
-
-      cascade_subscriber = Produce::CascadeSubscriber.new(
-        manifest:, workflows:, job_store:, file_store:,
-      )
-      event_bus.subscribe(Event::EntryWritten,     &cascade_subscriber.method(:on_entry_written))
-      event_bus.subscribe(Event::EntryDeleted,     &cascade_subscriber.method(:on_entry_deleted))
-      event_bus.subscribe(Event::EntryMoved,       &cascade_subscriber.method(:on_entry_moved))
-      event_bus.subscribe(Event::ProposalAccepted, &cascade_subscriber.method(:on_proposal_accepted))
-      event_bus.subscribe(Event::ProposalRejected, &cascade_subscriber.method(:on_proposal_rejected))
-
-      orchestration = build_orchestration(
-        manifest:, file_store:, schemas:, audit_log:, job_store:, layout:,
-      )
-
-      partial = Ctx.new(
-        manifest:, file_store:, schemas:, audit_log:, job_store:,
-        layout:, link_edge_store:, workflows:, event_bus:,
-        freshness_evaluator:, orchestration:, pipeline: nil
-      )
-
-      middleware = [
-        Dispatch::Middleware::Binder.new,
-        Dispatch::Middleware::Auth.new,
-        Dispatch::Middleware::AuditIndex.new(job_store: partial.job_store, audit_log: partial.audit_log),
-      ]
-
-      Dispatch::HandlerResolver.eager_load!
-      registry = Dispatch::HandlerResolver.build(partial)
-      pipeline = Dispatch::Pipeline.new(registry:, container: partial, middleware:)
-
-      partial.with(pipeline:)
-    end
-
-    def build_orchestration(manifest:, file_store:, schemas:, audit_log:, job_store:, layout:)
-      list_deps = Data.define(:manifest, :job_store).new(manifest:, job_store:)
-      audit_deps = Data.define(:manifest, :audit_log).new(manifest:, audit_log:)
-      move_deps = Data.define(:file_store, :manifest, :schemas, :audit_log, :layout).new(
-        file_store:, manifest:, schemas:, audit_log:, layout:,
-      )
-      delete_deps = Data.define(:file_store, :manifest, :schemas, :audit_log, :layout).new(
-        file_store:, manifest:, schemas:, audit_log:, layout:,
-      )
-      Orchestration.new(
-        list_keys: ->(command, call) { Handlers::Read::ListKeys.call(command, call, list_deps) },
-        move_key: ->(command, call) { Handlers::Write::MoveKey.call(command, call, move_deps) },
-        delete_key: ->(command, call) { Handlers::Write::DeleteKey.call(command, call, delete_deps) },
-        audit_entries: ->(command, call) { Handlers::Read::AuditEntries.call(command, call, audit_deps) },
-      )
-    end
-
     def build_container_proxy(ctx)
-      Store::ContainerProxy.new(
+      Store::UseCaseContainer.new(
         manifest: ctx.manifest, file_store: ctx.file_store,
         schemas: ctx.schemas, audit_log: ctx.audit_log,
         job_store: ctx.job_store, layout: ctx.layout,

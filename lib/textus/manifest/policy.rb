@@ -21,41 +21,29 @@ module Textus
       # keyed by String.
       def verb_for_lane(lane_name)
         kind = declared_kind(lane_name)
-        kind && Schema::KIND_REQUIRES_VERB[kind.to_s]
+        kind && Domain::Lane.verb_for(kind)
       end
 
-      # Names of roles whose declared caps include `verb`.
       def roles_with_capability(verb)
-        @data.role_caps.select { |_name, caps| caps.include?(verb) }.keys
+        Domain::Lane.roles_with(verb.to_s, @data.role_caps)
       end
 
-      # The conventional automated proposer: a role that can propose but is not
-      # the author-anchor (so it resolves to `agent`, not `human`, under the
-      # default mapping). Falls back to the first proposer, then nil.
       def proposer_role
-        proposers = roles_with_capability("propose")
-        (proposers - roles_with_capability("author")).first || proposers.first
+        Domain::Lane.proposer_role(@data.role_caps)
       end
 
-      # The role textus acts AS for a system-initiated operation requiring
-      # `verb` (no human passed --as). Capability-derived — a role name that
-      # exists in the manifest, or nil. Never a hardcoded literal (ADR 0044).
       def actor_for(verb)
-        roles_with_capability(verb).first
+        Domain::Lane.actor_for(verb.to_s, @data.role_caps)
       end
 
-      # The kind declared on a lane in the manifest, or nil if undeclared.
       def declared_kind(lane_name)
         @data.declared_lane_kinds[lane_name]
       end
 
-      # Lane names declaring `kind` (a Symbol), in manifest order. Lets callers
-      # (boot) name a kind's live lane instance(s) instead of hardcoding names.
       def lanes_of_kind(kind)
-        @data.declared_lane_kinds.select { |_name, k| k == kind }.keys
+        Domain::Lane.lanes_of_kind(kind, @data.declared_lane_kinds)
       end
 
-      # The single lane declaring `kind: queue`, or nil. Schema guarantees <=1.
       def queue_lane
         @data.declared_lane_kinds.key(:queue)
       end
@@ -65,29 +53,18 @@ module Textus
         entry.is_a?(Textus::Manifest::Entry::Produced) || false
       end
 
-      # The single lane declaring kind: machine, or nil.
       def machine_lane
         @data.declared_lane_kinds.key(:machine)
       end
 
-      # A lane is a proposal queue iff it declares kind: queue.
       def queue_lane?(lane_name)
-        declared_kind(lane_name) == :queue
+        Domain::Lane.queue_lane?(lane_name, @data.declared_lane_kinds)
       end
 
-      # The lane a proposer role writes proposals into: the single lane that
-      # declares kind: queue, when the role can write it. Returns nil if there
-      # is no queue lane or the role cannot write it.
       def propose_lane_for(role)
-        return nil if role.nil?
-
-        q = queue_lane
-        return nil unless q
-
-        q_verb = verb_for_lane(q)
-        return nil unless roles_with_capability(q_verb).include?(role)
-
-        q
+        Domain::Lane.propose_lane_for(
+          role, queue_lane, declared_kind(queue_lane), @data.role_caps
+        )
       end
     end
   end

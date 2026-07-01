@@ -22,6 +22,7 @@ Gem::Specification.new do |s|
   s.bindir = "exe"
   s.executables = ["textus"]
 
+  s.add_dependency "concurrent-ruby", "~> 1.3"
   s.add_dependency "csv", ">= 3.0"
   s.add_dependency "dry-schema", "~> 1.13"
   s.add_dependency "dry-struct", "~> 1.6"

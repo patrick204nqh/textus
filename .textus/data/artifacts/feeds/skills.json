@@ -5,7 +5,7 @@
   "skills": [
     {
       "name": "agent",
-      "description": "Use when creating, optimizing, or evaluating Agent Skills — the open format for extending AI agent capabilities. Reach for this skill when building SKILL.md files, testing skill descriptions, bundling scripts, or implementing skills support in an agent client.",
+      "description": "Use when creating, optimizing, or evaluating Agent Skills — reusable instruction packages that extend AI agent capabilities. Reach for this skill when building new skills, improving skill descriptions for better triggering, testing skill quality, or implementing skills support in an agent client.",
       "url": "https://agentskills.io/.well-known/agent-skills/agent/skill.md"
     }
   ],

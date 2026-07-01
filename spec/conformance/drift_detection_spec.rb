@@ -22,7 +22,7 @@ RSpec.describe "textus/4 conformance — Fixture D: generator drift detection" d
       File.write(project_path, "---\nname: acme\n---\nproject body\n")
       File.utime(Time.now, Time.now, project_path)
 
-      drift = store.with_role(Textus::Value::Role::DEFAULT).ops(:doctor)["issues"]
+      drift = store.with_role(Textus::Value::Role::DEFAULT).doctor["issues"]
                    .select { |i| i["code"] == "generator_drift" }
       expect(drift.length).to eq(1)
       row = drift.first

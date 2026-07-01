@@ -67,7 +67,7 @@ RSpec.describe Textus::Surface::MCP::Server do
     expect(body).to include("lanes", "agent_quickstart")
   end
 
-  it "returns ContractDrift JSON-RPC error for a write verb when manifest changes between calls" do
+  it "returns contract_drifted flag in pulse response when manifest changes between calls" do
     input1 = JSON.dump({ "jsonrpc" => "2.0", "id" => 1, "method" => "initialize",
                          "params" => { "protocolVersion" => "2024-11-05", "capabilities" => {},
                                        "clientInfo" => { "name" => "t", "version" => "0" } } })
@@ -82,18 +82,16 @@ RSpec.describe Textus::Surface::MCP::Server do
     File.write(File.join(root, "manifest.yaml"), File.read(File.join(root, "manifest.yaml")) + "# touched\n")
 
     stdin_pipe_w.puts(JSON.dump({ "jsonrpc" => "2.0", "id" => 2, "method" => "tools/call",
-                                  "params" => { "name" => "put",
-                                                "arguments" => { "key" => "knowledge.note",
-                                                                 "body" => "hello",
-                                                                 "meta" => { "owner" => "human:self" } } } }))
+                                  "params" => { "name" => "pulse", "arguments" => {} } }))
     sleep 0.2
     stdin_pipe_w.close
     thread.join(2)
 
     lines = output.string.lines.map { |l| JSON.parse(l) }
-    drift = lines.find { |r| r["id"] == 2 && r["error"] }
-    expect(drift).not_to be_nil
-    expect(drift["error"]["code"]).to eq(Textus::ContractDrift::JSONRPC_CODE)
+    resp = lines.find { |r| r["id"] == 2 }
+    expect(resp["error"]).to be_nil
+    body = JSON.parse(resp["result"]["content"][0]["text"])
+    expect(body["contract_drifted"]).to be(true)
   end
 
   # ADR 0083 — contract-drift guard gates write verbs only
@@ -124,13 +122,15 @@ RSpec.describe Textus::Surface::MCP::Server do
     output.string.lines.map { |l| JSON.parse(l) }
   end
 
-  it "refuses a write verb (put) after contract drift with ContractDrift error" do
+  it "includes a soft warning on write verb (put) after contract drift (no hard error)" do
     lines = run_with_drift(name: "put",
                            arguments: { "key" => "knowledge.note", "body" => "hello",
                                         "meta" => { "owner" => "human:self" } })
     resp = lines.find { |r| r["id"] == 2 }
-    expect(resp["error"]).not_to be_nil
-    expect(resp["error"]["message"]).to include("contract changed")
+    expect(resp["error"]).to be_nil
+    body = JSON.parse(resp["result"]["content"][0]["text"])
+    expect(body).to include("_warning")
+    expect(body["_warning"]).to include("contract drifted")
   end
 
   it "allows a read verb (list) after contract drift without error" do
@@ -167,12 +167,13 @@ RSpec.describe Textus::Surface::MCP::Server do
     expect(write_resp["result"]["isError"]).to be(false)
   end
 
-  # ADR 0083 — destructive Maintenance:: verbs must also be drift-gated
-  it "refuses a destructive maintenance verb (drain) after contract drift with ContractDrift error" do
+  it "includes a soft warning on drain after contract drift (no hard error)" do
     lines = run_with_drift(name: "drain", arguments: {})
     resp = lines.find { |r| r["id"] == 2 }
-    expect(resp["error"]).not_to be_nil
-    expect(resp["error"]["message"]).to include("contract changed")
+    expect(resp["error"]).to be_nil
+    body = JSON.parse(resp["result"]["content"][0]["text"])
+    expect(body).to include("_warning")
+    expect(body["_warning"]).to include("contract drifted")
   end
 
   it "returns method-not-found error for unknown methods" do

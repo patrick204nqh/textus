@@ -18,7 +18,12 @@ not edit by hand — edit the source under `.textus/data/` and run
 <% end -%><% end -%><% if (r = boot.dig("agent_protocol", "recipes", "propose")) -%>   • **propose** — <%= r["purpose"] %>
 <% Array(r["agent_steps"]).each do |s| -%>     agent: `<%= s %>`
 <% end -%><% Array(r["human_steps"]).each do |s| -%>     human: `<%= s %>`
-<% end -%><% end -%>-->
+<% end -%><% end -%>
+→ Knowledge pipeline:
+   • INPUT → LOOP → OUTPUT
+   • L1: goals → rules (validate before proceeding downstream)
+   • L2: architecture → decisions → patterns → runbooks → specs → docs
+   • Write to the right level — decisions reference architecture, patterns reference decisions-->
 
 
 # <%= project["name"] %>

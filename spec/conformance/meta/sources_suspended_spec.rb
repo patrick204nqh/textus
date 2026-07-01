@@ -20,20 +20,20 @@ RSpec.describe "Sources suspended detection" do
   end
 
   def ingest_file(store)
-    store.with_role(:human).entry(:ingest, kind: "file", slug: "article", path: __FILE__,
-                                           lane: "raw", label: "Article")
-    store.entry(:list, lane: "raw").first["key"]
+    store.with_role(:human).ingest(kind: "file", slug: "article", path: __FILE__,
+                                   lane: "raw", label: "Article")
+    store.list(lane: "raw").first["key"]
   end
 
   it "marks sources as not suspended when etag matches" do
     raw_key = ingest_file(full_store)
-    raw_etag = full_store.entry(:get, key: raw_key).etag
+    raw_etag = full_store.get(key: raw_key).etag
 
-    full_store.with_role(:human).entry(:put, key: "knowledge.notes.derived",
-                                             meta: { "sources" => [raw_key] },
-                                             body: "derived\n")
+    full_store.with_role(:human).put(key: "knowledge.notes.derived",
+                                     meta: { "sources" => [raw_key] },
+                                     body: "derived\n")
 
-    result = full_store.entry(:get, key: "knowledge.notes.derived")
+    result = full_store.get(key: "knowledge.notes.derived")
     src = result.sources.first
 
     expect(src["key"]).to eq(raw_key)
@@ -44,14 +44,14 @@ RSpec.describe "Sources suspended detection" do
   it "marks sources as suspended when source etag changed after put" do
     raw_key = ingest_file(full_store)
 
-    full_store.with_role(:human).entry(:put, key: "knowledge.notes.derived",
-                                             meta: { "sources" => [raw_key] },
-                                             body: "derived\n")
+    full_store.with_role(:human).put(key: "knowledge.notes.derived",
+                                     meta: { "sources" => [raw_key] },
+                                     body: "derived\n")
 
-    raw_path = full_store.entry(:get, key: raw_key).path
+    raw_path = full_store.get(key: raw_key).path
     File.write(raw_path, File.read(raw_path) + "\n# changed\n")
 
-    result = full_store.entry(:get, key: "knowledge.notes.derived")
+    result = full_store.get(key: "knowledge.notes.derived")
     src = result.sources.first
 
     expect(src["key"]).to eq(raw_key)
@@ -63,7 +63,7 @@ RSpec.describe "Sources suspended detection" do
     FileUtils.mkdir_p(File.dirname(path))
     File.write(path, "---\nuid: legacy-uid\nsources:\n- key: raw.some.entry\n---\nlegacy\n")
 
-    result = full_store.entry(:get, key: "knowledge.notes.legacy")
+    result = full_store.get(key: "knowledge.notes.legacy")
     src = result.sources.first
 
     expect(src["key"]).to eq("raw.some.entry")

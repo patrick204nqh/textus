@@ -9,7 +9,7 @@ module Textus
     # but no behaviour beyond accessors. Behaviour (lane authority, key
     # resolution, rules) lives on Manifest::Policy / Resolver / Rules.
     class Data
-      AUDIT_DEFAULTS = { max_size: 10_485_760, keep: 5 }.freeze
+      AUDIT_DEFAULTS = { max_size: 10_485_760, keep: 1000 }.freeze
       WORKER_DEFAULTS = { pool: 4, poll: 5, lease_ttl: 60, max_attempts: 3 }.freeze
 
       attr_reader :raw, :root, :entries, :declared_lane_kinds,

@@ -58,7 +58,7 @@ RSpec.describe "textus/4 conformance — CLI surface" do
 
   describe "--zone filter on list" do
     it "returns only entries in the named zone" do
-      expect(store.with_role(Textus::Value::Role::DEFAULT).entry(:list, lane: "knowledge").map { |r| r["lane"] }.uniq).to eq(["knowledge"])
+      expect(store.with_role(Textus::Value::Role::DEFAULT).list(lane: "knowledge").map { |r| r["lane"] }.uniq).to eq(["knowledge"])
     end
   end
 

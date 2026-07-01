@@ -4,6 +4,12 @@ module Textus
     # ports; `now` reads the system time. Callers that need a fixed time still
     # pass it as data via `Call#now`.
     class Clock
+      module Interface
+        def now = raise NotImplementedError
+      end
+
+      include Interface
+
       def now = Time.now
     end
   end

@@ -18,6 +18,9 @@ module Textus
           unknown = raw.keys - ALLOWED_KEYS
           raise Textus::BadManifest.new("react: unknown key(s): #{unknown.join(", ")}") unless unknown.empty?
 
+          Array(raw["on"]).each { |trigger| Textus::Manifest::TriggerCatalog.validate_trigger!(trigger) }
+          Array(raw["do"]).each { |action| Textus::Manifest::TriggerCatalog.validate_action!(action) }
+
           @raw = raw
         end
 

@@ -3,6 +3,7 @@ module Textus
     module MCP
       module Catalog
         PROJECTOR = Projector.new(view_key: :default).freeze
+        MCP_ADAPTER = Textus::DependencyAdapters::McpAdapter.new
 
         module_function
 
@@ -14,7 +15,7 @@ module Textus
           specs.map do |spec|
             schema = spec.input_schema
             schema = schema.reject { |k, v| k == :required && Array(v).empty? }
-            ::MCP::Tool.define(
+            MCP_ADAPTER.tool(
               name: spec.verb.to_s,
               description: spec.summary,
               input_schema: schema,

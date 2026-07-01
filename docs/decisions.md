@@ -15,6 +15,10 @@ Live status of every architecture decision, derived from each file's `**Status:*
 
 | # | Title | Date | Status |
 |---|---|---|---|
+| [0125](architecture/decisions/0125-bounded-use-case-objects.md) | bounded use case objects |  |  |
+| [0124](architecture/decisions/0124-workflow-parallel-steps.md) | workflow parallel steps |  |  |
+| [0123](architecture/decisions/0123-mcp-session-resilience.md) | mcp session resilience |  |  |
+| [0122](architecture/decisions/0122-proposal-diff-preview.md) | proposal diff preview |  |  |
 | [0121](architecture/decisions/0121-textus-native-links.md) | textus native links |  |  |
 | [0120](architecture/decisions/0120-atomic-canon-composed-artifacts.md) | atomic canon composed artifacts |  |  |
 | [0119](architecture/decisions/0119-architecture-deepening-phase-2.md) | architecture deepening phase 2 |  |  |

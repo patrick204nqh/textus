@@ -23,6 +23,11 @@ entries:
     owner: human:self
     nested: true
     kind: nested
+  - key: knowledge.patterns
+    lane: knowledge
+    owner: human:self
+    nested: true
+    kind: nested
   - key: knowledge.decisions
     lane: knowledge
     owner: human:self
@@ -64,9 +69,16 @@ entries:
     owner: human:self
     nested: true
     kind: nested
+  - key: knowledge.architecture
+    lane: knowledge
+    owner: human:self
+    nested: true
+    kind: nested
 
   # Scratchpad / proposals / raw
-  - { key: scratchpad.notes,  lane: scratchpad,  owner: agent:self, nested: true, kind: nested }
+  - { key: scratchpad.notes,    lane: scratchpad,  owner: agent:self, nested: true, kind: nested }
+  - { key: scratchpad.sessions, lane: scratchpad,  owner: agent:self, nested: true, kind: nested }
+  - { key: scratchpad.scripts,  lane: scratchpad,  owner: agent:self, nested: true, kind: nested }
   - { key: proposals.notes, lane: proposals, owner: agent:self, nested: true, kind: nested }
   - { key: raw, lane: raw, owner: agent:self, nested: true, kind: nested, format: yaml }
   # Boot artifact — pre-computed agent orientation
@@ -200,6 +212,32 @@ entries:
     source: { from: external, command: "true", sources: [] }
     publish:
       - { to: docs/explanation/concepts.md, template: docs/explanation/concepts.erb }
+  # Validation workflow results
+  - key: artifacts.doctor.rule-ambiguity
+    lane: artifacts
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
+  - key: artifacts.doctor.manifest-files
+    lane: artifacts
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
+  - key: artifacts.doctor.templates
+    lane: artifacts
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
+  - key: artifacts.doctor.schemas
+    lane: artifacts
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
+  - key: artifacts.doctor.publish-tree-overlap
+    lane: artifacts
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
   # System / feeds
   - key: artifacts.system.index
     lane: artifacts

@@ -1,0 +1,9 @@
+_meta:
+  uid: 55c1a4e95b386af3
+ingested_at: '2026-07-01T08:37:51Z'
+content_hash: sha256:ea660d6b02df755dc4deb41c515b8bb6ac5daaccb947492dedd003917dd87432
+source:
+  kind: url
+  url: https://github.com/railswhey/app
+  label: Rails Whey - 28 ways to build a Rails app
+body:

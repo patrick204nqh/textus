@@ -8,6 +8,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+- docs: add architecture patterns for triggers and adapters
+- refactor: centralize trigger vocabulary in TriggerCatalog
+- refactor: add dependency adapter modules for runtime deps
+- refactor: model jobs and produce results with outcome values
+- refactor: extract drain jobs pulse per-verb handlers
+- refactor: extract key_mv key_delete data_mv handlers
+- refactor: extract get put list per-verb handlers
+- refactor: add concern handlers for dispatch domains
+- refactor: narrow handler invocation to keyword interface
+- refactor: route CLI and MCP via VerbDispatch
+- refactor: introduce Infrastructure aliases and dispatch seam baseline
+- feat: implement ADRs 0121-0125, including bounded use-case objects, workflow parallel steps, and session resilience; update changelog and context documentation
+- feat: add ADR-0125 for Bounded Use-Case Objects and related documentation; update manifest and CLI argument formatting
+- refactor: consolidate handlers into UseCases and remove Orchestration layer
+- feat: Implement ADRs 0121-0124 — link graph, proposal diff, session resilience, parallel workflows
+- chore: fix 3 rubocop offenses and regenerate docs
+- fix: rule_trace verb category should be :read, not :maintenance
+- feat: add rule_trace verb — trace rule resolution candidates, winners, and effective RuleSet
+- refactor: decompose Writer#move into WriteStep::DEFAULT_MOVE chain
+- refactor: decompose Writer#delete into WriteStep::DEFAULT_DELETE chain
+- refactor: two-phase Manifest.build — derived_entry? now correct
+- refactor(store)!: delete deprecated Container, Assembler, Cascade middleware
+- refactor(store): build Ctx+HandlerResolver pipeline internally
+- refactor: convert all write and maintenance handlers to pure modules (HANDLES/NEEDS/self.call)
+- refactor: convert all read handlers to pure modules (HANDLES/NEEDS/self.call)
+- feat: add HandlerResolver — discovers pure handler modules by convention
+- feat: add CascadeSubscriber — event-driven replacement for Cascade middleware
+- feat: add Store::Ctx, typed Event structs, and session-scoped Event::Bus
 - feat: Introduce Boot.wire and Typed Events
 - refactor: drop positional-arg support from entry/ops/rule — keyword args only
 - feat: replace generated verb methods with entry/ops/rule noun-domain API on Store
