@@ -137,6 +137,8 @@ module Textus
         clock: Port::Clock.new,
       )
 
+      trace_buffer = Store::TraceBuffer.new
+
       cascade_subscriber = Produce::CascadeSubscriber.new(
         manifest:, workflows:, job_store:, file_store:,
       )
@@ -149,11 +151,12 @@ module Textus
       partial = Infrastructure.new(
         manifest:, file_store:, schemas:, audit_log:, job_store:,
         layout:, link_edge_store:, workflows:, event_bus:,
-        freshness_evaluator:, pipeline: nil
+        freshness_evaluator:, trace_buffer:, pipeline: nil
       )
 
       middleware = [
         Dispatch::Middleware::Binder.new,
+        Dispatch::Middleware::Trace.new,
         Dispatch::Middleware::Auth.new,
         Dispatch::Middleware::AuditIndex.new(job_store: partial.job_store, audit_log: partial.audit_log),
       ]

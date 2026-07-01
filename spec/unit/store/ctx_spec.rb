@@ -5,7 +5,7 @@ RSpec.describe Textus::Store::Ctx do
     expect(described_class.members).to contain_exactly(
       :manifest, :file_store, :schemas, :audit_log,
       :job_store, :layout, :link_edge_store, :workflows,
-      :event_bus, :freshness_evaluator, :pipeline
+      :event_bus, :freshness_evaluator, :trace_buffer, :pipeline
     )
   end
 
@@ -13,7 +13,7 @@ RSpec.describe Textus::Store::Ctx do
     ctx = described_class.new(
       manifest: :m, file_store: :fs, schemas: :sc, audit_log: :al,
       job_store: :js, layout: :ly, link_edge_store: :les, workflows: :wf,
-      event_bus: :eb, freshness_evaluator: :fe,
+      event_bus: :eb, freshness_evaluator: :fe, trace_buffer: :tb,
       pipeline: nil
     )
     updated = ctx.with(pipeline: :p)

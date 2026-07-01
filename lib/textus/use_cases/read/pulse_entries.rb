@@ -19,6 +19,12 @@ module Textus
             "index_etag" => index_etag(deps),
           }
 
+          trace_buffer = deps.respond_to?(:trace_buffer) ? deps.trace_buffer : nil
+          if trace_buffer
+            result["trace_stats"] = trace_buffer.stats
+            result["recent_traces"] = trace_buffer.recent(limit: 10).map(&:to_h_for_wire)
+          end
+
           Textus::Store::Cursor.new(root: root, role: call.role).write(result["cursor"])
           Value::Result.success(result)
         end

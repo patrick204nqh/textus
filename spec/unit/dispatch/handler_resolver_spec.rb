@@ -13,7 +13,7 @@ RSpec.describe Textus::Dispatch::HandlerResolver do
       manifest: fake_manifest, file_store: :fs, schemas: :sc,
       audit_log: :al, job_store: fake_job_store, layout: :ly,
       link_edge_store: :les, workflows: :wf, event_bus: :eb,
-      freshness_evaluator: :fe, pipeline: nil
+      freshness_evaluator: :fe, trace_buffer: :tb, pipeline: nil
     )
   end
 
