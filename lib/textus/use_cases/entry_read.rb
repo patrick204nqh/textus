@@ -16,7 +16,7 @@ module Textus
       ].freeze
       NEEDS = %i[file_store manifest layout freshness_evaluator audit_log job_store link_edge_store].freeze
 
-      def self.call(command, _call, deps)
+      def self.call(command, call, deps)
         if command.instance_of?(Dispatch::Contracts::GetEntry)
           get_entry(command, deps)
         elsif command.instance_of?(Dispatch::Contracts::UidEntry)
@@ -26,7 +26,7 @@ module Textus
         elsif command.instance_of?(Dispatch::Contracts::AuditEntries)
           audit_entries(command, deps)
         elsif command.instance_of?(Dispatch::Contracts::BlameEntry)
-          blame_entry(command, _call, deps)
+          blame_entry(command, call, deps)
         elsif command.instance_of?(Dispatch::Contracts::DepsEntry)
           deps_entry(command, deps)
         elsif command.instance_of?(Dispatch::Contracts::RdepsEntry)
@@ -38,7 +38,7 @@ module Textus
         elsif command.instance_of?(Dispatch::Contracts::ListKeys)
           list_keys(command, deps)
         elsif command.instance_of?(Dispatch::Contracts::PulseEntries)
-          pulse_entries(command, _call, deps)
+          pulse_entries(command, call, deps)
         else
           raise "Unsupported contract: #{command.class} (ID: #{command.class.object_id})"
         end
@@ -135,10 +135,8 @@ module Textus
       def self.diff_entry(command, deps)
         reader = Store::Entry::Reader.new(file_store: deps.file_store, manifest: deps.manifest, layout: deps.layout)
         proposal_env = reader.read(command.pending_key)
-        proposal = proposal_env&.meta&.dig("proposal") or
-          return Value::Result.failure(:proposal_error, "entry has no proposal block: #{command.pending_key}")
-        target_key = proposal["target_key"] or
-          return Value::Result.failure(:proposal_error, "proposal missing target_key")
+        target_key = proposal_target_key(proposal_env, command.pending_key)
+        return target_key if target_key.is_a?(Value::Result)
 
         target_env = reader.read(target_key)
 
@@ -147,9 +145,7 @@ module Textus
 
         target_schema = target_schema_ref(target_key, deps)
         proposal_schema = proposal_env&.meta&.dig("_meta", "schema")
-        schema_diff = if proposal_schema && target_schema != proposal_schema
-                        Textus::Diff.schema({ "schema" => target_schema }, { "schema" => proposal_schema })
-                      end
+        schema_diff = diff_schema(target_schema, proposal_schema)
 
         result = { "pending_key" => command.pending_key, "target_key" => target_key }
         result["body"] = body_diff if body_diff
@@ -158,6 +154,22 @@ module Textus
         result["summary"] = Textus::Diff.summary(result)
 
         Value::Result.success(result)
+      end
+
+      def self.proposal_target_key(proposal_env, pending_key)
+        proposal = proposal_env&.meta&.dig("proposal")
+        return Value::Result.failure(:proposal_error, "entry has no proposal block: #{pending_key}") unless proposal
+
+        target_key = proposal["target_key"]
+        return Value::Result.failure(:proposal_error, "proposal missing target_key") unless target_key
+
+        target_key
+      end
+
+      def self.diff_schema(target_schema, proposal_schema)
+        return nil unless proposal_schema && target_schema != proposal_schema
+
+        Textus::Diff.schema({ "schema" => target_schema }, { "schema" => proposal_schema })
       end
 
       def self.target_schema_ref(key, deps)
@@ -170,15 +182,15 @@ module Textus
         schema = command.respond_to?(:schema) ? command.schema : nil
 
         if deps.job_store && (q || schema)
-          return sqlite_list(q: q, schema: schema, lane: command.lane, prefix: command.prefix,
+          return sqlite_list(query: q, schema: schema, lane: command.lane, prefix: command.prefix,
                              deps: deps)
         end
 
         manifest_list(prefix: command.prefix, lane: command.lane, deps: deps)
       end
 
-      def self.sqlite_list(q:, schema:, lane:, prefix:, deps:)
-        rows = deps.job_store.search_entries(q: q, schema: schema, lane: lane, prefix: prefix)
+      def self.sqlite_list(query:, schema:, lane:, prefix:, deps:)
+        rows = deps.job_store.search_entries(q: query, schema: schema, lane: lane, prefix: prefix)
         Value::Result.success((rows || []).map { |r| { "key" => r["key"], "lane" => r["lane"] } })
       end
 
@@ -208,7 +220,7 @@ module Textus
         Value::Result.success(result)
       end
 
-      def self.changed_since(since, call, deps)
+      def self.changed_since(since, _call, deps)
         if deps.job_store
           sqlite_rows = deps.job_store.audit_events_since(seq: since)
           return sqlite_rows.map { |r| { "key" => r["key"], "verb" => r["verb"], "seq" => r["seq"] } } if sqlite_rows.any?
@@ -216,7 +228,7 @@ module Textus
 
         audit = audit_entries(
           Data.define(:seq_since, :key, :lane, :role, :verb, :since, :correlation_id, :limit).new(
-            seq_since: since, key: nil, lane: nil, role: call.role, verb: nil, since: nil, correlation_id: nil, limit: nil,
+            seq_since: since, key: nil, lane: nil, role: nil, verb: nil, since: nil, correlation_id: nil, limit: nil,
           ),
           deps,
         )
