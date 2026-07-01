@@ -33,6 +33,8 @@ module Textus
       private
 
       def trigger_cascade(trigger_type, key, role)
+        Textus::Manifest::TriggerCatalog.validate_trigger!(trigger_type)
+
         container = build_container_proxy
         jobs = Textus::Store::Jobs::Planner.new(container: container).plan(
           trigger: { "type" => trigger_type, "target" => key },

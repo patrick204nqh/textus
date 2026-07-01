@@ -9,6 +9,14 @@ RSpec.describe "Manifest::Rules#for_with_trace" do
                                   ])
   end
 
+  describe Textus::Manifest::TriggerCatalog do
+    it "rejects unknown trigger tokens" do
+      expect do
+        described_class.validate_trigger!("entry.unknown")
+      end.to raise_error(Textus::BadManifest, /unknown trigger: entry\.unknown/)
+    end
+  end
+
   describe "RuleTrace" do
     it "is a Data.define with key, candidates, winners, ruleset_fields" do
       expect(Textus::Manifest::RuleTrace.members).to contain_exactly(

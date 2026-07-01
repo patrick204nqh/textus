@@ -46,6 +46,8 @@ module Textus
           target = trigger["target"] || trigger[:target]
           return [] if type.nil?
 
+          Textus::Manifest::TriggerCatalog.validate_trigger!(type)
+
           blocks_with_react = @manifest.rules.blocks.select(&:react)
           if blocks_with_react.any?
             plan_from_rules(blocks_with_react, type, role, target: target)
@@ -63,6 +65,8 @@ module Textus
             .each do |block|
               do_action = block.react.raw["do"]
               Array(do_action).each do |action|
+                Textus::Manifest::TriggerCatalog.validate_action!(action)
+
                 if (global_args = GLOBAL_ACTIONS[action])
                   jobs << Textus::Store::Jobs::Queue::Job.new(type: action, args: global_args, role: role)
                 else
