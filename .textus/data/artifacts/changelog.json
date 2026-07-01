@@ -8,6 +8,18 @@
       "date": null,
       "commits": [
         {
+          "subject": "feat: add ADR-0125 for Bounded Use-Case Objects and related documentation; update manifest and CLI argument formatting",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "refactor: consolidate handlers into UseCases and remove Orchestration layer",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "feat: Implement ADRs 0121-0124 — link graph, proposal diff, session resilience, parallel workflows",
+          "date": "2026-07-01"
+        },
+        {
           "subject": "chore: fix 3 rubocop offenses and regenerate docs",
           "date": "2026-07-01"
         },

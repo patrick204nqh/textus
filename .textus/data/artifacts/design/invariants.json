@@ -63,12 +63,12 @@
     {
       "key": "knowledge.rules.10-one-path-for-recurring-operations",
       "slug": "10-one-path-for-recurring-operations",
-      "body": "### Rule 10 — One clear path for recurring operations\n\nIf a task repeats, encode it as workflow/schedule/automation. Do not normalize manual repeat prompting.\n"
+      "body": "### One clear path for recurring operations\n\nIf a task repeats, encode it as workflow/schedule/automation. Do not normalize manual repeat prompting.\n"
     },
     {
       "key": "knowledge.rules.11-keep-seams-explicit",
       "slug": "11-keep-seams-explicit",
-      "body": "### Rule 11 — Keep seams explicit\n\nEvolve via contracts, actions, rules, workflows, and ports. Avoid cross-layer shortcuts and dual paths.\n"
+      "body": "### Keep seams explicit\n\nEvolve via contracts, actions, rules, workflows, and ports. Avoid cross-layer shortcuts and dual paths.\n"
     },
     {
       "key": "knowledge.rules.12-quality-over-volume",

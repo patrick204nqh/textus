@@ -68,11 +68,11 @@ Reads return state and freshness only. Convergence is explicit (`drain`, jobs, w
 
 External inspiration/data should be referenceable from raw intake; canonical docs remain concise and goal/rule-focused.
 
-### Rule 10 — One clear path for recurring operations
+### One clear path for recurring operations
 
 If a task repeats, encode it as workflow/schedule/automation. Do not normalize manual repeat prompting.
 
-### Rule 11 — Keep seams explicit
+### Keep seams explicit
 
 Evolve via contracts, actions, rules, workflows, and ports. Avoid cross-layer shortcuts and dual paths.
 
