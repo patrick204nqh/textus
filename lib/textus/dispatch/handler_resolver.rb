@@ -45,9 +45,7 @@ module Textus
       end
 
       def discover_all
-        [
-          Textus::UseCases,
-        ].flat_map do |ns|
+        [Textus::Dispatch::Handlers].flat_map do |ns|
           ns.constants(false).filter_map { |c| ns.const_get(c) }.grep(Module)
         end
       end
