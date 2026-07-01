@@ -96,7 +96,7 @@ module Textus
           if arg.type == :boolean
             effective_default(arg) == true ? "--no-#{wire}" : "--#{wire}"
           else
-            "--#{wire}=VALUE"
+            "--#{wire} VALUE"
           end
         end
 

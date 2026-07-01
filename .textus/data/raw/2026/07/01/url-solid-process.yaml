@@ -1,0 +1,9 @@
+_meta:
+  uid: d424d58d3e265fe0
+ingested_at: '2026-07-01T08:37:52Z'
+content_hash: sha256:161a7ea5341b11c36faf4488aef31b00c234f4f9b969c6f082d49ff1df47e5cc
+source:
+  kind: url
+  url: https://github.com/solid-process/solid-process
+  label: Solid Process - Business logic that scales
+body:

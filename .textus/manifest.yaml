@@ -23,6 +23,11 @@ entries:
     owner: human:self
     nested: true
     kind: nested
+  - key: knowledge.patterns
+    lane: knowledge
+    owner: human:self
+    nested: true
+    kind: nested
   - key: knowledge.decisions
     lane: knowledge
     owner: human:self
