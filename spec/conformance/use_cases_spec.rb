@@ -12,7 +12,8 @@ USE_CASE_GLOB = File.expand_path("../../lib/textus/use_cases/**/*.rb", __dir__)
 # Valid keys from Store::Infrastructure.members
 VALID_NEEDS_KEYS = %i[
   manifest file_store schemas audit_log job_store layout
-  link_edge_store workflows event_bus freshness_evaluator pipeline
+  link_edge_store workflows event_bus freshness_evaluator
+  trace_buffer pipeline
 ].freeze
 
 RSpec.describe "Use-case module invariants (ADR-0125)" do

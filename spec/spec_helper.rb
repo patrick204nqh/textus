@@ -37,8 +37,7 @@ RSpec.configure do |c|
 
   # Specs that exercise actively-changing internals are marked volatile so
   # contract-focused suites can exclude them by policy.
-  c.define_derived_metadata(file_path: %r{/spec/conformance/events_spec\.rb$}) { |m| m[:volatile] = true }
-  c.define_derived_metadata(file_path: %r{/spec/conformance/loaded_event_spec\.rb$}) { |m| m[:volatile] = true }
+  # events_spec.rb and loaded_event_spec.rb were removed (coverage merged into conformance)
   c.define_derived_metadata(file_path: %r{/spec/conformance/publish/tree_spec\.rb$}) { |m| m[:volatile] = true }
   c.define_derived_metadata(file_path: %r{/spec/conformance/plugin_manifest_build_spec\.rb$}) { |m| m[:volatile] = true }
   c.define_derived_metadata(file_path: %r{/spec/conformance/init/scaffold_spec\.rb$}) { |m| m[:volatile] = true }

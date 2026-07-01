@@ -9,7 +9,7 @@ RSpec.describe "Verb completeness — every verb has contract + handler + CLI ve
         mod = ns.const_get(c)
         next unless mod.is_a?(Module) && mod.const_defined?(:HANDLES)
 
-        handles = mod.const_defined?(:HANDLES_ALL) ? Array(mod::HANDLES_ALL) : [mod::HANDLES]
+        handles = [mod::HANDLES]
         all_handles.concat(handles)
       end
     end

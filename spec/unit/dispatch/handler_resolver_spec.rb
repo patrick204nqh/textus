@@ -41,7 +41,7 @@ RSpec.describe Textus::Dispatch::HandlerResolver do
       expect(result.value["deps_manifest"]).to eq(fake_manifest)
     end
 
-    it "raises Boot::DepNotFound when a NEEDS field is missing from Ctx" do
+    it "raises Boot::DepNotFound when a NEEDS field is missing from Infrastructure" do
       bad_handler = Module.new do
         const_set(:HANDLES, FakeContract)
         const_set(:NEEDS, %i[nonexistent_field].freeze)

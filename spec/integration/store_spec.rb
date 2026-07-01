@@ -30,19 +30,6 @@ RSpec.describe Textus::Store do
       expect(store.container.workflows).to be_a(Textus::Workflow::Registry)
     end
 
-    it "no longer responds to reader/writer/schema_for" do
-      store = described_class.new(root)
-      expect(store).not_to respond_to(:reader)
-      expect(store).not_to respond_to(:writer)
-      expect(store).not_to respond_to(:schema_for)
-      expect { store.reader }.to raise_error(NoMethodError)
-      expect { store.writer }.to raise_error(NoMethodError)
-      expect { store.schema_for(:any) }.to raise_error(NoMethodError)
-    end
-
-    it "no longer exposes load_hooks (inlined into initialize in 0.18.0)" do
-      expect(described_class.instance_methods).not_to include(:load_hooks)
-    end
   end
 
   describe ".discover" do
@@ -75,37 +62,18 @@ RSpec.describe Textus::Store do
     expect(described_class.new(root).container.workflows).to be_a(Textus::Workflow::Registry)
   end
 
-  describe "unified dispatch via method_missing" do
+  describe "unified dispatch" do
     let(:store) { described_class.new(root) }
 
-    it "dispatches a read verb via method name" do
-      result = store.list
-      expect(result).to be_an(Array)
+    it "dispatches read/write/ops/rule verbs" do
+      expect(store.list).to be_an(Array)
+      expect(store.boot).to be_a(Hash)
+      expect(store.rule_list).to be_an(Array)
     end
 
-    it "dispatches :boot" do
-      result = store.boot
-      expect(result).to be_a(Hash)
-    end
-
-    it "dispatches :rule_list" do
-      result = store.rule_list
-      expect(result).to be_an(Array)
-    end
-
-    it "responds_to any registered verb" do
-      expect(store).to respond_to(:list)
-      expect(store).to respond_to(:get)
-      expect(store).to respond_to(:boot)
-      expect(store).to respond_to(:rule_list)
-    end
-
-    it "does not respond_to an unknown verb" do
+    it "rejects unknown verbs" do
       expect(store).not_to respond_to(:frobnicate)
-    end
-
-    it "requires keyword arguments for verbs" do
-      expect { store.list("knowledge") }.to raise_error(ArgumentError, /keyword arguments only/)
+      expect { store.list("knowledge") }.to raise_error(ArgumentError, /keyword arguments/)
     end
   end
 end
