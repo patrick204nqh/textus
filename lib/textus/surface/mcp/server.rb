@@ -11,6 +11,7 @@ module Textus
       # execution to Catalog.
       class Server
         CHECKPOINT_INTERVAL = 30
+        MCP_ADAPTER = Textus::DependencyAdapters::McpAdapter.new
 
         def initialize(store:, role: Textus::Value::Role::DEFAULT, stdin: $stdin, stdout: $stdout)
           @store  = store.with_role(role)
@@ -21,7 +22,7 @@ module Textus
           resume_from_cursor_file!
           start_cursor_checkpoint_thread!
 
-          @sdk = ::MCP::Server.new(
+          @sdk = MCP_ADAPTER.server(
             name: "textus",
             version: Textus::VERSION,
             tools: Catalog.build_tools(self),
@@ -77,7 +78,7 @@ module Textus
         def resume_from_cursor_file!
           saved = Textus::Store::Cursor.new(root: @store.root, role: @store.role).read
           latest = @store.audit_log.latest_seq
-          @store = @store.advance_cursor(saved) if saved > 0 && saved <= latest
+          @store = @store.advance_cursor(saved) if saved.positive? && saved <= latest
         end
 
         def start_cursor_checkpoint_thread!

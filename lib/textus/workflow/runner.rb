@@ -15,6 +15,7 @@ module Textus
 
     class Runner
       DEFAULT_TIMEOUT = 30
+      CONCURRENCY_ADAPTER = Textus::DependencyAdapters::ConcurrencyAdapter.new
 
       def initialize(definition, container:, call:)
         @definition = definition
@@ -70,13 +71,13 @@ module Textus
 
       def execute_parallel(parallel, ctx)
         promises = parallel.steps.map do |step|
-          Concurrent::Promises.future do
+          CONCURRENCY_ADAPTER.future do
             timeout = step.timeout || DEFAULT_TIMEOUT
             Timeout.timeout(timeout) { step.callable.call(nil, ctx) }
           end
         end
 
-        results = Concurrent::Promises.zip_futures(*promises).value!
+        results = CONCURRENCY_ADAPTER.zip_futures(*promises).value!
         failures = []
         outputs = {}
         results.each_with_index do |result, i|
