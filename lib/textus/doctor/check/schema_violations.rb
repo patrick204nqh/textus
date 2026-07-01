@@ -2,6 +2,9 @@ module Textus
   module Doctor
     class Check
       class SchemaViolations < Check
+        # Intentionally bypasses use-case layer — doctor checks are diagnostic
+        # reads (health checks), not user operations. No auth/audit needed for
+        # scanning entries to find schema violations.
         def call
           result = Textus::Doctor::Validator.new(
             reader: ->(key, ctnr, _c) { Textus::Store::Entry::Reader.from(container: ctnr).read(key) },

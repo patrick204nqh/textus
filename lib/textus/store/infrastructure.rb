@@ -14,6 +14,5 @@ module Textus
       :trace_buffer, # Store::TraceBuffer (ring buffer for dispatch traces)
       :pipeline, # Dispatch::Pipeline (nil until wired)
     )
-
-end
+  end
 end

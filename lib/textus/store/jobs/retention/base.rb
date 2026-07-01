@@ -40,6 +40,9 @@ module Textus
             FileUtils.cp(src, dest)
           end
 
+          # Intentionally bypasses use-case layer — retention is a system cleanup
+          # operation (automation role). Using the delete use case would fire
+          # cascade events that could re-trigger retention in an infinite loop.
           def delete(key)
             mentry = @container.manifest.resolver.resolve(key).entry
             writer = Textus::Store::Entry::Writer.from(container: @container, call: @call)

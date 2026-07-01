@@ -110,6 +110,11 @@ module Textus
           action: :converge, actor: @call.role, key: key,
           rule_predicates: rule_preds
         )
+        # Intentionally bypasses use-case layer — workflow outputs are system
+        # writes (automation role), not user writes. Using PutEntry would trigger
+        # cascading produce events that could cause infinite regress. Writer is
+        # called directly to write the produced data, then Publisher renders the
+        # template output.
         Textus::Store::Entry::Writer.from(container: @container, call: @call).put(
           key,
           mentry: ctx.entry,
