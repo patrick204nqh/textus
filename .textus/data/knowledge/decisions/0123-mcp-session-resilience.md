@@ -1,6 +1,7 @@
 ---
 name: '0123-mcp-session-resilience'
 uid: ''
+refines: knowledge.architecture.conventions
 ---
 
 # ADR-0123: MCP session resilience — cursor persistence, soft drift, audit retention

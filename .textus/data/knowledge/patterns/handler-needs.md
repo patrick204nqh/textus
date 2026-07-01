@@ -1,5 +1,7 @@
 # Handler NEEDS (Interface Segregation)
 
+ADR-0014: Explicit dependencies. ADR-0023: Uniform use-case shape. ADR-0125: Bounded use-case objects.
+
 Every use case declares exactly the dependencies it needs — nothing more, nothing less.
 
 ## The Pattern

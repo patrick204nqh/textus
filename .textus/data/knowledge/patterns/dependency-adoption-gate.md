@@ -1,6 +1,8 @@
 ---
 uid: 329cc7dce4d093f5
 ---
+ADR-0079: Unify lifecycle policy. ADR-0089: Ingest is system-pushed.
+
 # Dependency Adoption Gate
 
 Adopt new runtime dependencies only through a strict adapter-first gate.

@@ -1,5 +1,7 @@
 # Unified Dispatch
 
+ADR-0120: Replaced `store.entry(:get, key:)` with `store.get(key:)` via `method_missing`.
+
 Every verb call — whether from CLI, MCP, or internal — converges through a single `method_missing` on Store.
 
 ## The Pattern

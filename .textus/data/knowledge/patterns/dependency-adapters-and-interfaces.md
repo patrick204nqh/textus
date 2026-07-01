@@ -1,6 +1,8 @@
 ---
 uid: f29f4200b556a3f0
 ---
+ADR-0013: Port extraction. ADR-0016: Application ports/value. ADR-0024: Domain purity/ports.
+
 # Dependency Adapters and Interfaces
 
 Wrap external runtime dependencies behind small adapter modules, and depend on those adapters at seams. Keep the adapter API minimal and focused on the exact calls the module needs.

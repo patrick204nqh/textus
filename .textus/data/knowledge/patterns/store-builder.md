@@ -1,5 +1,7 @@
 # Store Builder
 
+ADR-0014: Explicit dependencies. Store SRP extraction from July 2026 architecture deepening.
+
 Dependency container construction is extracted into its own class so Store stays a thin facade.
 
 ## The Pattern

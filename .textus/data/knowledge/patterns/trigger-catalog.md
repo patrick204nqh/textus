@@ -1,6 +1,8 @@
 ---
 uid: 58874e878de2be3a
 ---
+ADR-0102: Produced event catalog. ADR-0110: Job queue and drain/serve.
+
 # TriggerCatalog Pattern
 
 Centralize trigger and action vocabulary in one module, then make all producers and validators depend on that module instead of repeating string literals.

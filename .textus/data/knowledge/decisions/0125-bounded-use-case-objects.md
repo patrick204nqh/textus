@@ -1,5 +1,6 @@
 ---
 uid: c7c0c58b8ad41100
+refines: knowledge.architecture.conventions
 ---
 # ADR-0125: Bounded Use-Case Objects
 

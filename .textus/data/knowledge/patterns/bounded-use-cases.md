@@ -1,6 +1,8 @@
 ---
 uid: adc9d742383d787d
 ---
+ADR-0125: Bounded use-case objects — one contract per module, uniform interface.
+
 # Bounded Use-Case Objects
 
 Based on the architectural patterns of Rodrigo Serradura, textus adopts the Bounded Use-Case Object pattern to ensure the codebase remains simple to change as it grows.

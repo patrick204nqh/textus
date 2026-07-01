@@ -3,6 +3,8 @@ name: adr
 description: Add an Architecture Decision Record for a load-bearing decision.
 ---
 
+Pattern: `knowledge.patterns.bounded-use-cases` — each ADR is a bounded decision.
+
 1. Copy the shape of a recent ADR (header block: Date, Status, Refines/Touches
    cross-links). Number it next in sequence and author the new `NNNN-*.md`
    under `.textus/data/knowledge/decisions/`.
