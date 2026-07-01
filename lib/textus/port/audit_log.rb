@@ -11,6 +11,16 @@ module Textus
     # instantiable class) before that ADR's Clock/Publisher conversions, so it
     # was unchanged by them.
     class AuditLog
+      module Interface
+        def append(role:, verb:, key:, etag_before:, etag_after:, extras: nil) = raise NotImplementedError
+        def latest_seq = raise NotImplementedError
+        def scan(seq_since: nil, key: nil, role: nil, verb: nil, correlation_id: nil, limit: nil) = raise NotImplementedError
+        def min_available_seq = raise NotImplementedError
+        def verify_integrity = raise NotImplementedError
+      end
+
+      include Interface
+
       DEFAULT_MAX_SIZE = 10_485_760
       DEFAULT_KEEP = 1000
 

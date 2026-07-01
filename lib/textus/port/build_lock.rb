@@ -11,6 +11,12 @@ module Textus
     # single-shape rule (every port is an instantiable class) before that ADR's
     # Clock/Publisher conversions, so it was unchanged by them.
     class BuildLock
+      module Interface
+        def acquire_or_raise(...) = raise NotImplementedError
+      end
+
+      include Interface
+
       MAX_HOLDER_BYTES = 512
 
       def self.with(root:, &)
