@@ -15,30 +15,24 @@ module Textus
       ].freeze
       NEEDS = %i[file_store manifest schemas audit_log layout event_bus job_store].freeze
 
+      DISPATCH = {
+        Dispatch::Contracts::PutEntry => :put_entry,
+        Dispatch::Contracts::MoveKey => :move_key,
+        Dispatch::Contracts::DeleteKey => :delete_key,
+        Dispatch::Contracts::KeyMvPrefix => :key_mv_prefix,
+        Dispatch::Contracts::KeyDeletePrefix => :key_delete_prefix,
+        Dispatch::Contracts::ProposeEntry => :propose_entry,
+        Dispatch::Contracts::AcceptProposal => :accept_proposal,
+        Dispatch::Contracts::RejectProposal => :reject_proposal,
+        Dispatch::Contracts::EnqueueJob => :enqueue_job,
+        Dispatch::Contracts::DataMv => :data_mv,
+      }.freeze
+
       def self.call(command, call, deps)
-        if command.instance_of?(Dispatch::Contracts::PutEntry)
-          put_entry(command, call, deps)
-        elsif command.instance_of?(Dispatch::Contracts::MoveKey)
-          move_key(command, call, deps)
-        elsif command.instance_of?(Dispatch::Contracts::DeleteKey)
-          delete_key(command, call, deps)
-        elsif command.instance_of?(Dispatch::Contracts::KeyMvPrefix)
-          key_mv_prefix(command, call, deps)
-        elsif command.instance_of?(Dispatch::Contracts::KeyDeletePrefix)
-          key_delete_prefix(command, call, deps)
-        elsif command.instance_of?(Dispatch::Contracts::ProposeEntry)
-          propose_entry(command, call, deps)
-        elsif command.instance_of?(Dispatch::Contracts::AcceptProposal)
-          accept_proposal(command, call, deps)
-        elsif command.instance_of?(Dispatch::Contracts::RejectProposal)
-          reject_proposal(command, call, deps)
-        elsif command.instance_of?(Dispatch::Contracts::EnqueueJob)
-          enqueue_job(command, call, deps)
-        elsif command.instance_of?(Dispatch::Contracts::DataMv)
-          data_mv(command, call, deps)
-        else
-          raise "Unsupported contract: #{command.class}"
-        end
+        method = DISPATCH[command.class]
+        raise "Unsupported contract: #{command.class}" unless method
+
+        send(method, command, call, deps)
       end
 
       def self.put_entry(command, call, deps)

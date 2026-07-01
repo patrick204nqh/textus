@@ -16,32 +16,25 @@ module Textus
       ].freeze
       NEEDS = %i[file_store manifest layout freshness_evaluator audit_log job_store link_edge_store].freeze
 
+      DISPATCH = {
+        Dispatch::Contracts::GetEntry => ->(cmd, _call, deps) { get_entry(cmd, deps) },
+        Dispatch::Contracts::UidEntry => ->(cmd, _call, deps) { uid_entry(cmd, deps) },
+        Dispatch::Contracts::WhereEntry => ->(cmd, _call, deps) { where_entry(cmd, deps) },
+        Dispatch::Contracts::AuditEntries => ->(cmd, _call, deps) { audit_entries(cmd, deps) },
+        Dispatch::Contracts::BlameEntry => ->(cmd, call, deps) { blame_entry(cmd, call, deps) },
+        Dispatch::Contracts::DepsEntry => ->(cmd, _call, deps) { deps_entry(cmd, deps) },
+        Dispatch::Contracts::RdepsEntry => ->(cmd, _call, deps) { rdeps_entry(cmd, deps) },
+        Dispatch::Contracts::GraphEntry => ->(cmd, _call, deps) { graph_entry(cmd, deps) },
+        Dispatch::Contracts::DiffEntry => ->(cmd, _call, deps) { diff_entry(cmd, deps) },
+        Dispatch::Contracts::ListKeys => ->(cmd, _call, deps) { list_keys(cmd, deps) },
+        Dispatch::Contracts::PulseEntries => ->(cmd, call, deps) { pulse_entries(cmd, call, deps) },
+      }.freeze
+
       def self.call(command, call, deps)
-        if command.instance_of?(Dispatch::Contracts::GetEntry)
-          get_entry(command, deps)
-        elsif command.instance_of?(Dispatch::Contracts::UidEntry)
-          uid_entry(command, deps)
-        elsif command.instance_of?(Dispatch::Contracts::WhereEntry)
-          where_entry(command, deps)
-        elsif command.instance_of?(Dispatch::Contracts::AuditEntries)
-          audit_entries(command, deps)
-        elsif command.instance_of?(Dispatch::Contracts::BlameEntry)
-          blame_entry(command, call, deps)
-        elsif command.instance_of?(Dispatch::Contracts::DepsEntry)
-          deps_entry(command, deps)
-        elsif command.instance_of?(Dispatch::Contracts::RdepsEntry)
-          rdeps_entry(command, deps)
-        elsif command.instance_of?(Dispatch::Contracts::GraphEntry)
-          graph_entry(command, deps)
-        elsif command.instance_of?(Dispatch::Contracts::DiffEntry)
-          diff_entry(command, deps)
-        elsif command.instance_of?(Dispatch::Contracts::ListKeys)
-          list_keys(command, deps)
-        elsif command.instance_of?(Dispatch::Contracts::PulseEntries)
-          pulse_entries(command, call, deps)
-        else
-          raise "Unsupported contract: #{command.class} (ID: #{command.class.object_id})"
-        end
+        handler = DISPATCH[command.class]
+        raise "Unsupported contract: #{command.class}" unless handler
+
+        handler.call(command, call, deps)
       end
 
       def self.get_entry(command, deps)

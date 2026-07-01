@@ -23,32 +23,25 @@ module Textus
       ].freeze
       NEEDS = %i[manifest file_store schemas audit_log layout pipeline job_store workflows].freeze
 
+      DISPATCH = {
+        Dispatch::Contracts::BootStore => :boot_store,
+        Dispatch::Contracts::DoctorStore => :doctor_store,
+        Dispatch::Contracts::DrainStore => :drain_store,
+        Dispatch::Contracts::IngestEntry => :ingest_entry,
+        Dispatch::Contracts::JobsAction => :jobs_action,
+        Dispatch::Contracts::PublishedEntries => :published_entries,
+        Dispatch::Contracts::RuleExplain => :rule_explain,
+        Dispatch::Contracts::RuleLint => :rule_lint,
+        Dispatch::Contracts::RuleList => :rule_list,
+        Dispatch::Contracts::RuleTrace => :rule_trace,
+        Dispatch::Contracts::SchemaEnvelope => :schema_envelope,
+      }.freeze
+
       def self.call(command, call, deps)
-        if command.instance_of?(Dispatch::Contracts::BootStore)
-          boot_store(command, call, deps)
-        elsif command.instance_of?(Dispatch::Contracts::DoctorStore)
-          doctor_store(command, call, deps)
-        elsif command.instance_of?(Dispatch::Contracts::DrainStore)
-          drain_store(command, call, deps)
-        elsif command.instance_of?(Dispatch::Contracts::IngestEntry)
-          ingest_entry(command, call, deps)
-        elsif command.instance_of?(Dispatch::Contracts::JobsAction)
-          jobs_action(command, call, deps)
-        elsif command.instance_of?(Dispatch::Contracts::PublishedEntries)
-          published_entries(command, call, deps)
-        elsif command.instance_of?(Dispatch::Contracts::RuleExplain)
-          rule_explain(command, call, deps)
-        elsif command.instance_of?(Dispatch::Contracts::RuleLint)
-          rule_lint(command, call, deps)
-        elsif command.instance_of?(Dispatch::Contracts::RuleList)
-          rule_list(command, call, deps)
-        elsif command.instance_of?(Dispatch::Contracts::RuleTrace)
-          rule_trace(command, call, deps)
-        elsif command.instance_of?(Dispatch::Contracts::SchemaEnvelope)
-          schema_envelope(command, call, deps)
-        else
-          raise "Unsupported contract: #{command.class}"
-        end
+        method = DISPATCH[command.class]
+        raise "Unsupported contract: #{command.class}" unless method
+
+        send(method, command, call, deps)
       end
 
       def self.boot_store(_command, _call, deps)
