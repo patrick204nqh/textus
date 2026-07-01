@@ -1,5 +1,4 @@
 version: textus/4
-federation: []
 roles:
   - { name: human,      can: [author, propose, ingest] }
   - { name: agent,      can: [propose, keep, ingest] }
@@ -240,17 +239,6 @@ entries:
     format: json
     source: { from: external, command: "true", sources: [] }
   # System / feeds
-  # Federation — synced entries from peer stores
-  - key: artifacts.system.federation
-    lane: artifacts
-    kind: produced
-    format: json
-    publish:
-      - { to: ".textus/federation-summary.json" }
-  - key: artifacts.federation
-    lane: artifacts
-    nested: true
-    kind: nested
   - key: artifacts.system.index
     lane: artifacts
     kind: produced
