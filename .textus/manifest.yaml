@@ -212,6 +212,12 @@ entries:
     source: { from: external, command: "true", sources: [] }
     publish:
       - { to: docs/explanation/concepts.md, template: docs/explanation/concepts.erb }
+  # Validation workflow results
+  - key: artifacts.doctor.rule-ambiguity
+    lane: artifacts
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
   # System / feeds
   - key: artifacts.system.index
     lane: artifacts
