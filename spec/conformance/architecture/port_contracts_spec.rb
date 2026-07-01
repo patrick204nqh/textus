@@ -1,3 +1,4 @@
+# rubocop:disable RSpec/LeakyConstantDeclaration, RSpec/ContextWording, Lint/ConstantDefinitionInBlock
 RSpec.describe "Port contract conformance" do
   PORT_INTERFACES = {
     Textus::Port::Storage::Interface => [Textus::Port::Storage::FileStore],
@@ -30,3 +31,4 @@ RSpec.describe "Port contract conformance" do
     end
   end
 end
+# rubocop:enable RSpec/LeakyConstantDeclaration, RSpec/ContextWording, Lint/ConstantDefinitionInBlock

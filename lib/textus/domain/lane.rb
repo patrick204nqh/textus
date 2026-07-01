@@ -1,10 +1,18 @@
 module Textus
   module Domain
     module Lane
+      LANE_VERBS = {
+        "canon" => "author",
+        "workspace" => "keep",
+        "machine" => "converge",
+        "queue" => "propose",
+        "raw" => "ingest",
+      }.freeze
+
       module_function
 
       def verb_for(kind)
-        Textus::Manifest::Schema::KIND_REQUIRES_VERB[kind.to_s]
+        LANE_VERBS[kind.to_s]
       end
 
       def roles_with(verb, role_caps)

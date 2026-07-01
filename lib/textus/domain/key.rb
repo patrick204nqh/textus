@@ -26,8 +26,8 @@ module Textus
                  .map(&:first)
       end
 
-      def distance(a, b)
-        Textus::Key::Distance.call(a, b)
+      def distance(left, right)
+        Textus::Key::Distance.call(left, right)
       end
 
       def match?(pattern, key)
