@@ -36,8 +36,12 @@ Textus.workflow "boot" do
     end
     propose_lane = manifest.policy.propose_lane_for(agent_role)
     agent_quickstart = {
-      "read_verbs" => Textus::Surface::MCP::Catalog.read_verbs,
-      "write_verbs" => agent_role ? Textus::Surface::MCP::Catalog.write_verbs : [],
+      "read_verbs" => Textus::VerbRegistry.registered
+                        .select { |s| s.read? && s.mcp? }
+                        .map { |s| s.verb.to_s },
+      "write_verbs" => agent_role ? Textus::VerbRegistry.registered
+                        .select { |s| s.write? && s.mcp? }
+                        .map { |s| s.verb.to_s } : [],
       "writable_lanes" => writable_lanes,
       "propose_lane" => propose_lane,
     }

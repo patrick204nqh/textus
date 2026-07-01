@@ -59,11 +59,9 @@ RSpec.describe "Use-case module invariants (ADR-0125)" do
     end
   end
 
-  it "no module has both HANDLES and HANDLES_ALL" do
-    use_case_modules.each do |mod|
-      has_both = mod.const_defined?(:HANDLES) && mod.const_defined?(:HANDLES_ALL)
-      expect(has_both).to be(false),
-                          "#{mod.name} defines both HANDLES and HANDLES_ALL — pick one"
-    end
+  it "no module defines HANDLES_ALL (removed — use HANDLES only)" do
+    offenders = use_case_modules.select { |m| m.const_defined?(:HANDLES_ALL) }
+    expect(offenders).to be_empty,
+                          "#{offenders.map(&:name).join(', ')} define HANDLES_ALL — only HANDLES (singular) is supported"
   end
 end

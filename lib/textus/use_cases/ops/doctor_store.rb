@@ -8,7 +8,7 @@ module Textus
         NEEDS = %i[manifest layout pipeline file_store schemas audit_log].freeze
 
         def self.call(command, call, deps)
-          proxy = Store::ContainerProxy.new(
+          proxy = Store::UseCaseContainer.new(
             manifest: deps.manifest, file_store: deps.file_store,
             layout: deps.layout, pipeline: deps.pipeline,
             audit_log: deps.audit_log, schemas: deps.schemas,

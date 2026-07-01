@@ -18,9 +18,9 @@ module Textus
 
         registry = HandlerRegistry.new
         handler_modules.each do |mod|
-          next unless (mod.const_defined?(:HANDLES) || mod.const_defined?(:HANDLES_ALL)) && mod.const_defined?(:NEEDS)
+          next unless mod.const_defined?(:HANDLES) && mod.const_defined?(:NEEDS)
 
-          contract_classes = mod.const_defined?(:HANDLES_ALL) ? Array(mod::HANDLES_ALL) : [mod::HANDLES]
+          contract_classes = [mod::HANDLES]
           needs = mod::NEEDS
 
           deps_hash = needs.to_h do |field|

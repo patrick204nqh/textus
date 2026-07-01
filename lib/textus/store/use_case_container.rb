@@ -1,6 +1,6 @@
 module Textus
   class Store
-    InfrastructureProxy = Data.define(
+    UseCaseContainer = Data.define(
       :manifest, :file_store, :schemas, :audit_log, :job_store,
       :layout, :link_edge_store, :workflows, :pipeline, :root
     ) do
@@ -11,7 +11,5 @@ module Textus
                 .filter_map { |row| reader.read(row[:key]) }
       end
     end
-
-    ContainerProxy = InfrastructureProxy
   end
 end
