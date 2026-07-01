@@ -24,6 +24,7 @@ module Textus
       Check::RawAssetPaths,
       Check::ScratchpadSources,
       Check::StaleReviewedStamp,
+      Check::CursorRetention,
     ].freeze
 
     ALL_CHECKS = CHECKS.map(&:name_key).freeze

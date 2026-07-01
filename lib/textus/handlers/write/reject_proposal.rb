@@ -28,10 +28,13 @@ module Textus
             deps.event_bus.emit(Textus::Event::ProposalRejected.new(
                                   proposal_key: command.pending_key,
                                   role: call.role,
+                                  reason: command.reason,
                                   occurred_at: call.now,
                                 ))
           end
-          Value::Result.success("protocol" => Textus::PROTOCOL, "rejected" => command.pending_key, "target_key" => target_key)
+          result = { "protocol" => Textus::PROTOCOL, "rejected" => command.pending_key, "target_key" => target_key }
+          result["reason"] = command.reason if command.reason
+          Value::Result.success(result)
         end
       end
     end

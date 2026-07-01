@@ -72,6 +72,15 @@ module Textus
           ) STRICT;
 
           CREATE INDEX IF NOT EXISTS idx_audit_events_seq ON audit_events(seq);
+
+          CREATE TABLE IF NOT EXISTS link_edges (
+            from_key TEXT NOT NULL,
+            to_key   TEXT NOT NULL,
+            PRIMARY KEY (from_key, to_key)
+          ) STRICT;
+
+          CREATE INDEX IF NOT EXISTS idx_link_edges_to ON link_edges(to_key);
+          CREATE INDEX IF NOT EXISTS idx_link_edges_from ON link_edges(from_key);
         SQL
         # Idempotent migration: add schema_ref column if missing (existing stores).
         execute("ALTER TABLE entries ADD COLUMN schema_ref TEXT") rescue nil # rubocop:disable Style/RescueModifier

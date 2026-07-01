@@ -12,7 +12,7 @@ module Textus
     # was unchanged by them.
     class AuditLog
       DEFAULT_MAX_SIZE = 10_485_760
-      DEFAULT_KEEP = 5
+      DEFAULT_KEEP = 1000
 
       def initialize(root = nil, layout: nil, max_size: DEFAULT_MAX_SIZE, keep: DEFAULT_KEEP)
         @geometry = layout || Textus::Store::Layout.new(root)

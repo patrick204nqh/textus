@@ -10,10 +10,16 @@ module Textus
       # textus Session lifecycle (built lazily on first tool call) and delegates
       # execution to Catalog.
       class Server
+        CHECKPOINT_INTERVAL = 30
+
         def initialize(store:, role: Textus::Value::Role::DEFAULT, stdin: $stdin, stdout: $stdout)
           @store  = store.with_role(role)
           @stdin  = stdin
           @stdout = stdout
+          @shutdown = false
+
+          resume_from_cursor_file!
+          start_cursor_checkpoint_thread!
 
           @sdk = ::MCP::Server.new(
             name: "textus",
@@ -40,13 +46,24 @@ module Textus
 
         def dispatch(verb_name, args, _server_context)
           str_args = deep_stringify_keys(args)
-          @store.check_etag!(contract_etag_now) unless Catalog.read_verbs.include?(verb_name.to_s)
+
+          is_read = Catalog.read_verbs.include?(verb_name.to_s)
+          drifted = contract_etag_now != @store.contract_etag
+
           result = Catalog.call(verb_name.to_s, store: @store, args: str_args)
-          @store = @store.advance_cursor(@store.audit_log.latest_seq) if verb_name == :pulse
+
+          if verb_name == :pulse
+            result["contract_drifted"] = drifted
+            @store = @store.advance_cursor(@store.audit_log.latest_seq)
+          end
+
+          if drifted && !is_read && verb_name != :boot
+            result["_warning"] = "contract drifted (was #{short_etag(@store.contract_etag)}, " \
+                                 "now #{short_etag(contract_etag_now)}); call boot() to re-arm"
+          end
+
           @store = @store.with_role(@store.role) if verb_name == :boot
           ::MCP::Tool::Response.new([{ type: "text", text: JSON.dump(result) }])
-        rescue Textus::ContractDrift => e
-          raise_handler_error(e.message, Textus::ContractDrift::JSONRPC_CODE)
         rescue Textus::CursorExpired => e
           raise_handler_error(e.message, Textus::CursorExpired::JSONRPC_CODE)
         rescue Textus::Surface::MCP::ToolError => e
@@ -56,6 +73,23 @@ module Textus
         end
 
         private
+
+        def resume_from_cursor_file!
+          saved = Textus::Store::Cursor.new(root: @store.root, role: @store.role).read
+          latest = @store.audit_log.latest_seq
+          @store = @store.advance_cursor(saved) if saved > 0 && saved <= latest
+        end
+
+        def start_cursor_checkpoint_thread!
+          @checkpoint_thread = Thread.new do
+            loop do
+              sleep(self.class::CHECKPOINT_INTERVAL)
+              break if @shutdown
+
+              Textus::Store::Cursor.new(root: @store.root, role: @store.role).write(@store.cursor)
+            end
+          end
+        end
 
         # Snapshot at server init against the boot-time manifest. New produced entries
         # added by a later reconcile are invisible until the server restarts — this is
@@ -82,6 +116,8 @@ module Textus
         end
 
         def contract_etag_now = Textus::Value::Etag.for_contract(@store.root)
+
+        def short_etag(etag) = etag.to_s.delete_prefix("sha256:")[0, 8]
 
         # The SDK parses JSON with symbolize_names:true, making all nested hash keys symbols.
         # Recursively stringify so Catalog.call receives string-keyed hashes throughout.

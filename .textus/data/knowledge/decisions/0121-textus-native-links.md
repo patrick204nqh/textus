@@ -7,7 +7,7 @@ uid: ''
 
 ## Status
 
-Proposed
+Accepted
 
 ## Date
 
@@ -129,6 +129,22 @@ calls coexist until all templates are migrated.
   `Produce::Render` and the template context.
 - **Deferred:** GitHub and CLI output modes; `TEXTUS_GITHUB_URL` config.
   Phase 1 ships filesystem mode only.
+
+### Implementation decisions (2026-07-01 architecture review)
+
+The Phase 1 resolver + filesystem mode was partially implemented (Resolver, UriRewriter, LinkEdgeStore in `lib/textus/links/`). The architecture review deepened the implementation plan with concrete decisions:
+
+**Storage backend:** Edge table in the existing `store.db` SQLite (`link_edges(from_key, to_key)`), not a separate file or in-memory Hash. Two columns only — keeps the seam simple. The in-memory LinkEdgeStore served Phase 1 prototyping and is replaced.
+
+**Recording timing:** Edges recorded at both write time (publish pipeline rewrites textus:KEY URIs and inserts edges inline) and via a background sweep job (catches any missed edges — e.g. manual edits, entries written before the link table existed).
+
+**Query API:** Two verbs share the graph:
+  - `rdeps` — existing verb, backfilled from SQLite instead of in-memory. Returns both produced-entry manifest deps AND textus:KEY link backlinks in one unified response (supersedes the dual-vocabulary model).
+  - `graph` — new verb returning `neighbors(key)` and `reachable(key, depth=N)` via BFS/DFS. Agent- and human-queryable for impact analysis.
+
+**Surface scope:** Both verbs surfaced to CLI and MCP.
+
+**No edge metadata.** Directional `(from_key, to_key)` only. Future link types (references, depends_on, implements) would be a separate schema change.
 
 ## Implementation phases
 

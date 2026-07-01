@@ -14,6 +14,17 @@ module Textus
             return Value::Result.failure(:proposal_error, "proposal missing target_key")
           action = proposal["action"] || "put"
 
+          if command.dry_run
+            target_env = reader.read(target)
+            body_diff = Textus::Diff.body(target_env&.body, env.body)
+            meta_diff = Textus::Diff.meta(target_env&.meta&.dig("_meta") || {}, env.meta&.dig("_meta") || {})
+            result = { "dry_run" => true, "pending_key" => command.pending_key, "target_key" => target, "action" => action }
+            result["body"] = body_diff if body_diff
+            result["meta"] = meta_diff if meta_diff
+            result["summary"] = Textus::Diff.summary(result)
+            return Value::Result.success(result)
+          end
+
           writer = Store::Entry::Writer.new(
             file_store: deps.file_store, manifest: deps.manifest,
             schemas: deps.schemas, audit_log: deps.audit_log,

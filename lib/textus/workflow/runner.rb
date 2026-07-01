@@ -1,7 +1,18 @@
 require "timeout"
+require "concurrent"
 
 module Textus
   module Workflow
+    class ParallelStepFailed < Textus::Error
+      attr_reader :failures
+
+      def initialize(failures)
+        @failures = failures
+        msgs = failures.map { |f| "#{f[:step]}: #{f[:error]}" }.join("; ")
+        super(:workflow_parallel_step_failed, "parallel step(s) failed: #{msgs}")
+      end
+    end
+
     class Runner
       DEFAULT_TIMEOUT = 30
 
@@ -39,6 +50,14 @@ module Textus
       end
 
       def execute_one(step, data, ctx)
+        case step
+        when DSL::Step then execute_single(step, data, ctx)
+        when DSL::Parallel then execute_parallel(step, ctx)
+        else raise ArgumentError.new("unknown step type: #{step.class}")
+        end
+      end
+
+      def execute_single(step, data, ctx)
         timeout = step.timeout || DEFAULT_TIMEOUT
         Timeout.timeout(timeout) { step.callable.call(data, ctx) }
       rescue Timeout::Error => e
@@ -47,6 +66,31 @@ module Textus
         raise
       rescue StandardError => e
         raise StepFailed.new(step.name, e)
+      end
+
+      def execute_parallel(parallel, ctx)
+        promises = parallel.steps.map do |step|
+          Concurrent::Promises.future do
+            timeout = step.timeout || DEFAULT_TIMEOUT
+            Timeout.timeout(timeout) { step.callable.call(nil, ctx) }
+          end
+        end
+
+        results = Concurrent::Promises.zip_futures(*promises).value!
+        failures = []
+        outputs = {}
+        results.each_with_index do |result, i|
+          step = parallel.steps[i]
+          if result.fulfilled?
+            outputs[step.name] = result.value!
+          else
+            failures << { step: step.name, error: result.reason.message }
+          end
+        end
+
+        raise ParallelStepFailed.new(failures) unless failures.empty?
+
+        outputs
       end
 
       def publish(key, data, ctx)
