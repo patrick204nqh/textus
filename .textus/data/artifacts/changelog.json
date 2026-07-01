@@ -8,6 +8,54 @@
       "date": null,
       "commits": [
         {
+          "subject": "docs: add architecture patterns for triggers and adapters",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "refactor: centralize trigger vocabulary in TriggerCatalog",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "refactor: add dependency adapter modules for runtime deps",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "refactor: model jobs and produce results with outcome values",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "refactor: extract drain jobs pulse per-verb handlers",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "refactor: extract key_mv key_delete data_mv handlers",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "refactor: extract get put list per-verb handlers",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "refactor: add concern handlers for dispatch domains",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "refactor: narrow handler invocation to keyword interface",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "refactor: route CLI and MCP via VerbDispatch",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "refactor: introduce Infrastructure aliases and dispatch seam baseline",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "feat: implement ADRs 0121-0125, including bounded use-case objects, workflow parallel steps, and session resilience; update changelog and context documentation",
+          "date": "2026-07-01"
+        },
+        {
           "subject": "feat: add ADR-0125 for Bounded Use-Case Objects and related documentation; update manifest and CLI argument formatting",
           "date": "2026-07-01"
         },
