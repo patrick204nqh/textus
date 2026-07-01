@@ -23,8 +23,10 @@ module Textus
             break unless leased
 
             case run_one(leased)
-            when :completed     then completed += 1
-            when :dead_lettered then failed += 1
+            when Textus::Value::Outcome::Completed
+              completed += 1
+            when Textus::Value::Outcome::DeadLettered
+              failed += 1
             end
           end
           Summary.new(completed: completed, failed: failed)
@@ -54,9 +56,14 @@ module Textus
           )
           klass.call(container: @container, call: call, **job.args.transform_keys(&:to_sym))
           @queue.ack(leased)
-          :completed
+          Textus::Value::Outcome::Completed.new(details: { "job_id" => job.id, "type" => job.type })
         rescue StandardError => e
-          @queue.fail(leased, error: e.message)
+          result = @queue.fail(leased, error: e.message)
+          if result == :dead_lettered
+            Textus::Value::Outcome::DeadLettered.new(error: e.message)
+          else
+            Textus::Value::Outcome::RetryableFailure.new(error: e.message)
+          end
         end
       end
     end
