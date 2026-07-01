@@ -1,6 +1,6 @@
 module Textus
   class Store
-    Ctx = Data.define(
+    Infrastructure = Data.define(
       :manifest,          # Textus::Manifest
       :file_store,        # Port::Storage::FileStore
       :schemas,           # Schema::Registry
@@ -13,5 +13,7 @@ module Textus
       :freshness_evaluator, # Store::Freshness::TtlEvaluator
       :pipeline, # Dispatch::Pipeline (nil until wired)
     )
+
+    Ctx = Infrastructure
   end
 end

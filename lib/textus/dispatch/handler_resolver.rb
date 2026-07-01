@@ -29,7 +29,7 @@ module Textus
             unless ctx_hash.key?(field)
               raise Boot::DepNotFound.new(
                 "boot_dep_not_found",
-                "handler #{mod.name || mod.inspect} needs :#{field} but Ctx has no such field",
+                "handler #{mod.name || mod.inspect} needs :#{field} but Infrastructure has no such field",
               )
             end
             [field, ctx_hash[field]]

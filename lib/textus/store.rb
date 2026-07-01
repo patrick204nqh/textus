@@ -142,7 +142,7 @@ module Textus
       event_bus.subscribe(Event::ProposalAccepted, &cascade_subscriber.method(:on_proposal_accepted))
       event_bus.subscribe(Event::ProposalRejected, &cascade_subscriber.method(:on_proposal_rejected))
 
-      partial = Ctx.new(
+      partial = Infrastructure.new(
         manifest:, file_store:, schemas:, audit_log:, job_store:,
         layout:, link_edge_store:, workflows:, event_bus:,
         freshness_evaluator:, pipeline: nil
