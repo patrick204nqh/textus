@@ -12,6 +12,6 @@ RSpec.describe "verb routing contract" do
   end
 
   it "marks the future verb dispatch seam explicitly" do
-    skip "enable when VerbDispatch module is introduced"
+    expect(defined?(Textus::Dispatch::VerbDispatch)).to eq("constant")
   end
 end

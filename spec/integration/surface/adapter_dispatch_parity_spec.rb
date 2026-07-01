@@ -12,6 +12,11 @@ RSpec.describe "surface adapter dispatch parity" do
   end
 
   it "routes CLI and MCP through VerbDispatch" do
-    skip "enable when VerbDispatch is wired"
+    allow(Textus::Dispatch::VerbDispatch).to receive(:call).and_call_original
+
+    store.entry(:list, prefix: "knowledge")
+    Textus::Surface::MCP::Projector.new.dispatch(:list, inputs: {}, store: store)
+
+    expect(Textus::Dispatch::VerbDispatch).to have_received(:call).at_least(:once)
   end
 end
