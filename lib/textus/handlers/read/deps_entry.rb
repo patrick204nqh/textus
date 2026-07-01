@@ -1,15 +1,14 @@
 module Textus
   module Handlers
     module Read
-      class DepsEntry
-        def initialize(manifest:)
-          @manifest = manifest
-        end
+      module DepsEntry
+        HANDLES = Dispatch::Contracts::DepsEntry
+        NEEDS   = %i[manifest].freeze
 
-        def call(command, _call)
-          entry = @manifest.data.entries.find { |e| e.key == command.key }
-          deps = entry&.external? ? Array(entry.source&.sources).compact : []
-          Value::Result.success("key" => command.key, "deps" => deps.uniq)
+        def self.call(command, _call, deps)
+          entry = deps.manifest.data.entries.find { |e| e.key == command.key }
+          deps_list = entry&.external? ? Array(entry.source&.sources).compact : []
+          Value::Result.success("key" => command.key, "deps" => deps_list.uniq)
         end
       end
     end

@@ -21,22 +21,22 @@ RSpec.describe "accept refuses a non-canon proposal target (ADR 0035)" do
   end
 
   def propose(target_key)
-    store.with_role("agent").put("proposals.notes.p1",
-                                 meta: { "name" => "p1",
-                                         "proposal" => { "target_key" => target_key, "action" => "put" },
-                                         "_meta" => { "name" => "p1" } },
-                                 body: "please add\n")
+    store.with_role("agent").entry(:put, key: "proposals.notes.p1",
+                                         meta: { "name" => "p1",
+                                                 "proposal" => { "target_key" => target_key, "action" => "put" },
+                                                 "_meta" => { "name" => "p1" } },
+                                         body: "please add\n")
   end
 
   it "accepts a proposal targeting a canon zone" do
     propose("knowledge.notes.p1")
-    result = store.with_role("human").accept("proposals.notes.p1")
+    result = store.with_role("human").entry(:accept, pending_key: "proposals.notes.p1")
     expect(result["accepted"]).to eq("proposals.notes.p1")
     expect(result["target_key"]).to eq("knowledge.notes.p1")
   end
 
   it "refuses a proposal whose target resolves to no declared entry" do
     propose("ghost.nope.p1")
-    expect { store.with_role("human").accept("proposals.notes.p1") }.to raise_error(Textus::UnknownKey)
+    expect { store.with_role("human").entry(:accept, pending_key: "proposals.notes.p1") }.to raise_error(Textus::UnknownKey)
   end
 end

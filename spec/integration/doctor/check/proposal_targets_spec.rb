@@ -21,11 +21,11 @@ RSpec.describe Textus::Doctor::Check::ProposalTargets do
   end
 
   def propose(name, target_key)
-    store.with_role("agent").put("proposals.notes.#{name}",
-                                 meta: { "name" => name,
-                                         "proposal" => { "target_key" => target_key, "action" => "put" },
-                                         "_meta" => { "name" => name } },
-                                 body: "x\n")
+    store.with_role("agent").entry(:put, key: "proposals.notes.#{name}",
+                                         meta: { "name" => name,
+                                                 "proposal" => { "target_key" => target_key, "action" => "put" },
+                                                 "_meta" => { "name" => name } },
+                                         body: "x\n")
   end
 
   it "is silent when every proposal targets a canon zone" do

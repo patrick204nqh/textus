@@ -1,22 +1,20 @@
 module Textus
   module Handlers
     module Write
-      class MoveKey
-        def initialize(container:, manifest:)
-          @container = container
-          @manifest = manifest
-        end
+      module MoveKey
+        HANDLES = Dispatch::Contracts::MoveKey
+        NEEDS   = %i[file_store manifest schemas audit_log layout].freeze
 
-        def call(command, call)
+        def self.call(command, call, deps)
           Textus::Manifest::Data.validate_key!(command.old_key)
           Textus::Manifest::Data.validate_key!(command.new_key)
 
           return Value::Result.failure(:usage_error, "mv: old and new keys are identical") if command.old_key == command.new_key
 
-          old_res = @manifest.resolver.resolve(command.old_key)
-          new_res = @manifest.resolver.resolve(command.new_key)
+          old_res = deps.manifest.resolver.resolve(command.old_key)
+          new_res = deps.manifest.resolver.resolve(command.new_key)
 
-          reader = Store::Entry::Reader.from(container: @container)
+          reader = Store::Entry::Reader.new(file_store: deps.file_store, manifest: deps.manifest, layout: deps.layout)
 
           unless reader.exists?(command.old_key)
             return Value::Result.failure(:not_found,
@@ -31,7 +29,11 @@ module Textus
           end
 
           pre_env = reader.read(command.old_key)
-          writer = Store::Entry::Writer.from(container: @container, call: call)
+          writer = Store::Entry::Writer.new(
+            file_store: deps.file_store, manifest: deps.manifest,
+            schemas: deps.schemas, audit_log: deps.audit_log,
+            call: call, reader: reader, layout: deps.layout
+          )
           unless pre_env.uid
             writer.put(
               command.old_key, mentry: old_res.entry,
@@ -61,9 +63,7 @@ module Textus
                                 })
         end
 
-        private
-
-        def validate_zone(old_mentry, new_mentry)
+        def self.validate_zone(old_mentry, new_mentry)
           if old_mentry.lane != new_mentry.lane
             return Value::Result.failure(:usage_error,
                                          "mv: cross-zone refused (#{old_mentry.lane} -> #{new_mentry.lane}). Use put+delete.")

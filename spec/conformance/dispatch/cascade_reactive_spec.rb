@@ -28,7 +28,7 @@ RSpec.describe "cascade reactive materialise" do
     queue = Textus::Store::Jobs::Queue.new(store: store.container.job_store)
     queue.purge(:ready)
 
-    store.with_role("human").put("knowledge.source", body: "hello")
+    store.with_role("human").entry(:put, key: "knowledge.source", body: "hello")
 
     ready = queue.ready_ids
     expect(ready).to include(a_string_starting_with("materialize:"))
@@ -49,7 +49,7 @@ RSpec.describe "cascade reactive materialise" do
     queue = Textus::Store::Jobs::Queue.new(store: store2.container.job_store)
     queue.purge(:ready)
 
-    store2.with_role("human").put("knowledge.a", body: "x")
+    store2.with_role("human").entry(:put, key: "knowledge.a", body: "x")
 
     expect(queue.ready_ids).to be_empty
   end

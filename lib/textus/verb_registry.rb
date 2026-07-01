@@ -86,6 +86,7 @@ module Textus
       ingest: Dispatch::Contracts::IngestEntry,
       jobs: Dispatch::Contracts::JobsAction,
       rule_lint: Dispatch::Contracts::RuleLint,
+      rule_trace: Dispatch::Contracts::RuleTrace,
       data_mv: Dispatch::Contracts::DataMv,
       key_mv_prefix: Dispatch::Contracts::KeyMvPrefix,
       key_delete_prefix: Dispatch::Contracts::KeyDeletePrefix,
@@ -94,6 +95,22 @@ module Textus
     CONTRACT_TO_VERB = VERB_TO_CONTRACT.invert.freeze
 
     private_constant :VERB_TO_CONTRACT, :CONTRACT_TO_VERB
+
+    ENTRY_VERBS = %i[
+      get put list key_delete key_mv propose accept reject
+      audit blame where uid deps rdeps ingest
+    ].freeze
+
+    OPS_VERBS = %i[
+      boot drain doctor pulse jobs enqueue data_mv
+      key_mv_prefix key_delete_prefix published
+    ].freeze
+
+    RULE_VERBS = %i[rule_explain rule_list schema_show rule_lint rule_trace].freeze
+
+    VERB_DOMAIN = ENTRY_VERBS.to_h { |v| [v, :entry] }
+                             .merge(OPS_VERBS.to_h { |v| [v, :ops] })
+                             .merge(RULE_VERBS.to_h { |v| [v, :rule] }).freeze
 
     def self.contract_to_verb(klass)
       CONTRACT_TO_VERB[klass] || klass.name.split("::").last.gsub(/([a-z])([A-Z])/, '\1_\2').downcase
@@ -393,25 +410,16 @@ module Textus
                    description: "path to candidate manifest YAML")],
       %i[cli mcp], { default: ->(v, _) { v.to_h } }, "rule lint", nil, :maintenance
     )
-  end
-end
 
-# Generate explicit methods on Store for each registered verb so the API
-# is statically discoverable by IDEs and documentation tools.
-Textus::Store.class_eval do
-  Textus::VerbRegistry::VERBS.each do |verb, spec|
-    positional_names = Textus::VerbRegistry::POSITIONAL[verb] || []
-    define_method(verb) do |*args, **kwargs|
-      if args.size > positional_names.size
-        raise ArgumentError.new("#{verb} accepts #{positional_names.size} positional argument(s) (got #{args.size})")
-      end
-
-      positional_inputs = positional_names.zip(args).to_h.compact
-      inputs = positional_inputs.merge(kwargs)
-      pending = Textus::Dispatch::Binder.command(spec, inputs)
-      call    = Textus::Value::Call.build(role: @role, correlation_id: @correlation_id)
-      result  = @container.pipeline.dispatch(pending, call: call)
-      Textus::Value::Result.extract(result)
-    end
+    # ── rule_trace ───────────────────────────────────────
+    register VerbSpec.new(
+      :rule_trace, "Trace rule resolution for a key — all candidates, winners, and the effective RuleSet.",
+      [ArgSpec.arg(name: :key, required: true, positional: true,
+                   description: "dotted key whose rule resolution to trace")],
+      %i[cli mcp], {
+        cli: ->(r, _) { r },
+        default: ->(r, _) { r },
+      }, "rule trace", nil, :read
+    )
   end
 end

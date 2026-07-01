@@ -6,7 +6,7 @@ require "pathname"
 # SSoT guards (ADR 0098): lanes.md is hand-authored prose but cites manifest
 # facts. This asserts the doc covers every projected fact so it cannot silently
 # drift from the manifest. The MCP tool catalog is now returned by boot
-# (artifacts.boot) rather than maintained in a generated reference doc.
+# (artifacts.ops(:boot)) rather than maintained in a generated reference doc.
 RSpec.describe "reference doc facts cover their projections" do
   let(:repo) { Pathname.new(File.expand_path("../../..", __dir__)) }
 

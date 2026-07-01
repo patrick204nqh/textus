@@ -62,17 +62,16 @@ RSpec.describe "Schema evolution" do
     it "migrate uses the declared author-capability role, not the literal human fallback" do
       store = store_with_roles
 
-      store.with_role("human").put(
-        "knowledge.note",
-        meta: { "name" => "note", "headline" => "My Headline" },
-        body: "body text",
-      )
+      store.with_role("human").entry(:put,
+                                     key: "knowledge.note",
+                                     meta: { "name" => "note", "headline" => "My Headline" },
+                                     body: "body text")
 
       res = Textus::Schema::Tools.migrate(store, name: "note", rename: nil)
 
       expect(res["migrated"]).to include("knowledge.note")
 
-      env = store.with_role(Textus::Value::Role::DEFAULT).get("knowledge.note")
+      env = store.with_role(Textus::Value::Role::DEFAULT).entry(:get, key: "knowledge.note")
       expect(env.meta).to have_key("title")
       expect(env.meta).not_to have_key("headline")
 
@@ -103,11 +102,10 @@ RSpec.describe "Schema evolution" do
 
     it "raises SchemaViolation listing the missing required field" do
       expect do
-        store.with_role("human").put(
-          "knowledge.network.org.bob",
-          meta: { "name" => "bob", "org" => "acme" },
-          body: "",
-        )
+        store.with_role("human").entry(:put,
+                                       key: "knowledge.network.org.bob",
+                                       meta: { "name" => "bob", "org" => "acme" },
+                                       body: "")
       end.to raise_error(Textus::SchemaViolation) do |err|
         env = err.to_envelope
         expect(env["code"]).to eq("schema_violation")

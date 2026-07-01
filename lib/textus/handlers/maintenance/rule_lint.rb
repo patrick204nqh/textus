@@ -3,13 +3,12 @@ require "yaml"
 module Textus
   module Handlers
     module Maintenance
-      class RuleLint
-        def initialize(manifest:)
-          @manifest = manifest
-        end
+      module RuleLint
+        HANDLES = Dispatch::Contracts::RuleLint
+        NEEDS   = %i[manifest].freeze
 
-        def call(command, _call)
-          root = @manifest.data.root
+        def self.call(command, _call, deps)
+          root = deps.manifest.data.root
           live_rules = current_rules(root)
           candidate_result = parse_candidate(command.candidate_yaml)
           return candidate_result if candidate_result.is_a?(Value::Result) && candidate_result.failure?
@@ -33,14 +32,12 @@ module Textus
           Value::Result.success(Textus::Store::Jobs::Plan.new(steps: steps, warnings: []))
         end
 
-        private
-
-        def current_rules(root)
+        def self.current_rules(root)
           raw = YAML.safe_load_file(File.join(root, "manifest.yaml"), permitted_classes: [Symbol], aliases: false)
           Array(raw["rules"])
         end
 
-        def parse_candidate(yaml_text)
+        def self.parse_candidate(yaml_text)
           raw = YAML.safe_load(yaml_text, permitted_classes: [Symbol], aliases: false)
           return Value::Result.failure(:usage_error, "candidate is not a YAML mapping") unless raw.is_a?(Hash)
 

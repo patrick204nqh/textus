@@ -7,8 +7,8 @@ RSpec.describe "textus/4 conformance — Fixture B: role gate on write" do
   describe "Fixture B — role gate on write" do
     it "raises WriteForbidden when an agent tries to write identity" do
       expect do
-        store.with_role("agent").put("identity.self",
-                                     meta: { "name" => "self" }, body: "n/a")
+        store.with_role("agent").entry(:put, key: "identity.self",
+                                             meta: { "name" => "self" }, body: "n/a")
       end.to raise_error(Textus::WriteForbidden) do |err|
         env = err.to_envelope
         expect(env["code"]).to eq("write_forbidden")

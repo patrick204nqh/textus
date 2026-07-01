@@ -1,0 +1,116 @@
+require "spec_helper"
+
+RSpec.describe Textus::Store::Entry::WriteStep do
+  let(:key) { "knowledge.demo" }
+  let(:mentry) { instance_double(Textus::Manifest::Entry::Leaf, format: :markdown, lane: "knowledge", schema: nil) }
+  let(:payload) { Textus::Value::Payload.new(meta: { "title" => "Demo" }, body: "hello", content: nil) }
+
+  describe "WriteContext" do
+    it "holds inputs and all step outputs as nil by default" do
+      ctx = described_class::WriteContext.new(
+        key: key, mentry: mentry, payload: payload, if_etag: nil,
+        path: nil, existing_env: nil, meta: nil, content: nil,
+        bytes: nil, eff_meta: nil, eff_body: nil, eff_content: nil,
+        etag_before: nil, envelope: nil
+      )
+      expect(ctx.key).to eq(key)
+      expect(ctx.path).to be_nil
+      expect(ctx.envelope).to be_nil
+    end
+
+    it "supports immutable update via #with" do
+      ctx = described_class::WriteContext.new(
+        key: key, mentry: mentry, payload: payload, if_etag: nil,
+        path: nil, existing_env: nil, meta: nil, content: nil,
+        bytes: nil, eff_meta: nil, eff_body: nil, eff_content: nil,
+        etag_before: nil, envelope: nil
+      )
+      updated = ctx.with(path: "/tmp/demo.md")
+      expect(updated.path).to eq("/tmp/demo.md")
+      expect(ctx.path).to be_nil
+    end
+  end
+
+  describe "DEFAULT_PUT" do
+    it "is an array of modules with .call" do
+      expect(described_class::DEFAULT_PUT).to all(respond_to(:call))
+    end
+
+    it "contains exactly the expected steps in order" do
+      names = described_class::DEFAULT_PUT.map(&:name).map { |n| n.split("::").last }
+      expect(names).to eq(%w[
+                            ResolvePath ReadExisting InjectMeta Serialize
+                            EnforceNameMatch ValidateSchema ValidateRaw
+                            CheckEtag WriteBytes BuildEnvelope AppendAudit
+                          ])
+    end
+  end
+
+  describe "DeleteContext" do
+    it "holds key, mentry, if_etag inputs and path, etag_before outputs" do
+      ctx = described_class::DeleteContext.new(
+        key: "knowledge.demo", mentry: nil, if_etag: nil,
+        path: nil, etag_before: nil
+      )
+      expect(ctx.key).to eq("knowledge.demo")
+      expect(ctx.path).to be_nil
+      expect(ctx.etag_before).to be_nil
+    end
+
+    it "supports immutable update via #with" do
+      ctx = described_class::DeleteContext.new(
+        key: "knowledge.demo", mentry: nil, if_etag: nil,
+        path: nil, etag_before: nil
+      )
+      expect(ctx.with(path: "/tmp/demo.md").path).to eq("/tmp/demo.md")
+      expect(ctx.path).to be_nil
+    end
+  end
+
+  describe "DEFAULT_DELETE" do
+    it "contains exactly the expected steps in order" do
+      names = described_class::DEFAULT_DELETE.map(&:name).map { |n| n.split("::").last }
+      expect(names).to eq(%w[
+                            ResolvePath AssertExists CheckEtag
+                            DeleteFile PruneParents AppendDeleteAudit
+                          ])
+    end
+  end
+
+  describe "MoveContext" do
+    it "holds all inputs and computed fields" do
+      ctx = described_class::MoveContext.new(
+        from_key: "knowledge.alpha", to_key: "knowledge.beta",
+        new_mentry: nil, if_etag: nil,
+        from_path: nil, to_path: nil,
+        etag_before: nil, etag_after: nil, envelope: nil
+      )
+      expect(ctx.from_key).to eq("knowledge.alpha")
+      expect(ctx.from_path).to be_nil
+      expect(ctx.envelope).to be_nil
+    end
+
+    it "supports immutable update via #with" do
+      ctx = described_class::MoveContext.new(
+        from_key: "knowledge.alpha", to_key: "knowledge.beta",
+        new_mentry: nil, if_etag: nil,
+        from_path: nil, to_path: nil,
+        etag_before: nil, etag_after: nil, envelope: nil
+      )
+      updated = ctx.with(from_path: "/tmp/alpha.md")
+      expect(updated.from_path).to eq("/tmp/alpha.md")
+      expect(ctx.from_path).to be_nil
+    end
+  end
+
+  describe "DEFAULT_MOVE" do
+    it "contains exactly the expected steps in order" do
+      names = described_class::DEFAULT_MOVE.map(&:name).map { |n| n.split("::").last }
+      expect(names).to eq(%w[
+                            ResolvePaths AssertSourceExists ReadMoveEtagBefore CheckMoveEtag
+                            MoveFile PruneSourceParents RewriteBasename
+                            ReadEtagAfter ReadEnvelope AppendMoveAudit
+                          ])
+    end
+  end
+end

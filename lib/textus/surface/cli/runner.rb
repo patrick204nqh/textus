@@ -59,7 +59,10 @@ module Textus
           role = verb_instance.resolved_role(store)
 
           s = store.with_role(role)
-          result = s.public_send(spec.verb, **inputs)
+          domain = Textus::VerbRegistry::VERB_DOMAIN.fetch(spec.verb) do
+            raise Textus::UsageError.new("#{spec.verb} has no domain assignment")
+          end
+          result = s.public_send(domain, spec.verb, **inputs)
           result = spec.view(:cli).call(result, inputs) if spec.view(:cli)
           verb_instance.emit(result)
         rescue Textus::Dispatch::MissingArgs => e

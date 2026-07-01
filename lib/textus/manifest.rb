@@ -18,6 +18,7 @@ require_relative "manifest/schema"
 require_relative "manifest/data"
 require_relative "manifest/policy"
 require_relative "manifest/resolver"
+require_relative "manifest/rule_trace"
 require_relative "manifest/capabilities"
 
 # Reopen Textus::Manifest (defined above as a Data.define) to attach
@@ -43,11 +44,18 @@ module Textus # rubocop:disable Style/OneClassPerFile
       private
 
       def build(raw, root)
-        data = Manifest::Data.parse(raw, root: root)
+        # Phase 1: structural data + authority policy (no entry validation)
+        data   = Manifest::Data.parse(raw, root: root)
+        policy = Manifest::Policy.new(data)
+
+        # Phase 2: validate entries with fully-formed Policy
+        data.entries.each { |entry| Manifest::Entry::Validators.run_all(entry, policy:) }
+        policy.entries = data.entries
+
         new(
-          data: data,
+          data:,
           resolver: Manifest::Resolver.new(data),
-          policy: data.policy,
+          policy:,
           rules: Manifest::Rules.parse(raw["rules"] || []),
         )
       end

@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+- feat: Introduce Boot.wire and Typed Events
+- refactor: drop positional-arg support from entry/ops/rule — keyword args only
+- feat: replace generated verb methods with entry/ops/rule noun-domain API on Store
+- refactor: replace Container#build_pipeline with declarative HANDLER_MANIFEST in Dispatch::Assembler
+- refactor: decompose Entry::Writer#put into WriteStep::DEFAULT_PUT chain
+- chore: save architecture redesign plan to scratchpad
 - refactor: remove manual uid from all workflows — textus manages uid natively via inject_all
 - fix(ci): stable uid in architecture-index — use JSON.generate instead of Hash#inspect (Ruby 3.3 vs 3.4 diverge)
 - fix(ci): fetch-depth: 0 on docs job — git log needs full history for changelog workflow

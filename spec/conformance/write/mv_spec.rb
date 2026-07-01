@@ -23,23 +23,23 @@ RSpec.describe "textus mv" do
 
   def put_md(key, body: "hi")
     basename = key.split(".").last
-    store.with_role("human").put(key, meta: { "name" => basename }, body: body)
+    store.with_role("human").entry(:put, key: key, meta: { "name" => basename }, body: body)
   end
 
   it "moves an entry within the same zone, preserving uid" do
     env = put_md("knowledge.notes.alpha")
     uid = env.uid
-    res = store.with_role("human").key_mv("knowledge.notes.alpha", "knowledge.notes.beta")
+    res = store.with_role("human").entry(:key_mv, old_key: "knowledge.notes.alpha", new_key: "knowledge.notes.beta")
     expect(res["ok"]).to be true
     expect(res["uid"]).to eq(uid)
     expect(File.exist?(File.join(root, "data/knowledge/notes/alpha.md"))).to be false
     expect(File.exist?(File.join(root, "data/knowledge/notes/beta.md"))).to be true
-    expect(store.with_role(Textus::Value::Role::DEFAULT).get("knowledge.notes.beta").uid).to eq(uid)
+    expect(store.with_role(Textus::Value::Role::DEFAULT).entry(:get, key: "knowledge.notes.beta").uid).to eq(uid)
   end
 
   it "writes an audit row with verb=mv and top-level structural fields" do
     put_md("knowledge.notes.alpha")
-    store.with_role("human").key_mv("knowledge.notes.alpha", "knowledge.notes.beta")
+    store.with_role("human").entry(:key_mv, old_key: "knowledge.notes.alpha", new_key: "knowledge.notes.beta")
     expect(store).to have_audit_verb("key_mv")
     parsed = last_audit_row(store)
     expect(parsed["key"]).to eq("knowledge.notes.beta")
@@ -53,7 +53,7 @@ RSpec.describe "textus mv" do
   it "refuses cross-zone moves" do
     put_md("knowledge.notes.alpha")
     expect do
-      store.with_role("human").key_mv("knowledge.notes.alpha", "identity.notes.alpha")
+      store.with_role("human").entry(:key_mv, old_key: "knowledge.notes.alpha", new_key: "identity.notes.alpha")
     end.to raise_error(Textus::ActionError, /cross-zone/)
   end
 
@@ -61,25 +61,25 @@ RSpec.describe "textus mv" do
     put_md("knowledge.notes.alpha")
     put_md("knowledge.notes.beta")
     expect do
-      store.with_role("human").key_mv("knowledge.notes.alpha", "knowledge.notes.beta")
+      store.with_role("human").entry(:key_mv, old_key: "knowledge.notes.alpha", new_key: "knowledge.notes.beta")
     end.to raise_error(Textus::ActionError, /already exists/)
   end
 
   it "refuses when the new key fails grammar" do
     put_md("knowledge.notes.alpha")
     expect do
-      store.with_role("human").key_mv("knowledge.notes.alpha", "knowledge.notes.Bad_Name")
+      store.with_role("human").entry(:key_mv, old_key: "knowledge.notes.alpha", new_key: "knowledge.notes.Bad_Name")
     end.to raise_error(Textus::UsageError, /invalid key segment/)
   end
 
   it "mints a uid if the source had none, so the audit row carries it" do
     src = File.join(root, "data/knowledge/notes/alpha.md")
     File.write(src, "---\nname: alpha\n---\nbody\n")
-    expect(store.with_role(Textus::Value::Role::DEFAULT).get("knowledge.notes.alpha").uid).to be_nil
+    expect(store.with_role(Textus::Value::Role::DEFAULT).entry(:get, key: "knowledge.notes.alpha").uid).to be_nil
 
-    res = store.with_role("human").key_mv("knowledge.notes.alpha", "knowledge.notes.beta")
+    res = store.with_role("human").entry(:key_mv, old_key: "knowledge.notes.alpha", new_key: "knowledge.notes.beta")
     expect(res["uid"]).to match(/\A[a-f0-9]{12,}\z/)
-    expect(store.with_role(Textus::Value::Role::DEFAULT).get("knowledge.notes.beta").uid).to eq(res["uid"])
+    expect(store.with_role(Textus::Value::Role::DEFAULT).entry(:get, key: "knowledge.notes.beta").uid).to eq(res["uid"])
 
     parsed = last_audit_row(store)
     expect(parsed["uid"]).to eq(res["uid"])

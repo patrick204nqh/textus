@@ -85,6 +85,7 @@ RSpec.describe "Textus::Surface::CLI verb return-value contract" do
       "explain" => Textus::Surface::CLI::Verb::GenRuleExplain,
       "lint" => Textus::Surface::CLI::Verb::GenRuleLint,
       "list" => Textus::Surface::CLI::Verb::GenRuleList,
+      "trace" => Textus::Surface::CLI::Verb::GenRuleTrace,
     )
     expect(Textus::Surface::CLI::Group::Data.subcommands).to eq(
       "mv" => Textus::Surface::CLI::Verb::GenDataMv,

@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Store::Container, "#read_family" do
+RSpec.describe "Textus::Store::ContainerProxy#read_family" do
   include_context "textus_store_fixture"
 
   let(:container) do

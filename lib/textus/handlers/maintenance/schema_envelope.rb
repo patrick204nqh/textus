@@ -1,15 +1,13 @@
 module Textus
   module Handlers
     module Maintenance
-      class SchemaEnvelope
-        def initialize(manifest:, schemas:)
-          @manifest = manifest
-          @schemas = schemas
-        end
+      module SchemaEnvelope
+        HANDLES = Dispatch::Contracts::SchemaEnvelope
+        NEEDS   = %i[manifest schemas].freeze
 
-        def call(command, _call)
-          mentry = @manifest.resolver.resolve(command.key).entry
-          schema = @schemas.fetch_or_nil(mentry.schema)
+        def self.call(command, _call, deps)
+          mentry = deps.manifest.resolver.resolve(command.key).entry
+          schema = deps.schemas.fetch_or_nil(mentry.schema)
           Value::Result.success("protocol" => Textus::PROTOCOL, "key" => command.key,
                                 "schema_ref" => mentry.schema, "schema" => schema&.to_h)
         end

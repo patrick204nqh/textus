@@ -3,14 +3,13 @@ require "yaml"
 module Textus
   module Handlers
     module Write
-      class DataMv
-        def initialize(container:)
-          @container = container
-        end
+      module DataMv
+        HANDLES = Dispatch::Contracts::DataMv
+        NEEDS   = %i[manifest layout].freeze
 
-        def call(command, _call)
-          manifest = @container.manifest
-          geom = @container.layout
+        def self.call(command, _call, deps)
+          manifest = deps.manifest
+          geom = deps.layout
 
           return Value::Result.failure(:usage_error, "from and to required") if command.from.nil? || command.to.nil?
           unless manifest.data.declared_lane_kinds.key?(command.from)
@@ -36,9 +35,7 @@ module Textus
           Value::Result.success(plan)
         end
 
-        private
-
-        def rewrite_manifest!(geom, from:, to:)
+        def self.rewrite_manifest!(geom, from:, to:)
           path = geom.manifest_path
           raw = YAML.safe_load_file(path, permitted_classes: [Symbol], aliases: false)
           raw["lanes"].each { |lane| lane["name"] = to if lane["name"] == from }

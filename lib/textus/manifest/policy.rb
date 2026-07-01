@@ -10,8 +10,11 @@ module Textus
     # (declared_kind, derived_entry?, queue_lane?, queue_lane).
     class Policy
       def initialize(data)
-        @data = data
+        @data    = data
+        @entries = nil
       end
+
+      attr_writer :entries
 
       # The capability a lane's kind requires to be written, or nil if the
       # lane declares no kind. declared_kind returns a Symbol; the table is
@@ -57,13 +60,9 @@ module Textus
         @data.declared_lane_kinds.key(:queue)
       end
 
-      # ADR 0091: derived-ness is a property of the ENTRY, not its lane (one
-      # machine lane holds both intake and derived entries). Resolve the entry
-      # and ask it directly. Returns false if entries are not yet built
-      # (validator phase during Data#initialize) — validators must not rely on
-      # cross-entry state during construction.
-      def derived_entry?(_key)
-        false
+      def derived_entry?(key)
+        entry = Array(@entries).find { |e| e.key == key }
+        entry.is_a?(Textus::Manifest::Entry::Produced) || false
       end
 
       # The single lane declaring kind: machine, or nil.

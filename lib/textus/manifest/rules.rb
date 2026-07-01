@@ -20,6 +20,45 @@ module Textus
       attr_reader :blocks
 
       def for(key)
+        for_with_trace(key).first
+      end
+
+      def for_with_trace(key)
+        candidates = @blocks.map do |b|
+          matched     = Textus::Manifest::Policy::Matcher.matches?(b.match, key)
+          specificity = matched ? Textus::Manifest::Policy::Matcher.specificity(b.match) : 0
+          { "pattern" => b.match, "matched" => matched, "specificity" => specificity }
+        end
+
+        winning_blocks = @blocks
+                         .select { |b| Textus::Manifest::Policy::Matcher.matches?(b.match, key) }
+                         .sort_by { |b| [-Textus::Manifest::Policy::Matcher.specificity(b.match), b.match.length, b.match] }
+
+        ruleset = build_ruleset_from(winning_blocks, key)
+
+        trace = Manifest::RuleTrace.new(
+          key:,
+          candidates:,
+          winners: winning_blocks.map do |b|
+            {
+              "pattern" => b.match,
+              "specificity" => Textus::Manifest::Policy::Matcher.specificity(b.match),
+              "fields" => PICK_FIELDS.each_with_object({}) { |f, h| h[f.to_s] = b.public_send(f) if b.public_send(f) },
+            }
+          end,
+          ruleset_fields: ruleset.to_h,
+        )
+
+        [ruleset, trace]
+      end
+
+      def explain(key)
+        @blocks.select { |b| Textus::Manifest::Policy::Matcher.matches?(b.match, key) }
+      end
+
+      private
+
+      def build_ruleset_from(_winning_blocks, key)
         slots = PICK_FIELDS.to_h { |f| [f, []] }
         @blocks.each do |b|
           next unless Textus::Manifest::Policy::Matcher.matches?(b.match, key)
@@ -28,12 +67,6 @@ module Textus
         end
         RuleSet.new(**slots.to_h { |slot, blocks| [slot, pick(blocks, slot, key)] })
       end
-
-      def explain(key)
-        @blocks.select { |b| Textus::Manifest::Policy::Matcher.matches?(b.match, key) }
-      end
-
-      private
 
       def pick(blocks, slot, key)
         return nil if blocks.empty?

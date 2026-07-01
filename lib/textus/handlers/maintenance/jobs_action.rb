@@ -1,13 +1,12 @@
 module Textus
   module Handlers
     module Maintenance
-      class JobsAction
-        def initialize(job_store:)
-          @job_store = job_store
-        end
+      module JobsAction
+        HANDLES = Dispatch::Contracts::JobsAction
+        NEEDS   = %i[job_store].freeze
 
-        def call(command, _call)
-          queue = Textus::Store::Jobs::Queue.new(store: @job_store)
+        def self.call(command, _call, deps)
+          queue = Textus::Store::Jobs::Queue.new(store: deps.job_store)
           case command.action
           when "retry" then queue.retry_failed(command.job_id)
           when "purge" then queue.purge(command.state)
