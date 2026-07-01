@@ -4,7 +4,7 @@ module Textus
       # The manifest's key whitelists and the rule-field registry — the schema's
       # data tables (ADR 0109; the vocabulary lives in Schema::Vocabulary).
       module Keys
-        ROOT_KEYS  = %w[version roles lanes entries rules audit].freeze
+        ROOT_KEYS  = %w[version roles lanes entries rules audit federation].freeze
         ROLE_KEYS  = %w[name can].freeze
         LANE_KEYS  = %w[name kind owner desc].freeze
         ENTRY_KEYS = %w[
