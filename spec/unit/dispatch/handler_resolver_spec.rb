@@ -34,7 +34,10 @@ RSpec.describe Textus::Dispatch::HandlerResolver do
       handler_fn = registry.for(FakeContract)
       expect(handler_fn).not_to be_nil
 
-      result = handler_fn.call(FakeContract.new(key: "x"), Textus::Value::Call.build(role: "human"))
+      result = handler_fn.call(
+        command: FakeContract.new(key: "x"),
+        call: Textus::Value::Call.build(role: "human"),
+      )
       expect(result.value["deps_manifest"]).to eq(fake_manifest)
     end
 

@@ -38,7 +38,7 @@ module Textus
           dep_struct = Data.define(*needs).new(**deps_hash)
 
           contract_classes.each do |contract_class|
-            registry.register(contract_class, ->(command, call) { mod.call(command, call, dep_struct) })
+            registry.register(contract_class, ->(command:, call:) { mod.call(command, call, dep_struct) })
           end
         end
         registry
