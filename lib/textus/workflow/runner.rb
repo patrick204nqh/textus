@@ -53,9 +53,15 @@ module Textus
       def execute_one(step, data, ctx)
         case step
         when DSL::Step then execute_single(step, data, ctx)
+        when DSL::ValidateStep then execute_validate(step, data, ctx)
         when DSL::Parallel then execute_parallel(step, ctx)
         else raise ArgumentError.new("unknown step type: #{step.class}")
         end
+      end
+
+      # Validation steps collect issues instead of raising on failure.
+      def execute_validate(step, data, ctx)
+        step.callable.call(data, ctx)
       end
 
       def execute_single(step, data, ctx)
@@ -92,6 +98,37 @@ module Textus
         raise ParallelStepFailed.new(failures) unless failures.empty?
 
         outputs
+      end
+
+      public
+
+      # Run validation across ALL matching entries (multi-key scan).
+      # Returns { workflow:, total:, passed:, issues: }
+      def validate_all
+        keys = @definition.multi_match? ? all_matching_keys : @container.manifest.data.entries.select { |e| @definition.match?(e.key) }.map(&:key)
+        all_issues = []
+        keys.each do |key|
+          ctx = build_context(key)
+          each_validate_step(ctx).each { |issue| all_issues << issue.merge("key" => key) }
+        end
+        {
+          "workflow" => @definition.name,
+          "total" => keys.size,
+          "passed" => keys.size - all_issues.group_by { |i| i["key"] }.size,
+          "issues" => all_issues,
+        }
+      end
+
+      private
+
+      def all_matching_keys
+        prefix = @definition.match_pattern.sub(/\.\*\*$/, "")
+        rows = @container.manifest.resolver.enumerate
+        rows.select { |r| r[:key].start_with?(prefix) }.map { |r| r[:key] }
+      end
+
+      def each_validate_step(ctx)
+        @definition.validate_steps.flat_map { |step| step.callable.call(nil, ctx) }
       end
 
       def publish(key, data, ctx)
