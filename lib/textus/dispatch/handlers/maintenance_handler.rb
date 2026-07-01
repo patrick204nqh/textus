@@ -8,6 +8,9 @@ module Textus
         module_function
 
         def call(command, call, deps)
+          return Maintenance::DrainHandler.call(command, call, deps) if command.instance_of?(Dispatch::Contracts::DrainStore)
+          return Maintenance::JobsHandler.call(command, call, deps) if command.instance_of?(Dispatch::Contracts::JobsAction)
+
           Textus::UseCases::Maintenance.call(command, call, deps)
         end
       end

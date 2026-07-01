@@ -70,4 +70,29 @@ RSpec.describe "dispatch per-verb handlers" do
     expect(result).to be_a(Textus::Store::Jobs::Plan)
     expect(result.steps.first["op"]).to eq("rename_zone")
   end
+
+  it "routes jobs through the maintenance concern with a per-verb handler present" do
+    expect(defined?(Textus::Dispatch::Handlers::Maintenance::JobsHandler)).to eq("constant")
+
+    result = store.ops(:jobs, state: "ready", action: nil, job_id: nil)
+    expect(result).to be_a(Hash)
+    expect(result["ok"]).to be(true)
+  end
+
+  it "routes drain through the maintenance concern with a per-verb handler present" do
+    expect(defined?(Textus::Dispatch::Handlers::Maintenance::DrainHandler)).to eq("constant")
+
+    result = store.ops(:drain, prefix: nil, lane: nil)
+    expect(result).to be_a(Hash)
+    expect(result).to include("ok")
+  end
+
+  it "routes pulse through the read concern with a per-verb handler present" do
+    expect(defined?(Textus::Dispatch::Handlers::Read::PulseHandler)).to eq("constant")
+
+    result = store.ops(:pulse, since: nil)
+    expect(result).to be_a(Hash)
+    expect(result).to include("cursor")
+    expect(result).to include("changed")
+  end
 end
