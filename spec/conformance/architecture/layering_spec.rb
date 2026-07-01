@@ -16,7 +16,7 @@ RSpec.describe "layering invariant (ADR 0106)" do
   end
 
   it "has domain files to check (guard is wired to a real tree)" do
-    skip "domain/ is empty — layer dissolved into dispatch/" if domain_files.empty?
+    expect(domain_files).not_to be_empty, "domain/ is empty — run Phase 2 of the architecture deepening"
   end
 
   layers_above_domain.each do |layer|

@@ -9,16 +9,11 @@ module Textus
 
       def resolve(key)
         @data.validate_key!(key)
-        segments = key.split(".")
-        candidates = @data.entries
-                          .map { |e| [e, e.key.split(".")] }
-                          .select { |(_, esegs)| esegs == segments[0, esegs.length] }
-                          .sort_by { |(_, esegs)| -esegs.length }
-        raise UnknownKey.new(key, suggestions: suggestions_for(key)) if candidates.empty?
+        dr = Domain::Key.resolve(key, @data.entries)
+        raise UnknownKey.new(key, suggestions: suggestions_for(key)) unless dr
+        raise UnknownKey.new(key, suggestions: suggestions_for(key)) unless dr.entry
 
-        entry, esegs = candidates.first
-        remaining = segments[esegs.length..]
-        build_resolution(entry, remaining, key)
+        Resolution.new(entry: dr.entry, path: build_path(dr.entry, dr.remaining), remaining: dr.remaining)
       end
 
       def suggestions_for(key)
@@ -40,23 +35,17 @@ module Textus
 
       private
 
-      # Returns true for entries that behave as nested (Nested subclass, or any
-      # entry with nested: true in the raw YAML — e.g. Intake entries covering
-      # a directory of leaf files).
       def nested_entry?(entry)
         entry.nested?
       end
 
-      def build_resolution(entry, remaining, key)
+      def build_path(entry, remaining)
         if remaining.empty?
-          Resolution.new(entry: entry, path: resolve_leaf_path(entry), remaining: [])
+          resolve_leaf_path(entry)
         else
-          raise UnknownKey.new(key, suggestions: suggestions_for(key)) unless nested_entry?(entry)
-
           primary_ext = Textus::Format.for(entry.format).extensions.first
           base = Textus::Key::Path.normalize_relative_path(entry.path)
-          path = File.join(@data.root, base, *remaining) + primary_ext
-          Resolution.new(entry: entry, path: path, remaining: remaining)
+          File.join(@data.root, base, *remaining) + primary_ext
         end
       end
 
