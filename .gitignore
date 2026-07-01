@@ -28,3 +28,8 @@ docs/superpowers/
 .superpowers/
 
 skills/
+
+# Agent freedom zone — transient working memory
+.textus/data/scratchpad/sessions/
+.textus/data/scratchpad/scripts/
+/.textus/scripts/
