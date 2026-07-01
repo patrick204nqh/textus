@@ -8,6 +8,7 @@ module Textus
         entry.moved
         proposal.accepted
         proposal.rejected
+        schedule.tick
       ].freeze
 
       ACTIONS = %w[materialize sweep index].freeze
