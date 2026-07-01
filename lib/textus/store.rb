@@ -142,14 +142,10 @@ module Textus
       event_bus.subscribe(Event::ProposalAccepted, &cascade_subscriber.method(:on_proposal_accepted))
       event_bus.subscribe(Event::ProposalRejected, &cascade_subscriber.method(:on_proposal_rejected))
 
-      orchestration = build_orchestration(
-        manifest:, file_store:, schemas:, audit_log:, job_store:, layout:,
-      )
-
       partial = Ctx.new(
         manifest:, file_store:, schemas:, audit_log:, job_store:,
         layout:, link_edge_store:, workflows:, event_bus:,
-        freshness_evaluator:, orchestration:, pipeline: nil
+        freshness_evaluator:, pipeline: nil
       )
 
       middleware = [
@@ -163,23 +159,6 @@ module Textus
       pipeline = Dispatch::Pipeline.new(registry:, container: partial, middleware:)
 
       partial.with(pipeline:)
-    end
-
-    def build_orchestration(manifest:, file_store:, schemas:, audit_log:, job_store:, layout:)
-      list_deps = Data.define(:manifest, :job_store).new(manifest:, job_store:)
-      audit_deps = Data.define(:manifest, :audit_log).new(manifest:, audit_log:)
-      move_deps = Data.define(:file_store, :manifest, :schemas, :audit_log, :layout).new(
-        file_store:, manifest:, schemas:, audit_log:, layout:,
-      )
-      delete_deps = Data.define(:file_store, :manifest, :schemas, :audit_log, :layout).new(
-        file_store:, manifest:, schemas:, audit_log:, layout:,
-      )
-      Orchestration.new(
-        list_keys: ->(command, call) { Handlers::Read::ListKeys.call(command, call, list_deps) },
-        move_key: ->(command, call) { Handlers::Write::MoveKey.call(command, call, move_deps) },
-        delete_key: ->(command, call) { Handlers::Write::DeleteKey.call(command, call, delete_deps) },
-        audit_entries: ->(command, call) { Handlers::Read::AuditEntries.call(command, call, audit_deps) },
-      )
     end
 
     def build_container_proxy(ctx)

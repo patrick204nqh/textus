@@ -6,15 +6,12 @@ module Textus
 
   module Dispatch
     module HandlerResolver
-      HANDLER_NAMESPACES = [
-        Handlers::Read, Handlers::Write, Handlers::Maintenance
-      ].freeze
-
       module_function
 
       def eager_load!
-        handlers_dir = File.expand_path("../handlers", __dir__)
-        Dir[File.join(handlers_dir, "**", "*.rb")].each { |f| require f }
+        [File.expand_path("../handlers", __dir__), File.expand_path("../../use_cases", __dir__)].each do |dir|
+          Dir[File.join(dir, "**", "*.rb")].each { |f| require f }
+        end
       end
 
       def build(ctx, handlers: nil)
@@ -23,10 +20,10 @@ module Textus
 
         registry = HandlerRegistry.new
         handler_modules.each do |mod|
-          next unless mod.const_defined?(:HANDLES) && mod.const_defined?(:NEEDS)
+          next unless (mod.const_defined?(:HANDLES) || mod.const_defined?(:HANDLES_ALL)) && mod.const_defined?(:NEEDS)
 
-          contract_class = mod::HANDLES
-          needs          = mod::NEEDS
+          contract_classes = mod.const_defined?(:HANDLES_ALL) ? Array(mod::HANDLES_ALL) : [mod::HANDLES]
+          needs = mod::NEEDS
 
           deps_hash = needs.to_h do |field|
             unless ctx_hash.key?(field)
@@ -40,13 +37,17 @@ module Textus
 
           dep_struct = Data.define(*needs).new(**deps_hash)
 
-          registry.register(contract_class, ->(command, call) { mod.call(command, call, dep_struct) })
+          contract_classes.each do |contract_class|
+            registry.register(contract_class, ->(command, call) { mod.call(command, call, dep_struct) })
+          end
         end
         registry
       end
 
       def discover_all
-        HANDLER_NAMESPACES.flat_map do |ns|
+        [
+          Textus::UseCases,
+        ].flat_map do |ns|
           ns.constants(false).filter_map { |c| ns.const_get(c) }.grep(Module)
         end
       end

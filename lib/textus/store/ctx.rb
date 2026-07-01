@@ -11,8 +11,7 @@ module Textus
       :workflows,         # Workflow::Registry
       :event_bus,         # Event::Bus (session-scoped)
       :freshness_evaluator, # Store::Freshness::TtlEvaluator
-      :orchestration,     # Textus::Orchestration
-      :pipeline,          # Dispatch::Pipeline (nil until wired)
+      :pipeline, # Dispatch::Pipeline (nil until wired)
     )
   end
 end
