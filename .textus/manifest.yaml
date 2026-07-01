@@ -69,9 +69,16 @@ entries:
     owner: human:self
     nested: true
     kind: nested
+  - key: knowledge.architecture
+    lane: knowledge
+    owner: human:self
+    nested: true
+    kind: nested
 
   # Scratchpad / proposals / raw
-  - { key: scratchpad.notes,  lane: scratchpad,  owner: agent:self, nested: true, kind: nested }
+  - { key: scratchpad.notes,    lane: scratchpad,  owner: agent:self, nested: true, kind: nested }
+  - { key: scratchpad.sessions, lane: scratchpad,  owner: agent:self, nested: true, kind: nested }
+  - { key: scratchpad.scripts,  lane: scratchpad,  owner: agent:self, nested: true, kind: nested }
   - { key: proposals.notes, lane: proposals, owner: agent:self, nested: true, kind: nested }
   - { key: raw, lane: raw, owner: agent:self, nested: true, kind: nested, format: yaml }
   # Boot artifact — pre-computed agent orientation
