@@ -104,13 +104,12 @@ RSpec.describe Textus::Doctor do
     expect(issue).to be_nil
   end
 
-  it "reports audit.parse_error on malformed audit log lines" do
+  it "does not include audit.parse_error in doctor summary (ported to workflow artifact)" do
     FileUtils.mkdir_p(audit_dir_path(root))
     File.write(audit_log_path(root), "this is not a tsv row\n")
     res = doctor
     issue = res["issues"].find { |i| i["code"] == "audit.parse_error" }
-    expect(issue).not_to be_nil
-    expect(issue["level"]).to eq("warning")
+    expect(issue).to be_nil
   end
 
   it "reports schema.unowned_fields as info when fields lack maintained_by" do
