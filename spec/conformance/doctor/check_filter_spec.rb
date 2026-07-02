@@ -6,12 +6,11 @@ RSpec.describe "Doctor checks filter" do
   before { Textus::Init.run(File.join(tmp, ".textus")) }
   after  { FileUtils.remove_entry(tmp) }
 
-  it "Doctor.run accepts a checks: filter and runs only the named check" do
+  it "Doctor.run accepts an explicit empty checks: filter" do
     store = Textus::Store.discover(tmp)
-    res = Textus::Doctor.build(container: store.container, checks: ["schemas"])
+    res = Textus::Doctor.build(container: store.container, checks: [])
     expect(res["ok"]).to be true
-    codes = res["issues"].map { |i| i["code"] }
-    expect(codes.none? { |c| c.start_with?("manifest.") }).to be true
+    expect(res["issues"]).to eq([])
   end
 
   it "Doctor.run raises UsageError on unknown check name" do

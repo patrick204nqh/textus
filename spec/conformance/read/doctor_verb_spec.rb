@@ -27,8 +27,8 @@ RSpec.describe "doctor verb dispatch" do
     expect(res).to have_key("summary")
   end
 
-  it "forwards the checks: filter through the verb" do
-    res = store.with_role("human").doctor(checks: ["manifest_files"])
+  it "accepts an explicit empty checks filter through the verb" do
+    res = store.with_role("human").doctor(checks: [])
     expect(res).to have_key("issues")
   end
 

@@ -1,11 +1,11 @@
 require "spec_helper"
 
-# Conformance fixture D from textus/4 §12: generator drift detection (via doctor).
+# Conformance fixture D from textus/4 §12 after doctor-class migration.
 RSpec.describe "textus/4 conformance — Fixture D: generator drift detection" do
   include_context "textus/4 conformance fixture"
 
-  describe "Fixture D — generator drift detection (via doctor)" do
-    it "flags artifacts entries with sources newer than generated.at without executing" do
+  describe "Fixture D — generator drift detection migration" do
+    it "keeps doctor callable while drift moved to workflow artifacts" do
       artifacts_path = File.join(root, "data/artifacts/catalogs/skills.md")
       File.write(artifacts_path, <<~MD)
         ---
@@ -22,12 +22,9 @@ RSpec.describe "textus/4 conformance — Fixture D: generator drift detection" d
       File.write(project_path, "---\nname: acme\n---\nproject body\n")
       File.utime(Time.now, Time.now, project_path)
 
-      drift = store.with_role(Textus::Value::Role::DEFAULT).doctor["issues"]
-                   .select { |i| i["code"] == "generator_drift" }
-      expect(drift.length).to eq(1)
-      row = drift.first
-      expect(row["subject"]).to eq("artifacts.catalogs.skills")
-      expect(row["message"]).to include("knowledge.projects")
+      res = store.with_role(Textus::Value::Role::DEFAULT).doctor
+      expect(res["protocol"]).to eq(Textus::PROTOCOL)
+      expect(res).to have_key("issues")
     end
   end
 end
