@@ -10,8 +10,6 @@ lanes:
   - { name: artifacts, kind: machine, desc: "machine-maintained computed outputs" }
   - { name: raw, kind: raw, desc: "ingested external source material (write-once)" }
 entries:
-  - { key: knowledge.project, lane: knowledge, path: knowledge/intent/0003-project.md, schema: project, owner: human:self, kind: leaf }
-
   - { key: knowledge.execution, lane: knowledge, schema: runbook, owner: human:self, kind: nested, nested: true }
   - { key: knowledge.intent, lane: knowledge, owner: human:self, kind: nested, nested: true }
   - { key: knowledge.constraint.repo, lane: knowledge, owner: human:self, kind: nested, nested: true }

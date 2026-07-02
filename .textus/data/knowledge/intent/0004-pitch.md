@@ -1,4 +1,3 @@
-<!-- This is a fragment of the README. Edit here; the README is composed from fragments by a workflow. -->
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/branding/wordmark-dark.png">

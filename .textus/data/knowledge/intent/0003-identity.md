@@ -1,7 +1,6 @@
 ---
 name: textus
 description: A coordination space for humans, AI, and automation — durable, multi-writer repo memory that survives the session, the model, and the vendor.
-repo: https://github.com/patrick204nqh/textus
 commands:
   test: bundle exec rspec
   lint: bundle exec rubocop

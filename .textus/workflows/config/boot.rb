@@ -9,8 +9,8 @@ Textus.workflow "boot" do
     fetch = ->(key) { begin; reader.read(key); rescue StandardError; nil; end }
 
     # Project context (was artifacts.config.orientation)
-    project_env = fetch.call("knowledge.project")
-    project = project_env&.meta || {}
+    identity_env = fetch.call("knowledge.intent.0003-identity")
+    identity = identity_env&.meta || {}
 
     runbooks = ctx.container.read_family("knowledge.execution").filter_map(&:meta)
 
@@ -78,10 +78,10 @@ Textus.workflow "boot" do
     {
       "content" => {
         "project" => {
-          "name" => project["name"],
-          "description" => project["description"],
-          "commands" => (project["commands"] || {}).map { |k, v| "- **#{k}**: `#{v}`" }.join("\n"),
-          "has_commands" => !(project["commands"] || {}).empty?,
+          "name" => identity["name"],
+          "description" => identity["description"],
+          "commands" => (identity["commands"] || {}).map { |k, v| "- **#{k}**: `#{v}`" }.join("\n"),
+          "has_commands" => !(identity["commands"] || {}).empty?,
         },
         "runbooks" => runbooks.map { |r| { "name" => r["name"], "description" => r["description"] } },
         "lanes" => lanes,

@@ -1,5 +1,6 @@
-<!-- This is a fragment of the README. Edit here; the README is composed from fragments by a workflow. -->
 ## See it in four commands
+
+Pattern: `knowledge.judgment.engineering.0007-bounded-use-cases` — quickstart composes role-gated actions into a single runnable flow.
 
 ```sh
 gem install textus
@@ -22,7 +23,7 @@ Try the gate the other way (`textus put knowledge.notes.X --as=agent`) and you g
 
 ## Try it
 
-- **Worked end-to-end store** — the role gate (propose → accept), drain/publish (`CLAUDE.md` / `AGENTS.md` generated from knowledge entries), schemas, ERB templates, and workflows: [`.textus/`](.textus/)
+- **Worked end-to-end store** — the role gate (propose -> accept), drain/publish (`CLAUDE.md` / `AGENTS.md` generated from knowledge entries), schemas, ERB templates, and workflows: [`.textus/`](.textus/)
 - **Wire textus into Claude Code via MCP** — 4 steps, ~5 minutes: [`docs/how-to/agents-mcp.md`](docs/how-to/agents-mcp.md)
 
 ## Protocol, not just a gem
@@ -107,7 +108,7 @@ For a worked store — knowledge entries, a staged proposal, schemas, ERB templa
 
 - **Per-entry formats & publish.** `format: markdown|json|yaml|text` per entry; a typed `publish:` block (`to:` for file fan-out, `tree:` for a whole-subtree mirror) byte-copies derived files to their consumer paths. (the wire protocol spec §5.2–5.3)
 - **Stable identity.** Auto-minted `uid:` survives writes and `textus key mv`; reorganising never breaks references.
-- **Capability × lane-kind gate.** Writes carry `--as=<role>`; a role may write a lane iff it holds the capability the lane's `kind:` requires (`canon`→`author`, `workspace`→`keep`, `machine`→`converge`, `queue`→`propose`). The wrong role gets `write_forbidden` naming the capability needed and the roles that hold it. (the wire protocol spec §5)
+- **Capability × lane-kind gate.** Writes carry `--as=<role>`; a role may write a lane iff it holds the capability the lane's `kind:` requires (`canon`->`author`, `workspace`->`keep`, `machine`->`converge`, `queue`->`propose`). The wrong role gets `write_forbidden` naming the capability needed and the roles that hold it. (the wire protocol spec §5)
 - **Agent loop.** `textus boot` orients a fresh session; `textus pulse --since=N` is the per-turn heartbeat (changed entries, pending proposals, index etag for catalog drift detection). ([docs/how-to/agents-mcp.md](docs/how-to/agents-mcp.md))
 - **MCP surface.** The official `mcp` Ruby SDK drives the stdio JSON-RPC server; protocol version auto-negotiated up to `2025-11-25`. Wire textus into Claude Code, Cursor, or any MCP host in one config block.
 - **`textus doctor`.** Health checks across schemas, workflow registrations, keys, sentinels, and the audit log.
@@ -115,7 +116,7 @@ For a worked store — knowledge entries, a staged proposal, schemas, ERB templa
 
 ## CLI and lanes
 
-Every command operates on one store, located in this order: `--root <path>` flag → **`TEXTUS_ROOT`** env → walk up from the working directory for a `.textus/` (the wire protocol spec §3.1). Write verbs require `--as=<role>`, resolved as: `--as` flag → **`TEXTUS_ROLE`** env → `.textus/role` file → default `human` (the wire protocol spec §5.1). Default roles: `human`, `agent`, `automation` (rename or add your own in the manifest's `roles:` block). All verbs accept `--output=json` and return the envelope defined in the wire protocol spec §8.
+Every command operates on one store, located in this order: `--root <path>` flag -> **`TEXTUS_ROOT`** env -> walk up from the working directory for a `.textus/` (the wire protocol spec §3.1). Write verbs require `--as=<role>`, resolved as: `--as` flag -> **`TEXTUS_ROLE`** env -> `.textus/role` file -> default `human` (the wire protocol spec §5.1). Default roles: `human`, `agent`, `automation` (rename or add your own in the manifest's `roles:` block). All verbs accept `--output=json` and return the envelope defined in the wire protocol spec §8.
 
 - Full verb table — read, write, health, scaffolding — is in the wire protocol spec §9.
 - Lane semantics and the capability × lane-kind mapping live in the wire protocol spec §5, with the reference in [`docs/reference/lanes.md`](docs/reference/lanes.md).
@@ -199,7 +200,7 @@ textus get artifacts.feeds.skills                  # a pure read; carries a fres
 
 Schemas (`.textus/schemas/<name>.yaml`) declare field shapes, per-field `maintained_by:` ownership, and an `evolution:` block (`added_in`, `deprecated_at`, `migrate_from`). Full contract in SPEC §5.8.
 
-See [`docs/how-to/agents-mcp.md`](docs/how-to/agents-mcp.md) for the agent boot → pulse loop.
+See [`docs/how-to/agents-mcp.md`](docs/how-to/agents-mcp.md) for the agent boot -> pulse loop.
 
 ## Examples
 
@@ -211,7 +212,7 @@ See [`docs/how-to/agents-mcp.md`](docs/how-to/agents-mcp.md) for the agent boot 
 bundle exec rspec
 ```
 
-Includes conformance fixtures A–I from SPEC §12.
+Includes conformance fixtures A-I from SPEC §12.
 
 ## Code quality
 

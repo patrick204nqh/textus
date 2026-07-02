@@ -1,5 +1,0 @@
-fields:
-  name:        { type: string, required: true, maintained_by: human }
-  description: { type: string, required: true, maintained_by: human }
-  repo:        { type: string, maintained_by: human }
-  commands:     { type: map, maintained_by: human }
