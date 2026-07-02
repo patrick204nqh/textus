@@ -3,7 +3,7 @@ module Textus
     module Write
       module RejectProposal
         HANDLES = Dispatch::Contracts::RejectProposal
-        NEEDS = %i[file_system manifest audit_log layout job_store writer reader workflows].freeze
+        NEEDS = %i[file_system manifest audit_log layout event_store writer reader workflows].freeze
 
         def self.call(command, call, deps)
           mentry = deps.manifest.resolver.resolve(command.pending_key).entry
@@ -21,7 +21,7 @@ module Textus
           writer = deps.writer
           writer.delete(command.pending_key, mentry: mentry, call: call)
           registry = Textus::Workflow::Registry.new(deps.workflows)
-          emitter = Textus::Produce::EventEmitter.new(db: deps.job_store.db, workflow_registry: registry)
+          emitter = Textus::Produce::EventEmitter.new(db: deps.event_store.db, workflow_registry: registry)
           emitter.emit(event_type: "proposal.rejected", key: command.pending_key)
           result = { "protocol" => Textus::PROTOCOL, "rejected" => command.pending_key, "target_key" => target_key }
           result["reason"] = command.reason if command.reason

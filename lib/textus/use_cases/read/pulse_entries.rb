@@ -3,7 +3,7 @@ module Textus
     module Read
       module PulseEntries
         HANDLES = Dispatch::Contracts::PulseEntries
-        NEEDS = %i[file_system manifest audit_log job_store].freeze
+        NEEDS = %i[file_system manifest audit_log event_store].freeze
 
         def self.call(command, call, deps)
           root  = deps.manifest.data.root
@@ -30,8 +30,8 @@ module Textus
         end
 
         def self.changed_since(since, call, deps)
-          if deps.job_store
-            sqlite_rows = deps.job_store.db[:audit_events].where { seq > since }.order(:seq).all
+          if deps.event_store
+            sqlite_rows = deps.event_store.db[:audit_events].where { seq > since }.order(:seq).all
             return sqlite_rows.map { |r| { "key" => r[:key], "verb" => r[:verb], "seq" => r[:seq] } } if sqlite_rows.any?
           end
 

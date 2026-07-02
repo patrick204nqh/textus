@@ -3,8 +3,8 @@
 module Textus
   module Links
     class LinkEdgeStore
-      def initialize(database:)
-        @db = database.db
+      def initialize(database)
+        @db = database.respond_to?(:connection) ? database.connection : database
       end
 
       def record(from_key:, to_key:)

@@ -9,7 +9,7 @@ module Textus
     module Ops
       module IngestEntry
         HANDLES = Dispatch::Contracts::IngestEntry
-        NEEDS = %i[file_system manifest schemas audit_log layout job_store writer reader].freeze
+        NEEDS = %i[file_system manifest schemas audit_log layout event_store writer reader].freeze
 
         SOURCE_KINDS = %w[url file asset].freeze
         CONTENT_HASH_ALGO = "sha256"
@@ -35,7 +35,7 @@ module Textus
           ts = now.iso8601
 
           structured = build_structured(ts, now, content_hash, command, deps)
-          store = deps.job_store
+          store = deps.event_store
           index = Textus::Store::Index::Lookup.new(store:)
 
           duplicate_key = find_duplicate(index, content_hash, command)
@@ -128,7 +128,7 @@ module Textus
           lane = command.lane
           move_asset(old_content["asset"], lane, deps) if command.kind == "asset" && old_content["asset"]
 
-          rebuild_index(deps.job_store, deps)
+          rebuild_index(deps.event_store, deps)
           env
         end
 

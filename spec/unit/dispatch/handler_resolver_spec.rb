@@ -6,12 +6,12 @@ RSpec.describe Textus::Dispatch::HandlerResolver do
   end
 
   let(:fake_manifest)  { instance_double(Textus::Manifest) }
-  let(:fake_job_store) { instance_double(Textus::Port::Store) }
+  let(:fake_event_store) { instance_double(Textus::Port::EventStore) }
 
   let(:ctx) do
-    Textus::Store::Infrastructure.new(
+    Textus::Store::Infrastructure.build(
       manifest: fake_manifest, file_system: :fs, schemas: :sc,
-      audit_log: :al, job_store: fake_job_store, layout: :ly,
+      audit_log: :al, event_store: fake_event_store, layout: :ly,
       link_edge_store: :les, workflows: :wf,
       root: "/tmp", reader: nil, writer: nil,
       ttl_evaluator: :fe,
@@ -22,7 +22,7 @@ RSpec.describe Textus::Dispatch::HandlerResolver do
   let(:fake_handler) do
     Module.new do
       const_set(:HANDLES, FakeContract)
-      const_set(:NEEDS, %i[manifest job_store].freeze)
+      const_set(:NEEDS, %i[manifest event_store].freeze)
 
       def self.call(_command, _call, deps)
         Textus::Value::Result.success({ "deps_manifest" => deps.manifest })

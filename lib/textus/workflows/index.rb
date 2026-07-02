@@ -11,7 +11,7 @@ module Textus
         container = ctx.container
         entry = container.manifest.resolver.resolve(key).entry
         path = container.manifest.resolver.resolve(key).path
-        db = container.job_store.db
+        db = container.event_store.db
 
         if container.file_system.exists?(path)
           body = container.file_system.read(path)

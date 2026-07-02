@@ -2,10 +2,10 @@ require "spec_helper"
 require "tmpdir"
 
 RSpec.describe Textus::Links::LinkEdgeStore do
-  subject(:store) { described_class.new(database: db) }
+  subject(:store) { described_class.new(db) }
 
   let(:tmp) { Dir.mktmpdir }
-  let(:db)  { Textus::Port::Store.new(root: File.join(tmp, ".textus")).setup! }
+  let(:db)  { Textus::Port::Database.new(root: File.join(tmp, ".textus")).setup! }
 
   after do
     db.close

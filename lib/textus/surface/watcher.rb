@@ -14,7 +14,7 @@ module Textus
 
       def tick
         CONSUMER.drain(
-          db: @container.job_store.db,
+          db: @container.event_store.db,
           registry: @registry,
           container: @container,
           call: Textus::Value::Call.build(role: Textus::Value::Role::AUTOMATION, correlation_id: SecureRandom.uuid),

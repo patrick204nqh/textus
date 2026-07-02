@@ -1,23 +1,38 @@
-# frozen_string_literal: true
-
 require "fileutils"
 
 module Textus
   module Port
-    class Store
-      attr_reader :path, :db
+    class Database
+      module Interface
+        def connection = raise NotImplementedError
+        def setup! = raise NotImplementedError
+        def transaction(&) = raise NotImplementedError
+        def close = raise NotImplementedError
+      end
+      include Interface
 
       SEQUEL_ADAPTER = Textus::DependencyAdapters::SequelAdapter.new
 
       def initialize(root:)
-        @path = Textus::Store::Layout.new(root).store_db_path
-        FileUtils.mkdir_p(File.dirname(@path))
-        @db = SEQUEL_ADAPTER.connect(@path)
-        @db.run("PRAGMA journal_mode=WAL")
-        @db.run("PRAGMA foreign_keys=ON")
+        @layout = Textus::Store::Layout.new(root)
       end
 
       def setup!
+        FileUtils.mkdir_p(File.dirname(@layout.store_db_path))
+        @db = SEQUEL_ADAPTER.connect(@layout.store_db_path)
+        @db.run("PRAGMA journal_mode=WAL")
+        @db.run("PRAGMA foreign_keys=ON")
+        create_tables
+        self
+      end
+
+      def connection = @db
+      def transaction(&) = @db.transaction(&)
+      def close = @db.disconnect
+
+      private
+
+      def create_tables
         @db.create_table?(:events) do
           primary_key :id
           String :event_type, null: false
@@ -67,26 +82,6 @@ module Textus
             content=entries, content_rowid=rowid
           )
         SQL
-
-        self
-      end
-
-      def transaction(&)
-        @db.transaction(&)
-      end
-
-      def close
-        @db.disconnect
-      end
-
-      def self.open(root)
-        store = new(root: root)
-        store.setup!
-        return store unless block_given?
-
-        yield store
-      ensure
-        store&.close
       end
     end
   end

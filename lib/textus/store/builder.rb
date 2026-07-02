@@ -3,7 +3,8 @@ module Textus
     class Builder
       def call(root)
         manifest = Manifest.load(root)
-        job_store = Port::Store.new(root: root).setup!
+        database = Port::Database.new(root: root).setup!
+        event_store = Store::EventStore.new(database)
         layout = Store::Layout.new(root)
         file_system = Store::FileSystem.new
         schemas = Schema::Registry.new(layout.schemas_dir)
@@ -12,7 +13,7 @@ module Textus
           max_size: manifest.data.audit_config[:max_size],
           keep: manifest.data.audit_config[:keep],
         )
-        link_edge_store = Links::LinkEdgeStore.new(database: job_store)
+        link_edge_store = Links::LinkEdgeStore.new(database)
 
         workflows = Workflow::Loader.load_all(root)
         workflows.concat([Textus::Workflows::Materialize, Textus::Workflows::Index])
@@ -30,7 +31,8 @@ module Textus
                                            audit_log:, reader:, layout:)
 
         partial = Infrastructure.new(
-          manifest:, file_system:, schemas:, audit_log:, job_store:,
+          manifest:, file_system:, schemas:, audit_log:,
+          database:, event_store:,
           layout:, link_edge_store:, workflows:, root:,
           reader:, writer:,
           ttl_evaluator:, trace_buffer:, pipeline: nil

@@ -3,13 +3,13 @@ module Textus
     module Read
       module ListKeys
         HANDLES = Dispatch::Contracts::ListKeys
-        NEEDS = %i[manifest file_system layout job_store].freeze
+        NEEDS = %i[manifest file_system layout event_store].freeze
 
         def self.call(command, _call, deps)
           q      = command.respond_to?(:q)      ? command.q      : nil
           schema = command.respond_to?(:schema) ? command.schema : nil
 
-          if deps.job_store && (q || schema)
+          if deps.event_store && (q || schema)
             return sqlite_list(query: q, schema: schema, lane: command.lane, prefix: command.prefix,
                                deps: deps)
           end
@@ -18,7 +18,7 @@ module Textus
         end
 
         def self.sqlite_list(query:, schema:, lane:, prefix:, deps:)
-          rows = deps.job_store.search_entries(q: query, schema: schema, lane: lane, prefix: prefix)
+          rows = deps.event_store.search_entries(q: query, schema: schema, lane: lane, prefix: prefix)
           Value::Result.success((rows || []).map { |r| { "key" => r["key"], "lane" => r["lane"] } })
         end
 

@@ -125,7 +125,7 @@ module TextusSpecHelpers
   def converge_now(store, prefix: nil, lane: nil, role: Textus::Value::Role::AUTOMATION) # rubocop:disable Lint/UnusedMethodArgument
     with_missing_workflows(store)
     registry = Textus::Workflow::Registry.new(store.container.workflows)
-    db = store.job_store.db
+    db = store.event_store.db
 
     store.container.manifest.data.entries.each do |entry|
       next if prefix && !entry.key.start_with?(prefix)
