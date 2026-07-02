@@ -112,13 +112,10 @@ RSpec.describe Textus::Doctor do
     expect(issue).to be_nil
   end
 
-  it "reports schema.unowned_fields as info when fields lack maintained_by" do
+  it "does not include schema.unowned_fields in doctor summary (ported to workflow artifact)" do
     res = doctor
     issue = res["issues"].find { |i| i["code"] == "schema.unowned_fields" }
-    expect(issue).not_to be_nil
-    expect(issue["level"]).to eq("info")
-    expect(issue["message"]).to include("tag")
-    expect(res["ok"]).to be true
+    expect(issue).to be_nil
   end
 
   it "summary tallies issues by level and ok stays true unless an error exists" do
