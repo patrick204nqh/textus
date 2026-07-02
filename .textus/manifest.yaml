@@ -47,6 +47,7 @@ entries:
   - { key: artifacts.explanation.concepts, lane: artifacts, format: json, kind: produced }
   - { key: artifacts.doctor.rule-ambiguity, lane: artifacts, format: json, kind: produced }
   - { key: artifacts.doctor.manifest-files, lane: artifacts, format: json, kind: produced }
+  - { key: artifacts.doctor.protocol-version, lane: artifacts, format: json, kind: produced }
   - { key: artifacts.doctor.templates, lane: artifacts, format: json, kind: produced }
   - { key: artifacts.doctor.schemas, lane: artifacts, format: json, kind: produced }
   - { key: artifacts.doctor.publish-tree-overlap, lane: artifacts, format: json, kind: produced }

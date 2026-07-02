@@ -6,7 +6,6 @@ module Textus
     LEVELS = %w[error warning info].freeze
 
     CHECKS = [
-      Check::ProtocolVersion,
       Check::ManifestFiles,
       Check::Schemas,
       Check::SchemaParseError,
