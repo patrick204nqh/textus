@@ -15,6 +15,5 @@ Textus.workflow "invariants-assembler" do
 
     { "content" => { "goals" => goals, "rules" => rules } }
   end
-
-  publish
+  publish to: "docs/design/invariants.md", template: "docs/design/invariants.erb"
 end

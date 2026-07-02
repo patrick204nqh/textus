@@ -8,6 +8,5 @@ Textus.workflow "opencode_config" do
       "instructions" => ["AGENTS.md"],
     } }
   end
-
-  publish
+  publish to: "opencode.json"
 end

@@ -16,7 +16,7 @@ module Textus
         handler_modules = handlers || discover_all
         ctx_hash = ctx.to_h
 
-        registry = HandlerRegistry.new
+        registry = {}
         handler_modules.each do |mod|
           next unless mod.const_defined?(:HANDLES) && mod.const_defined?(:NEEDS)
 
@@ -36,7 +36,7 @@ module Textus
           dep_struct = Data.define(*needs).new(**deps_hash)
 
           contract_classes.each do |contract_class|
-            registry.register(contract_class, ->(command:, call:) { mod.call(command, call, dep_struct) })
+            registry[contract_class] = ->(command:, call:) { mod.call(command, call, dep_struct) }
           end
         end
         registry

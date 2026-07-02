@@ -19,6 +19,5 @@ Textus.workflow "reference-lanes" do
 
     { "content" => { "lanes" => lanes, "roles" => roles, "kind_capability_map" => kmap } }
   end
-
-  publish
+  publish to: "docs/reference/lanes.md", template: "docs/reference/lanes.erb"
 end

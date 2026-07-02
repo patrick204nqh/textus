@@ -27,7 +27,7 @@ module Textus
       private
 
       def execute(command, call)
-        handler = @registry.for(command.class)
+        handler = @registry.fetch(command.class)
         handler.call(command: command, call: call)
       end
     end

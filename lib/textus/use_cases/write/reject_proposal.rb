@@ -21,9 +21,9 @@ module Textus
           writer = Store::Entry::Writer.new(
             file_store: deps.file_store, manifest: deps.manifest,
             schemas: deps.schemas, audit_log: deps.audit_log,
-            call: call, reader: reader, layout: deps.layout
+            reader: reader, layout: deps.layout
           )
-          writer.delete(command.pending_key, mentry: mentry)
+          writer.delete(command.pending_key, mentry: mentry, call: call)
           if deps.respond_to?(:event_bus) && deps.event_bus
             deps.event_bus.emit(Textus::Event::ProposalRejected.new(
                                   proposal_key: command.pending_key,

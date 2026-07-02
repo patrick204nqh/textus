@@ -1,81 +1,71 @@
 ---
 uid: 578908fe598d9685
 ---
-# Architecture Deepening Plan
+# Implementation plan — architecture deepening phase 3
 
-> Proposed: 2026-07-01
-> Target: Level 3.3 → Level 4 (Bounded Contexts with Explicit Contracts)
+## Phase 1: Container consolidation + Writer port + double-event fix
+Safe internal refactors. No breaking changes.
 
-## Diagnosis
+### 1a. Add reader, writer, root to Infrastructure
+- Edit `lib/textus/store/infrastructure.rb` — add :reader, :writer, :root
+- Edit `lib/textus/store/builder.rb` — construct Reader + Writer, store in partial
 
-**Current state:** Excellent hexagonal layering with 128 ADRs, contract-first dispatch, Result monad, conformance specs. Fuzzy boundaries at the module seam.
+### 1b. Delete UseCaseContainer + ContainerHelpers + build_container_proxy
+- DELETE `lib/textus/store/use_case_container.rb`
+- DELETE `lib/textus/container_helpers.rb`
+- Edit `lib/textus/store.rb` — remove build_container_proxy, @container = @ctx
+- Edit `lib/textus/workflow/context.rb` — inline ContainerHelpers methods
+- Edit `lib/textus/workflow/runner.rb` — inline ContainerHelpers methods
 
-### Key findings
+### 1c. Move call: to Writer method args + drop From factories
+- Edit `lib/textus/store/entry/writer.rb` — remove call from initialize, add to method sigs
+- delete Writer.from() — callers use container.writer
+- Edit `lib/textus/store/entry/reader.rb` — delete Reader.from(), callers use container.reader
 
-1. **God Module use cases** — UseCases::EntryWrite dispatches 10 contracts via internal if/elsif; EntryRead handles 13. Dependencies = union of all needs.
-2. **Port interfaces implicit** — Writer checks respond_to?(:mv) instead of calling a declared interface. Port::Storage::Interface exists but is unused.
-3. **No pure domain layer** — lib/textus/domain/ is empty. Core logic lives in Store/UseCases.
-4. **Dual verb maps** — VerbRegistry + MCP::Catalog::WRITE_VERBS drift independently.
-5. **Validation inside Writer** — Not at the system boundary. Testing validation requires full write path.
-6. **Inconsistent Store:: namespacing** — Some sub-namespaces are modules, others are classes.
-7. **No architectural fitness functions** — No automated guards beyond basic layering specs.
-8. **Event types unvalidated** — No schema guard on emit.
+### 1d. Update all Writer callers
+- Edit use cases: put_entry, propose_entry, accept_proposal, delete_entry, move_entry
+- Edit workflow/runner.rb
+- Edit retention (wherever Writer called)
+  Writer.from(container:, call:) → container.writer.put(key, ..., call:)
 
-## The Plan
+### 1e. Fix double-event bug
+- Remove events.publish(EntryWritten) from put_entry, propose_entry, accept_proposal, delete_entry, move_entry use cases
+- AuditIndex middleware stays as sole emitter
 
-### Phase 1 — Land In-Flight ADRs (0120, 0121, 0125)
+## Phase 2: Manifest→workflow boundary
+Breaking. Coordinated commit.
 
-| ADR | Work |
-|-----|------|
-| 0125 | Split UseCases::EntryWrite (10→10 classes) and EntryRead (13→13 classes). +23 files, no god modules. |
-| 0120 | Unify dispatch: method_missing on Store, delete RoleScope/ReadModel/CommandModel. One dispatch path. |
-| 0121 | 8-item hygiene pass: CursorExpired, Result alias, FileStore interface, verb category, remove redundant fetch, report schema errors, namespace convention. |
+### 2a. Add DSL declarations to Workflow::DSL
+- Edit `lib/textus/workflow/dsl.rb`
+- Add priority(N), depends_on(pattern), ttl(string), on_expire(sym), publish(to:, template: nil)
 
-### Phase 2 — Domain Model Extraction
+### 2b. Drop lifecycle fields from manifest parser
+- Remove publish, source, rules, worker from manifest schema
+- Raise helpful error: "moved to workflow DSL"
+- Remove publish_targets, publish_to, publish_tree from Entry::Base
 
-Carve Textus::Domain from dispatch/use-case code:
+### 2c. Update Planner to read workflows
+- Edit `lib/textus/store/jobs/planner.rb`
+- producible_keys iterates workflows.all instead of manifest.data.entries
+- dependent_keys uses workflow depends_on
 
-- Domain::Key — resolve, suggest, match, distance (from Manifest::Resolver + Key::*)
-- Domain::Envelope — build, parse, freshness (from Value::Envelope)
-- Domain::Lane — authority queries (verb_for_lane, roles_with_capability from Manifest::Policy)
+### 2d. Update Publisher and Engine
+- Engine reads publish config from workflow definition
+- Publisher receives targets from caller
 
-Manifest remains load-time config. Domain becomes the stateless rule engine. Result: domain_purity_spec.rb comes alive.
+## Phase 3: Cleanup
+Bonus deletions.
 
-### Phase 3 — Formal Port Contracts
+### 3a. Remove Collector + Registry
+- DELETE collector.rb, registry.rb
+- Edit loader.rb — use plain array
+- Edit workflow.rb — pass registry kwarg
 
-Every port gets a declared interface module + conformance spec verifying implementation:
+### 3b. Remove HandlerRegistry
+- DELETE handler_registry.rb
+- Edit handler_resolver.rb — return plain hash
+- Edit pipeline.rb — .fetch() instead of .for()
 
-- Port::Storage: read, write, delete, exists?, etag, mkdir_p, mv, rmdir, dir_empty?
-- Port::AuditLog: append, latest_seq, events_since, rotate, prune
-- Port::Store (SQLite): execute, query_value, transaction, setup!, close
-- Port::Publisher: publish, sentinel_path
-- Port::Clock: now
-
-Kill all respond_to? checks — replace with interface-verified calls.
-
-### Phase 4 — Architectural Fitness Functions
-
-| Guard | Prevents | Mechanism |
-|-------|----------|-----------|
-| Layer import | domain/ importing use_cases/ | Static require graph analysis |
-| Module export | Calling private symbols across namespace | private_constant enforcement |
-| Verb completeness | Adding verb without registration | Regex: every VERBS entry has contract + handler + CLI verb |
-| Port implementation | Port missing declared method | Interface conformance (Phase 3) |
-
-### Phase 5 — Observability Middleware
-
-Add Trace = Data.define(:verb, :duration_ms, :correlation_id, :role, :key) flowing through dispatch. Every dispatch auto-instruments. Accessible via pulse. No manual annotation.
-
-### Phase 6 — Hard-Cut Cleanup
-
-No deprecation window, no warnings period. Remove cleanly; trust git log. If a consuming script breaks, the diff tells them how to fix it. Fast evolution > compatibility tax at this stage.
-
-## Decision Test
-
-| Invariant | Pass? |
-|-----------|-------|
-| Preserves protocol determinism? | Yes — all changes at internal seams |
-| Keeps trust transitions explicit? | Yes — no change to proposal/accept |
-| Routes work to right actor? | Yes — domain extraction makes pure core testable |
-| Reduces manual repetition? | Yes — fitness functions automate review |
-| Improves evolvability? | Yes — bounded use cases make single-action changes safe |
+### 3c. Inline Publisher
+- DELETE publisher.rb
+- Edit engine.rb — inline 7 lines into publish_only

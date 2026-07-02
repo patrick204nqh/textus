@@ -3,7 +3,7 @@ require "spec_helper"
 RSpec.describe Textus::Produce::CascadeSubscriber do
   let(:job_store)  { instance_double(Textus::Port::Store) }
   let(:manifest)   { instance_double(Textus::Manifest) }
-  let(:workflows)  { instance_double(Textus::Workflow::Registry) }
+  let(:workflows)  { [] }
   let(:file_store) { instance_double(Textus::Port::Storage::FileStore) }
   let(:subscriber) do
     described_class.new(

@@ -4,16 +4,23 @@ module Textus
       Step = Data.define(:name, :callable, :timeout)
       ValidateStep = Data.define(:name, :callable)
       Parallel = Data.define(:steps)
+      PublishTarget = Data.define(:to, :template, :tree, :inject_boot)
 
       class Definition
-        attr_reader :name, :steps, :match_pattern, :publish_block, :validate_steps
+        attr_reader :name, :steps, :match_pattern, :publish_block, :publish_targets,
+                    :validate_steps, :depends_on_patterns, :ttl, :on_expire
 
         def initialize(name)
-          @name           = name
-          @steps          = []
-          @validate_steps = []
-          @match_pattern  = nil
-          @publish_block  = nil
+          @name                = name
+          @steps               = []
+          @validate_steps      = []
+          @match_pattern       = nil
+          @publish_block       = nil
+          @publish_targets     = []
+          @priority            = 0
+          @depends_on_patterns = []
+          @ttl                 = nil
+          @on_expire           = nil
         end
 
         def match(pattern)
@@ -44,8 +51,36 @@ module Textus
           @steps = saved << Parallel.new(steps: parallel_steps)
         end
 
-        def publish(&block)
-          @publish_block = block || :default
+        def publish(to: nil, template: nil, tree: nil, inject_boot: nil, &block)
+          if block
+            @publish_block = block
+          elsif to || tree
+            @publish_targets << PublishTarget.new(to: to, template: template, tree: tree, inject_boot: inject_boot)
+          else
+            @publish_block = :default
+          end
+        end
+
+        def priority(n = nil)
+          return @priority if n.nil?
+
+          @priority = n.to_i
+        end
+
+        def depends_on(pattern)
+          @depends_on_patterns << pattern
+        end
+
+        def ttl(duration_string)
+          @ttl = Textus::Value::Duration.seconds(duration_string)
+        end
+
+        def on_expire(action)
+          actions = %i[drop archive]
+          sym = action.to_s.to_sym
+          raise ArgumentError.new("on_expire must be one of #{actions.join("|")}, got #{action.inspect}") unless actions.include?(sym)
+
+          @on_expire = sym
         end
 
         def match?(key)
@@ -54,12 +89,10 @@ module Textus
           Pattern.match?(@match_pattern, key)
         end
 
-        # Returns true when this workflow should match MULTIPLE keys (glob pattern).
         def multi_match?
           @match_pattern&.end_with?("**")
         end
 
-        # Returns true when this workflow has validation steps.
         def validation_workflow?
           @validate_steps.any?
         end

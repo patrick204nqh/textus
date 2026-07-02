@@ -11,10 +11,11 @@ module Textus
             (now - mtime).to_i > ttl_seconds
           end
 
-          def initialize(manifest:, file_stat:, clock:)
-            @manifest = manifest
+          def initialize(manifest:, workflows:, file_stat:, clock:)
+            @manifest  = manifest
+            @workflows = workflows
             @file_stat = file_stat
-            @clock = clock
+            @clock     = clock
           end
 
           def call(prefix: nil, lane: nil)
@@ -35,18 +36,28 @@ module Textus
           end
 
           def rows_for(mentry)
-            policy = @manifest.rules.for(mentry.key).retention
-            return [] if policy.nil?
+            ttl_seconds, action = lifecycle_for(mentry.key)
+            return [] if ttl_seconds.nil?
 
             @manifest.resolver.enumerate(prefix: mentry.key).filter_map do |row|
               path = row[:path]
               next unless @file_stat.exists?(path)
               next unless self.class.expired?(
-                ttl_seconds: policy.ttl_seconds, mtime: @file_stat.mtime(path), now: @clock.now,
+                ttl_seconds: ttl_seconds, mtime: @file_stat.mtime(path), now: @clock.now,
               )
 
-              { "key" => row[:key], "path" => path, "action" => policy.action.to_s }
+              { "key" => row[:key], "path" => path, "action" => action }
             end
+          end
+
+          def lifecycle_for(key)
+            wf = @workflows.find { |d| d.match?(key) }
+            return [wf.ttl, wf.on_expire.to_s] if wf&.ttl
+
+            policy = @manifest.rules.for(key).retention
+            return [policy.ttl_seconds, policy.action.to_s] if policy
+
+            [nil, nil]
           end
         end
       end

@@ -32,11 +32,11 @@ module Textus
           writer = Store::Entry::Writer.new(
             file_store: deps.file_store, manifest: deps.manifest,
             schemas: deps.schemas, audit_log: deps.audit_log,
-            call: call, reader: reader, layout: deps.layout
+            reader: reader, layout: deps.layout
           )
           unless pre_env.uid
             writer.put(
-              command.old_key, mentry: old_res.entry,
+              command.old_key, mentry: old_res.entry, call: call,
                                payload: Textus::Value::Payload.new(meta: pre_env.meta, body: pre_env.body, content: pre_env.content)
             )
           end
@@ -52,7 +52,7 @@ module Textus
 
           envelope = writer.move(
             from_key: command.old_key, to_key: command.new_key,
-            new_mentry: new_res.entry
+            new_mentry: new_res.entry, call: call
           )
 
           Value::Result.success({

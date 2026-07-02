@@ -45,22 +45,22 @@ module Textus
           writer = Store::Entry::Writer.new(
             file_store: deps.file_store, manifest: deps.manifest,
             schemas: deps.schemas, audit_log: deps.audit_log,
-            call: call, reader: reader, layout: deps.layout
+            reader: reader, layout: deps.layout
           )
           case action
           when "put"
             mentry = deps.manifest.resolver.resolve(target).entry
             writer.put(
-              target, mentry: mentry,
+              target, mentry: mentry, call: call,
                       payload: Textus::Value::Payload.new(meta: env.meta["_meta"] || {}, body: env.body, content: nil)
             )
           when "delete"
-            writer.delete(target)
+            writer.delete(target, call: call)
           else
             return Value::Result.failure(:proposal_error, "unknown action: #{action}")
           end
 
-          writer.delete(command.pending_key)
+          writer.delete(command.pending_key, call: call)
           if deps.respond_to?(:event_bus) && deps.event_bus
             deps.event_bus.emit(Textus::Event::ProposalAccepted.new(
                                   proposal_key: command.pending_key,

@@ -25,6 +25,12 @@ RSpec.describe "cascade reactive materialise" do
   end
 
   it "enqueues a materialise job for a dependent entry when its source is written" do
+    defn = Textus::Workflow::DSL::Definition.new("feeds")
+    defn.match("feeds.derived")
+    defn.depends_on("knowledge.source")
+    defn.step(:fetch) { |_data, _ctx| { content: "ok" } }
+    store.container.workflows << defn
+
     queue = Textus::Store::Jobs::Queue.new(store: store.container.job_store)
     queue.purge(:ready)
 

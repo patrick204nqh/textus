@@ -10,13 +10,13 @@ module Textus
           writer = Store::Entry::Writer.new(
             file_store: deps.file_store, manifest: deps.manifest,
             schemas: deps.schemas, audit_log: deps.audit_log,
-            call: call, reader: reader, layout: deps.layout
+            reader: reader, layout: deps.layout
           )
           envelope = writer.put(
             command.key,
             mentry: deps.manifest.resolver.resolve(command.key).entry,
             payload: Textus::Value::Payload.new(meta: command.meta || {}, body: command.body, content: command.content),
-            if_etag: command.if_etag,
+            if_etag: command.if_etag, call: call
           )
           if deps.respond_to?(:event_bus) && deps.event_bus
             deps.event_bus.emit(Textus::Event::EntryWritten.new(

@@ -21,7 +21,7 @@ module Textus
       private
 
       def produce_one(key)
-        workflow = @container.workflows.for(key)
+        workflow = @container.workflows.find { |d| d.match?(key) }
         if workflow
           Workflow::Runner.new(workflow, container: @container, call: @call).run(key)
         else
@@ -45,7 +45,21 @@ module Textus
       end
 
       def publish_only(key)
-        Textus::Produce::Publisher.call(container: @container, call: @call, key: key)
+        entry = @container.manifest.resolver.resolve(key).entry
+        return unless entry.publish_tree || !Array(entry.publish_to).empty?
+        return unless entry.publish_tree || @container.file_store.exists?(
+          @container.manifest.resolver.resolve(key).path,
+        )
+
+        reader = Textus::Store::Entry::Reader.new(
+          file_store: @container.file_store, manifest: @container.manifest,
+          layout: @container.layout
+        )
+        pctx = Textus::Manifest::Entry::Base::PublishContext.new(
+          container: @container, call: @call,
+          reader: reader.method(:read)
+        )
+        entry.publish_via(pctx)
       end
     end
   end

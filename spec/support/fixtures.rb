@@ -151,8 +151,25 @@ module TextusSpecHelpers
   def converge_now(store, prefix: nil, lane: nil, role: Textus::Value::Role::AUTOMATION) # rubocop:disable Lint/UnusedMethodArgument
     queue = Textus::Store::Jobs::Queue.new(store: store.job_store)
     queue.purge("done")
+    with_missing_workflows(store)
     Textus::Store::Jobs::Planner.seed(container: store.container, queue: queue, role: role)
     Textus::Store::Jobs::Worker.for(container: store.container, queue: queue).drain
+  end
+
+  # Auto-register no-op workflows for manifest entries that have publish config
+  # but no matching workflow definition. This lets legacy test manifests work
+  # with the workflow-only Planner.
+  def with_missing_workflows(store)
+    store.container.manifest.data.entries.each do |entry|
+      has_publish = entry.publish_to.any? || entry.publish_tree
+      already_has = store.container.workflows.any? { |d| d.match?(entry.key) }
+      next unless has_publish && !already_has
+
+      defn = Textus::Workflow::DSL::Definition.new("auto-#{entry.key}")
+      defn.match(entry.key)
+      defn.step(:passthrough) { |data, _ctx| data || { content: nil } }
+      store.container.workflows << defn
+    end
   end
 end
 

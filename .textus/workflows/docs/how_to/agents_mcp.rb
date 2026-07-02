@@ -32,7 +32,6 @@ Textus.workflow "how-to-agents-mcp" do
                      "propose_lane" => propose_lane,
                      "role_authority" => authority.call } }
   end
-
-  publish
+  publish to: "docs/how-to/agents-mcp.md", template: "docs/how-to/agents-mcp.erb"
 end
 # rubocop:enable Metrics/BlockLength

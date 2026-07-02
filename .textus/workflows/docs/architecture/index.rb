@@ -20,6 +20,5 @@ Textus.workflow "architecture-index-generator" do
 
     { "content" => { "lanes" => lanes, "roles" => roles } }
   end
-
-  publish
+  publish to: "docs/architecture/README.md", template: "docs/architecture/index.erb"
 end

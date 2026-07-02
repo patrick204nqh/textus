@@ -1,5 +1,5 @@
 Textus.workflow "reference-testing" do
   match "artifacts.reference.testing"
   step(:build) { |_, _| { "content" => {} } }
-  publish
+  publish to: "docs/reference/testing.md", template: "docs/reference/testing.erb"
 end

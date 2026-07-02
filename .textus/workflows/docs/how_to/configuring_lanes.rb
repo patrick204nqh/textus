@@ -19,6 +19,5 @@ Textus.workflow "how-to-configuring-lanes" do
 
     { "content" => { "lanes" => lanes, "roles" => roles, "kind_capability_map" => kmap } }
   end
-
-  publish
+  publish to: "docs/how-to/configuring-lanes.md", template: "docs/how-to/configuring-lanes.erb"
 end

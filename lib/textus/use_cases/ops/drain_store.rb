@@ -8,12 +8,11 @@ module Textus
         NEEDS = %i[manifest file_store schemas audit_log job_store layout workflows].freeze
 
         def self.call(_command, call, deps)
-          proxy = Store::UseCaseContainer.new(
+          proxy = Store::Infrastructure.build(
             manifest: deps.manifest, file_store: deps.file_store,
             schemas: deps.schemas, audit_log: deps.audit_log,
             job_store: deps.job_store, layout: deps.layout,
-            workflows: deps.workflows,
-            link_edge_store: nil, pipeline: nil, root: deps.layout.root
+            workflows: deps.workflows, root: deps.layout.root
           )
           queue = Textus::Store::Jobs::Queue.new(store: deps.job_store)
           Textus::Store::Jobs::Planner.seed(container: proxy, queue: queue, role: call.role)

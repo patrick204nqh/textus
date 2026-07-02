@@ -12,8 +12,10 @@ RSpec.describe Textus::Dispatch::HandlerResolver do
     Textus::Store::Infrastructure.new(
       manifest: fake_manifest, file_store: :fs, schemas: :sc,
       audit_log: :al, job_store: fake_job_store, layout: :ly,
-      link_edge_store: :les, workflows: :wf, event_bus: :eb,
-      freshness_evaluator: :fe, trace_buffer: :tb, pipeline: nil
+      link_edge_store: :les, workflows: :wf,
+      root: "/tmp", reader: nil, writer: nil,
+      event_bus: :eb, freshness_evaluator: :fe,
+      trace_buffer: :tb, pipeline: nil
     )
   end
 
@@ -31,7 +33,7 @@ RSpec.describe Textus::Dispatch::HandlerResolver do
   describe ".build" do
     it "registers the handler for its contract and injects declared deps" do
       registry = described_class.build(ctx, handlers: [fake_handler])
-      handler_fn = registry.for(FakeContract)
+      handler_fn = registry[FakeContract]
       expect(handler_fn).not_to be_nil
 
       result = handler_fn.call(

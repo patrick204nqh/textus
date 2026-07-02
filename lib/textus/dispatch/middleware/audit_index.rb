@@ -28,8 +28,6 @@ module Textus
           key = command.respond_to?(:key) ? command.key : nil
           return result unless key
 
-          emit_entry_written(container, command, call, result, key)
-
           seq = @audit_log.latest_seq
           verb = command.class.name.split("::").last
                         .gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
@@ -46,25 +44,6 @@ module Textus
             etag_after: result.value.is_a?(Hash) ? result.value["etag"] : nil,
           )
           result
-        end
-
-        def emit_entry_written(container, command, call, result, key)
-          return unless command.instance_of?(Contracts::PutEntry)
-          return unless container.respond_to?(:event_bus) && container.event_bus
-
-          etag_after = if result.value.respond_to?(:etag)
-                         result.value.etag
-                       elsif result.value.is_a?(Hash)
-                         result.value["etag"]
-                       end
-
-          container.event_bus.emit(Textus::Event::EntryWritten.new(
-                                     key: key,
-                                     role: call.role,
-                                     etag_before: nil,
-                                     etag_after: etag_after,
-                                     occurred_at: call.now,
-                                   ))
         end
       end
     end

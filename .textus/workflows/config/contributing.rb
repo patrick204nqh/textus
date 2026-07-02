@@ -6,6 +6,5 @@ Textus.workflow "contributing" do
     project = project_env&.meta || {}
     { "content" => { "project_name" => project["name"].to_s } }
   end
-
-  publish
+  publish to: "CONTRIBUTING.md", template: "docs/meta/contributing.erb"
 end

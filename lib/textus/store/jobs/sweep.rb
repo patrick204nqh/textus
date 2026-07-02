@@ -10,6 +10,7 @@ module Textus
           lane   = scope.is_a?(Hash) ? scope["lane"] : nil
           rows = Retention::Sweep.new(
             manifest: container.manifest,
+            workflows: container.workflows,
             file_stat: Textus::Port::Storage::FileStat.new,
             clock: Textus::Port::Clock.new,
           ).call(prefix: prefix, lane: lane)

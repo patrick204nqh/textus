@@ -7,7 +7,12 @@ module Textus
         # scanning entries to find schema violations.
         def call
           result = Textus::Doctor::Validator.new(
-            reader: ->(key, ctnr, _c) { Textus::Store::Entry::Reader.from(container: ctnr).read(key) },
+            reader: lambda { |key, ctnr, _c|
+              Textus::Store::Entry::Reader.new(
+                file_store: ctnr.file_store, manifest: ctnr.manifest,
+                layout: ctnr.layout
+              ).read(key)
+            },
             manifest: @container.manifest,
             audit_log: @container.audit_log,
             schema_for: ->(name) { @container.schemas.fetch_or_nil(name) },

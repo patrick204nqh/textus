@@ -3,14 +3,14 @@ module Textus
     class Loader
       def self.load_all(root)
         geometry = Textus::Store::Layout.new(root)
-        registry = Registry.new
-        return registry unless File.directory?(geometry.workflow_dir)
+        defns = []
+        return defns unless File.directory?(geometry.workflow_dir)
 
-        collector = Collector.new(registry)
-        Collector.with(collector) do
-          Dir.glob(File.join(geometry.workflow_dir, "**", "*.rb")).each { |path| load path }
-        end
-        registry
+        Thread.current[:textus_workflow_registry] = defns
+        Dir.glob(File.join(geometry.workflow_dir, "**", "*.rb")).each { |path| load path }
+        defns
+      ensure
+        Thread.current[:textus_workflow_registry] = nil
       end
     end
   end

@@ -63,6 +63,6 @@ RSpec.describe "Use-case module invariants (ADR-0125)" do
   it "no module defines HANDLES_ALL (removed — use HANDLES only)" do
     offenders = use_case_modules.select { |m| m.const_defined?(:HANDLES_ALL) }
     expect(offenders).to be_empty,
-                          "#{offenders.map(&:name).join(', ')} define HANDLES_ALL — only HANDLES (singular) is supported"
+                         "#{offenders.map(&:name).join(", ")} define HANDLES_ALL — only HANDLES (singular) is supported"
   end
 end

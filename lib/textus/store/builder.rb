@@ -33,9 +33,14 @@ module Textus
         event_bus.subscribe(Event::ProposalAccepted, &cascade_subscriber.method(:on_proposal_accepted))
         event_bus.subscribe(Event::ProposalRejected, &cascade_subscriber.method(:on_proposal_rejected))
 
+        reader  = Store::Entry::Reader.new(file_store:, manifest:, layout:)
+        writer  = Store::Entry::Writer.new(file_store:, manifest:, schemas:,
+                                           audit_log:, reader:, layout:)
+
         partial = Infrastructure.new(
           manifest:, file_store:, schemas:, audit_log:, job_store:,
-          layout:, link_edge_store:, workflows:, event_bus:,
+          layout:, link_edge_store:, workflows:, root:,
+          reader:, writer:, event_bus:,
           freshness_evaluator:, trace_buffer:, pipeline: nil
         )
 
@@ -50,7 +55,7 @@ module Textus
         registry = Dispatch::HandlerResolver.build(partial)
         pipeline = Dispatch::Pipeline.new(registry:, container: partial, middleware:)
 
-        partial.with(pipeline:)
+        partial.with(pipeline:, reader:, writer:)
       end
     end
   end

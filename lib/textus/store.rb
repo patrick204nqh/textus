@@ -44,7 +44,7 @@ module Textus
     def initialize(root, role: Value::Role::DEFAULT, correlation_id: nil, dry_run: false)
       @root = File.expand_path(root)
       @ctx = Store::Builder.new.call(@root)
-      @container = build_container_proxy(@ctx)
+      @container = @ctx
       @role = role.to_s
       @correlation_id = correlation_id || SecureRandom.uuid
       @dry_run = dry_run
@@ -115,16 +115,5 @@ module Textus
     end
 
     def short_etag(etag) = etag.to_s.delete_prefix("sha256:")[0, 8]
-
-    def build_container_proxy(ctx)
-      Store::UseCaseContainer.new(
-        manifest: ctx.manifest, file_store: ctx.file_store,
-        schemas: ctx.schemas, audit_log: ctx.audit_log,
-        job_store: ctx.job_store, layout: ctx.layout,
-        link_edge_store: ctx.link_edge_store,
-        workflows: ctx.workflows, pipeline: ctx.pipeline,
-        root: ctx.layout.root
-      )
-    end
   end
 end

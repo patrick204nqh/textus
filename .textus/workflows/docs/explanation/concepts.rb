@@ -21,6 +21,5 @@ Textus.workflow "explanation-concepts" do
 
     { "content" => { "lanes" => lanes, "roles" => roles, "propose_lane" => propose_lane } }
   end
-
-  publish
+  publish to: "docs/explanation/concepts.md", template: "docs/explanation/concepts.erb"
 end

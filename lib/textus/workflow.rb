@@ -18,11 +18,11 @@ module Textus
   end
 
   def self.workflow(name, &)
-    collector = Workflow::Collector.current
-    raise "Textus.workflow called outside Workflow::Loader.load_all context" unless collector
+    reg = Thread.current[:textus_workflow_registry]
+    raise "Textus.workflow called outside Workflow::Loader.load_all context" unless reg
 
     defn = Workflow::DSL::Definition.new(name)
     defn.instance_eval(&)
-    collector.register(defn)
+    reg << defn
   end
 end

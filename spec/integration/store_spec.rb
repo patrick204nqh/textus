@@ -27,9 +27,8 @@ RSpec.describe Textus::Store do
       expect(store.schemas).to be_a(Textus::Schema::Registry)
       expect(store.file_store).to be_a(Textus::Port::Storage::FileStore)
       expect(store.audit_log).to be_a(Textus::Port::AuditLog)
-      expect(store.container.workflows).to be_a(Textus::Workflow::Registry)
+      expect(store.container.workflows).to be_an(Array)
     end
-
   end
 
   describe ".discover" do
@@ -58,8 +57,8 @@ RSpec.describe Textus::Store do
     end
   end
 
-  it "exposes container.workflows as a Workflow::Registry" do
-    expect(described_class.new(root).container.workflows).to be_a(Textus::Workflow::Registry)
+  it "exposes container.workflows as an Array" do
+    expect(described_class.new(root).container.workflows).to be_an(Array)
   end
 
   describe "unified dispatch" do

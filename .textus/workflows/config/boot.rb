@@ -88,7 +88,7 @@ Textus.workflow "boot" do
       },
     }
   end
-
-  publish
+  publish to: "CLAUDE.md", template: "docs/meta/orientation.erb", inject_boot: true
+  publish to: "AGENTS.md", template: "docs/meta/orientation.erb", inject_boot: true
 end
 # rubocop:enable Metrics/BlockLength

@@ -39,6 +39,7 @@ module Textus
         def initialize(container:)
           @container = container
           @manifest  = container.manifest
+          @workflows = container.workflows
         end
 
         def plan(trigger:, role:)
@@ -48,43 +49,17 @@ module Textus
 
           Textus::Manifest::TriggerCatalog.validate_trigger!(type)
 
-          blocks_with_react = @manifest.rules.blocks.select(&:react)
-          if blocks_with_react.any?
-            plan_from_rules(blocks_with_react, type, role, target: target)
-          else
-            plan_from_defaults(type, role, target: target)
-          end
+          plan_from_defaults(type, role, target: target)
         end
 
         private
-
-        def plan_from_rules(blocks, type, role, target: nil) # rubocop:disable Lint/UnusedMethodArgument
-          jobs = []
-          blocks
-            .select { |b| matches_trigger?(b.react, type) }
-            .each do |block|
-              do_action = block.react.raw["do"]
-              Array(do_action).each do |action|
-                Textus::Manifest::TriggerCatalog.validate_action!(action)
-
-                if (global_args = GLOBAL_ACTIONS[action])
-                  jobs << Textus::Store::Jobs::Queue::Job.new(type: action, args: global_args, role: role)
-                else
-                  resolver = SCOPE_RESOLVERS.fetch(action, :producible_keys)
-                  keys = send(resolver, nil)
-                  keys.each { |key| jobs << job(action, key, role) }
-                end
-              end
-            end
-          jobs
-        end
 
         def plan_from_defaults(type, role, target: nil)
           actions = ACTIONS_BY_TRIGGER.fetch(type, [])
           jobs = []
           if actions.include?("materialize")
-            keys = target && ENTRY_LEVEL_TRIGGERS.include?(type) ? dependent_keys(target) : producible_keys(nil)
-            keys.each { |k| jobs << job("materialize", k, role) }
+            keys = target && ENTRY_LEVEL_TRIGGERS.include?(type) ? dependent_keys(target) : producible_keys
+            sort_by_priority(keys).each { |k| jobs << job("materialize", k, role) }
           end
           GLOBAL_ACTIONS.each do |action, args|
             jobs << Textus::Store::Jobs::Queue::Job.new(type: action, args: args, role: role) if actions.include?(action)
@@ -92,35 +67,32 @@ module Textus
           jobs
         end
 
-        def matches_trigger?(react, type)
-          on = react.raw["on"]
-          Array(on).include?(type)
-        end
-
         def job(type, key, role)
           Textus::Store::Jobs::Queue::Job.new(type: type, args: { "key" => key }, role: role)
         end
 
-        def producible_keys(_target)
-          @manifest.data.entries
-                   .select { |e| !e.publish_tree.nil? || !e.publish_to.empty? }
-                   .map(&:key)
-        end
-
-        def lane_keys(_target)
-          @manifest.data.entries.map(&:key)
+        def producible_keys
+          @workflows.map(&:match_pattern).compact
         end
 
         def dependent_keys(target_key)
-          @manifest.data.entries
-                   .select(&:external?)
-                   .select do |e|
-                     Array(e.source&.sources).compact.any? do |s|
-                       target_key == s || target_key.start_with?("#{s}.")
-                     end
-                   end
-                   .select { |e| !e.publish_tree.nil? || !e.publish_to.empty? }
-                   .map(&:key)
+          @workflows
+            .select { |w| w.depends_on_patterns.any? { |p| match_depends?(p, target_key) } }
+            .map(&:match_pattern)
+            .compact
+        end
+
+        def match_depends?(pattern, target_key)
+          target_key == pattern || target_key.start_with?("#{pattern}.")
+        end
+
+        def sort_by_priority(keys)
+          keys.sort_by { |k| -priority_for(k) }
+        end
+
+        def priority_for(key)
+          wf = @workflows.find { |d| d.match?(key) }
+          wf&.priority || 0
         end
       end
     end

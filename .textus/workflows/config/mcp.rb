@@ -11,6 +11,5 @@ Textus.workflow "mcp_config" do
       },
     } }
   end
-
-  publish
+  publish to: ".mcp.json"
 end

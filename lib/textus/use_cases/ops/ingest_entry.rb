@@ -98,9 +98,9 @@ module Textus
           writer = Store::Entry::Writer.new(
             file_store: deps.file_store, manifest: deps.manifest,
             schemas: deps.schemas, audit_log: deps.audit_log,
-            call: call, reader: reader, layout: deps.layout
+            reader: reader, layout: deps.layout
           )
-          writer.put(key, mentry: mentry,
+          writer.put(key, mentry: mentry, call: call,
                           payload: Textus::Value::Payload.new(meta: nil, body: nil, content: structured))
         end
 
@@ -126,9 +126,9 @@ module Textus
           writer = Store::Entry::Writer.new(
             file_store: deps.file_store, manifest: deps.manifest,
             schemas: deps.schemas, audit_log: deps.audit_log,
-            call: call, reader: reader, layout: deps.layout
+            reader: reader, layout: deps.layout
           )
-          writer.put(old_key, mentry: old_mentry,
+          writer.put(old_key, mentry: old_mentry, call: call,
                               payload: Textus::Value::Payload.new(meta: nil, body: nil, content: tombstone))
 
           structured["supersedes"] = old_key

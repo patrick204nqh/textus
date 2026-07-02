@@ -45,8 +45,16 @@ module Textus
           # cascade events that could re-trigger retention in an infinite loop.
           def delete(key)
             mentry = @container.manifest.resolver.resolve(key).entry
-            writer = Textus::Store::Entry::Writer.from(container: @container, call: @call)
-            writer.delete(key, mentry: mentry)
+            writer = Textus::Store::Entry::Writer.new(
+              file_store: @container.file_store, manifest: @container.manifest,
+              schemas: @container.schemas, audit_log: @container.audit_log,
+              reader: Textus::Store::Entry::Reader.new(
+                file_store: @container.file_store, manifest: @container.manifest,
+                layout: @container.layout
+              ),
+              layout: @container.layout
+            )
+            writer.delete(key, mentry: mentry, call: @call)
           end
         end
       end

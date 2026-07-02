@@ -36,7 +36,6 @@ Textus.workflow "changelog" do
 
     { "content" => { "entries" => entries } }
   end
-
-  publish
+  publish to: "CHANGELOG.md", template: "docs/meta/changelog.erb"
 end
 # rubocop:enable Metrics/BlockLength

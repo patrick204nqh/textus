@@ -27,6 +27,5 @@ Textus.workflow "decisions-log" do
 
     { "content" => { "adrs" => build_adrs.call } }
   end
-
-  publish
+  publish to: "docs/decisions.md", template: "docs/decisions/log.erb"
 end

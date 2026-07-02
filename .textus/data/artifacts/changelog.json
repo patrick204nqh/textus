@@ -8,6 +8,42 @@
       "date": null,
       "commits": [
         {
+          "subject": "feat(workflow): migrate 4 more Doctor checks to validation workflows",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "feat(workflow): migrate Doctor::RuleAmbiguity to self-contained validation workflow",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "feat(workflow): add validate step type, multi-key matching, and validation workflow POC",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "chore: revert solid-process POC (gem not mature enough)",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "refactor(specs): remove 6 redundant files, simplify 5 overlapping specs, drop 6 dead refs",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "feat(pipeline): enforce cross-reference chain — decisions→architecture, patterns→decisions, runbooks→patterns",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "chore: regenerate changelog",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "chore: track knowledge.architecture entries and manifest",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "feat(patterns): add unified-dispatch, middleware-chain, handler-needs, store-builder + agent training",
+          "date": "2026-07-01"
+        },
+        {
           "subject": "docs: document 6 intentional Reader/Writer bypass sites (P3)",
           "date": "2026-07-01"
         },

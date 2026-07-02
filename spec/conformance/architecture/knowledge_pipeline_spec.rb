@@ -35,23 +35,27 @@ RSpec.describe "Knowledge pipeline conformance" do
   end
 
   it "recent decisions (ADR-0119+) reference architecture (pipeline: architecture → decisions)" do
-    decisions = Dir[File.join(knowledge_dir, "decisions", "0*.md")].select { |f| f.match?(/01(19|2[0-5])/) }
-    offenders = decisions.reject { |f| File.read(f).match?(/knowledge\.architecture\.|\.textus\/data\/knowledge\/architecture/) }
+    decisions = Dir[File.join(knowledge_dir, "decisions", "0*.md")].grep(/01(19|2[0-5])/)
+    offenders = decisions.reject { |f| File.read(f).match?(%r{knowledge\.architecture\.|\.textus/data/knowledge/architecture}) }
     expect(offenders).to be_empty,
-      "decisions after ADR-0119 missing architecture reference:\n#{offenders.map { |f| "  #{f.sub(knowledge_dir, 'knowledge')}" }.join("\n")}"
+                         "decisions after ADR-0119 missing architecture reference:\n#{offenders.map do |f|
+                           "  #{f.sub(knowledge_dir, "knowledge")}"
+                         end.join("\n")}"
   end
 
   it "patterns reference decisions (pipeline: decisions → patterns)" do
     patterns = Dir[File.join(knowledge_dir, "patterns", "*.md")]
     offenders = patterns.reject { |f| File.read(f).match?(/knowledge\.decisions\.|ADR-\d+|knowledge\.patterns\./) }
     expect(offenders).to be_empty,
-      "patterns missing decision reference:\n#{offenders.map { |f| "  #{f.sub(knowledge_dir, 'knowledge')}" }.join("\n")}"
+                         "patterns missing decision reference:\n#{offenders.map do |f|
+                           "  #{f.sub(knowledge_dir, "knowledge")}"
+                         end.join("\n")}"
   end
 
   it "runbooks reference patterns (pipeline: patterns → runbooks)" do
     runbooks = Dir[File.join(knowledge_dir, "runbooks", "*.md")]
     offenders = runbooks.reject { |f| File.read(f).match?(/knowledge\.patterns\./) }
     expect(offenders).to be_empty,
-      "runbooks missing pattern reference:\n#{offenders.map { |f| "  #{f.sub(knowledge_dir, 'knowledge')}" }.join("\n")}"
+                         "runbooks missing pattern reference:\n#{offenders.map { |f| "  #{f.sub(knowledge_dir, "knowledge")}" }.join("\n")}"
   end
 end

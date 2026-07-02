@@ -24,6 +24,5 @@ Textus.workflow "agentskills" do
 
     { "content" => { "skills" => skills, "count" => skills.size } }
   end
-
-  publish
+  publish to: "docs/reference/skills.md", template: "feeds/skills.erb"
 end

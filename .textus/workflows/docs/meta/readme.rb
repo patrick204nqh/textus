@@ -12,6 +12,5 @@ Textus.workflow "readme" do
 
     { "content" => { "sections" => sections } }
   end
-
-  publish
+  publish to: "README.md", template: "docs/meta/readme.erb"
 end

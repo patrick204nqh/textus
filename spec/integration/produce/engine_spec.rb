@@ -40,7 +40,7 @@ RSpec.describe Textus::Produce::Engine do
       fetched << ctx.key
       { content: ["item"] }
     end
-    store.container.workflows.register(defn)
+        store.container.workflows << defn
 
     result = described_class.converge(
       container: store.container,

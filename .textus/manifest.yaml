@@ -1,252 +1,57 @@
 version: textus/4
 roles:
-  - { name: human,      can: [author, propose, ingest] }
-  - { name: agent,      can: [propose, keep, ingest] }
+  - { name: human, can: [author, propose, ingest] }
+  - { name: agent, can: [propose, keep, ingest] }
   - { name: automation, can: [converge, ingest] }
 lanes:
-  - { name: knowledge, kind: canon,     desc: "the maintained source of truth about the repo" }
-  - { name: scratchpad,  kind: workspace, owner: agent, desc: "the agent's own durable scratchpad (working memory)" }
-  - { name: proposals, kind: queue,     desc: "changes awaiting a human accept" }
-  - { name: artifacts, kind: machine,   desc: "machine-maintained computed outputs" }
-  - { name: raw,       kind: raw,       desc: "ingested external source material (write-once)" }
+  - { name: knowledge, kind: canon, desc: "the maintained source of truth about the repo" }
+  - { name: scratchpad, kind: workspace, owner: agent, desc: "the agent's own durable scratchpad (working memory)" }
+  - { name: proposals, kind: queue, desc: "changes awaiting a human accept" }
+  - { name: artifacts, kind: machine, desc: "machine-maintained computed outputs" }
+  - { name: raw, kind: raw, desc: "ingested external source material (write-once)" }
 entries:
-  # Canon — human-authored atoms and stable documents
-  - { key: knowledge.project,  lane: knowledge, schema: project, owner: human:self, kind: leaf }
-  - { key: knowledge.runbooks, lane: knowledge, schema: runbook, owner: human:self, nested: true, kind: nested }
-  - key: knowledge.goals
-    lane: knowledge
-    owner: human:self
-    nested: true
-    kind: nested
-  - key: knowledge.rules
-    lane: knowledge
-    owner: human:self
-    nested: true
-    kind: nested
-  - key: knowledge.patterns
-    lane: knowledge
-    owner: human:self
-    nested: true
-    kind: nested
-  - key: knowledge.decisions
-    lane: knowledge
-    owner: human:self
-    nested: true
-    kind: nested
-    ignore: ["**/README.md"]
-    publish: [{ tree: docs/architecture/decisions }]
-  - key: artifacts.contributing
-    lane: artifacts
-    kind: produced
-    format: json
-    source: { from: external, command: "true", sources: [] }
-    publish: [{ to: CONTRIBUTING.md, template: docs/meta/contributing.erb }]
-  - key: artifacts.security
-    lane: artifacts
-    kind: produced
-    format: json
-    source: { from: external, command: "true", sources: [] }
-    publish: [{ to: SECURITY.md, template: docs/meta/security.erb }]
-  - key: artifacts.code-of-conduct
-    lane: artifacts
-    kind: produced
-    format: json
-    source: { from: external, command: "true", sources: [] }
-    publish: [{ to: CODE_OF_CONDUCT.md, template: docs/meta/code-of-conduct.erb }]
-  - key: artifacts.changelog
-    lane: artifacts
-    kind: produced
-    format: json
-    source: { from: external, command: "true", sources: [] }
-    publish: [{ to: CHANGELOG.md, template: docs/meta/changelog.erb }]
-  - key: knowledge.readme
-    lane: knowledge
-    owner: human:self
-    nested: true
-    kind: nested
-  - key: knowledge.specs
-    lane: knowledge
-    owner: human:self
-    nested: true
-    kind: nested
-  - key: knowledge.architecture
-    lane: knowledge
-    owner: human:self
-    nested: true
-    kind: nested
+  - { key: knowledge.project, lane: knowledge, schema: project, owner: human:self, kind: leaf }
 
-  # Scratchpad / proposals / raw
-  - { key: scratchpad.notes,    lane: scratchpad,  owner: agent:self, nested: true, kind: nested }
-  - { key: scratchpad.sessions, lane: scratchpad,  owner: agent:self, nested: true, kind: nested }
-  - { key: scratchpad.scripts,  lane: scratchpad,  owner: agent:self, nested: true, kind: nested }
-  - { key: proposals.notes, lane: proposals, owner: agent:self, nested: true, kind: nested }
-  - { key: raw, lane: raw, owner: agent:self, nested: true, kind: nested, format: yaml }
-  # Boot artifact — pre-computed agent orientation
-  - key: artifacts.boot
-    lane: artifacts
-    kind: produced
-    format: json
-    source: { from: external, command: "true", sources: [] }
-    publish:
-      - { to: CLAUDE.md,  template: docs/meta/orientation.erb, inject_boot: true }
-      - { to: AGENTS.md,  template: docs/meta/orientation.erb, inject_boot: true }
-  # Config — tool configuration files
-  - key: artifacts.config.opencode
-    lane: artifacts
-    kind: produced
-    format: json
-    source: { from: external, command: "true", sources: [] }
-    publish: [{ to: opencode.json }]
-  - key: artifacts.config.mcp
-    path: artifacts/config/claude-mcp.json
-    lane: artifacts
-    kind: produced
-    source: { from: external, command: "true", sources: [] }
-    publish: [{ to: .mcp.json }]
-  - key: artifacts.config.plugin
-    path: artifacts/config/claude-plugin.json
-    lane: artifacts
-    kind: produced
-    source: { from: external, command: "true", sources: [] }
-    publish: [{ to: .claude-plugin/plugin.json }]
-  # Docs — meta (index, readme, adr log)
+  - { key: knowledge.runbooks, lane: knowledge, schema: runbook, owner: human:self, kind: nested, nested: true }
+  - { key: knowledge.goals, lane: knowledge, owner: human:self, kind: nested, nested: true }
+  - { key: knowledge.rules, lane: knowledge, owner: human:self, kind: nested, nested: true }
+  - { key: knowledge.patterns, lane: knowledge, owner: human:self, kind: nested, nested: true }
+  - { key: knowledge.decisions, lane: knowledge, owner: human:self, kind: nested, nested: true, ignore: ["**/README.md"] }
+  - { key: artifacts.contributing, lane: artifacts, format: json, kind: produced }
+  - { key: artifacts.security, lane: artifacts, format: json, kind: produced }
+  - { key: artifacts.code-of-conduct, lane: artifacts, format: json, kind: produced }
+  - { key: artifacts.changelog, lane: artifacts, format: json, kind: produced }
+  - { key: knowledge.readme, lane: knowledge, owner: human:self, kind: nested, nested: true }
+  - { key: knowledge.specs, lane: knowledge, owner: human:self, kind: nested, nested: true }
+  - { key: knowledge.architecture, lane: knowledge, owner: human:self, kind: nested, nested: true }
+  - { key: scratchpad.notes, lane: scratchpad, owner: agent:self, kind: nested, nested: true }
+  - { key: scratchpad.sessions, lane: scratchpad, owner: agent:self, kind: nested, nested: true }
+  - { key: scratchpad.scripts, lane: scratchpad, owner: agent:self, kind: nested, nested: true }
+  - { key: proposals.notes, lane: proposals, owner: agent:self, kind: nested, nested: true }
+  - { key: raw, lane: raw, format: yaml, owner: agent:self, kind: nested, nested: true }
+  - { key: artifacts.boot, lane: artifacts, format: json, kind: produced }
+  - { key: artifacts.config.opencode, lane: artifacts, format: json, kind: produced }
+  - { key: artifacts.config.mcp, lane: artifacts, path: artifacts/config/claude-mcp.json, kind: produced }
+  - { key: artifacts.config.plugin, lane: artifacts, path: artifacts/config/claude-plugin.json, kind: produced }
+  - { key: artifacts.decisions.log, lane: artifacts, format: json, kind: produced }
+  - { key: artifacts.docs.readme, lane: artifacts, format: json, kind: produced }
+  - { key: artifacts.architecture.index, lane: artifacts, format: json, kind: produced }
+  - { key: artifacts.design.invariants, lane: artifacts, format: json, kind: produced }
+  - { key: artifacts.how-to.agents-mcp, lane: artifacts, format: json, kind: produced }
+  - { key: artifacts.how-to.configuring-lanes, lane: artifacts, format: json, kind: produced }
+  - { key: artifacts.how-to.drain-scheduling, lane: artifacts, format: json, kind: produced }
+  - { key: artifacts.how-to.migrations, lane: artifacts, format: json, kind: produced }
+  - { key: artifacts.reference.lanes, lane: artifacts, format: json, kind: produced }
+  - { key: artifacts.reference.conventions, lane: artifacts, format: json, kind: produced }
+  - { key: artifacts.reference.testing, lane: artifacts, format: json, kind: produced }
+  - { key: artifacts.reference.engineering-skills, lane: artifacts, format: json, kind: produced }
+  - { key: artifacts.reference.contributor-conventions, lane: artifacts, format: json, kind: produced }
+  - { key: artifacts.explanation.concepts, lane: artifacts, format: json, kind: produced }
+  - { key: artifacts.doctor.rule-ambiguity, lane: artifacts, format: json, kind: produced }
+  - { key: artifacts.doctor.manifest-files, lane: artifacts, format: json, kind: produced }
+  - { key: artifacts.doctor.templates, lane: artifacts, format: json, kind: produced }
+  - { key: artifacts.doctor.schemas, lane: artifacts, format: json, kind: produced }
+  - { key: artifacts.doctor.publish-tree-overlap, lane: artifacts, format: json, kind: produced }
+  - { key: artifacts.system.index, lane: artifacts, format: json, kind: produced }
+  - { key: artifacts.feeds.skills, lane: artifacts, format: json, kind: produced }
 
-  - key: artifacts.decisions.log
-    lane: artifacts
-    kind: produced
-    format: json
-    source: { from: external, command: "true", sources: [] }
-    publish: [{ to: docs/decisions.md, template: docs/decisions/log.erb }]
-  - key: artifacts.docs.readme
-    lane: artifacts
-    kind: produced
-    format: json
-    source: { from: external, command: "true", sources: [] }
-    publish: [{ to: README.md, template: docs/meta/readme.erb }]
-  # Docs — architecture
-  - key: artifacts.architecture.index
-    lane: artifacts
-    kind: produced
-    format: json
-    source: { from: external, command: "true", sources: [] }
-    publish:
-      - { to: docs/architecture/README.md, template: docs/architecture/index.erb }
-  # Docs — design
-  - key: artifacts.design.invariants
-    lane: artifacts
-    kind: produced
-    format: json
-    source: { from: external, command: "true", sources: [] }
-    publish:
-      - { to: docs/design/invariants.md, template: docs/design/invariants.erb }
-  # Docs — how-to guides
-  - key: artifacts.how-to.agents-mcp
-    lane: artifacts
-    kind: produced
-    format: json
-    source: { from: external, command: "true", sources: [] }
-    publish:
-      - { to: docs/how-to/agents-mcp.md, template: docs/how-to/agents-mcp.erb }
-  - key: artifacts.how-to.configuring-lanes
-    lane: artifacts
-    kind: produced
-    format: json
-    source: { from: external, command: "true", sources: [] }
-    publish:
-      - { to: docs/how-to/configuring-lanes.md, template: docs/how-to/configuring-lanes.erb }
-  - key: artifacts.how-to.drain-scheduling
-    lane: artifacts
-    kind: produced
-    format: json
-    source: { from: external, command: "true", sources: [] }
-    publish:
-      - { to: docs/how-to/drain-scheduling.md, template: docs/how-to/drain-scheduling.erb }
-  - key: artifacts.how-to.migrations
-    lane: artifacts
-    kind: produced
-    format: json
-    source: { from: external, command: "true", sources: [] }
-    publish:
-      - { to: docs/how-to/migrations.md, template: docs/how-to/migrations.erb }
-  # Docs — reference
-  - key: artifacts.reference.lanes
-    lane: artifacts
-    kind: produced
-    format: json
-    source: { from: external, command: "true", sources: [] }
-    publish:
-      - { to: docs/reference/lanes.md, template: docs/reference/lanes.erb }
-  - key: artifacts.reference.conventions
-    lane: artifacts
-    kind: produced
-    format: json
-    source: { from: external, command: "true", sources: [] }
-    publish:
-      - { to: docs/reference/conventions.md, template: docs/reference/conventions.erb }
-  - key: artifacts.reference.testing
-    lane: artifacts
-    kind: produced
-    format: json
-    source: { from: external, command: "true", sources: [] }
-    publish:
-      - { to: docs/reference/testing.md, template: docs/reference/testing.erb }
-  - key: artifacts.reference.engineering-skills
-    lane: artifacts
-    kind: produced
-    format: json
-    source: { from: external, command: "true", sources: [] }
-    publish:
-      - { to: docs/reference/engineering-skills.md, template: docs/reference/engineering-skills.erb }
-  - key: artifacts.reference.contributor-conventions
-    lane: artifacts
-    kind: produced
-    format: json
-    source: { from: external, command: "true", sources: [] }
-    publish:
-      - { to: docs/reference/contributor-conventions.md, template: docs/reference/contributor-conventions.erb }
-  # Docs — explanation
-  - key: artifacts.explanation.concepts
-    lane: artifacts
-    kind: produced
-    format: json
-    source: { from: external, command: "true", sources: [] }
-    publish:
-      - { to: docs/explanation/concepts.md, template: docs/explanation/concepts.erb }
-  # Validation workflow results
-  - key: artifacts.doctor.rule-ambiguity
-    lane: artifacts
-    kind: produced
-    format: json
-    source: { from: external, command: "true", sources: [] }
-  - key: artifacts.doctor.manifest-files
-    lane: artifacts
-    kind: produced
-    format: json
-    source: { from: external, command: "true", sources: [] }
-  - key: artifacts.doctor.templates
-    lane: artifacts
-    kind: produced
-    format: json
-    source: { from: external, command: "true", sources: [] }
-  - key: artifacts.doctor.schemas
-    lane: artifacts
-    kind: produced
-    format: json
-    source: { from: external, command: "true", sources: [] }
-  - key: artifacts.doctor.publish-tree-overlap
-    lane: artifacts
-    kind: produced
-    format: json
-    source: { from: external, command: "true", sources: [] }
-  # System / feeds
-  - key: artifacts.system.index
-    lane: artifacts
-    kind: produced
-    format: json
-    source: { from: external, command: "true", sources: [] }
-  - key: artifacts.feeds.skills
-    lane: artifacts
-    kind: produced
-    format: json
-    source: { from: external, command: "true", sources: [] }
-    publish: [{ to: docs/reference/skills.md, template: feeds/skills.erb }]

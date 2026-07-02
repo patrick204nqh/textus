@@ -1,9 +1,9 @@
 RSpec.describe Textus::Workflow::Loader do
   include_context "textus_store_fixture"
 
-  it "returns an empty registry when no workflows/ dir exists" do
-    registry = described_class.load_all(root)
-    expect(registry.all).to be_empty
+  it "returns an empty array when no workflows/ dir exists" do
+    defns = described_class.load_all(root)
+    expect(defns).to be_empty
   end
 
   it "loads workflow files and registers definitions" do
@@ -15,8 +15,8 @@ RSpec.describe Textus::Workflow::Loader do
       end
     RUBY
 
-    registry = described_class.load_all(root)
-    defn = registry.for("knowledge.notes.x")
+    defns = described_class.load_all(root)
+    defn = defns.find { |d| d.match?("knowledge.notes.x") }
     expect(defn).not_to be_nil
     expect(defn.name).to eq("test_wf")
   end

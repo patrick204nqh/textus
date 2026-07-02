@@ -64,9 +64,25 @@ module Textus
         step.callable.call(data, ctx)
       end
 
+      class StepScope
+        include Helpers
+
+        def initialize(data, ctx, runner)
+          @data = data
+          @ctx  = ctx
+          @container = ctx.container
+          @call = ctx.call
+        end
+
+        def call(callable)
+          instance_exec(@data, @ctx, &callable)
+        end
+      end
+
       def execute_single(step, data, ctx)
+        scope = StepScope.new(data, ctx, self)
         timeout = step.timeout || DEFAULT_TIMEOUT
-        Timeout.timeout(timeout) { step.callable.call(data, ctx) }
+        Timeout.timeout(timeout) { scope.call(step.callable) }
       rescue Timeout::Error => e
         raise StepFailed.new(step.name, e)
       rescue Textus::Error
@@ -76,10 +92,11 @@ module Textus
       end
 
       def execute_parallel(parallel, ctx)
+        scope = StepScope.new(nil, ctx, self)
         promises = parallel.steps.map do |step|
           CONCURRENCY_ADAPTER.future do
             timeout = step.timeout || DEFAULT_TIMEOUT
-            Timeout.timeout(timeout) { step.callable.call(nil, ctx) }
+            Timeout.timeout(timeout) { scope.call(step.callable) }
           end
         end
 
@@ -105,7 +122,13 @@ module Textus
       # Run validation across ALL matching entries (multi-key scan).
       # Returns { workflow:, total:, passed:, issues: }
       def validate_all
-        keys = @definition.multi_match? ? all_matching_keys : @container.manifest.data.entries.select { |e| @definition.match?(e.key) }.map(&:key)
+        keys = if @definition.multi_match?
+                 all_matching_keys
+               else
+                 @container.manifest.data.entries.select do |e|
+                   @definition.match?(e.key)
+                 end.map(&:key)
+               end
         all_issues = []
         keys.each do |key|
           ctx = build_context(key)
@@ -132,10 +155,47 @@ module Textus
       end
 
       def publish(key, data, ctx)
+        targets = @definition.publish_targets
+        if targets.any?
+          write_and_publish(key, data, ctx, targets)
+          return
+        end
+
         blk = @definition.publish_block
         return blk.call(data, ctx) if blk && blk != :default
 
         built_in_publish(key, data, ctx)
+      end
+
+      def write_and_publish(key, data, ctx, targets)
+        normalized = Textus::Format.data_to_payload(data, ctx.entry.format)
+        Textus::Store::Entry::Writer.new(
+          file_store: @container.file_store, manifest: @container.manifest,
+          schemas: @container.schemas, audit_log: @container.audit_log,
+          reader: Textus::Store::Entry::Reader.new(
+            file_store: @container.file_store, manifest: @container.manifest,
+            layout: @container.layout
+          ),
+          layout: @container.layout
+        ).put(key, mentry: ctx.entry,
+                   payload: Textus::Value::Payload.new(**normalized), call: @call)
+
+        targets.each do |target|
+          attrs = { "to" => target.to, "template" => target.template,
+                    "tree" => target.tree }
+          attrs["inject_boot"] = true if target.inject_boot
+          pub_target = Textus::Manifest::Policy::PublishTarget.new(attrs)
+          reader = Textus::Store::Entry::Reader.new(
+            file_store: @container.file_store, manifest: @container.manifest,
+            layout: @container.layout
+          )
+          pctx = Textus::Manifest::Entry::Base::PublishContext.new(
+            container: @container, call: @call,
+            reader: reader.method(:read)
+          )
+          entry = ctx.entry.with_publish_targets([pub_target])
+          entry.publish_via(pctx)
+        end
       end
 
       def built_in_publish(key, data, ctx)
@@ -147,17 +207,29 @@ module Textus
           action: :converge, actor: @call.role, key: key,
           rule_predicates: rule_preds
         )
-        # Intentionally bypasses use-case layer — workflow outputs are system
-        # writes (automation role), not user writes. Using PutEntry would trigger
-        # cascading produce events that could cause infinite regress. Writer is
-        # called directly to write the produced data, then Publisher renders the
-        # template output.
-        Textus::Store::Entry::Writer.from(container: @container, call: @call).put(
-          key,
-          mentry: ctx.entry,
-          payload: Textus::Value::Payload.new(**normalized),
+        Textus::Store::Entry::Writer.new(
+          file_store: @container.file_store, manifest: @container.manifest,
+          schemas: @container.schemas, audit_log: @container.audit_log,
+          reader: Textus::Store::Entry::Reader.new(
+            file_store: @container.file_store, manifest: @container.manifest,
+            layout: @container.layout
+          ),
+          layout: @container.layout
+        ).put(key, mentry: ctx.entry,
+                   payload: Textus::Value::Payload.new(**normalized), call: @call)
+
+        entry = @container.manifest.resolver.resolve(key).entry
+        return unless entry.publish_tree || !Array(entry.publish_to).empty?
+
+        reader = Textus::Store::Entry::Reader.new(
+          file_store: @container.file_store, manifest: @container.manifest,
+          layout: @container.layout
         )
-        Textus::Produce::Publisher.call(container: @container, call: @call, key: key)
+        pctx = Textus::Manifest::Entry::Base::PublishContext.new(
+          container: @container, call: @call,
+          reader: reader.method(:read),
+        )
+        entry.publish_via(pctx)
       end
     end
   end

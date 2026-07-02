@@ -20,6 +20,5 @@ Textus.workflow "claude_plugin" do
       "mcpServers" => { "textus" => { "command" => "textus", "args" => %w[mcp serve] } },
     } }
   end
-
-  publish
+  publish to: ".claude-plugin/plugin.json"
 end
