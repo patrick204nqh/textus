@@ -1,22 +1,22 @@
 version: textus/4
 data:
   knowledge:
-    - key: knowledge.execution
+    - key: knowledge.loop.execution
       naming: sequential
       schema: runbook
-    - key: knowledge.intent
+    - key: knowledge.loop.intent
       naming: sequential
-    - key: knowledge.constraint.repo
+    - key: knowledge.loop.constraint.repo
       naming: sequential
-    - key: knowledge.constraint.protocol
+    - key: knowledge.loop.constraint.protocol
       naming: sequential
-    - key: knowledge.judgment.engineering
+    - key: knowledge.loop.judgment.engineering
       naming: sequential
-    - key: knowledge.judgment.agent-behavior
+    - key: knowledge.loop.judgment.agent-behavior
       naming: sequential
-    - key: knowledge.evidence
+    - key: knowledge.loop.evidence
       naming: sequential
-    - key: knowledge.feedback
+    - key: knowledge.loop.feedback
       naming: sequential
   scratchpad:
     - key: scratchpad.notes

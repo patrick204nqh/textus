@@ -10,16 +10,16 @@ module Textus
       version: textus/4
       data:
         knowledge:
-          - key: knowledge.execution
+          - key: knowledge.loop.execution
             naming: sequential
             schema: runbook
-          - key: knowledge.intent
+          - key: knowledge.loop.intent
             naming: sequential
-          - key: knowledge.constraint
-          - key: knowledge.judgment
-          - key: knowledge.evidence
+          - key: knowledge.loop.constraint
+          - key: knowledge.loop.judgment
+          - key: knowledge.loop.evidence
             naming: sequential
-          - key: knowledge.feedback
+          - key: knowledge.loop.feedback
         scratchpad:
           - key: scratchpad.notes
             tracked: false

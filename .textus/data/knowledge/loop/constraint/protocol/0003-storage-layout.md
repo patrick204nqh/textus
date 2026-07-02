@@ -19,7 +19,7 @@ The root is `.textus/` at the project working directory. A typical tree:
     raw/                 # lane: raw (kind: raw — ingest-holders write; write-once)
 ```
 
-Textus internals (`manifest.yaml`, `schemas/`, `templates/`, `workflows/`) live directly under `.textus/`; disposable runtime state (audit log, publish `sentinels/`, fetch/build locks, pulse cursors, job queue) lives under `.textus/.state/` (git-ignored, ADR 0038/0070). **All user content lives under `.textus/data/`.** Manifest `path:` fields are relative to `.textus/` — they include the `data/` prefix explicitly (e.g. `path: data/knowledge/foo.md`).
+Textus internals (`manifest.yaml`, `schemas/`, `templates/`, `workflows/`) live directly under `.textus/`; disposable runtime state (audit log, publish `sentinels/`, fetch/build locks, pulse cursors, job queue) lives under `.textus/.state/` (git-ignored, ADR 0038/0070). **All user content lives under `.textus/data/`.** Manifest `path:` fields are relative to `.textus/` — they include the `data/` prefix explicitly (e.g. `path: data/knowledge/loop/foo.md`).
 
 Lane directories under `data/` are conventional; their write semantics are derived from the lane's declared `kind:` (and the capabilities roles hold), not the directory name.
 

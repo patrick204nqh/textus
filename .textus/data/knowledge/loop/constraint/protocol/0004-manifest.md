@@ -25,12 +25,12 @@ lanes:
 
 entries:
   - key: knowledge.identity.self
-    path: data/knowledge/identity/self.md
+    path: data/knowledge/loop/identity/self.md
     lane: knowledge
     schema: identity
 
   - key: knowledge.network.org
-    path: data/knowledge/network/org
+    path: data/knowledge/loop/network/org
     lane: knowledge
     schema: person
     owner: human:network
@@ -72,7 +72,7 @@ For `nested: true`, the recursive glob matches the format's extension (markdownâ
 
 ```yaml
 - key: knowledge.skills
-  path: data/knowledge/skills
+  path: data/knowledge/loop/skills
   lane: knowledge
   schema: skill
   nested: true
@@ -81,4 +81,4 @@ For `nested: true`, the recursive glob matches the format's extension (markdownâ
   ignore: ["*.tmp", ".DS_Store"]
 ```
 
-**Lookup rule:** to resolve a key, find the entry with the longest `key:` prefix that matches. If that entry has `nested: true`, the remaining segments map to subdirectories under its `path`. Otherwise the key must equal an entry exactly. The resolved filesystem path is `<.textus root>/<entry.path>[/<remaining>...].md` â€” manifest `path:` values include the `data/` prefix (e.g. `data/knowledge/network/org`).
+**Lookup rule:** to resolve a key, find the entry with the longest `key:` prefix that matches. If that entry has `nested: true`, the remaining segments map to subdirectories under its `path`. Otherwise the key must equal an entry exactly. The resolved filesystem path is `<.textus root>/<entry.path>[/<remaining>...].md` â€” manifest `path:` values include the `data/` prefix (e.g. `data/knowledge/loop/network/org`).

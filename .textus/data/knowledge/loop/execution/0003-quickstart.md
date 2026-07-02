@@ -1,6 +1,6 @@
 ## See it in four commands
 
-Pattern: `knowledge.judgment.engineering.0007-bounded-use-cases` — quickstart composes role-gated actions into a single runnable flow.
+Pattern: `knowledge.loop.judgment.engineering.0007-bounded-use-cases` — quickstart composes role-gated actions into a single runnable flow.
 
 ```sh
 gem install textus
@@ -86,7 +86,7 @@ lanes:
     indexes/raw.yaml     # raw lane content-hash/URL index — regenerable cache
 ```
 
-Manifest `path:` fields are relative to `.textus/data/`. So `knowledge.notes.org.jane` lives at `.textus/data/knowledge/notes/org/jane.md`.
+Manifest `path:` fields are relative to `.textus/data/`. So `knowledge.notes.org.jane` lives at `.textus/data/knowledge/loop/notes/org/jane.md`.
 
 Read and write:
 

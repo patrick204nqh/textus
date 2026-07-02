@@ -8,7 +8,7 @@ Every successful CLI response (`--output=json`) is a single JSON envelope:
   "key": "knowledge.network.org.jane",
   "lane": "knowledge",
   "owner": "human:network",
-  "path": "/absolute/path/to/.textus/data/knowledge/network/org/jane.md",
+  "path": "/absolute/path/to/.textus/data/knowledge/loop/network/org/jane.md",
   "format": "markdown",
   "_meta": { "name": "jane", "relationship": "peer", "org": "acme" },
   "body": "Short body in Markdown.\n",

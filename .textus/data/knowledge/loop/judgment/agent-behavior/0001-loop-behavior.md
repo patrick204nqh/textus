@@ -16,11 +16,11 @@ Per-node behavior:
 
 - **Touching intent** — human-authored only. Your job is to *surface* drift,
   never self-author a goal.
-- **Hit a hard limit** — check `knowledge.constraint.repo` (engineering
-  rules) or `knowledge.constraint.protocol` (wire contract) before
+- **Hit a hard limit** — check `knowledge.loop.constraint.repo` (engineering
+  rules) or `knowledge.loop.constraint.protocol` (wire contract) before
   improvising.
 - **A judgment call constraint doesn't cover** — consult
-  `knowledge.judgment.engineering`. If you're repeating the same judgment
+  `knowledge.loop.judgment.engineering`. If you're repeating the same judgment
   call, that's the Upward flow: propose compressing it into a new pattern
   entry there.
 - **Logging a one-off choice** — propose an entry under `knowledge.evidence`.

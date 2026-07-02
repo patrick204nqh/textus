@@ -1,6 +1,6 @@
 ---
 uid: c7c0c58b8ad41100
-refines: knowledge.judgment.engineering.0009-conventions
+refines: knowledge.loop.judgment.engineering.0009-conventions
 ---
 # ADR-0125: Bounded Use-Case Objects
 

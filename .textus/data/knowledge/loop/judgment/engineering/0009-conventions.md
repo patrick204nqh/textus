@@ -57,11 +57,11 @@ The loop is self-correcting: judgment identifies issues and patterns → evidenc
 ## Agent Training
 
 On session start, agents should read:
-1. `knowledge.judgment.engineering.0009-conventions` — this file (folder structure, role design, pipeline)
-2. `knowledge.constraint.protocol.0014-data-flow` — how data flows through the system
-3. `knowledge.judgment.engineering.0010-anti-patterns` — what to avoid
-4. `knowledge.feedback.0001-solid-audit` — SOLID evaluation of the codebase
-5. `knowledge.judgment.engineering.*` — reusable patterns when designing new code
+1. `knowledge.loop.judgment.engineering.0009-conventions` — this file (folder structure, role design, pipeline)
+2. `knowledge.loop.constraint.protocol.0014-data-flow` — how data flows through the system
+3. `knowledge.loop.judgment.engineering.0010-anti-patterns` — what to avoid
+4. `knowledge.loop.feedback.0001-solid-audit` — SOLID evaluation of the codebase
+5. `knowledge.loop.judgment.engineering.*` — reusable patterns when designing new code
 
 When designing new code, prefer:
 - **Unified dispatch** — new verbs automatically route through Store#method_missing

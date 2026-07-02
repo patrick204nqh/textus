@@ -1,7 +1,7 @@
 ---
 name: '0120-atomic-canon-composed-artifacts'
 uid: ''
-refines: knowledge.judgment.engineering.0009-conventions
+refines: knowledge.loop.judgment.engineering.0009-conventions
 ---
 
 # ADR-0120: Atomic canon + composed artifacts

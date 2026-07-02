@@ -1,7 +1,7 @@
 ---
 name: '0124-workflow-parallel-steps'
 uid: ''
-refines: knowledge.judgment.engineering.0009-conventions
+refines: knowledge.loop.judgment.engineering.0009-conventions
 ---
 
 # ADR-0124: Workflow parallel steps with concurrent-ruby
