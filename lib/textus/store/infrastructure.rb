@@ -4,7 +4,7 @@ module Textus
   class Store
     Infrastructure = Data.define(
       :manifest,
-      :file_store,
+      :file_system,
       :schemas,
       :audit_log,
       :job_store,

@@ -47,12 +47,12 @@ module Textus
       def publish_only(key)
         entry = @container.manifest.resolver.resolve(key).entry
         return unless entry.publish_tree || !Array(entry.publish_to).empty?
-        return unless entry.publish_tree || @container.file_store.exists?(
+        return unless entry.publish_tree || @container.file_system.exists?(
           @container.manifest.resolver.resolve(key).path,
         )
 
         reader = Textus::Store::Entry::Reader.new(
-          file_store: @container.file_store, manifest: @container.manifest,
+          file_system: @container.file_system, manifest: @container.manifest,
           layout: @container.layout
         )
         pctx = Textus::Manifest::Entry::Base::PublishContext.new(

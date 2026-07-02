@@ -13,7 +13,7 @@ module Textus
         end
 
         WriteDeps = Data.define(
-          :file_store, :manifest, :audit_log, :call, :reader, :layout
+          :file_system, :manifest, :audit_log, :call, :reader, :layout
         )
 
         module ResolvePath
@@ -44,7 +44,7 @@ module Textus
 
           def self.resolve_source_etag(deps, key)
             path = deps.manifest.resolver.resolve(key).path
-            return nil unless deps.file_store.exists?(path)
+            return nil unless deps.file_system.exists?(path)
 
             Value::Etag.for_file(path)
           rescue Textus::Error
@@ -82,7 +82,7 @@ module Textus
 
         module CheckEtag
           def self.call(ctx, deps)
-            etag_before = deps.file_store.exists?(ctx.path) ? deps.file_store.etag(ctx.path) : nil
+            etag_before = deps.file_system.exists?(ctx.path) ? deps.file_system.etag(ctx.path) : nil
             raise EtagMismatch.new(ctx.key, ctx.if_etag, etag_before) if ctx.if_etag && (etag_before != ctx.if_etag)
 
             ctx.with(etag_before:)
@@ -91,7 +91,7 @@ module Textus
 
         module WriteBytes
           def self.call(ctx, deps)
-            deps.file_store.write(ctx.path, ctx.bytes)
+            deps.file_system.write(ctx.path, ctx.bytes)
             ctx
           end
         end
@@ -136,7 +136,7 @@ module Textus
 
         module AssertExists
           def self.call(ctx, deps)
-            return ctx if deps.file_store.exists?(ctx.path)
+            return ctx if deps.file_system.exists?(ctx.path)
 
             raise UnknownKey.new(ctx.key, suggestions: deps.manifest.resolver.suggestions_for(ctx.key))
           end
@@ -144,7 +144,7 @@ module Textus
 
         module DeleteFile
           def self.call(ctx, deps)
-            deps.file_store.delete(ctx.path)
+            deps.file_system.delete(ctx.path)
             ctx
           end
         end
@@ -154,8 +154,8 @@ module Textus
             floor = deps.layout.lane_floor(ctx.path)
             if floor
               dir = File.dirname(ctx.path)
-              while dir.start_with?("#{floor}/") && deps.file_store.dir_empty?(dir)
-                deps.file_store.rmdir(dir)
+              while dir.start_with?("#{floor}/") && deps.file_system.dir_empty?(dir)
+                deps.file_system.rmdir(dir)
                 dir = File.dirname(dir)
               end
             end
@@ -206,7 +206,7 @@ module Textus
 
         module AssertSourceExists
           def self.call(ctx, deps)
-            return ctx if deps.file_store.exists?(ctx.from_path)
+            return ctx if deps.file_system.exists?(ctx.from_path)
 
             raise UnknownKey.new(
               ctx.from_key,
@@ -217,7 +217,7 @@ module Textus
 
         module ReadMoveEtagBefore
           def self.call(ctx, deps)
-            etag_before = deps.file_store.etag(ctx.from_path)
+            etag_before = deps.file_system.etag(ctx.from_path)
             ctx.with(etag_before:)
           end
         end
@@ -234,7 +234,7 @@ module Textus
 
         module MoveFile
           def self.call(ctx, deps)
-            deps.file_store.mv(ctx.from_path, ctx.to_path)
+            deps.file_system.mv(ctx.from_path, ctx.to_path)
             ctx
           end
         end
@@ -244,8 +244,8 @@ module Textus
             floor = deps.layout.lane_floor(ctx.from_path)
             if floor
               dir = File.dirname(ctx.from_path)
-              while dir.start_with?("#{floor}/") && deps.file_store.dir_empty?(dir)
-                deps.file_store.rmdir(dir)
+              while dir.start_with?("#{floor}/") && deps.file_system.dir_empty?(dir)
+                deps.file_system.rmdir(dir)
                 dir = File.dirname(dir)
               end
             end

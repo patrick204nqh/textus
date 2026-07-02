@@ -9,7 +9,7 @@ class Textus::Store
       def with(**attrs) = self.class.new(**to_h, **attrs)
     end
 
-    WriteDeps = Data.define(:file_store, :manifest, :audit_log, :call, :reader, :layout)
+    WriteDeps = Data.define(:file_system, :manifest, :audit_log, :call, :reader, :layout)
 
     DeleteContext = Data.define(:key, :mentry, :if_etag, :path, :etag_before) do
       def with(**attrs) = self.class.new(**to_h, **attrs)

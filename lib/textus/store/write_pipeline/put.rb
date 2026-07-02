@@ -29,7 +29,7 @@ class Textus::Store
 
         def self.resolve_source_etag(deps, key)
           path = deps.manifest.resolver.resolve(key).path
-          return nil unless deps.file_store.exists?(path)
+          return nil unless deps.file_system.exists?(path)
 
           Textus::Value::Etag.for_file(path)
         rescue Textus::Error
@@ -67,7 +67,7 @@ class Textus::Store
 
       module CheckEtag
         def self.call(ctx, deps)
-          etag_before = deps.file_store.exists?(ctx.path) ? deps.file_store.etag(ctx.path) : nil
+          etag_before = deps.file_system.exists?(ctx.path) ? deps.file_system.etag(ctx.path) : nil
           raise Textus::EtagMismatch.new(ctx.key, ctx.if_etag, etag_before) if ctx.if_etag && (etag_before != ctx.if_etag)
 
           ctx.with(etag_before:)
@@ -76,7 +76,7 @@ class Textus::Store
 
       module WriteBytes
         def self.call(ctx, deps)
-          deps.file_store.write(ctx.path, ctx.bytes)
+          deps.file_system.write(ctx.path, ctx.bytes)
           ctx
         end
       end
@@ -111,14 +111,14 @@ class Textus::Store
         CheckEtag, WriteBytes, BuildEnvelope, AppendAudit,
       ].freeze
 
-      def self.call(key, mentry:, payload:, call:, if_etag: nil, file_store:, manifest:, audit_log:, layout:, reader:)
+      def self.call(key, mentry:, payload:, call:, if_etag: nil, file_system:, manifest:, audit_log:, layout:, reader:)
         ctx = WriteContext.new(
           key:, mentry:, payload:, if_etag:,
           path: nil, existing_env: nil, meta: nil, content: nil,
           bytes: nil, eff_meta: nil, eff_body: nil, eff_content: nil,
           etag_before: nil, envelope: nil
         )
-        deps = WriteDeps.new(file_store:, manifest:, audit_log:, call:, reader:, layout:)
+        deps = WriteDeps.new(file_system:, manifest:, audit_log:, call:, reader:, layout:)
         ctx = STEPS.reduce(ctx) { |c, step| step.call(c, deps) }
         ctx.envelope
       end

@@ -11,7 +11,7 @@ class Textus::Store
 
       module AssertSourceExists
         def self.call(ctx, deps)
-          return ctx if deps.file_store.exists?(ctx.from_path)
+          return ctx if deps.file_system.exists?(ctx.from_path)
 
           raise Textus::UnknownKey.new(
             ctx.from_key,
@@ -22,7 +22,7 @@ class Textus::Store
 
       module ReadMoveEtagBefore
         def self.call(ctx, deps)
-          etag_before = deps.file_store.etag(ctx.from_path)
+          etag_before = deps.file_system.etag(ctx.from_path)
           ctx.with(etag_before:)
         end
       end
@@ -39,7 +39,7 @@ class Textus::Store
 
       module MoveFile
         def self.call(ctx, deps)
-          deps.file_store.mv(ctx.from_path, ctx.to_path)
+          deps.file_system.mv(ctx.from_path, ctx.to_path)
           ctx
         end
       end
@@ -49,8 +49,8 @@ class Textus::Store
           floor = deps.layout.lane_floor(ctx.from_path)
           if floor
             dir = File.dirname(ctx.from_path)
-            while dir.start_with?("#{floor}/") && deps.file_store.dir_empty?(dir)
-              deps.file_store.rmdir(dir)
+            while dir.start_with?("#{floor}/") && deps.file_system.dir_empty?(dir)
+              deps.file_system.rmdir(dir)
               dir = File.dirname(dir)
             end
           end
@@ -112,13 +112,13 @@ class Textus::Store
         AppendMoveAudit,
       ].freeze
 
-      def self.call(from_key:, to_key:, new_mentry:, call:, if_etag: nil, file_store:, manifest:, audit_log:, layout:, reader:)
+      def self.call(from_key:, to_key:, new_mentry:, call:, if_etag: nil, file_system:, manifest:, audit_log:, layout:, reader:)
         ctx = MoveContext.new(
           from_key:, to_key:, new_mentry:, if_etag:,
           from_path: nil, to_path: nil,
           etag_before: nil, etag_after: nil, envelope: nil
         )
-        deps = WriteDeps.new(file_store:, manifest:, audit_log:, call:, reader:, layout:)
+        deps = WriteDeps.new(file_system:, manifest:, audit_log:, call:, reader:, layout:)
         ctx = STEPS.reduce(ctx) { |c, step| step.call(c, deps) }
         ctx.envelope
       end

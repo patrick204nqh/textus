@@ -156,7 +156,7 @@ module Textus
       return nil unless res.path && File.exist?(res.path)
 
       reader = Textus::Store::Entry::Reader.new(
-        file_store: container.file_store, manifest: container.manifest,
+        file_system: container.file_system, manifest: container.manifest,
         layout: container.layout
       )
       env = reader.read(key)
@@ -172,7 +172,7 @@ module Textus
       return nil unless res.path && File.exist?(res.path)
 
       reader = Textus::Store::Entry::Reader.new(
-        file_store: container.file_store, manifest: container.manifest,
+        file_system: container.file_system, manifest: container.manifest,
         layout: container.layout
       )
       env = reader.read("knowledge.boot")

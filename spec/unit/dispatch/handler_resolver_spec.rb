@@ -10,7 +10,7 @@ RSpec.describe Textus::Dispatch::HandlerResolver do
 
   let(:ctx) do
     Textus::Store::Infrastructure.new(
-      manifest: fake_manifest, file_store: :fs, schemas: :sc,
+      manifest: fake_manifest, file_system: :fs, schemas: :sc,
       audit_log: :al, job_store: fake_job_store, layout: :ly,
       link_edge_store: :les, workflows: :wf,
       root: "/tmp", reader: nil, writer: nil,

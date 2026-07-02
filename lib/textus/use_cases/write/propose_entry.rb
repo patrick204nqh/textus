@@ -3,7 +3,7 @@ module Textus
     module Write
       module ProposeEntry
         HANDLES = Dispatch::Contracts::ProposeEntry
-        NEEDS = %i[file_store manifest audit_log layout job_store writer reader workflows].freeze
+        NEEDS = %i[file_system manifest audit_log layout job_store writer reader workflows].freeze
 
         def self.call(command, call, deps)
           zone = deps.manifest.policy.propose_lane_for(call.role)

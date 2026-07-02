@@ -5,7 +5,7 @@ module Textus
         manifest = Manifest.load(root)
         job_store = Port::Store.new(root: root).setup!
         layout = Store::Layout.new(root)
-        file_store = Port::Storage::FileStore.new
+        file_system = Store::FileSystem.new
         schemas = Schema::Registry.new(layout.schemas_dir)
         audit_log = Port::AuditLog.new(
           layout:,
@@ -19,18 +19,18 @@ module Textus
 
         ttl_evaluator = Store::Freshness::TtlEvaluator.new(
           manifest:,
-          file_stat: Port::Storage::FileStat.new,
+          file_stat: file_system,
           clock: Port::Clock.new,
         )
 
         trace_buffer = Store::TraceBuffer.new
 
-        reader  = Store::Entry::Reader.new(file_store:, manifest:, layout:)
-        writer  = Store::Entry::Writer.new(file_store:, manifest:,
+        reader  = Store::Entry::Reader.new(file_system:, manifest:, layout:)
+        writer  = Store::Entry::Writer.new(file_system:, manifest:,
                                            audit_log:, reader:, layout:)
 
         partial = Infrastructure.new(
-          manifest:, file_store:, schemas:, audit_log:, job_store:,
+          manifest:, file_system:, schemas:, audit_log:, job_store:,
           layout:, link_edge_store:, workflows:, root:,
           reader:, writer:,
           ttl_evaluator:, trace_buffer:, pipeline: nil

@@ -3,7 +3,7 @@ module Textus
     module Write
       module KeyDeletePrefix
         HANDLES = Dispatch::Contracts::KeyDeletePrefix
-        NEEDS = %i[file_store manifest schemas audit_log layout job_store writer reader].freeze
+        NEEDS = %i[file_system manifest schemas audit_log layout job_store writer reader].freeze
 
         def self.call(command, call, deps)
           return Value::Result.failure(:usage_error, "prefix required") if command.prefix.nil? || command.prefix.empty?

@@ -8,8 +8,8 @@ module Textus
       #
       # No audit, no events, no permission checks — those live one layer up.
       class Reader
-        def initialize(file_store:, manifest:, layout:)
-          @file_store = file_store
+        def initialize(file_system:, manifest:, layout:)
+          @file_system = file_system
           @manifest   = manifest
           @layout     = layout
         end
@@ -17,10 +17,10 @@ module Textus
         def read(key)
           res = @manifest.resolver.resolve(key)
           path = res.path
-          return nil unless @file_store.exists?(path)
+          return nil unless @file_system.exists?(path)
 
           mentry = res.entry
-          raw = @file_store.read(path)
+          raw = @file_system.read(path)
           parsed = Format.for(mentry.format).parse(raw, path: path)
           Textus::Value::Envelope.build(
             key: key, mentry: mentry, path: path,
@@ -30,7 +30,7 @@ module Textus
         end
 
         def exists?(key)
-          @file_store.exists?(@manifest.resolver.resolve(key).path)
+          @file_system.exists?(@manifest.resolver.resolve(key).path)
         end
       end
     end

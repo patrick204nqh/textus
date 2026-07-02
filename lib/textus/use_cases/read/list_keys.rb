@@ -3,7 +3,7 @@ module Textus
     module Read
       module ListKeys
         HANDLES = Dispatch::Contracts::ListKeys
-        NEEDS = %i[manifest file_store layout job_store].freeze
+        NEEDS = %i[manifest file_system layout job_store].freeze
 
         def self.call(command, _call, deps)
           q      = command.respond_to?(:q)      ? command.q      : nil

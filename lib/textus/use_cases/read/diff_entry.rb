@@ -3,10 +3,10 @@ module Textus
     module Read
       module DiffEntry
         HANDLES = Dispatch::Contracts::DiffEntry
-        NEEDS = %i[file_store manifest layout].freeze
+        NEEDS = %i[file_system manifest layout].freeze
 
         def self.call(command, _call, deps)
-          reader = Store::Entry::Reader.new(file_store: deps.file_store, manifest: deps.manifest, layout: deps.layout)
+          reader = Store::Entry::Reader.new(file_system: deps.file_system, manifest: deps.manifest, layout: deps.layout)
           proposal_env = reader.read(command.pending_key)
           target_key = proposal_target_key(proposal_env, command.pending_key)
           return target_key if target_key.is_a?(Value::Result)

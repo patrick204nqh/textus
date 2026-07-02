@@ -3,10 +3,10 @@ module Textus
     module Read
       module GetEntry
         HANDLES = Dispatch::Contracts::GetEntry
-        NEEDS = %i[file_store manifest layout].freeze
+        NEEDS = %i[file_system manifest layout].freeze
 
         def self.call(command, _call, deps)
-          reader = Store::Entry::Reader.new(file_store: deps.file_store, manifest: deps.manifest, layout: deps.layout)
+          reader = Store::Entry::Reader.new(file_system: deps.file_system, manifest: deps.manifest, layout: deps.layout)
           envelope = reader.read(command.key)
           return Value::Result.failure(:not_found, "no entry at #{command.key}") unless envelope
 
@@ -47,15 +47,15 @@ module Textus
 
         def self.resolve_current_etag(key, deps:)
           path = deps.manifest.resolver.resolve(key).path
-          return nil unless deps.file_store.exists?(path)
+          return nil unless deps.file_system.exists?(path)
 
-          deps.file_store.etag(path)
+          deps.file_system.etag(path)
         rescue Textus::Error
           nil
         end
 
         def self.resolve_env(key, deps:)
-          Store::Entry::Reader.new(file_store: deps.file_store, manifest: deps.manifest, layout: deps.layout).read(key)
+          Store::Entry::Reader.new(file_system: deps.file_system, manifest: deps.manifest, layout: deps.layout).read(key)
         end
       end
     end

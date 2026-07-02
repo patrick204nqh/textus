@@ -1,7 +1,7 @@
 # rubocop:disable RSpec/LeakyConstantDeclaration, RSpec/ContextWording, Lint/ConstantDefinitionInBlock
 RSpec.describe "Port contract conformance" do
   PORT_INTERFACES = {
-    Textus::Port::Storage::Interface => [Textus::Port::Storage::FileStore],
+    Textus::Port::FileSystem::Interface => [Textus::Store::FileSystem],
     Textus::Port::AuditLog::Interface => [Textus::Port::AuditLog],
     Textus::Port::Publisher::Interface => [Textus::Port::Publisher],
     Textus::Port::Clock::Interface => [Textus::Port::Clock],
@@ -22,7 +22,7 @@ RSpec.describe "Port contract conformance" do
 
   def build_instance(klass)
     case klass.name
-    when /FileStore/ then klass.new
+    when /FileSystem|FileStore/ then klass.new
     when /AuditLog/ then klass.new(Dir.tmpdir)
     when /Publisher/ then klass.new
     when /Clock/ then klass.new

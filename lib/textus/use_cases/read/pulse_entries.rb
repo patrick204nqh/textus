@@ -3,7 +3,7 @@ module Textus
     module Read
       module PulseEntries
         HANDLES = Dispatch::Contracts::PulseEntries
-        NEEDS = %i[file_store manifest audit_log job_store].freeze
+        NEEDS = %i[file_system manifest audit_log job_store].freeze
 
         def self.call(command, call, deps)
           root  = deps.manifest.data.root
@@ -65,7 +65,7 @@ module Textus
 
         def self.index_etag(deps)
           path = deps.manifest.resolver.resolve("artifacts.system.index").path
-          File.exist?(path) ? deps.file_store.etag(path) : nil
+          File.exist?(path) ? deps.file_system.etag(path) : nil
         rescue Textus::Error
           nil
         end

@@ -3,7 +3,7 @@ module Textus
     module Write
       module MoveKey
         HANDLES = Dispatch::Contracts::MvKey
-        NEEDS = %i[file_store manifest schemas audit_log layout writer reader].freeze
+        NEEDS = %i[file_system manifest schemas audit_log layout writer reader].freeze
 
         def self.call(command, call, deps)
           Textus::Manifest::Data.validate_key!(command.old_key)

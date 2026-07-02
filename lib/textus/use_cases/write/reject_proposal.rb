@@ -3,7 +3,7 @@ module Textus
     module Write
       module RejectProposal
         HANDLES = Dispatch::Contracts::RejectProposal
-        NEEDS = %i[file_store manifest audit_log layout job_store writer reader workflows].freeze
+        NEEDS = %i[file_system manifest audit_log layout job_store writer reader workflows].freeze
 
         def self.call(command, call, deps)
           mentry = deps.manifest.resolver.resolve(command.pending_key).entry

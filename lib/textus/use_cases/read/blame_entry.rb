@@ -3,7 +3,7 @@ module Textus
     module Read
       module BlameEntry
         HANDLES = Dispatch::Contracts::BlameEntry
-        NEEDS = %i[file_store manifest audit_log].freeze
+        NEEDS = %i[file_system manifest audit_log].freeze
 
         def self.call(command, call, deps)
           root = deps.manifest.data.root

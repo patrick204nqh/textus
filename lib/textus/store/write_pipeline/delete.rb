@@ -10,7 +10,7 @@ class Textus::Store
 
       module CheckEtag
         def self.call(ctx, deps)
-          etag_before = deps.file_store.exists?(ctx.path) ? deps.file_store.etag(ctx.path) : nil
+          etag_before = deps.file_system.exists?(ctx.path) ? deps.file_system.etag(ctx.path) : nil
           raise Textus::EtagMismatch.new(ctx.key, ctx.if_etag, etag_before) if ctx.if_etag && (etag_before != ctx.if_etag)
 
           ctx.with(etag_before:)
@@ -19,7 +19,7 @@ class Textus::Store
 
       module AssertExists
         def self.call(ctx, deps)
-          return ctx if deps.file_store.exists?(ctx.path)
+          return ctx if deps.file_system.exists?(ctx.path)
 
           raise Textus::UnknownKey.new(ctx.key, suggestions: deps.manifest.resolver.suggestions_for(ctx.key))
         end
@@ -27,7 +27,7 @@ class Textus::Store
 
       module DeleteFile
         def self.call(ctx, deps)
-          deps.file_store.delete(ctx.path)
+          deps.file_system.delete(ctx.path)
           ctx
         end
       end
@@ -37,8 +37,8 @@ class Textus::Store
           floor = deps.layout.lane_floor(ctx.path)
           if floor
             dir = File.dirname(ctx.path)
-            while dir.start_with?("#{floor}/") && deps.file_store.dir_empty?(dir)
-              deps.file_store.rmdir(dir)
+            while dir.start_with?("#{floor}/") && deps.file_system.dir_empty?(dir)
+              deps.file_system.rmdir(dir)
               dir = File.dirname(dir)
             end
           end
@@ -69,12 +69,12 @@ class Textus::Store
         AppendDeleteAudit,
       ].freeze
 
-      def self.call(key, call:, mentry: nil, if_etag: nil, file_store:, manifest:, audit_log:, layout:, reader: nil)
+      def self.call(key, call:, mentry: nil, if_etag: nil, file_system:, manifest:, audit_log:, layout:, reader: nil)
         ctx = DeleteContext.new(
           key:, mentry:, if_etag:,
           path: nil, etag_before: nil
         )
-        deps = WriteDeps.new(file_store:, manifest:, audit_log:, call:, reader:, layout:)
+        deps = WriteDeps.new(file_system:, manifest:, audit_log:, call:, reader:, layout:)
         STEPS.reduce(ctx) { |c, step| step.call(c, deps) }
         nil
       end

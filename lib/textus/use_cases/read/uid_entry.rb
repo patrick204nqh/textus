@@ -3,10 +3,10 @@ module Textus
     module Read
       module UidEntry
         HANDLES = Dispatch::Contracts::UidEntry
-        NEEDS = %i[file_store manifest layout].freeze
+        NEEDS = %i[file_system manifest layout].freeze
 
         def self.call(command, _call, deps)
-          reader = Store::Entry::Reader.new(file_store: deps.file_store, manifest: deps.manifest, layout: deps.layout)
+          reader = Store::Entry::Reader.new(file_system: deps.file_system, manifest: deps.manifest, layout: deps.layout)
           envelope = reader.read(command.key)
           return Value::Result.failure(:not_found, "no entry at #{command.key}") unless envelope
 

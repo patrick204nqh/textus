@@ -13,8 +13,8 @@ module Textus
         path = container.manifest.resolver.resolve(key).path
         db = container.job_store.db
 
-        if container.file_store.exists?(path)
-          body = container.file_store.read(path)
+        if container.file_system.exists?(path)
+          body = container.file_system.read(path)
           db[:entries].insert_ignore.insert(
             key: key,
             lane: entry.lane,
