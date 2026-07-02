@@ -23,7 +23,6 @@ entries:
   - { key: artifacts.security, lane: artifacts, format: json, kind: produced }
   - { key: artifacts.code-of-conduct, lane: artifacts, format: json, kind: produced }
   - { key: artifacts.changelog, lane: artifacts, format: json, kind: produced }
-  - { key: knowledge.readme, lane: knowledge, owner: human:self, kind: nested, nested: true }
   - { key: knowledge.constraint.protocol, lane: knowledge, owner: human:self, kind: nested, nested: true }
   - { key: scratchpad.notes, lane: scratchpad, owner: agent:self, kind: nested, nested: true }
   - { key: scratchpad.sessions, lane: scratchpad, owner: agent:self, kind: nested, nested: true }
