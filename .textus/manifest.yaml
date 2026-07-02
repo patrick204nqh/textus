@@ -12,17 +12,17 @@ lanes:
 entries:
   - { key: knowledge.project, lane: knowledge, schema: project, owner: human:self, kind: leaf }
 
-  - { key: knowledge.runbooks, lane: knowledge, schema: runbook, owner: human:self, kind: nested, nested: true }
-  - { key: knowledge.goals, lane: knowledge, owner: human:self, kind: nested, nested: true }
-  - { key: knowledge.rules, lane: knowledge, owner: human:self, kind: nested, nested: true }
+  - { key: knowledge.execution, lane: knowledge, schema: runbook, owner: human:self, kind: nested, nested: true }
+  - { key: knowledge.intent, lane: knowledge, owner: human:self, kind: nested, nested: true }
+  - { key: knowledge.constraint.repo, lane: knowledge, owner: human:self, kind: nested, nested: true }
   - { key: knowledge.patterns, lane: knowledge, owner: human:self, kind: nested, nested: true }
-  - { key: knowledge.decisions, lane: knowledge, owner: human:self, kind: nested, nested: true, ignore: ["**/README.md"] }
+  - { key: knowledge.evidence, lane: knowledge, owner: human:self, kind: nested, nested: true, ignore: ["**/README.md"] }
   - { key: artifacts.contributing, lane: artifacts, format: json, kind: produced }
   - { key: artifacts.security, lane: artifacts, format: json, kind: produced }
   - { key: artifacts.code-of-conduct, lane: artifacts, format: json, kind: produced }
   - { key: artifacts.changelog, lane: artifacts, format: json, kind: produced }
   - { key: knowledge.readme, lane: knowledge, owner: human:self, kind: nested, nested: true }
-  - { key: knowledge.specs, lane: knowledge, owner: human:self, kind: nested, nested: true }
+  - { key: knowledge.constraint.protocol, lane: knowledge, owner: human:self, kind: nested, nested: true }
   - { key: knowledge.architecture, lane: knowledge, owner: human:self, kind: nested, nested: true }
   - { key: scratchpad.notes, lane: scratchpad, owner: agent:self, kind: nested, nested: true }
   - { key: scratchpad.sessions, lane: scratchpad, owner: agent:self, kind: nested, nested: true }
@@ -54,4 +54,3 @@ entries:
   - { key: artifacts.doctor.publish-tree-overlap, lane: artifacts, format: json, kind: produced }
   - { key: artifacts.system.index, lane: artifacts, format: json, kind: produced }
   - { key: artifacts.feeds.skills, lane: artifacts, format: json, kind: produced }
-

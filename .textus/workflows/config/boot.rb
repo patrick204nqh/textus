@@ -12,7 +12,7 @@ Textus.workflow "boot" do
     project_env = fetch.call("knowledge.project")
     project = project_env&.meta || {}
 
-    runbooks = ctx.container.read_family("knowledge.runbooks").filter_map(&:meta)
+    runbooks = ctx.container.read_family("knowledge.execution").filter_map(&:meta)
 
     # Lanes (was Boot.lanes_for)
     lanes = manifest.data.declared_lane_kinds.keys.map do |name|
@@ -35,13 +35,15 @@ Textus.workflow "boot" do
       acc << lane_name if writers.include?(agent_role)
     end
     propose_lane = manifest.policy.propose_lane_for(agent_role)
+    read_verbs = Textus::VerbRegistry.registered.select { |s| s.read? && s.mcp? }.map { |s| s.verb.to_s }
+    write_verbs = if agent_role
+                    Textus::VerbRegistry.registered.select { |s| s.write? && s.mcp? }.map { |s| s.verb.to_s }
+                  else
+                    []
+                  end
     agent_quickstart = {
-      "read_verbs" => Textus::VerbRegistry.registered
-                        .select { |s| s.read? && s.mcp? }
-                        .map { |s| s.verb.to_s },
-      "write_verbs" => agent_role ? Textus::VerbRegistry.registered
-                        .select { |s| s.write? && s.mcp? }
-                        .map { |s| s.verb.to_s } : [],
+      "read_verbs" => read_verbs,
+      "write_verbs" => write_verbs,
       "writable_lanes" => writable_lanes,
       "propose_lane" => propose_lane,
     }

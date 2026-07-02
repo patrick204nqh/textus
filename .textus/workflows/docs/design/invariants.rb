@@ -10,8 +10,8 @@ Textus.workflow "invariants-assembler" do
          .map { |env| { "key" => env.key, "slug" => env.key.split(".").last, "body" => env.body.to_s } }
     end
 
-    goals = read_atoms.call("knowledge.goals")
-    rules = read_atoms.call("knowledge.rules")
+    goals = read_atoms.call("knowledge.intent")
+    rules = read_atoms.call("knowledge.constraint.repo")
 
     { "content" => { "goals" => goals, "rules" => rules } }
   end

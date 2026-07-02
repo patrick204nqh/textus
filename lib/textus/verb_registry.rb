@@ -154,7 +154,7 @@ module Textus
     register VerbSpec.new(
       :list, "List keys filtered by lane and/or prefix.",
       [ArgSpec.arg(name: :prefix,
-                   description: "restrict to keys starting with this dotted prefix, e.g. 'knowledge.runbooks'"),
+                   description: "restrict to keys starting with this dotted prefix, e.g. 'knowledge.execution'"),
        ArgSpec.arg(name: :lane,
                    description: "restrict to one lane by name (see `boot` lanes)"),
        ArgSpec.arg(name: :q,

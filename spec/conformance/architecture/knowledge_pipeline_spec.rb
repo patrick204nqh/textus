@@ -1,7 +1,7 @@
 RSpec.describe "Knowledge pipeline conformance" do
-  KNOWN_SECTIONS = %w[
-    goals rules architecture decisions patterns runbooks specs readme project
-  ].freeze
+  let(:known_sections) do
+    %w[intent constraint architecture evidence patterns execution readme project]
+  end
 
   def knowledge_dir
     File.expand_path("../../../.textus/data/knowledge", __dir__)
@@ -9,7 +9,7 @@ RSpec.describe "Knowledge pipeline conformance" do
 
   it "every knowledge section is a known section" do
     sections = Dir.children(knowledge_dir).select { |e| File.directory?(File.join(knowledge_dir, e)) }
-    unknown = sections - KNOWN_SECTIONS
+    unknown = sections - known_sections
     expect(unknown).to be_empty,
                        "unknown knowledge sections: #{unknown.join(", ")}"
   end
@@ -24,18 +24,18 @@ RSpec.describe "Knowledge pipeline conformance" do
 
   it "has the core loop sections" do
     sections = Dir.children(knowledge_dir).select { |e| File.directory?(File.join(knowledge_dir, e)) }
-    expect(sections).to include("goals", "rules", "architecture", "decisions", "patterns", "runbooks", "specs")
+    expect(sections).to include("intent", "constraint", "architecture", "evidence", "patterns", "execution")
   end
 
   it "each section has content" do
     Dir.children(knowledge_dir).select { |e| File.directory?(File.join(knowledge_dir, e)) }.each do |section|
-      files = Dir[File.join(knowledge_dir, section, "*.md")]
+      files = Dir[File.join(knowledge_dir, section, "**", "*.md")]
       expect(files).not_to be_empty, "section #{section} has no markdown files"
     end
   end
 
   it "recent decisions (ADR-0119+) reference architecture (pipeline: architecture → decisions)" do
-    decisions = Dir[File.join(knowledge_dir, "decisions", "0*.md")].grep(/01(19|2[0-5])/)
+    decisions = Dir[File.join(knowledge_dir, "evidence", "0*.md")].grep(/01(19|2[0-5])/)
     offenders = decisions.reject { |f| File.read(f).match?(%r{knowledge\.architecture\.|\.textus/data/knowledge/architecture}) }
     expect(offenders).to be_empty,
                          "decisions after ADR-0119 missing architecture reference:\n#{offenders.map do |f|
@@ -45,7 +45,7 @@ RSpec.describe "Knowledge pipeline conformance" do
 
   it "patterns reference decisions (pipeline: decisions → patterns)" do
     patterns = Dir[File.join(knowledge_dir, "patterns", "*.md")]
-    offenders = patterns.reject { |f| File.read(f).match?(/knowledge\.decisions\.|ADR-\d+|knowledge\.patterns\./) }
+    offenders = patterns.reject { |f| File.read(f).match?(/knowledge\.evidence\.|ADR-\d+|knowledge\.patterns\./) }
     expect(offenders).to be_empty,
                          "patterns missing decision reference:\n#{offenders.map do |f|
                            "  #{f.sub(knowledge_dir, "knowledge")}"
@@ -53,7 +53,7 @@ RSpec.describe "Knowledge pipeline conformance" do
   end
 
   it "runbooks reference patterns (pipeline: patterns → runbooks)" do
-    runbooks = Dir[File.join(knowledge_dir, "runbooks", "*.md")]
+    runbooks = Dir[File.join(knowledge_dir, "execution", "*.md")]
     offenders = runbooks.reject { |f| File.read(f).match?(/knowledge\.patterns\./) }
     expect(offenders).to be_empty,
                          "runbooks missing pattern reference:\n#{offenders.map { |f| "  #{f.sub(knowledge_dir, "knowledge")}" }.join("\n")}"

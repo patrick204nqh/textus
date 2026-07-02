@@ -37,7 +37,7 @@ module Textus
 
     AGENT_ENTRIES = <<~YAML.gsub(/^/, "  ")
       - { key: knowledge.project, path: data/knowledge/project.md, lane: knowledge, schema: project, owner: human:self, kind: leaf }
-      - { key: knowledge.runbooks, path: data/knowledge/runbooks, lane: knowledge, schema: runbook, owner: human:self, nested: true, kind: nested }
+      - { key: knowledge.execution, path: data/knowledge/execution, lane: knowledge, schema: runbook, owner: human:self, nested: true, kind: nested }
       - key: artifacts.derived.orientation
         path: data/artifacts/derived/orientation.json
         lane: artifacts

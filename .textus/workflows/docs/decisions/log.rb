@@ -4,7 +4,7 @@ Textus.workflow "decisions-log" do
   step :build do |_, ctx|
     normalize = ->(s) { s.to_s.gsub(/\[([^\]]+)\]\([^)]+\)/, '\1').gsub(/\s+/, " ").strip }
 
-    envelopes = ctx.container.read_family("knowledge.decisions", include_keyless: true)
+    envelopes = ctx.container.read_family("knowledge.evidence", include_keyless: true)
 
     build_adrs = lambda do
       envelopes.filter_map do |env|

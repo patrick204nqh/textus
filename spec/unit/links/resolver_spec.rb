@@ -15,7 +15,7 @@ RSpec.describe Textus::Links::Resolver do
         - { name: knowledge, kind: canon }
         - { name: artifacts, kind: machine }
       entries:
-        - { key: knowledge.goals.north-star, lane: knowledge, kind: leaf }
+        - { key: knowledge.intent.north-star, lane: knowledge, kind: leaf }
         - key: artifacts.reference.lanes
           lane: artifacts
           kind: produced
@@ -63,10 +63,10 @@ RSpec.describe Textus::Links::Resolver do
     context "when target has no publish.to path" do
       it "returns a textus get command string" do
         result = resolver.resolve(
-          key: "knowledge.goals.north-star",
+          key: "knowledge.intent.north-star",
           from_path: "docs/how-to/agents-mcp.md",
         )
-        expect(result).to eq("`textus get knowledge.goals.north-star`")
+        expect(result).to eq("`textus get knowledge.intent.north-star`")
       end
     end
 
