@@ -42,13 +42,6 @@ module Textus
 
       def built_in_publish(key, data, ctx, _definition)
         normalized = Textus::Format.data_to_payload(data, ctx.entry.format)
-        guard_map = @container.manifest.rules.for(key).guard
-        rule_preds = guard_map ? Array(guard_map["converge"]) : []
-        Textus::Manifest::Policy::Predicates.evaluate(
-          manifest: @container.manifest, schemas: @container.schemas,
-          action: :converge, actor: @call.role, key: key,
-          rule_predicates: rule_preds
-        )
         @container.writer.put(key, mentry: ctx.entry,
                                    payload: Textus::Value::Payload.new(**normalized), call: @call)
 

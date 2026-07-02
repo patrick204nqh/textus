@@ -3,15 +3,20 @@ module Textus
     module V4
       LANES = {
         "knowledge"  => { writers: %w[human],
-                           desc: "the maintained source of truth about the repo" },
+                           desc: "the maintained source of truth about the repo",
+                           retention_ttl: nil },
         "scratchpad" => { writers: %w[agent],
-                           desc: "the agent's own durable scratchpad (working memory)" },
+                           desc: "the agent's own durable scratchpad (working memory)",
+                           retention_ttl: nil },
         "proposals"  => { writers: %w[human agent],
-                           desc: "changes awaiting a human accept" },
+                           desc: "changes awaiting a human accept",
+                           retention_ttl: nil },
         "artifacts"  => { writers: %w[automation],
-                           desc: "machine-maintained computed outputs" },
+                           desc: "machine-maintained computed outputs",
+                           retention_ttl: 3600 * 24 * 30 },
         "raw"        => { writers: %w[human agent automation],
-                           desc: "ingested external source material (write-once)" },
+                           desc: "ingested external source material (write-once)",
+                           retention_ttl: nil },
       }.freeze
 
       NAMING_PATTERNS = {

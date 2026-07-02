@@ -54,8 +54,9 @@ module Textus
             wf = @workflows.find { |d| d.match?(key) }
             return [wf.ttl, wf.on_expire.to_s] if wf&.ttl
 
-            policy = @manifest.rules.for(key).retention
-            return [policy.ttl_seconds, policy.action.to_s] if policy
+            entry = @manifest.data.entries.find { |e| e.key == key || key.start_with?("#{e.key}.") }
+            lane_ttl = entry ? Textus::Protocol::V4::LANES.dig(entry.lane, :retention_ttl) : nil
+            return [lane_ttl, "archive"] if lane_ttl
 
             [nil, nil]
           end

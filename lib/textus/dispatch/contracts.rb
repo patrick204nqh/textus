@@ -39,10 +39,6 @@ module Textus
 
       PublishedEntries = Data.define
 
-      RuleExplain = Data.define(:key, :detail)
-
-      RuleList = Data.define
-
       SchemaEnvelope = Data.define(:key)
 
       DrainStore = Data.define(:prefix, :lane)
@@ -54,10 +50,6 @@ module Textus
       JobsRetry = Data.define(:job_id)
 
       JobsPurge = Data.define(:state)
-
-      RuleLint = Data.define(:candidate_yaml)
-
-      RuleTrace = Data.define(:key)
 
       DataMv = Data.define(:from, :to, :dry_run)
 

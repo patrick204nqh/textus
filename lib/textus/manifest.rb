@@ -2,23 +2,20 @@ require "yaml"
 
 module Textus
   # Manifest is the composition record for a parsed manifest. It bundles
-  # four collaborators:
+  # three collaborators:
   #
   #   * data     — frozen value: raw, root, zones, entries, audit_config, role_caps
   #   * resolver — resolves keys → entry + path
-  #   * policy   — zone/role authority (lane_writers, declared_kind, derived_entry?,
-  #     queue_lane?, permission_for, …)
-  #   * rules    — match-block rule engine (lifecycle, handler allowlist, materialize, …)
+  #   * policy   — zone/role authority (lane_writers, declared_kind, derived_entry?, …)
   #
   # Use `manifest.data.entries`, `manifest.policy.declared_kind(z)`, etc.
-  Manifest = Data.define(:data, :resolver, :policy, :rules)
+  Manifest = Data.define(:data, :resolver, :policy)
 end
 
 require_relative "manifest/schema"
 require_relative "manifest/data"
 require_relative "manifest/policy"
 require_relative "manifest/resolver"
-require_relative "manifest/rule_trace"
 
 # Reopen Textus::Manifest (defined above as a Data.define) to attach
 # class-level loaders and helpers.
@@ -55,7 +52,6 @@ module Textus # rubocop:disable Style/OneClassPerFile
           data:,
           resolver: Manifest::Resolver.new(data),
           policy:,
-          rules: Manifest::Rules.parse(raw["rules"] || []),
         )
       end
 

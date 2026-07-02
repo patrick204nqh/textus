@@ -39,15 +39,6 @@ module Textus
 
         optional(:data).value(:hash)
 
-        optional(:rules).value(:array).each do
-          hash do
-            optional(:match).value(:string)
-            optional(:guard)
-            optional(:retention)
-            optional(:react)
-          end
-        end
-
         optional(:audit).hash do
           optional(:max_size).value(:integer)
           optional(:keep).value(:integer)

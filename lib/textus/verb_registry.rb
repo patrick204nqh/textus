@@ -79,16 +79,12 @@ module Textus
       diff: Dispatch::Contracts::DiffEntry,
       boot: Dispatch::Contracts::BootStore,
       published: Dispatch::Contracts::PublishedEntries,
-      rule_explain: Dispatch::Contracts::RuleExplain,
-      rule_list: Dispatch::Contracts::RuleList,
       schema_show: Dispatch::Contracts::SchemaEnvelope,
       drain: Dispatch::Contracts::DrainStore,
       ingest: Dispatch::Contracts::IngestEntry,
       jobs_list: Dispatch::Contracts::JobsList,
       jobs_retry: Dispatch::Contracts::JobsRetry,
       jobs_purge: Dispatch::Contracts::JobsPurge,
-      rule_lint: Dispatch::Contracts::RuleLint,
-      rule_trace: Dispatch::Contracts::RuleTrace,
       data_mv: Dispatch::Contracts::DataMv,
       key_mv_prefix: Dispatch::Contracts::KeyMvPrefix,
       key_delete_prefix: Dispatch::Contracts::KeyDeletePrefix,
@@ -108,11 +104,8 @@ module Textus
       key_mv_prefix key_delete_prefix published
     ].freeze
 
-    RULE_VERBS = %i[rule_explain rule_list schema_show rule_lint rule_trace].freeze
-
     VERB_DOMAIN = ENTRY_VERBS.to_h { |v| [v, :entry] }
-                             .merge(OPS_VERBS.to_h { |v| [v, :ops] })
-                             .merge(RULE_VERBS.to_h { |v| [v, :rule] }).freeze
+                             .merge(OPS_VERBS.to_h { |v| [v, :ops] }).freeze
 
     def self.contract_to_verb(klass)
       CONTRACT_TO_VERB[klass] || klass.name.split("::").last.gsub(/([a-z])([A-Z])/, '\1_\2').downcase
@@ -318,25 +311,6 @@ module Textus
       %i[cli mcp], { default: identity }, nil, nil, :read
     )
 
-    # ── rule_explain ─────────────────────────────────────
-    register VerbSpec.new(
-      :rule_explain, "Effective rules for a key. Lean by default; detail: true adds matched blocks.",
-      [ArgSpec.arg(name: :key, required: true, positional: true,
-                   description: "dotted key whose effective rules you want"),
-       ArgSpec.arg(name: :detail, type: :boolean,
-                   description: "detail: true adds matched blocks + guard predicates")],
-      %i[cli mcp], {
-        cli: ->(r, _) { { "verb" => "rule_explain" }.merge(r.transform_keys(&:to_s)) },
-        default: identity,
-      }, "rule explain", nil, :read
-    )
-
-    # ── rule_list ────────────────────────────────────────
-    register VerbSpec.new(
-      :rule_list, "List every rule block in the manifest.",
-      [], %i[cli mcp], { cli: ->(p, _) { { "verb" => "rule_list", "policies" => p } }, default: identity }, "rule list", nil, :read
-    )
-
     # ── published ────────────────────────────────────────
     register VerbSpec.new(
       :published, "List all entries that declare a publish target.",
@@ -419,24 +393,5 @@ module Textus
       %i[cli mcp], { default: identity }, nil, nil, :maintenance
     )
 
-    # ── rule_lint ────────────────────────────────────────
-    register VerbSpec.new(
-      :rule_lint, "Diff candidate manifest rules against the live manifest.",
-      [ArgSpec.arg(name: :candidate_yaml, required: true,
-                   wire_name: :against, source: :file,
-                   description: "path to candidate manifest YAML")],
-      %i[cli mcp], { default: ->(v, _) { v.to_h } }, "rule lint", nil, :maintenance
-    )
-
-    # ── rule_trace ───────────────────────────────────────
-    register VerbSpec.new(
-      :rule_trace, "Trace rule resolution for a key — all candidates, winners, and the effective RuleSet.",
-      [ArgSpec.arg(name: :key, required: true, positional: true,
-                   description: "dotted key whose rule resolution to trace")],
-      %i[cli mcp], {
-        cli: ->(r, _) { r },
-        default: ->(r, _) { r },
-      }, "rule trace", nil, :read
-    )
   end
 end
