@@ -2,10 +2,13 @@ module Textus
   class Manifest
     class Entry
       class Base < Entry
-        attr_reader :raw, :key, :path, :lane, :schema, :naming, :format, :publish_targets
+        attr_reader :raw, :key, :path, :lane, :format, :publish_targets
+
+        def schema = @schema
+        def naming = @naming
 
         # rubocop:disable Lint/MissingSuper
-        def initialize(raw:, key:, path:, lane:, schema:, naming:, format:, publish_targets: [])
+        def initialize(raw:, key:, path:, lane:, format:, schema: nil, naming: nil, publish_targets: [])
           @raw = raw
           @key = key
           @path = path
@@ -49,15 +52,7 @@ module Textus
         def publish_to   = @publish_targets.select(&:to_target?).map(&:to)
         def publish_tree = @publish_targets.find(&:tree_target?)&.tree
 
-        # Nil stubs for cross-cutting optional attrs. Subclasses override the
-        # ones they own. Validators and serializers can call these directly
-        # without `respond_to?` guards.
-        def events         = {}
-        def ignore         = []
-
-        # Per-entry ignore (ADR 0042). Base entries enumerate no tree, so
-        # nothing is ever ignored; Nested overrides with real patterns.
-        def ignored?(_rel_path) = false
+        def events = {}
 
         # Minimal context object passed into entry `publish_via` hooks.
         # Everything beyond the three primitives is derived.
