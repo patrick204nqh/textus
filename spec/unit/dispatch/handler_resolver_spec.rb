@@ -8,14 +8,16 @@ RSpec.describe Textus::Dispatch::HandlerResolver do
   let(:fake_manifest)  { instance_double(Textus::Manifest) }
   let(:fake_event_store) { instance_double(Textus::Port::EventStore) }
 
+  let(:storage)    { Textus::Store::Container::Storage.new(file_system: :fs, entry_store: nil, layout: :ly) }
+  let(:events)     { Textus::Store::Container::Events.new(event_store: fake_event_store, workflows: :wf) }
+  let(:governance) { Textus::Store::Container::Governance.new(manifest: fake_manifest, schemas: :sc) }
+  let(:logging)    { Textus::Store::Container::Logging.new(audit_log: :al) }
+  let(:links)      { Textus::Store::Container::Links.new(link_graph: :lg) }
+
   let(:ctx) do
-    Textus::Store::Infrastructure.build(
-      manifest: fake_manifest, file_system: :fs, schemas: :sc,
-      audit_log: :al, event_store: fake_event_store, layout: :ly,
-      link_edge_store: :les, workflows: :wf,
-      root: "/tmp", reader: nil, writer: nil,
-      ttl_evaluator: :fe,
-      trace_buffer: :tb, pipeline: nil
+    Textus::Store::Container.new(
+      storage:, events:, governance:, logging:, links:,
+      root: "/tmp", trace_buffer: :tb, ttl_evaluator: :fe, pipeline: nil
     )
   end
 
@@ -43,7 +45,7 @@ RSpec.describe Textus::Dispatch::HandlerResolver do
       expect(result.value["deps_manifest"]).to eq(fake_manifest)
     end
 
-    it "raises Boot::DepNotFound when a NEEDS field is missing from Infrastructure" do
+    it "raises Boot::DepNotFound when a NEEDS field is missing from the container" do
       bad_handler = Module.new do
         const_set(:HANDLES, FakeContract)
         const_set(:NEEDS, %i[nonexistent_field].freeze)

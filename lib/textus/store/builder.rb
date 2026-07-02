@@ -32,7 +32,10 @@ module Textus
         logging    = Container::Logging.new(audit_log:)
         links      = Container::Links.new(link_graph:)
 
-        container = Container.new(storage:, events:, governance:, logging:, links:, root:)
+        container = Container.new(
+          storage:, events:, governance:, logging:, links:,
+          root:, trace_buffer:, ttl_evaluator:
+        )
 
         middleware = [
           Dispatch::Middleware::Binder.new,

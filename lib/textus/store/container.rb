@@ -7,9 +7,12 @@ module Textus
       Logging    = Data.define(:audit_log)
       Links      = Data.define(:link_graph)
 
-      attr_reader :storage, :events, :governance, :logging, :links, :pipeline, :root
+      attr_reader :storage, :events, :governance, :logging, :links,
+                  :pipeline, :root, :trace_buffer, :ttl_evaluator
 
-      def initialize(storage:, events:, governance:, logging:, links:, root: nil, pipeline: nil)
+      def initialize(storage:, events:, governance:, logging:, links:,
+                     root: nil, pipeline: nil,
+                     trace_buffer: nil, ttl_evaluator: nil)
         @storage = storage
         @events = events
         @governance = governance
@@ -17,11 +20,17 @@ module Textus
         @links = links
         @root = root
         @pipeline = pipeline
+        @trace_buffer = trace_buffer
+        @ttl_evaluator = ttl_evaluator
         freeze
       end
 
       def with_pipeline(pipeline)
-        self.class.new(storage:, events:, governance:, logging:, links:, root:, pipeline:)
+        self.class.new(
+          storage:, events:, governance:, logging:, links:,
+          root:, pipeline:,
+          trace_buffer:, ttl_evaluator:
+        )
       end
 
       def to_h
@@ -47,6 +56,10 @@ module Textus
       def link_graph  = links.link_graph
       def entry_store = storage.entry_store
       def workflows   = events.workflows
+
+      def link_edge_store = links.link_graph
+      def reader          = storage.entry_store
+      def writer          = storage.entry_store
     end
   end
 end
