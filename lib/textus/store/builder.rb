@@ -12,6 +12,7 @@ module Textus
           layout:,
           max_size: manifest.data.audit_config[:max_size],
           keep: manifest.data.audit_config[:keep],
+          file_system:,
         )
         link_graph  = Store::LinkGraph.new(database)
         workflows   = Workflow::Loader.load_all(root)

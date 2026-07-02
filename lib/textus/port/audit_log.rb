@@ -24,15 +24,17 @@ module Textus
       DEFAULT_MAX_SIZE = 10_485_760
       DEFAULT_KEEP = 1000
 
-      def initialize(root = nil, layout: nil, max_size: DEFAULT_MAX_SIZE, keep: DEFAULT_KEEP)
+      def initialize(root = nil, layout: nil, max_size: DEFAULT_MAX_SIZE, keep: DEFAULT_KEEP,
+                     file_system: Store::FileSystem.new)
         @geometry = layout || Textus::Store::Layout.new(root)
         @path     = @geometry.audit_log_path
         @max_size = max_size
         @keep     = keep
+        @file_system = file_system
       end
 
       def last_writer_for(key)
-        return nil unless File.exist?(@path)
+        return nil unless @file_system.exists?(@path)
 
         last_role = nil
         File.foreach(@path) do |line|
@@ -47,7 +49,7 @@ module Textus
       end
 
       def latest_seq
-        return scan_max_seq(@path) if File.exist?(@path) && File.size(@path).positive?
+        return scan_max_seq(@path) if @file_system.exists?(@path) && @file_system.size(@path).positive?
 
         # Active log is empty/missing — consult the most recent rotated file's sidecar.
         meta = read_meta(1)
@@ -60,7 +62,7 @@ module Textus
         rotated_metas = (1..@keep).map { |n| read_meta(n) }.compact
         if rotated_metas.any?
           rotated_metas.map { |m| m["min_seq"] }.min
-        elsif File.exist?(@path)
+        elsif @file_system.exists?(@path)
           File.foreach(@path) do |line|
             parsed = parse_row(line.chomp)
             return parsed["seq"] if parsed && parsed["seq"]
@@ -70,7 +72,7 @@ module Textus
       end
 
       def append(role:, verb:, key:, etag_before:, etag_after:, extras: nil)
-        FileUtils.mkdir_p(File.dirname(@path))
+        @file_system.mkdir_p(File.dirname(@path))
         File.open(@path, File::WRONLY | File::APPEND | File::CREAT, 0o644) do |f|
           f.flock(File::LOCK_EX)
           next_seq = current_max_seq_unlocked + 1
@@ -108,7 +110,7 @@ module Textus
       # Each entry is { "lineno" => Integer, "reason" => String, "detail" => String }.
       # Empty array means the log is well-formed (or doesn't exist yet).
       def verify_integrity
-        return [] unless File.exist?(@path)
+        return [] unless @file_system.exists?(@path)
 
         [].tap do |out|
           iterate_with_prev_seq do |line, lineno, prev_seq|
@@ -157,7 +159,7 @@ module Textus
       # Caller holds the flock. Returns the highest seq across the active log,
       # OR the most-recent rotated file's max_seq if the active log is empty.
       def current_max_seq_unlocked
-        return scan_max_seq(@path) if File.exist?(@path) && File.size(@path).positive?
+        return scan_max_seq(@path) if @file_system.exists?(@path) && @file_system.size(@path).positive?
 
         meta = read_meta(1)
         meta ? meta["max_seq"] : 0
@@ -187,9 +189,9 @@ module Textus
 
       def read_meta(n)
         path = rotated_meta(n)
-        return nil unless File.exist?(path)
+        return nil unless @file_system.exists?(path)
 
-        JSON.parse(File.read(path))
+        JSON.parse(@file_system.read(path))
       rescue JSON::ParserError
         nil
       end
@@ -224,18 +226,18 @@ module Textus
         meta = { "min_seq" => min_seq, "max_seq" => max_seq, "rotated_at" => Time.now.utc.iso8601 }
 
         # Drop the file that would be shifted past @keep.
-        FileUtils.rm_f(rotated(@keep))
-        FileUtils.rm_f(rotated_meta(@keep))
+        @file_system.delete(rotated(@keep)) if @file_system.exists?(rotated(@keep))
+        @file_system.delete(rotated_meta(@keep)) if @file_system.exists?(rotated_meta(@keep))
 
         # Shift .N → .(N+1) for N = keep-1 down to 1.
         (@keep - 1).downto(1) do |n|
-          File.rename(rotated(n), rotated(n + 1)) if File.exist?(rotated(n))
-          File.rename(rotated_meta(n), rotated_meta(n + 1)) if File.exist?(rotated_meta(n))
+          @file_system.mv(rotated(n), rotated(n + 1)) if @file_system.exists?(rotated(n))
+          @file_system.mv(rotated_meta(n), rotated_meta(n + 1)) if @file_system.exists?(rotated_meta(n))
         end
 
         # Active log → .1
-        File.rename(@path, rotated(1))
-        File.write(rotated_meta(1), JSON.generate(meta) + "\n")
+        @file_system.mv(@path, rotated(1))
+        @file_system.write(rotated_meta(1), JSON.generate(meta) + "\n")
         # Next append will create a fresh audit.log via File::CREAT.
       end
 
@@ -258,10 +260,10 @@ module Textus
       end
 
       def all_log_files
-        rotated = Dir.glob(@geometry.audit_log_glob)
+        rotated = @file_system.glob(@geometry.audit_log_glob)
                      .reject { |path| path.end_with?(".meta.json") }
                      .sort_by { |path| -path.scan(/\d+$/).first.to_i }
-        active_log = File.exist?(@path) ? [@path] : []
+        active_log = @file_system.exists?(@path) ? [@path] : []
         rotated + active_log
       end
 

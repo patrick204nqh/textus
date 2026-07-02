@@ -19,17 +19,18 @@ module Textus
 
       MAX_HOLDER_BYTES = 512
 
-      def self.with(root:, &)
-        new(root: root).acquire_or_raise(&)
+      def self.with(root:, file_system: Store::FileSystem.new, &)
+        new(root: root, file_system: file_system).acquire_or_raise(&)
       end
 
-      def initialize(root:)
+      def initialize(root:, file_system: Store::FileSystem.new)
         @path = Textus::Store::Layout.new(root).lock_path("build")
         @file = nil
+        @file_system = file_system
       end
 
       def acquire_or_raise
-        FileUtils.mkdir_p(File.dirname(@path))
+        @file_system.mkdir_p(File.dirname(@path))
         @file = File.open(@path, File::RDWR | File::CREAT, 0o644)
         @file.close_on_exec = true
 
@@ -60,8 +61,9 @@ module Textus
       end
 
       def read_holder_safely
-        content = File.read(@path, MAX_HOLDER_BYTES)
-        content.gsub(/[^[:print:]\t ]/, "").strip
+        content = @file_system.read(@path)
+        content = content[0, MAX_HOLDER_BYTES] if content
+        (content || "").gsub(/[^[:print:]\t ]/, "").strip
       rescue StandardError
         "unknown"
       end

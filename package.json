@@ -1,6 +1,7 @@
 {
   "private": true,
   "devDependencies": {
-    "yaml-language-server": "^1.15.0"
+    "yaml-language-server": "^1.15.0",
+    "vscode-json-languageserver": "^1.3.4"
   }
 }

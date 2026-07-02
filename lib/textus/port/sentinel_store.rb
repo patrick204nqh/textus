@@ -10,22 +10,34 @@ module Textus
     # Core::Sentinel is a pure value object that depends on this port for
     # reads and writes.
     class SentinelStore
+      module Interface
+        def write!(target:, source:, store_root:) = raise NotImplementedError
+        def load(path, repo_root) = raise NotImplementedError
+        def sentinel_path(target, store_root) = raise NotImplementedError
+        def targets_under(target_dir, store_root) = raise NotImplementedError
+      end
+      include Interface
+
       SUFFIX = ".textus-managed.json".freeze
+
+      def initialize(file_system: Store::FileSystem.new)
+        @file_system = file_system
+      end
 
       def write!(target:, source:, store_root:)
         path = sentinel_path(target, store_root)
-        FileUtils.mkdir_p(File.dirname(path))
+        @file_system.mkdir_p(File.dirname(path))
         repo_root = File.dirname(store_root)
-        File.write(path, JSON.generate(
+        @file_system.write(path, JSON.generate(
                            "source" => rel_or_abs(source, repo_root),
                            "target" => rel_or_abs(target, repo_root),
-                           "sha256" => Digest::SHA256.hexdigest(File.binread(target)),
+                           "sha256" => Digest::SHA256.hexdigest(@file_system.read(target)),
                            "mode" => "copy",
                          ))
       end
 
       def load(path, repo_root)
-        raw = JSON.parse(File.read(path))
+        raw = JSON.parse(@file_system.read(path))
         Textus::Port::Sentinel.new(
           target: absolutize(raw["target"], repo_root),
           source: absolutize(raw["source"], repo_root),
@@ -48,10 +60,10 @@ module Textus
         rel = relative_to(target_dir, repo_root) or return []
         root = Textus::Store::Layout.new(store_root).sentinels_root
         sdir = File.join(root, rel)
-        return [] unless File.directory?(sdir)
+        return [] unless @file_system.directory?(sdir)
 
         prefix = root + "/"
-        Dir.glob(File.join(sdir, "**", "*#{SUFFIX}")).map do |spath|
+        @file_system.glob(File.join(sdir, "**", "*#{SUFFIX}")).map do |spath|
           # strip the sentinel-store prefix and the .textus-managed.json suffix to recover the repo-relative target path
           trel = spath.delete_prefix(prefix).delete_suffix(SUFFIX)
           File.join(repo_root, trel)

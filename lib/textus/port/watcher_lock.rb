@@ -7,15 +7,16 @@ module Textus
     # Flock-based watcher presence lock. Held for the watcher's lifetime.
     # Process death releases the flock automatically.
     class WatcherLock
-      def initialize(root)
+      def initialize(root, file_system: Store::FileSystem.new)
         @path = Textus::Store::Layout.new(root).lock_path("watcher")
         @file = nil
-        FileUtils.mkdir_p(File.dirname(@path))
+        @file_system = file_system
+        @file_system.mkdir_p(File.dirname(@path))
       end
 
-      def self.running?(root)
+      def self.running?(root, file_system: Store::FileSystem.new)
         path = Textus::Store::Layout.new(root).lock_path("watcher")
-        return false unless File.exist?(path)
+        return false unless file_system.exists?(path)
 
         File.open(path, "r+") do |file|
           got = file.flock(File::LOCK_EX | File::LOCK_NB)
@@ -40,7 +41,7 @@ module Textus
 
         @file.flock(File::LOCK_UN)
         @file.close
-        FileUtils.rm_f(@path)
+        @file_system.delete(@path) if @file_system.exists?(@path)
         @file = nil
       end
     end

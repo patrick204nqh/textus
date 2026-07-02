@@ -4,3 +4,4 @@
 # Ruby itself is managed via your version manager of choice (asdf, rbenv, chruby).
 
 brew "lefthook" # git hook manager — see lefthook.yml
+brew "marksman" # markdown LSP server
