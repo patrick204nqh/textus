@@ -113,6 +113,7 @@ module Textus
           AppendMoveAudit,
         ].freeze
 
+        # rubocop:disable Metrics/ParameterLists
         def self.call(from_key:, to_key:, new_mentry:, call:, file_system:, manifest:, audit_log:, layout:, reader:, if_etag: nil)
           ctx = MoveContext.new(
             from_key:, to_key:, new_mentry:, if_etag:,

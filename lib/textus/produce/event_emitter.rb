@@ -3,8 +3,8 @@
 module Textus
   module Produce
     class EventEmitter
-      def initialize(db:, workflow_registry:)
-        @db = db
+      def initialize(database:, workflow_registry:)
+        @db = database
         @registry = workflow_registry
       end
 

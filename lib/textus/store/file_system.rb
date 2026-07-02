@@ -24,7 +24,7 @@ module Textus
       def copy(source, target) = FileUtils.cp(source, target)
       def symlink?(path) = File.symlink?(path)
       def identical?(left, right) = FileUtils.identical?(left, right)
-      def mtime(path)    = File.mtime(path)
+      def mtime(path) = File.mtime(path)
       def directory?(path) = File.directory?(path)
 
       def flock_exclusive(path, nonblock: false)

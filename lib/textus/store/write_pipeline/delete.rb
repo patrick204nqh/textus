@@ -70,6 +70,7 @@ module Textus
           AppendDeleteAudit,
         ].freeze
 
+        # rubocop:disable Metrics/ParameterLists
         def self.call(key, call:, file_system:, manifest:, audit_log:, layout:, mentry: nil, if_etag: nil, reader: nil)
           ctx = DeleteContext.new(
             key:, mentry:, if_etag:,

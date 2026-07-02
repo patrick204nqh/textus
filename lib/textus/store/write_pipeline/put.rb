@@ -112,6 +112,7 @@ module Textus
           CheckEtag, WriteBytes, BuildEnvelope, AppendAudit
         ].freeze
 
+        # rubocop:disable Metrics/ParameterLists
         def self.call(key, mentry:, payload:, call:, file_system:, manifest:, audit_log:, layout:, reader:, if_etag: nil)
           ctx = WriteContext.new(
             key:, mentry:, payload:, if_etag:,
