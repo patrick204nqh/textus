@@ -24,44 +24,44 @@ lib/textus/
 
 ```
 INPUT → LOOP:
-           level 1: goals → rules (validate before proceeding downstream)
-           level 2: architecture → decisions → patterns → runbooks
+           level 1: intent → constraint (validate before proceeding downstream)
+           level 2: judgment → evidence → execution → feedback
        → OUTPUT
 ```
 
 | Stage | Role | Examples |
 |-------|------|----------|
 | **Input** | Raw material | audit results, feature requests, bugs, agent sessions, external context |
-| **Loop L1** | Principles — validate everything below | goals (north-star), rules (01-12) |
-| **Loop L2** | Refinement — constrained by L1 | architecture → decisions → patterns → runbooks |
-| **Output** | Hardened knowledge | specs, conventions, projected docs, runbooks |
+| **Loop L1** | Principles — validate everything below | intent (north-star), constraint (repo/protocol) |
+| **Loop L2** | Refinement — constrained by L1 | judgment → evidence → execution → feedback |
+| **Output** | Hardened knowledge | protocol constraints, execution runbooks, projected docs |
 
 ### Level 2 Refinement Flow
 
 ```
-architecture → decisions → patterns → runbooks → specs → projected docs
-     ↑                                                    │
-     └────────────────── back to ─────────────────────────┘
+judgment → evidence → execution → feedback
+    ↑                                  │
+    └──────────────────────────────────┘
 ```
 
 | Section | Role | Examples |
 |---------|------|----------|
-| architecture/ | Current state — descriptive | conventions, data-flow, anti-patterns, solid-audit |
-| decisions/ | Why we chose — historical ADRs | all ADR files |
-| patterns/ | Reusable solutions — prescriptive | bounded-use-cases, dependency-adapters |
-| runbooks/ | How to execute — procedural | adr, release |
-| specs/ | Formal contract — what we commit to | 00-conventions through 13-why-not-x |
+| judgment/engineering | Reusable solutions and conventions | bounded-use-cases, dependency-adapters, anti-patterns |
+| evidence/ | Why we chose — historical ADRs | all ADR files |
+| execution/ | How to execute — procedural | adr, release |
+| feedback/ | Audits and review loops | solid-audit |
+| constraint/protocol | Formal contract — what we commit to | 0001-conventions through 0014-data-flow |
 
-The loop is self-correcting: architecture analysis reveals problems → decisions capture the choice → patterns extract the solution → runbooks operationalize it → which changes the architecture state → loop again. Goals and rules validate input before anything enters the loop, and the loop's output may signal that a goal or rule needs updating.
+The loop is self-correcting: judgment identifies issues and patterns → evidence captures the decision record → execution operationalizes it → feedback measures outcomes → back into judgment. Intent and constraints validate input before anything enters the loop, and loop output may signal updates to intent or constraints.
 
 ## Agent Training
 
 On session start, agents should read:
-1. `knowledge.architecture.conventions` — this file (folder structure, role design, pipeline)
-2. `knowledge.architecture.data-flow` — how data flows through the system
-3. `knowledge.architecture.anti-patterns` — what to avoid
-4. `knowledge.architecture.solid-audit` — SOLID evaluation of the codebase
-5. `knowledge.patterns.*` — reusable patterns when designing new code
+1. `knowledge.judgment.engineering.0009-conventions` — this file (folder structure, role design, pipeline)
+2. `knowledge.constraint.protocol.0014-data-flow` — how data flows through the system
+3. `knowledge.judgment.engineering.0010-anti-patterns` — what to avoid
+4. `knowledge.feedback.0001-solid-audit` — SOLID evaluation of the codebase
+5. `knowledge.judgment.engineering.*` — reusable patterns when designing new code
 
 When designing new code, prefer:
 - **Unified dispatch** — new verbs automatically route through Store#method_missing

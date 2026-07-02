@@ -47,6 +47,6 @@ not edit by hand — edit the source under `.textus/data/` and run
 
 ## Docs
 
-Full documentation is canon — authored under `.textus/data/knowledge/` and published to `docs/`. Read the map with `textus get artifacts.docs.index`; the ADR log index is `textus get knowledge.architecture-index`. Sections: how-to · reference · explanation · cookbook · decisions.
+Full documentation is canon — authored under `.textus/data/knowledge/` and published to `docs/`. Read the map with `textus get artifacts.docs.index`; the decision log index is `textus get artifacts.decisions.log`. Sections: how-to · reference · explanation · cookbook · decisions.
 
-The ADR log (`docs/reference/adr-log.md`) is generated — do not hand-edit it; edit the source ADR under `.textus/data/knowledge/decisions/` and run `textus drain`.
+The decision log (`docs/decisions.md`) is generated — do not hand-edit it; edit the source ADR under `.textus/data/knowledge/evidence/` and run `textus drain`.

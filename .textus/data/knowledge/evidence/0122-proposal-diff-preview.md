@@ -1,7 +1,7 @@
 ---
 name: '0122-proposal-diff-preview'
 uid: ''
-refines: knowledge.architecture.conventions
+refines: knowledge.judgment.engineering.0009-conventions
 ---
 
 # ADR-0122: Proposal diff, preview, and rejection feedback

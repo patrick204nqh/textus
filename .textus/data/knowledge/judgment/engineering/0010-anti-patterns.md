@@ -1,5 +1,7 @@
 # Anti-Pattern Catalog
 
+Derived from `knowledge.evidence.0119-architecture-deepening-phase-2` and follow-up ADRs (ADR-0120+).
+
 ## P0 — boot.rb upward layer violation
 Boot.build calls Surface::MCP::Catalog (boot.rb:114-115)
 Fix: Pass verb lists as parameters

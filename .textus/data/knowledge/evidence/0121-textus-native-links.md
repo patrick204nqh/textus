@@ -1,7 +1,7 @@
 ---
 name: '0121-textus-native-links'
 uid: ''
-refines: knowledge.architecture.conventions
+refines: knowledge.judgment.engineering.0009-conventions
 ---
 
 # ADR-0121: Textus-native link resolution
