@@ -7,8 +7,10 @@ module Textus
       PublishTarget = Data.define(:to, :template, :tree, :inject_boot)
 
       class Definition
+        include Textus::Workflow::Helpers
+
         attr_reader :name, :steps, :match_pattern, :publish_block, :publish_targets,
-                    :validate_steps, :depends_on_patterns, :ttl, :on_expire
+                    :validate_steps, :depends_on_patterns
 
         def initialize(name)
           @name                = name
@@ -41,6 +43,35 @@ module Textus
 
         def validate(name, &block)
           @validate_steps << ValidateStep.new(name: name, callable: block)
+        end
+
+        def shape(key_pattern, naming:)
+          @steps << Step.new(
+            name: :"shape_#{key_pattern.tr(".*", "_")}",
+            callable: lambda do |data, ctx|
+              entries = ctx.container.manifest.resolver.enumerate.select do |row|
+                Pattern.match?(key_pattern, row[:key].to_s)
+              end
+
+              new_issues = check_naming(
+                entries,
+                pattern: naming,
+                code: "loop.naming",
+                fix: "rename to match #{naming.inspect}",
+              )
+              existing_issues = Array(data&.dig("content", "issues"))
+              issues = existing_issues + new_issues
+
+              {
+                "content" => {
+                  "ok" => issues.empty?,
+                  "issues" => issues,
+                  "count" => issues.size,
+                },
+              }
+            end,
+            timeout: nil,
+          )
         end
 
         def parallel(&)

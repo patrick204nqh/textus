@@ -1,0 +1,93 @@
+{
+  "_meta": {
+    "uid": "9e1d64ec4e594486"
+  },
+  "ok": false,
+  "issues": [
+    {
+      "code": "loop.naming",
+      "level": "warning",
+      "subject": "scratchpad.notes.architecture-deepening-plan",
+      "message": "scratchpad.notes.architecture-deepening-plan does not match the required naming pattern /\\A\\d{4}-[a-z0-9-]+\\.md\\z/",
+      "fix": "rename to match /\\A\\d{4}-[a-z0-9-]+\\.md\\z/"
+    },
+    {
+      "code": "loop.naming",
+      "level": "warning",
+      "subject": "scratchpad.notes.architecture-deepening-plan-v2",
+      "message": "scratchpad.notes.architecture-deepening-plan-v2 does not match the required naming pattern /\\A\\d{4}-[a-z0-9-]+\\.md\\z/",
+      "fix": "rename to match /\\A\\d{4}-[a-z0-9-]+\\.md\\z/"
+    },
+    {
+      "code": "loop.naming",
+      "level": "warning",
+      "subject": "scratchpad.notes.implementation-plan-0121-0124",
+      "message": "scratchpad.notes.implementation-plan-0121-0124 does not match the required naming pattern /\\A\\d{4}-[a-z0-9-]+\\.md\\z/",
+      "fix": "rename to match /\\A\\d{4}-[a-z0-9-]+\\.md\\z/"
+    },
+    {
+      "code": "loop.naming",
+      "level": "warning",
+      "subject": "scratchpad.notes.parked-arch-candidates",
+      "message": "scratchpad.notes.parked-arch-candidates does not match the required naming pattern /\\A\\d{4}-[a-z0-9-]+\\.md\\z/",
+      "fix": "rename to match /\\A\\d{4}-[a-z0-9-]+\\.md\\z/"
+    },
+    {
+      "code": "loop.naming",
+      "level": "warning",
+      "subject": "scratchpad.notes.plan-1-boot-wire-typed-events",
+      "message": "scratchpad.notes.plan-1-boot-wire-typed-events does not match the required naming pattern /\\A\\d{4}-[a-z0-9-]+\\.md\\z/",
+      "fix": "rename to match /\\A\\d{4}-[a-z0-9-]+\\.md\\z/"
+    },
+    {
+      "code": "loop.naming",
+      "level": "warning",
+      "subject": "scratchpad.notes.plan-2-manifest-init-writestep",
+      "message": "scratchpad.notes.plan-2-manifest-init-writestep does not match the required naming pattern /\\A\\d{4}-[a-z0-9-]+\\.md\\z/",
+      "fix": "rename to match /\\A\\d{4}-[a-z0-9-]+\\.md\\z/"
+    },
+    {
+      "code": "loop.naming",
+      "level": "warning",
+      "subject": "scratchpad.notes.plan-3-rules-tracing",
+      "message": "scratchpad.notes.plan-3-rules-tracing does not match the required naming pattern /\\A\\d{4}-[a-z0-9-]+\\.md\\z/",
+      "fix": "rename to match /\\A\\d{4}-[a-z0-9-]+\\.md\\z/"
+    },
+    {
+      "code": "loop.naming",
+      "level": "warning",
+      "subject": "scratchpad.notes.plans-architecture-redesign",
+      "message": "scratchpad.notes.plans-architecture-redesign does not match the required naming pattern /\\A\\d{4}-[a-z0-9-]+\\.md\\z/",
+      "fix": "rename to match /\\A\\d{4}-[a-z0-9-]+\\.md\\z/"
+    },
+    {
+      "code": "loop.naming",
+      "level": "warning",
+      "subject": "scratchpad.notes.spec-1-boot-wire-typed-events",
+      "message": "scratchpad.notes.spec-1-boot-wire-typed-events does not match the required naming pattern /\\A\\d{4}-[a-z0-9-]+\\.md\\z/",
+      "fix": "rename to match /\\A\\d{4}-[a-z0-9-]+\\.md\\z/"
+    },
+    {
+      "code": "loop.naming",
+      "level": "warning",
+      "subject": "scratchpad.notes.spec-2-manifest-init-writestep-completion",
+      "message": "scratchpad.notes.spec-2-manifest-init-writestep-completion does not match the required naming pattern /\\A\\d{4}-[a-z0-9-]+\\.md\\z/",
+      "fix": "rename to match /\\A\\d{4}-[a-z0-9-]+\\.md\\z/"
+    },
+    {
+      "code": "loop.naming",
+      "level": "warning",
+      "subject": "scratchpad.notes.spec-3-rules-tracing",
+      "message": "scratchpad.notes.spec-3-rules-tracing does not match the required naming pattern /\\A\\d{4}-[a-z0-9-]+\\.md\\z/",
+      "fix": "rename to match /\\A\\d{4}-[a-z0-9-]+\\.md\\z/"
+    },
+    {
+      "code": "loop.naming",
+      "level": "warning",
+      "subject": "scratchpad.notes.verb-registry-standardization-plan",
+      "message": "scratchpad.notes.verb-registry-standardization-plan does not match the required naming pattern /\\A\\d{4}-[a-z0-9-]+\\.md\\z/",
+      "fix": "rename to match /\\A\\d{4}-[a-z0-9-]+\\.md\\z/"
+    }
+  ],
+  "count": 12
+}

@@ -50,5 +50,6 @@ entries:
   - { key: artifacts.doctor.templates, lane: artifacts, format: json, kind: produced }
   - { key: artifacts.doctor.schemas, lane: artifacts, format: json, kind: produced }
   - { key: artifacts.doctor.publish-tree-overlap, lane: artifacts, format: json, kind: produced }
+  - { key: artifacts.doctor.loop-shape, lane: artifacts, format: json, kind: produced }
   - { key: artifacts.system.index, lane: artifacts, format: json, kind: produced }
   - { key: artifacts.feeds.skills, lane: artifacts, format: json, kind: produced }
