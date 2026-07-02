@@ -79,7 +79,6 @@ module Textus
       graph: Dispatch::Contracts::GraphEntry,
       diff: Dispatch::Contracts::DiffEntry,
       boot: Dispatch::Contracts::BootStore,
-      doctor: Dispatch::Contracts::DoctorStore,
       published: Dispatch::Contracts::PublishedEntries,
       rule_explain: Dispatch::Contracts::RuleExplain,
       rule_list: Dispatch::Contracts::RuleList,
@@ -106,7 +105,7 @@ module Textus
     ].freeze
 
     OPS_VERBS = %i[
-      boot drain doctor pulse jobs_list jobs_retry jobs_purge enqueue data_mv
+      boot drain pulse jobs_list jobs_retry jobs_purge enqueue data_mv
       key_mv_prefix key_delete_prefix published
     ].freeze
 
@@ -361,14 +360,6 @@ module Textus
       [ArgSpec.arg(name: :key, required: true, positional: true,
                    description: "any key in the family whose schema you want")],
       %i[cli mcp], { default: identity }, "schema show", nil, :read
-    )
-
-    # ── doctor ───────────────────────────────────────────
-    register VerbSpec.new(
-      :doctor, "Run health checks on the textus store.",
-      [ArgSpec.arg(name: :checks, type: Array,
-                   description: "subset of check names to run (default: all)")],
-      %i[cli mcp], { default: identity }, "doctor", nil, :read
     )
 
     # ── boot ─────────────────────────────────────────────

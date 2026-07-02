@@ -39,8 +39,6 @@ module Textus
 
       BootStore = Data.define
 
-      DoctorStore = Data.define(:checks)
-
       PublishedEntries = Data.define
 
       RuleExplain = Data.define(:key, :detail)

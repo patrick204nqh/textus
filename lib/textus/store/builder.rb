@@ -54,8 +54,7 @@ module Textus
         Dispatch::HandlerResolver.eager_load!
 
         # NEEDS deps are snapshotted at HandlerResolver.build time, so a handler
-        # declaring :pipeline in NEEDS (DoctorStore, to dispatch sub-checks like
-        # `list`/`get` against a live pipeline) would otherwise always see the
+        # declaring :pipeline in NEEDS would otherwise always see the
         # `pipeline: nil` from `partial` above. Build once against `partial` to
         # get a working pipeline, wire it into the container, then rebuild the
         # registry against that container so :pipeline resolves to a real value.
