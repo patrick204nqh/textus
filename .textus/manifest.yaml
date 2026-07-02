@@ -11,8 +11,11 @@ data:
     - key: knowledge.feedback
   scratchpad:
     - key: scratchpad.notes
+      tracked: false
     - key: scratchpad.sessions
+      tracked: false
     - key: scratchpad.scripts
+      tracked: false
   proposals:
     - key: proposals.notes
   raw:
