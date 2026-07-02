@@ -67,13 +67,11 @@ RSpec.describe Textus::Doctor do
     expect(res["ok"]).to be false
   end
 
-  it "reports key.illegal for nested entries with bad filenames" do
+  it "does not include key.illegal in doctor summary (ported to workflow artifact)" do
     File.write(File.join(root, "data/knowledge/notes/Bad_Name.md"), "---\n---\nx\n")
     res = doctor
     issue = res["issues"].find { |i| i["code"] == "key.illegal" }
-    expect(issue).not_to be_nil
-    expect(issue["message"]).to include("Bad_Name")
-    expect(issue["fix"]).to match(/lowercase.*hyphen/i)
+    expect(issue).to be_nil
   end
 
   it "reports sentinel.orphan when a sentinel's target is missing" do

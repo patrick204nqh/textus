@@ -4,14 +4,19 @@ RSpec.describe "ignore-pattern consistency across list and doctor (issue #119)" 
   include_context "textus_store_fixture"
   include TextusSpecHelpers
 
+  let(:illegal_keys_workflow) do
+    File.read(File.expand_path("../../../.textus/workflows/config/doctor_illegal_keys.rb", __dir__))
+  end
+
   let(:store) do
     store_from_manifest(
       root,
-      lanes: %w[knowledge],
+      lanes: %w[knowledge artifacts],
       manifest: <<~YAML,
         version: textus/4
         lanes:
           - { name: knowledge, kind: canon }
+          - { name: artifacts, kind: machine }
         entries:
           - key: skills
             path: knowledge/skills
@@ -20,10 +25,12 @@ RSpec.describe "ignore-pattern consistency across list and doctor (issue #119)" 
             kind: nested
             ignore:
               - "**/node_modules/**"
+          - { key: artifacts.doctor.illegal-keys, lane: artifacts, format: json, kind: produced }
       YAML
       files: {
         "data/knowledge/skills/alpha/intro.md" => "# alpha\n",
         "data/knowledge/skills/alpha/node_modules/dep/intro.md" => "# vendored\n",
+        "workflows/config/doctor_illegal_keys.rb" => illegal_keys_workflow,
       },
     )
   end
@@ -35,15 +42,25 @@ RSpec.describe "ignore-pattern consistency across list and doctor (issue #119)" 
   end
 
   it "doctor reports no key.illegal for the same vendored subtree" do
-    issues = Textus::Doctor::Check::IllegalKeys.new(store.container).call
-    illegal = issues.select { |i| i["code"] == "key.illegal" }
+    Textus::Produce::Engine.converge(
+      container: store.container,
+      call: Textus::Value::Call.build(role: "automation"),
+      keys: ["artifacts.doctor.illegal-keys"],
+    )
+    env = store.with_role("human").get(key: "artifacts.doctor.illegal-keys")
+    illegal = env.content.fetch("issues").select { |i| i["code"] == "key.illegal" }
     expect(illegal).to be_empty
   end
 
   it "the store is green: list is clean AND doctor is clean on the ignored tree" do
     keys = store.container.manifest.resolver.enumerate.map { |r| r[:key] }
-    issues = Textus::Doctor::Check::IllegalKeys.new(store.container).call
+    Textus::Produce::Engine.converge(
+      container: store.container,
+      call: Textus::Value::Call.build(role: "automation"),
+      keys: ["artifacts.doctor.illegal-keys"],
+    )
+    env = store.with_role("human").get(key: "artifacts.doctor.illegal-keys")
     expect(keys).to eq(["skills.alpha.intro"])
-    expect(issues.select { |i| i["code"] == "key.illegal" }).to be_empty
+    expect(env.content.fetch("issues").select { |i| i["code"] == "key.illegal" }).to be_empty
   end
 end

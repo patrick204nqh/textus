@@ -227,11 +227,16 @@ RSpec.describe "publish_tree (ADR 0047)" do
   # mirror. The Publisher always honored opacity; these two paths did not until
   # the `Publish::Mode#keyless?` guard.
   describe "opacity (ADR 0047)" do
+    let(:illegal_keys_workflow) do
+      File.read(File.expand_path("../../../.textus/workflows/config/doctor_illegal_keys.rb", __dir__))
+    end
+
     let(:opacity_manifest) do
       <<~YAML
         version: textus/4
         lanes:
           - { name: working, kind: canon }
+          - { name: artifacts, kind: machine }
         entries:
           - key: working.published
             path: working/skills
@@ -241,6 +246,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
             nested: true
             publish:
               - { tree: "skills" }
+          - { key: artifacts.doctor.illegal-keys, lane: artifacts, format: json, kind: produced }
       YAML
     end
 
@@ -249,16 +255,22 @@ RSpec.describe "publish_tree (ADR 0047)" do
         "data/working/skills/my-skill/SKILL.md" => "# my skill\n",
         "data/working/skills/my-skill/README.md" => "# readme\n",
         "data/working/skills/my-skill/references/algo.md" => "notes\n",
+        "workflows/config/doctor_illegal_keys.rb" => illegal_keys_workflow,
       }
     end
 
     let(:opacity_store) do
-      store_from_manifest(root, lanes: %w[working], manifest: opacity_manifest, files: opacity_files)
+      store_from_manifest(root, lanes: %w[working artifacts], manifest: opacity_manifest, files: opacity_files)
     end
 
     it "does not flag uppercase filenames under a publish_tree entry (doctor green)" do
-      issues = Textus::Doctor::Check::IllegalKeys.new(opacity_store.container).call
-      expect(issues).to be_empty
+      Textus::Produce::Engine.converge(
+        container: opacity_store.container,
+        call: Textus::Value::Call.build(role: "automation"),
+        keys: ["artifacts.doctor.illegal-keys"],
+      )
+      env = opacity_store.with_role("human").get(key: "artifacts.doctor.illegal-keys")
+      expect(env.content.fetch("issues")).to be_empty
     end
 
     it "does not enumerate publish_tree files as keys" do
@@ -275,25 +287,40 @@ RSpec.describe "publish_tree (ADR 0047)" do
       expect(File.read(File.join(repo_root, "skills/my-skill/references/algo.md"))).to eq("notes\n")
     end
 
-    it "still flags illegal segments on a non-publish nested entry (guard not over-broad)" do
-      plain = <<~YAML
-        version: textus/4
-        lanes:
-          - { name: working, kind: canon }
-        entries:
-          - key: working.notes
-            path: working/notes
-            lane: working
-            owner: human:self
-            kind: nested
-            nested: true
-      YAML
-      plain_store = store_from_manifest(
-        root, lanes: %w[working], manifest: plain,
-              files: { "data/working/notes/Bad_Dir/note.md" => "x\n" }
+    def plain_illegal_store
+      store_from_manifest(
+        root,
+        lanes: %w[working artifacts],
+        manifest: <<~YAML,
+          version: textus/4
+          lanes:
+            - { name: working, kind: canon }
+            - { name: artifacts, kind: machine }
+          entries:
+            - key: working.notes
+              path: working/notes
+              lane: working
+              owner: human:self
+              kind: nested
+              nested: true
+            - { key: artifacts.doctor.illegal-keys, lane: artifacts, format: json, kind: produced }
+        YAML
+        files: {
+          "data/working/notes/Bad_Dir/note.md" => "x\n",
+          "workflows/config/doctor_illegal_keys.rb" => illegal_keys_workflow,
+        },
       )
-      issues = Textus::Doctor::Check::IllegalKeys.new(plain_store.container).call
-      expect(issues).to include(hash_including("code" => "key.illegal"))
+    end
+
+    it "still flags illegal segments on a non-publish nested entry (guard not over-broad)" do
+      plain_store = plain_illegal_store
+      Textus::Produce::Engine.converge(
+        container: plain_store.container,
+        call: Textus::Value::Call.build(role: "automation"),
+        keys: ["artifacts.doctor.illegal-keys"],
+      )
+      env = plain_store.with_role("human").get(key: "artifacts.doctor.illegal-keys")
+      expect(env.content.fetch("issues")).to include(hash_including("code" => "key.illegal"))
     end
   end
 end
