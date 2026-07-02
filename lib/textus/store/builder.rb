@@ -26,15 +26,13 @@ module Textus
 
         trace_buffer = Store::TraceBuffer.new
 
-        reader  = Store::Entry::Reader.new(file_system:, manifest:, layout:)
-        writer  = Store::Entry::Writer.new(file_system:, manifest:,
-                                           audit_log:, reader:, layout:)
+        entry_store = Store::EntryStore.new(file_system:, manifest:, audit_log:, layout:)
 
         partial = Infrastructure.new(
           manifest:, file_system:, schemas:, audit_log:,
-          database:, event_store:,
+          database:, event_store:, entry_store:,
           layout:, link_edge_store:, workflows:, root:,
-          reader:, writer:,
+          reader: entry_store, writer: entry_store,
           ttl_evaluator:, trace_buffer:, pipeline: nil
         )
 

@@ -51,13 +51,9 @@ module Textus
           @container.manifest.resolver.resolve(key).path,
         )
 
-        reader = Textus::Store::Entry::Reader.new(
-          file_system: @container.file_system, manifest: @container.manifest,
-          layout: @container.layout
-        )
         pctx = Textus::Manifest::Entry::Base::PublishContext.new(
           container: @container, call: @call,
-          reader: reader.method(:read)
+          reader: @container.entry_store.method(:read)
         )
         entry.publish_via(pctx)
       end

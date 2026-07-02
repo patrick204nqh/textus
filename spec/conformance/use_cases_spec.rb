@@ -11,7 +11,7 @@ USE_CASE_GLOB = File.expand_path("../../lib/textus/use_cases/**/*.rb", __dir__)
 
 # Valid keys from Store::Infrastructure.members
 VALID_NEEDS_KEYS = %i[
-  manifest file_system schemas audit_log event_store layout
+  manifest file_system schemas audit_log database event_store entry_store layout
   link_edge_store workflows event_bus ttl_evaluator
   trace_buffer pipeline reader writer
 ].freeze

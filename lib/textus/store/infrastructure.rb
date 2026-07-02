@@ -9,6 +9,7 @@ module Textus
       :audit_log,
       :database,
       :event_store,
+      :entry_store,
       :layout,
       :link_edge_store,
       :workflows,
