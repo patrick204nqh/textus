@@ -1,19 +1,18 @@
-RSpec.describe "Jobs registry — every Job subclass is registered" do
-  def all_job_classes
-    Textus::Store::Jobs::Base.subclasses.flat_map { |k| [k] + k.subclasses }
-  end
-
-  it "every Store::Jobs::Base subclass appears in the registry" do
-    registered = Textus::Store::Jobs::Registry::JOBS.values
-    subclasses = all_job_classes
-    unregistered = subclasses - registered
-    expect(unregistered).to be_empty,
-                            "Unregistered job subclasses: #{unregistered.map(&:name).join(", ")}"
-  end
-
-  it "every registry entry is a valid Job subclass" do
-    Textus::Store::Jobs::Registry::JOBS.each_value do |klass|
-      expect(klass).to be < Textus::Store::Jobs::Base
+RSpec.describe "Jobs registry — every entry is a callable" do
+  it "all registry entries respond to call" do
+    Textus::Store::Jobs::Registry::JOBS.each do |type, fn|
+      expect(fn).to respond_to(:call), "#{type} is not callable"
     end
+  end
+
+  it "every required_role entry has a matching job type" do
+    Textus::Store::Jobs::Registry::REQUIRED_ROLES.each_key do |type|
+      expect(Textus::Store::Jobs::Registry::JOBS).to have_key(type),
+                                                       "REQUIRED_ROLES references unknown job type: #{type}"
+    end
+  end
+
+  it "lists at least one job type" do
+    expect(Textus::Store::Jobs::Registry::JOBS.keys).not_to be_empty
   end
 end

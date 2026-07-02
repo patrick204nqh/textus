@@ -15,7 +15,7 @@ module Textus
             job_store: nil, link_edge_store: nil,
             workflows: nil,
             root: deps.layout.root, reader: nil, writer: nil,
-            event_bus: nil, freshness_evaluator: nil,
+            event_bus: nil, ttl_evaluator: nil,
             trace_buffer: nil
           )
           Value::Result.success(Textus::Doctor.build(container: proxy, checks: command.checks, role: call.role))

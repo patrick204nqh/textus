@@ -49,12 +49,12 @@ module Textus
 
         def run_one(leased)
           job    = leased.job
-          klass  = Textus::Jobs.fetch(job.type)
+          fn     = Textus::Store::Jobs::Registry.fetch(job.type)
           call   = Textus::Value::Call.build(
             role: job.role || Textus::Value::Role::AUTOMATION,
             correlation_id: SecureRandom.uuid,
           )
-          klass.call(container: @container, call: call, **job.args.transform_keys(&:to_sym))
+          fn.call(container: @container, call: call, **job.args.transform_keys(&:to_sym))
           @queue.ack(leased)
           Textus::Value::Outcome::Completed.new(details: { "job_id" => job.id, "type" => job.type })
         rescue StandardError => e

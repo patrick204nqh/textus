@@ -33,7 +33,7 @@ RSpec.describe Textus::Workflow::Runner do
       end
 
       runner = described_class.new(defn, container: store.container, call: call)
-      allow(runner).to receive(:built_in_publish).and_return(nil)
+      allow(runner).to receive(:publish).and_return(nil)
 
       result = runner.run("artifacts.feeds.test")
       expect(result).to eq(%w[A B])
@@ -49,7 +49,7 @@ RSpec.describe Textus::Workflow::Runner do
       end
 
       runner = described_class.new(defn, container: store.container, call: call)
-      allow(runner).to receive(:built_in_publish)
+      allow(runner).to receive(:publish)
       runner.run("artifacts.feeds.test")
 
       expect(received.first).to be_nil

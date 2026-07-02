@@ -14,7 +14,7 @@ RSpec.describe Textus::Dispatch::HandlerResolver do
       audit_log: :al, job_store: fake_job_store, layout: :ly,
       link_edge_store: :les, workflows: :wf,
       root: "/tmp", reader: nil, writer: nil,
-      event_bus: :eb, freshness_evaluator: :fe,
+      event_bus: :eb, ttl_evaluator: :fe,
       trace_buffer: :tb, pipeline: nil
     )
   end

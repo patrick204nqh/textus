@@ -16,7 +16,7 @@ module Textus
         workflows = Workflow::Loader.load_all(root)
         event_bus = Event::Bus.new
 
-        freshness_evaluator = Store::Freshness::TtlEvaluator.new(
+        ttl_evaluator = Store::Freshness::TtlEvaluator.new(
           manifest:,
           file_stat: Port::Storage::FileStat.new,
           clock: Port::Clock.new,
@@ -41,7 +41,7 @@ module Textus
           manifest:, file_store:, schemas:, audit_log:, job_store:,
           layout:, link_edge_store:, workflows:, root:,
           reader:, writer:, event_bus:,
-          freshness_evaluator:, trace_buffer:, pipeline: nil
+          ttl_evaluator:, trace_buffer:, pipeline: nil
         )
 
         middleware = [
