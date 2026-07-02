@@ -18,6 +18,7 @@ entries:
   - { key: knowledge.judgment.engineering, lane: knowledge, owner: human:self, kind: nested, nested: true }
   - { key: knowledge.judgment.agent-behavior, lane: knowledge, owner: human:self, kind: nested, nested: true }
   - { key: knowledge.evidence, lane: knowledge, owner: human:self, kind: nested, nested: true, ignore: ["**/README.md"] }
+  - { key: knowledge.feedback, lane: knowledge, owner: human:self, kind: nested, nested: true }
   - { key: artifacts.contributing, lane: artifacts, format: json, kind: produced }
   - { key: artifacts.security, lane: artifacts, format: json, kind: produced }
   - { key: artifacts.code-of-conduct, lane: artifacts, format: json, kind: produced }
