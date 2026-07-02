@@ -1,6 +1,7 @@
 ---
 name: '0120-atomic-canon-composed-artifacts'
 uid: ''
+refines: knowledge.architecture.conventions
 ---
 
 # ADR-0120: Atomic canon + composed artifacts

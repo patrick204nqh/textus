@@ -8,6 +8,18 @@
       "date": null,
       "commits": [
         {
+          "subject": "refactor(architecture): deepen phase 3 — Writer port, single Infrastructure, manifest→workflow boundary",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "Revert \"feat(federation): add federation sync workflow — auto-mirrors remote store entries on drain\"",
+          "date": "2026-07-01"
+        },
+        {
+          "subject": "feat(federation): add federation sync workflow — auto-mirrors remote store entries on drain",
+          "date": "2026-07-01"
+        },
+        {
           "subject": "feat(workflow): migrate 4 more Doctor checks to validation workflows",
           "date": "2026-07-01"
         },

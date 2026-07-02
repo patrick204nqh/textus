@@ -36,7 +36,7 @@ flowchart TD
     action["Actions — per-verb use cases (action/)"]
     jobs["Jobs — Worker · Planner · Materialize · Retention · Sweep"]
     produce["Produce — Engine · Render"]
-    workflow["Workflow — Runner · Registry · Loader · DSL"]
+    workflow["Workflow — Runner · Loader · DSL · Helpers"]
     manifest["Manifest — declarative config, no IO (policy/, schema/, entry/)"]
     core["Core — pure value types (Freshness, Retention, Duration, Sentinel)"]
     ports["Ports — IO adapters (FileStore, AuditLog, JobStore, Publisher…)"]
@@ -127,9 +127,9 @@ produce/render.rb         ERB template expansion for publish targets
 
 ```
 workflow/runner.rb    Runs a Definition: build_context → execute_steps → publish
-workflow/registry.rb  In-memory list of registered Definitions; Registry#for(key)
-workflow/loader.rb    Loads .textus/workflows/*.rb files via Collector DSL
-workflow/dsl.rb       Textus.workflow "name" { match "...", step :fetch { ... }, publish }
+workflow/loader.rb    Loads .textus/workflows/*.rb files via thread-local registry
+workflow/dsl.rb       Textus.workflow "name" { match "...", step :fetch { ... }, publish to: }
+workflow/helpers.rb   Reusable step helpers: fetch_json, render_template, merge_hashes
 workflow/context.rb   Context passed to each step (key, entry, config, container, call)
 workflow/pattern.rb   Key-matching pattern (glob via File.fnmatch?)
 workflow/errors.rb    NotFound, StepFailed
@@ -181,16 +181,18 @@ Verbs are looked up in a static frozen table (`Textus::Action::VERBS`) that maps
 
 ## Container
 
-Use cases never see the raw `Store`. `Textus::Container` is a single record holding the wired collaborators:
+Every action receives the full `Store::Infrastructure` as `container`. A single `Data.define` holds all ports and dependencies:
 
 ```ruby
-Container = Data.define(
-  :manifest, :file_store, :schemas, :root,
-  :audit_log, :workflows, :gate
+Infrastructure = Data.define(
+  :manifest, :file_store, :schemas, :audit_log, :job_store,
+  :layout, :link_edge_store, :workflows, :root,
+  :reader, :writer,
+  :event_bus, :freshness_evaluator, :trace_buffer, :pipeline,
 )
 ```
 
-The `Store` builds one `Container` at boot; every action receives it via `(container:, call:)`. Workflow steps receive a `Workflow::Context` (key, entry, config, container, call).
+The `Store::Builder` constructs one `Infrastructure` at boot. Use cases access it via `(container:, call:)`. Workflow steps receive a `Workflow::Context` (key, entry, config, container, call). Writer is a port on the container — constructed once, `call:` supplied per-invocation.
 
 ## Ports
 
@@ -199,12 +201,13 @@ The `Store` builds one `Container` at boot; every action receives it via `(conta
 | `Ports::Storage::FileStore` | Bytes-only FS I/O — `read`, `write`, `delete`, `exists?`, `etag`. |
 | `Ports::AuditLog` | Append-only structured log (`audit.log`). Owns seq numbering, file-locking, rotation. |
 | `Ports::Clock` | Supplies `Time.now` — instantiable class so tests can inject. |
-| `Ports::Publisher` | Copies a built artifact to a repo-relative consumer path and writes a sentinel. |
 | `Ports::BuildLock` | Process-exclusive `flock` guard over the produce pipeline. |
 | `Ports::JobStore` | Persistent job queue used by `drain` workers; tracks ready/leased/done/failed jobs. |
 | `Ports::SentinelStore` | Reads and writes per-target sentinel files for managed-file detection. |
+| `Store::Entry::Writer` | 11-step write pipeline: resolve → serialize → validate → write → audit. On `container.writer`. |
+| `Store::Entry::Reader` | Read-only: resolve → read → parse → envelope. On `container.reader`. |
 
-Application use cases access ports only through `Container` fields — never through the raw `Store`.
+Application use cases access ports only through `container` — never through the raw `Store`.
 
 ### Envelope
 
@@ -223,7 +226,7 @@ Application use cases access ports only through `Container` fields — never thr
 | `data` | `Manifest::Data` | Frozen value: raw, root, lanes, entries, audit_config, role_caps. |
 | `resolver` | `Manifest::Resolver` | Key → `Resolution(entry, path, remaining)`. Nested entry enumeration and fuzzy-match suggestions. |
 | `policy` | `Manifest::Policy` | Zone/capability authority — `verb_for_lane`, `roles_with_capability`, `propose_lane_for(role)`. |
-| `rules` | `Manifest::Rules` | Pattern-matched rule engine. `rules.for(key)` → `RuleSet(guard, retention, react)`. |
+| `rules` | `Manifest::Rules` | Pattern-matched rule engine. `rules.for(key)` → `RuleSet(guard, retention)`. |
 
 ## Read path (`store.get(key)`)
 
@@ -248,7 +251,7 @@ The workflow system owns the produce pipeline. `Produce::Engine.converge(contain
 
 For each key, `Engine#produce_one`:
 
-1. Looks up a registered workflow via `container.workflows.for(key)` (Pattern matching against the key).
+1. Looks up a registered workflow via `container.workflows.find { |d| d.match?(key) }` (Pattern matching against the key).
 2. If a workflow matches: `Workflow::Runner.new(definition, container:, call:).run(key)`.
    - `Runner` builds a `Workflow::Context`, executes each step in sequence, then publishes.
    - **Built-in publish**: writes the step output to the entry via `Envelope::Writer`, then calls `entry.publish_via(pctx)` for any `publish_to` or `publish_tree` targets.
@@ -257,12 +260,22 @@ For each key, `Engine#produce_one`:
 **Workflow files** live in `.textus/workflows/*.rb`. The DSL:
 
 ```ruby
-Textus.workflow "my-producer" do
+Textus.workflow "my-producer", priority: 10 do
   match "artifacts.derived.*"
+  depends_on "knowledge.project"
+
   step :fetch do |data, ctx|
-    { content: { "key" => ctx.key } }
+    { content: fetch_json("https://api.example.com/data") }
   end
-  publish
+
+  step :reduce do |data, ctx|
+    merge_hashes(data[:fetch], data[:enrich])
+  end
+
+  publish to: "docs/output.md", template: "my_template.erb"
+
+  ttl "24h"
+  on_expire :archive
 end
 ```
 

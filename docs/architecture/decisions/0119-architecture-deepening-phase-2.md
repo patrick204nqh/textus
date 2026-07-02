@@ -1,6 +1,7 @@
 ---
 name: '0119-architecture-deepening-phase-2'
 uid: C05B465DE347449D
+refines: knowledge.architecture.conventions
 ---
 
 # ADR-0119: Architecture deepening — dry-monad actions, container split, geometry authority
