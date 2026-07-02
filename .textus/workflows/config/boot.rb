@@ -14,6 +14,14 @@ Textus.workflow "boot" do
 
     runbooks = ctx.container.read_family("knowledge.execution").filter_map(&:meta)
 
+    loop_nodes = %w[intent constraint.repo constraint.protocol judgment.engineering
+                    judgment.agent-behavior evidence execution feedback]
+    agent_behavior_excerpt = fetch.call("knowledge.judgment.agent-behavior.0001-loop-behavior")&.body.to_s
+    loop_summary = {
+      "nodes" => loop_nodes,
+      "excerpt" => agent_behavior_excerpt.lines.first(5).join,
+    }
+
     # Lanes (was Boot.lanes_for)
     lanes = manifest.data.declared_lane_kinds.keys.map do |name|
       verb = manifest.policy.verb_for_lane(name)
@@ -84,6 +92,7 @@ Textus.workflow "boot" do
           "has_commands" => !(identity["commands"] || {}).empty?,
         },
         "runbooks" => runbooks.map { |r| { "name" => r["name"], "description" => r["description"] } },
+        "loop" => loop_summary,
         "lanes" => lanes,
         "agent_quickstart" => agent_quickstart,
         "agent_protocol" => agent_protocol,

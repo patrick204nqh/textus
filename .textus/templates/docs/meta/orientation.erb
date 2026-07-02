@@ -21,9 +21,10 @@ not edit by hand — edit the source under `.textus/data/` and run
 <% end -%><% end -%>
 → Knowledge pipeline:
    • INPUT → LOOP → OUTPUT
-   • L1: goals → rules (validate before proceeding downstream)
-   • L2: architecture → decisions → patterns → runbooks → specs → docs
-   • Write to the right level — decisions reference architecture, patterns reference decisions-->
+   • Loop nodes: <%= Array(boot.dig("loop", "nodes")).join(" → ") %>
+   • Loop behavior excerpt:
+<% Array(boot.dig("loop", "excerpt")&.lines).each do |line| -%>     <%= line.chomp %>
+<% end -%>   • Write to the right node — evidence logs decisions, execution points to judgment patterns-->
 
 
 # <%= project["name"] %>
