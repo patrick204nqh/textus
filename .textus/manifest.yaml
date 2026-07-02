@@ -54,6 +54,7 @@ entries:
   - { key: artifacts.doctor.audit-log, lane: artifacts, format: json, kind: produced }
   - { key: artifacts.doctor.unowned-schema-fields, lane: artifacts, format: json, kind: produced }
   - { key: artifacts.doctor.schema-violations, lane: artifacts, format: json, kind: produced }
+  - { key: artifacts.doctor.orphaned-publish-targets, lane: artifacts, format: json, kind: produced }
   - { key: artifacts.doctor.templates, lane: artifacts, format: json, kind: produced }
   - { key: artifacts.doctor.schemas, lane: artifacts, format: json, kind: produced }
   - { key: artifacts.doctor.publish-tree-overlap, lane: artifacts, format: json, kind: produced }
