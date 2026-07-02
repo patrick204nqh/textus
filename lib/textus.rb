@@ -29,4 +29,4 @@ loader.ignore(File.expand_path("textus/init/templates", __dir__))
 loader.setup
 loader.eager_load
 
-Textus::Boot::CLI_VERBS = Textus::Boot.build_cli_verbs.freeze
+Textus::Boot::CLI_VERBS = Textus::Boot::Catalog.build.freeze
