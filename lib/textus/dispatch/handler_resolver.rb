@@ -14,7 +14,6 @@ module Textus
 
       def build(ctx, handlers: nil)
         handler_modules = handlers || discover_all
-        ctx_hash = ctx.to_h
 
         registry = {}
         handler_modules.each do |mod|
@@ -31,13 +30,13 @@ module Textus
           next unless contract_class && needs
 
           deps_hash = needs.to_h do |field|
-            unless ctx_hash.key?(field)
+            unless ctx.respond_to?(field)
               raise Boot::DepNotFound.new(
                 "boot_dep_not_found",
-                "handler #{mod.name || mod.inspect} needs :#{field} but Infrastructure has no such field",
+                "handler #{mod.name || mod.inspect} needs :#{field} but the container has no such field",
               )
             end
-            [field, ctx_hash[field]]
+            [field, ctx.public_send(field)]
           end
 
           dep_struct = Data.define(*needs).new(**deps_hash)

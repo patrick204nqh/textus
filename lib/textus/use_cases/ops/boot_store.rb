@@ -8,11 +8,14 @@ module Textus
         needs :manifest, :file_system, :schemas, :audit_log, :layout, :pipeline
 
         def call
-          proxy = Store::Infrastructure.build(
-            manifest:, file_system:,
-            schemas:, audit_log:,
-            layout:, root: layout.root,
-            pipeline:
+          storage    = Store::Container::Storage.new(file_system:, entry_store: nil, layout:)
+          events     = Store::Container::Events.new(event_store: nil, workflows: nil)
+          governance = Store::Container::Governance.new(manifest:, schemas:)
+          logging    = Store::Container::Logging.new(audit_log:)
+          links      = Store::Container::Links.new(link_graph: nil)
+          proxy = Store::Container.new(
+            storage:, events:, governance:, logging:, links:,
+            root: layout.root, pipeline:
           )
           success(Textus::Boot.build(container: proxy))
         end
