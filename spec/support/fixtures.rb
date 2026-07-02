@@ -20,14 +20,13 @@ module TextusSpecHelpers
   #     version: textus/4
   #     data:
   #       knowledge:
-  #         - { key: knowledge.foo, path: knowledge/foo.md }
+  #         - key: knowledge.foo
   #   YAML
   #
   # `lanes:` creates the data/<lane> directories; `schemas` maps name => YAML
   # body (written to schemas/<name>.yaml); `files` maps a path relative to the
   # .textus dir => contents.
   def store_from_manifest(textus_dir, manifest:, lanes: [], schemas: {}, files: {})
-    manifest = migrate_legacy_manifest(manifest)
     lanes.each { |lane| FileUtils.mkdir_p(File.join(textus_dir, "data", lane)) }
     schemas.each do |name, body|
       FileUtils.mkdir_p(File.join(textus_dir, "schemas"))
@@ -42,44 +41,32 @@ module TextusSpecHelpers
     Textus::Store.new(textus_dir)
   end
 
-  # Preset: a single lane (default knowledge) holding one leaf entry.
-  #
-  #   let(:store) { minimal_store(root) }                          # knowledge.foo leaf
-  #   let(:store) { minimal_store(root, lane: "knowledge",          # custom lane/key/path
-  #                               key: "knowledge.doc",
-  #                               path: "knowledge/doc.md") }
-  def minimal_store(root, lane: "knowledge", key: "#{lane}.foo", path: "#{lane}/foo.md")
+  def minimal_store(root, lane: "knowledge", key: "#{lane}.foo")
     store_from_manifest(root, lanes: [lane], manifest: <<~YAML)
       version: textus/4
       data:
         #{lane}:
-          - { key: #{key}, path: #{path} }
+          - key: #{key}
     YAML
   end
 
-  # Preset: two lanes, each with one leaf. One automation-only (artifacts),
-  # one writable by human/agent (knowledge). For write-gating specs.
   def machine_store(root)
     store_from_manifest(root, lanes: %w[artifacts knowledge], manifest: <<~YAML)
       version: textus/4
       data:
         artifacts:
-          - { key: artifacts.foo, path: artifacts/foo.md }
+          - key: artifacts.foo
         knowledge:
-          - { key: knowledge.bar, path: knowledge/bar.md }
+          - key: knowledge.bar
     YAML
   end
 
-  # Preset: an artifacts lane with one produced entry driven by a
-  # user-registered workflow. Pass the workflow step body as a block.
-  # Optionally pass `retention:` to add a retention rule.
   def workflow_store(root, workflow_body:, retention: nil, lane: "artifacts")
     manifest = <<~YAML
       version: textus/4
       data:
         #{lane}:
           - key: #{lane}.doc
-            path: #{lane}/doc.md
     YAML
     manifest << "rules:\n  - { match: #{lane}.doc, retention: #{retention} }\n" if retention
     store_from_manifest(
@@ -143,25 +130,6 @@ module TextusSpecHelpers
     with_missing_workflows(store)
     Textus::Store::Jobs::Planner.seed(container: store.container, queue: queue, role: role)
     Textus::Store::Jobs::Worker.for(container: store.container, queue: queue).drain
-  end
-
-  # Detect old-format manifests (roles:/lanes:/entries: at top level) and
-  # auto-convert to the data:-grouped format. Keeps legacy conformance specs
-  # running without manual migration.
-  def migrate_legacy_manifest(yaml_str)
-    raw = YAML.safe_load(yaml_str, aliases: false)
-    return yaml_str if raw["data"]  # already new format
-
-    entries = Array(raw["entries"]).map { |e|
-      e.reject { |k, _| %w[owner kind nested].include?(k) }
-    }
-    return yaml_str if entries.empty?  # nothing to convert (e.g. version-only test)
-
-    grouped = entries.group_by { |e| e.delete("lane") }
-    raw["data"] = grouped
-    raw.delete("roles")
-    raw.delete("lanes")
-    YAML.dump(raw).sub(/\A---\n/, "")
   end
 
   # Auto-register no-op workflows for manifest entries that have publish config

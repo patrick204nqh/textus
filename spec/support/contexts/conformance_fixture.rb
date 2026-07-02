@@ -14,14 +14,11 @@ RSpec.shared_context "textus/4 conformance fixture" do
       version: textus/4
       data:
         knowledge:
-          - { key: knowledge.network.org, path: knowledge/network/org, schema: person }
-          - { key: knowledge.projects, path: knowledge/projects }
+          - key: knowledge.network.org
+          - key: knowledge.projects
         artifacts:
           - key: artifacts.catalogs.skills
-            path: artifacts/catalogs/skills
-            source: { from: external, command: "rake catalog:skills", sources: [knowledge.projects] }
           - key: artifacts.feeds.calendar.events
-            path: artifacts/feeds/calendar/events
     YAML
 
     File.write(File.join(root, "schemas/person.yaml"), <<~YAML)
