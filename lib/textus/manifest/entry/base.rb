@@ -30,9 +30,8 @@ module Textus
         def intake?  = false
         def leaf?    = false
 
-        # Production traits. Default false on Base (a leaf/intake entry is neither
-        # an out-of-band command nor a projection); Produced overrides both from
-        # its source. Lets publish modes call these without a `respond_to?` guard.
+        # Production traits. Default false on all non-produced entries.
+        # Lets publish modes call these without a `respond_to?` guard.
         def external?   = false
         def projection? = false
 

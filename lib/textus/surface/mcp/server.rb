@@ -100,7 +100,7 @@ module Textus
           return [] unless machine_lane
 
           @store.manifest.data.entries
-                .select { |e| e.lane == machine_lane && e.is_a?(Textus::Manifest::Entry::Produced) }
+                .select { |e| e.lane == machine_lane }
                 .map { |e| ::MCP::Resource.new(uri: "textus://#{e.key.tr(".", "/")}", name: e.key, mime_type: mime_for_format(e.format)) }
         end
 

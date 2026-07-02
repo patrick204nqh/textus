@@ -1,69 +1,67 @@
 version: textus/4
-roles:
-  - { name: human, can: [author, propose, ingest] }
-  - { name: agent, can: [propose, keep, ingest] }
-  - { name: automation, can: [converge, ingest] }
-lanes:
-  - { name: knowledge, kind: canon, desc: "the maintained source of truth about the repo" }
-  - { name: scratchpad, kind: workspace, owner: agent, desc: "the agent's own durable scratchpad (working memory)" }
-  - { name: proposals, kind: queue, desc: "changes awaiting a human accept" }
-  - { name: artifacts, kind: machine, desc: "machine-maintained computed outputs" }
-  - { name: raw, kind: raw, desc: "ingested external source material (write-once)" }
-entries:
-  - { key: knowledge.execution, lane: knowledge, schema: runbook, owner: human:self, kind: nested, nested: true }
-  - { key: knowledge.intent, lane: knowledge, owner: human:self, kind: nested, nested: true }
-  - { key: knowledge.constraint.repo, lane: knowledge, owner: human:self, kind: nested, nested: true }
-  - { key: knowledge.judgment.engineering, lane: knowledge, owner: human:self, kind: nested, nested: true }
-  - { key: knowledge.judgment.agent-behavior, lane: knowledge, owner: human:self, kind: nested, nested: true }
-  - { key: knowledge.evidence, lane: knowledge, owner: human:self, kind: nested, nested: true, ignore: ["**/README.md"] }
-  - { key: knowledge.feedback, lane: knowledge, owner: human:self, kind: nested, nested: true }
-  - { key: artifacts.contributing, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.security, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.code-of-conduct, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.changelog, lane: artifacts, format: json, kind: produced }
-  - { key: knowledge.constraint.protocol, lane: knowledge, owner: human:self, kind: nested, nested: true }
-  - { key: scratchpad.notes, lane: scratchpad, owner: agent:self, kind: nested, nested: true }
-  - { key: scratchpad.sessions, lane: scratchpad, owner: agent:self, kind: nested, nested: true }
-  - { key: scratchpad.scripts, lane: scratchpad, owner: agent:self, kind: nested, nested: true }
-  - { key: proposals.notes, lane: proposals, owner: agent:self, kind: nested, nested: true }
-  - { key: raw, lane: raw, format: yaml, owner: agent:self, kind: nested, nested: true }
-  - { key: artifacts.boot, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.config.opencode, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.config.mcp, lane: artifacts, path: artifacts/config/claude-mcp.json, kind: produced }
-  - { key: artifacts.config.plugin, lane: artifacts, path: artifacts/config/claude-plugin.json, kind: produced }
-  - { key: artifacts.decisions.log, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.docs.readme, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.architecture.index, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.design.invariants, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.how-to.agents-mcp, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.how-to.configuring-lanes, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.how-to.drain-scheduling, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.how-to.migrations, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.reference.lanes, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.reference.conventions, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.reference.testing, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.reference.engineering-skills, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.reference.contributor-conventions, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.explanation.concepts, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.doctor.rule-ambiguity, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.doctor.manifest-files, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.doctor.protocol-version, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.doctor.schema-parse-error, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.doctor.illegal-keys, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.doctor.sentinels, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.doctor.audit-log, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.doctor.unowned-schema-fields, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.doctor.schema-violations, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.doctor.orphaned-publish-targets, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.doctor.proposal-targets, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.doctor.generator-drift, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.doctor.raw-asset-paths, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.doctor.scratchpad-sources, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.doctor.stale-reviewed-stamp, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.doctor.cursor-retention, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.doctor.templates, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.doctor.schemas, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.doctor.publish-tree-overlap, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.doctor.loop-shape, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.system.index, lane: artifacts, format: json, kind: produced }
-  - { key: artifacts.feeds.skills, lane: artifacts, format: json, kind: produced }
+data:
+  knowledge:
+    - key: knowledge.execution
+    - key: knowledge.intent
+    - key: knowledge.constraint.repo
+    - key: knowledge.constraint.protocol
+    - key: knowledge.judgment.engineering
+    - key: knowledge.judgment.agent-behavior
+    - key: knowledge.evidence
+      ignore: ["**/README.md"]
+    - key: knowledge.feedback
+  scratchpad:
+    - key: scratchpad.notes
+    - key: scratchpad.sessions
+    - key: scratchpad.scripts
+  proposals:
+    - key: proposals.notes
+  raw:
+    - key: raw
+      format: yaml
+  artifacts:
+    - { key: artifacts.contributing, format: json }
+    - { key: artifacts.security, format: json }
+    - { key: artifacts.code-of-conduct, format: json }
+    - { key: artifacts.changelog, format: json }
+    - { key: artifacts.boot, format: json }
+    - { key: artifacts.config.opencode, format: json }
+    - { key: artifacts.config.mcp, path: artifacts/config/claude-mcp.json }
+    - { key: artifacts.config.plugin, path: artifacts/config/claude-plugin.json }
+    - { key: artifacts.decisions.log, format: json }
+    - { key: artifacts.docs.readme, format: json }
+    - { key: artifacts.architecture.index, format: json }
+    - { key: artifacts.design.invariants, format: json }
+    - { key: artifacts.how-to.agents-mcp, format: json }
+    - { key: artifacts.how-to.configuring-lanes, format: json }
+    - { key: artifacts.how-to.drain-scheduling, format: json }
+    - { key: artifacts.how-to.migrations, format: json }
+    - { key: artifacts.reference.lanes, format: json }
+    - { key: artifacts.reference.conventions, format: json }
+    - { key: artifacts.reference.testing, format: json }
+    - { key: artifacts.reference.engineering-skills, format: json }
+    - { key: artifacts.reference.contributor-conventions, format: json }
+    - { key: artifacts.explanation.concepts, format: json }
+    - { key: artifacts.doctor.rule-ambiguity, format: json }
+    - { key: artifacts.doctor.manifest-files, format: json }
+    - { key: artifacts.doctor.protocol-version, format: json }
+    - { key: artifacts.doctor.schema-parse-error, format: json }
+    - { key: artifacts.doctor.illegal-keys, format: json }
+    - { key: artifacts.doctor.sentinels, format: json }
+    - { key: artifacts.doctor.audit-log, format: json }
+    - { key: artifacts.doctor.unowned-schema-fields, format: json }
+    - { key: artifacts.doctor.schema-violations, format: json }
+    - { key: artifacts.doctor.orphaned-publish-targets, format: json }
+    - { key: artifacts.doctor.proposal-targets, format: json }
+    - { key: artifacts.doctor.generator-drift, format: json }
+    - { key: artifacts.doctor.raw-asset-paths, format: json }
+    - { key: artifacts.doctor.scratchpad-sources, format: json }
+    - { key: artifacts.doctor.stale-reviewed-stamp, format: json }
+    - { key: artifacts.doctor.cursor-retention, format: json }
+    - { key: artifacts.doctor.templates, format: json }
+    - { key: artifacts.doctor.schemas, format: json }
+    - { key: artifacts.doctor.publish-tree-overlap, format: json }
+    - { key: artifacts.doctor.loop-shape, format: json }
+    - { key: artifacts.doctor.naming-check, format: json }
+    - { key: artifacts.system.index, format: json }
+    - { key: artifacts.feeds.skills, format: json }

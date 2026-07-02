@@ -13,7 +13,8 @@ module Textus
 
           kind = infer_kind(key, lane, raw, root:)
           explicit_path = raw["path"]
-          format = resolve_format(explicit_path)
+          declared_format = raw["format"]
+          format = resolve_format(explicit_path, declared_format)
           path   = explicit_path || derive_path(key, kind, format)
 
           common = {
@@ -35,7 +36,6 @@ module Textus
 
           return :nested if full_path && File.directory?(full_path)
           return :leaf if full_path && File.file?(full_path)
-          return :produced if lane == "artifacts"
 
           :leaf
         end
@@ -61,10 +61,10 @@ module Textus
           block.map { |t| Textus::Manifest::Policy::PublishTarget.new(t) }
         end
 
-        def self.resolve_format(path)
-          return "markdown" if path.nil? || path.empty?
+        def self.resolve_format(path, declared = nil)
+          return declared || "markdown" if path.nil? || path.empty?
 
-          Textus::Format.infer_from_extension(File.extname(path)) || "markdown"
+          Textus::Format.infer_from_extension(File.extname(path)) || declared || "markdown"
         end
 
         def self.derive_path(key, kind_sym, format)

@@ -2,14 +2,14 @@ require "spec_helper"
 
 RSpec.describe Textus::Manifest::Entry::Parser do
   describe ".call" do
-    it "builds a Leaf entry for a key with no existing directory" do
+    it "builds a Leaf entry for a key with no existing directory (default)" do
       entry = described_class.call({ "key" => "knowledge.identity", "lane" => "knowledge" }, root: "/nonexistent")
       expect(entry).to be_a(Textus::Manifest::Entry::Leaf)
     end
 
-    it "builds a Produced entry for a new key in the artifacts lane" do
-      entry = described_class.call({ "key" => "artifacts.boot", "lane" => "artifacts" }, root: "/nonexistent")
-      expect(entry).to be_a(Textus::Manifest::Entry::Produced)
+    it "builds a Leaf entry for a new key in the artifacts lane (no produced class)" do
+      entry = described_class.call({ "key" => "artifacts.built.index", "lane" => "artifacts" }, root: "/nonexistent")
+      expect(entry).to be_a(Textus::Manifest::Entry::Leaf)
     end
 
     it "accepts naming: and rejects an unknown alias" do

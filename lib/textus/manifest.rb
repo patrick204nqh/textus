@@ -26,7 +26,7 @@ module Textus # rubocop:disable Style/OneClassPerFile
   class Manifest
     class << self
       def parse(yaml_text, root: ".")
-        raw = YAML.safe_load(yaml_text, aliases: false)
+        raw = YAML.safe_load(yaml_text, aliases: true)
         check_version!(raw, "<string>")
         build(raw, root)
       end
@@ -35,7 +35,7 @@ module Textus # rubocop:disable Style/OneClassPerFile
         manifest_path = File.join(root, "manifest.yaml")
         raise IoError.new("manifest not found: #{manifest_path}") unless File.exist?(manifest_path)
 
-        raw = YAML.safe_load_file(manifest_path, aliases: false)
+        raw = YAML.safe_load_file(manifest_path, aliases: true)
         check_version!(raw, manifest_path)
         build(raw, root)
       end

@@ -20,10 +20,10 @@ module Textus
         Domain::Lane.actor_for(lane_name)
       end
 
-      def derived_entry?(key)
-        entry = Array(@entries).find { |e| e.key == key }
-        entry.is_a?(Textus::Manifest::Entry::Produced) || false
-      end
+        def derived_entry?(key)
+          entry = Array(@entries).find { |e| e.key == key }
+          entry && entry.lane == "artifacts"
+        end
 
       def queue_lane
         "proposals"

@@ -43,24 +43,16 @@ RSpec.describe "Schema evolution" do
     end
   end
 
-  describe "Schema::Tools.migrate with renamed authority role" do
+  describe "Schema::Tools.migrate with authority role" do
     include_context "textus_store_fixture"
 
-    let(:store_with_roles) do
-      store_from_manifest(root, lanes: %w[knowledge], schemas: { note: NOTE_SCHEMA_BODY }, manifest: <<~YAML)
+    it "uses the human role as migration author" do
+      store = store_from_manifest(root, lanes: %w[knowledge], schemas: { note: NOTE_SCHEMA_BODY }, manifest: <<~YAML)
         version: textus/4
-        roles:
-          - { name: human,  can: [author, propose] }
-          - { name: agent,  can: [propose] }
-        lanes:
-          - { name: knowledge, kind: canon }
-        entries:
-          - { key: knowledge.note, path: knowledge/note.md, lane: knowledge, schema: note, kind: leaf }
+        data:
+          knowledge:
+            - { key: knowledge.note, path: knowledge/note.md, schema: note }
       YAML
-    end
-
-    it "migrate uses the declared author-capability role, not the literal human fallback" do
-      store = store_with_roles
 
       store.with_role("human").put(key: "knowledge.note",
                                    meta: { "name" => "note", "headline" => "My Headline" },
@@ -78,20 +70,16 @@ RSpec.describe "Schema evolution" do
       expect(audit.last_writer_for("knowledge.note")).to eq("human")
     end
 
-    it "migrate raises UsageError when roles: is declared but no author kind exists" do
+    it "uses knowledge lane's first writer as migration authority" do
       store = store_from_manifest(root, lanes: %w[knowledge], schemas: { note: NOTE_SCHEMA_BODY }, manifest: <<~YAML)
         version: textus/4
-        roles:
-          - { name: agent, can: [propose] }
-        lanes:
-          - { name: proposals, kind: queue }
-        entries:
-          - { key: proposals.note, path: proposals/note.md, lane: proposals, schema: note, kind: leaf }
+        data:
+          knowledge:
+            - { key: knowledge.note, path: knowledge/note.md, schema: note }
       YAML
 
-      expect do
-        Textus::Schema::Tools.migrate(store, name: "note", rename: nil)
-      end.to raise_error(Textus::UsageError, /requires a role holding the 'author' capability/)
+      authority = Textus::Schema::Tools.accept_role_for(store)
+      expect(authority).to eq("human")
     end
   end
 

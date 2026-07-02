@@ -9,28 +9,19 @@ RSpec.shared_context "textus/4 conformance fixture" do
     FileUtils.mkdir_p(File.join(root, "data/knowledge/projects"))
     FileUtils.mkdir_p(File.join(root, "data/artifacts/catalogs"))
     FileUtils.mkdir_p(File.join(root, "data/artifacts/feeds/calendar"))
-    FileUtils.mkdir_p(File.join(root, "data/identity"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/4
-      lanes:
-        - { name: identity,  kind: canon }
-        - { name: knowledge,   kind: canon }
-        - { name: artifacts, kind: machine }
-      entries:
-        - { key: identity.self,         path: identity/self,         lane: identity,   owner: human:patrick, kind: leaf}
-
-        - { key: knowledge.network.org,   path: knowledge/network/org,   lane: knowledge,  schema: person, owner: human:patrick, kind: nested}
-
-        - { key: knowledge.projects,      path: knowledge/projects,      lane: knowledge,    owner: human:patrick, kind: nested}
-
-        - { key: artifacts.catalogs.skills, path: artifacts/catalogs/skills, lane: artifacts, owner: automation:catalog, kind: produced, source: { from: external, command: "rake catalog:skills", sources: [knowledge.projects] } }
-        - key: artifacts.feeds.calendar.events
-          kind: nested
-          path: artifacts/feeds/calendar/events
-          lane: artifacts
-          owner: automation:cron
-          nested: true
+      data:
+        knowledge:
+          - { key: knowledge.network.org, path: knowledge/network/org, schema: person }
+          - { key: knowledge.projects, path: knowledge/projects }
+        artifacts:
+          - key: artifacts.catalogs.skills
+            path: artifacts/catalogs/skills
+            source: { from: external, command: "rake catalog:skills", sources: [knowledge.projects] }
+          - key: artifacts.feeds.calendar.events
+            path: artifacts/feeds/calendar/events
     YAML
 
     File.write(File.join(root, "schemas/person.yaml"), <<~YAML)
