@@ -1,6 +1,6 @@
 RSpec.describe "Knowledge pipeline conformance" do
   let(:known_sections) do
-    %w[intent constraint architecture evidence patterns execution readme project]
+    %w[intent constraint architecture evidence judgment execution readme project]
   end
 
   def knowledge_dir
@@ -24,7 +24,7 @@ RSpec.describe "Knowledge pipeline conformance" do
 
   it "has the core loop sections" do
     sections = Dir.children(knowledge_dir).select { |e| File.directory?(File.join(knowledge_dir, e)) }
-    expect(sections).to include("intent", "constraint", "architecture", "evidence", "patterns", "execution")
+    expect(sections).to include("intent", "constraint", "architecture", "evidence", "judgment", "execution")
   end
 
   it "each section has content" do
@@ -54,7 +54,7 @@ RSpec.describe "Knowledge pipeline conformance" do
 
   it "runbooks reference patterns (pipeline: patterns → runbooks)" do
     runbooks = Dir[File.join(knowledge_dir, "execution", "*.md")]
-    offenders = runbooks.reject { |f| File.read(f).match?(/knowledge\.patterns\./) }
+    offenders = runbooks.reject { |f| File.read(f).match?(/knowledge\.(patterns|judgment\.engineering)\./) }
     expect(offenders).to be_empty,
                          "runbooks missing pattern reference:\n#{offenders.map { |f| "  #{f.sub(knowledge_dir, "knowledge")}" }.join("\n")}"
   end

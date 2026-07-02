@@ -3,20 +3,20 @@
 # Inspired by knowledge_pipeline_spec cross-reference check.
 
 Textus.workflow "pattern-crossrefs" do
-  match "knowledge.patterns.**"
+  match "knowledge.judgment.engineering.**"
 
   validate :check_refs do |_data, ctx|
     reader = Textus::Store::Entry::Reader.new(
       file_store: ctx.container.file_store,
       manifest: ctx.container.manifest,
-      layout: ctx.container.layout
+      layout: ctx.container.layout,
     )
     body = reader.read(ctx.key)&.body.to_s
-    unless body.match?(/ADR-\d+/)
+    if body.match?(/ADR-\d+/)
+      []
+    else
       [{ "code" => "missing_decision_ref", "severity" => "info",
          "message" => "pattern entry #{ctx.key} does not reference a decision (ADR)" }]
-    else
-      []
     end
   end
 end

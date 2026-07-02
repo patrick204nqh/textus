@@ -3,7 +3,7 @@ name: release
 description: Cut a textus release — bump the version, regenerate Gemfile.lock, then tag via PR.
 ---
 
-Pattern: `knowledge.patterns.trigger-catalog` — release triggers a full converge sweep.
+Pattern: `knowledge.judgment.engineering.trigger-catalog` — release triggers a full converge sweep.
 
 1. Bump `Textus::VERSION` in `lib/textus/version.rb`.
 2. Run `bundle install` so `Gemfile.lock` records the new version — **commit
