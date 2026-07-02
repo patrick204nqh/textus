@@ -10,24 +10,41 @@ module Textus
       version: textus/4
       data:
         knowledge:
-          - key: knowledge.identity
-          - key: knowledge.notes
+          - key: knowledge.execution
+            naming: sequential
+          - key: knowledge.intent
+            naming: sequential
+          - key: knowledge.constraint.repo
+            naming: sequential
+          - key: knowledge.constraint.protocol
+            naming: sequential
+          - key: knowledge.judgment.engineering
+            naming: sequential
+          - key: knowledge.judgment.agent-behavior
+            naming: sequential
+          - key: knowledge.evidence
+            naming: sequential
+          - key: knowledge.feedback
+            naming: sequential
         scratchpad:
           - key: scratchpad.notes
             tracked: false
+          - key: scratchpad.sessions
+            tracked: false
+          - key: scratchpad.scripts
+            tracked: false
         proposals:
           - key: proposals.notes
-        artifacts:
-          - key: artifacts.feeds.machines
+        raw:
+          - key: raw
             format: yaml
-            tracked: false
+        artifacts:
+          - key: artifacts.boot
+            format: json
     YAML
 
     AGENT_ENTRIES = <<~YAML
       data:
-        knowledge:
-          - key: knowledge.project
-          - key: knowledge.execution
         artifacts:
           - key: artifacts.derived.orientation
             format: json

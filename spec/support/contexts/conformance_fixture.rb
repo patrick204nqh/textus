@@ -7,6 +7,14 @@ RSpec.shared_context "textus/4 conformance fixture" do
     FileUtils.mkdir_p(File.join(root, "schemas"))
     FileUtils.mkdir_p(File.join(root, "data/knowledge/network/org"))
     FileUtils.mkdir_p(File.join(root, "data/knowledge/projects"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge/constraint"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge/judgment"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge/evidence"))
+    FileUtils.mkdir_p(File.join(root, "data/scratchpad/notes"))
+    FileUtils.mkdir_p(File.join(root, "data/scratchpad/sessions"))
+    FileUtils.mkdir_p(File.join(root, "data/scratchpad/scripts"))
+    FileUtils.mkdir_p(File.join(root, "data/proposals/notes"))
+    FileUtils.mkdir_p(File.join(root, "data/raw"))
     FileUtils.mkdir_p(File.join(root, "data/artifacts/catalogs"))
     FileUtils.mkdir_p(File.join(root, "data/artifacts/feeds/calendar"))
 
@@ -17,6 +25,21 @@ RSpec.shared_context "textus/4 conformance fixture" do
           - key: knowledge.network.org
             schema: person
           - key: knowledge.projects
+          - key: knowledge.constraint
+          - key: knowledge.judgment
+          - key: knowledge.evidence
+        scratchpad:
+          - key: scratchpad.notes
+            tracked: false
+          - key: scratchpad.sessions
+            tracked: false
+          - key: scratchpad.scripts
+            tracked: false
+        proposals:
+          - key: proposals.notes
+        raw:
+          - key: raw
+            format: yaml
         artifacts:
           - key: artifacts.catalogs.skills
           - key: artifacts.feeds.calendar.events
