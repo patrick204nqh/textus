@@ -10,8 +10,9 @@ The shape of your context in textus is a small set of ideas that everything else
 ## Table of contents
 
 1. [The lane mental model](#the-lane-mental-model)
-2. [The proposal trust path](#the-proposal-trust-path)
-3. [Two channels: boot & pulse](#two-channels-boot--pulse)
+2. [The Loop node model](#the-loop-node-model)
+3. [The proposal trust path](#the-proposal-trust-path)
+4. [Two channels: boot & pulse](#two-channels-boot--pulse)
 
 ---
 
@@ -52,6 +53,14 @@ Two ideas do all the work:
 |---|---|
 <% roles.each do |role| -%>
 | `<%= role["name"] %>` | <%= role["capabilities"].map{|c| "`#{c}`"}.join(", ") %> |
+<% end -%>
+
+## The Loop node model
+
+| Node | Zone |
+|---|---|
+<% loop_nodes.each do |node| -%>
+| `<%= node["node"] %>` | `<%= node["key"] %>` |
 <% end -%>
 
 Everything else — workflows, publishing, schemas — is layered on top of those two ideas.

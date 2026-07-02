@@ -1,3 +1,12 @@
+LOOP_NODES = [
+  { "node" => "Intent", "key" => "knowledge.intent" },
+  { "node" => "Constraint", "key" => "knowledge.constraint.repo / knowledge.constraint.protocol" },
+  { "node" => "Judgment", "key" => "knowledge.judgment.engineering / knowledge.judgment.agent-behavior" },
+  { "node" => "Evidence", "key" => "knowledge.evidence" },
+  { "node" => "Execution", "key" => "knowledge.execution" },
+  { "node" => "Feedback", "key" => "knowledge.feedback" },
+].freeze
+
 Textus.workflow "explanation-concepts" do
   match "artifacts.explanation.concepts"
 
@@ -19,7 +28,14 @@ Textus.workflow "explanation-concepts" do
 
     propose_lane = policy.propose_lane_for("agent").to_s
 
-    { "content" => { "lanes" => lanes, "roles" => roles, "propose_lane" => propose_lane } }
+    {
+      "content" => {
+        "lanes" => lanes,
+        "roles" => roles,
+        "loop_nodes" => LOOP_NODES,
+        "propose_lane" => propose_lane,
+      },
+    }
   end
   publish to: "docs/explanation/concepts.md", template: "docs/explanation/concepts.erb"
 end
