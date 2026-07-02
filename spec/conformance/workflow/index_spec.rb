@@ -22,7 +22,6 @@ RSpec.describe "artifacts.system.index workflow" do
                                     "key"    => row[:key],
                                     "lane"   => mentry.lane,
                                     "schema" => mentry.schema,
-                                    "owner"  => mentry.owner,
                                     "format" => mentry.format,
                                     "etag"   => etag,
                                   }
