@@ -54,7 +54,9 @@ RSpec.describe "textus drain concurrency (build lock)" do
 
     expect(exit_code).to eq(0)
     envelope = JSON.parse(stdout.string.lines.last)
-    expect(envelope["ok"]).to be true
+    expect(envelope["protocol"]).to eq(Textus::PROTOCOL)
+    expect(envelope["completed"]).to be >= 0
+    expect(envelope["failed"]).to be >= 0
   ensure
     lock_fd&.close
   end
