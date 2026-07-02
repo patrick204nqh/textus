@@ -10,31 +10,27 @@ module Textus
       version: textus/4
       data:
         knowledge:
-          - { key: knowledge.identity, path: data/knowledge/identity.md }
-          - { key: knowledge.notes, path: data/knowledge/notes }
+          - key: knowledge.identity
+          - key: knowledge.notes
         scratchpad:
-          - { key: scratchpad.notes, path: data/scratchpad/notes }
+          - key: scratchpad.notes
+            tracked: false
         proposals:
-          - { key: proposals.notes, path: data/proposals/notes }
+          - key: proposals.notes
         artifacts:
           - key: artifacts.feeds.machines
-            path: data/artifacts/feeds/machines
             format: yaml
             tracked: false
-      rules: []
     YAML
 
     AGENT_ENTRIES = <<~YAML
       data:
         knowledge:
-          - { key: knowledge.project, path: data/knowledge/intent/0003-project.md, schema: project }
-          - { key: knowledge.execution, path: data/knowledge/execution, schema: runbook }
+          - key: knowledge.project
+          - key: knowledge.execution
         artifacts:
           - key: artifacts.derived.orientation
-            path: data/artifacts/derived/orientation.json
-            publish:
-            - { to: CLAUDE.md, template: orientation.erb, inject_boot: true }
-            - { to: AGENTS.md, template: orientation.erb, inject_boot: true }
+            format: json
     YAML
 
     def self.run(target_root, with_agent: false)
