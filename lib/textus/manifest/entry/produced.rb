@@ -14,7 +14,6 @@ module Textus
         end
 
         def external? = @source&.external? || false
-        def nested?   = !!@raw["nested"]
 
         KIND = :produced
 
