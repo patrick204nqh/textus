@@ -12,20 +12,14 @@ module Textus
         knowledge:
           - key: knowledge.execution
             naming: sequential
+            schema: runbook
           - key: knowledge.intent
             naming: sequential
-          - key: knowledge.constraint.repo
-            naming: sequential
-          - key: knowledge.constraint.protocol
-            naming: sequential
-          - key: knowledge.judgment.engineering
-            naming: sequential
-          - key: knowledge.judgment.agent-behavior
-            naming: sequential
+          - key: knowledge.constraint
+          - key: knowledge.judgment
           - key: knowledge.evidence
             naming: sequential
           - key: knowledge.feedback
-            naming: sequential
         scratchpad:
           - key: scratchpad.notes
             tracked: false
