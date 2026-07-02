@@ -2,10 +2,7 @@ module Textus
   class Manifest
     class Entry
       class Base < Entry
-        attr_reader :raw, :key, :path, :lane, :format, :publish_targets
-
-        def schema = @schema
-        def naming = @naming
+        attr_reader :raw, :key, :path, :lane, :format, :publish_targets, :schema, :naming
 
         # rubocop:disable Lint/MissingSuper
         def initialize(raw:, key:, path:, lane:, format:, schema: nil, naming: nil, publish_targets: [])

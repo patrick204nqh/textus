@@ -8,7 +8,7 @@ module Textus
       end
 
       def connection = @db
-      alias_method :db, :connection
+      alias db connection
 
       def emit(event_type:, workflow_type:, key:, lane:, payload:,
                created_at: Time.now.utc, scheduled_at: nil,
@@ -29,25 +29,26 @@ module Textus
           .first
       end
 
-      def mark_done(id:)   = @db[:events].where(id:).update(state: "done")
-      def mark_failed(id:, retry_count:, error:)
-        @db[:events].where(id:).update(state: "failed", retry_count:, error:)
+      def mark_done(event_id:)   = @db[:events].where(id: event_id).update(state: "done")
+
+      def mark_failed(event_id:, retry_count:, error:)
+        @db[:events].where(id: event_id).update(state: "failed", retry_count:, error:)
       end
 
-      def reschedule(id:, retry_count:, delay:, error:)
-        @db[:events].where(id:).update(
+      def reschedule(event_id:, retry_count:, delay:, error:)
+        @db[:events].where(id: event_id).update(
           state: "pending", retry_count:, error:,
           scheduled_at: Sequel.lit("datetime('now', '+#{delay.to_i} seconds')")
         )
       end
 
-      def search_entries(q:, schema:, lane:, prefix:)
-        query = @db[:entries]
-        query = query.where(Sequel.lit("entries MATCH ?", q)) if q
-        query = query.where(schema:) if schema
-        query = query.where(lane:) if lane
-        query = query.where(Sequel.like(:key, "#{prefix}%")) if prefix
-        query.all
+      def search_entries(query:, schema:, lane:, prefix:)
+        dataset = @db[:entries]
+        dataset = dataset.where(Sequel.lit("entries MATCH ?", query)) if query
+        dataset = dataset.where(schema:) if schema
+        dataset = dataset.where(lane:) if lane
+        dataset = dataset.where(Sequel.like(:key, "#{prefix}%")) if prefix
+        dataset.all
       end
     end
   end

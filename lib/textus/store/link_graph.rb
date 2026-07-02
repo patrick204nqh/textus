@@ -1,5 +1,3 @@
-require "set"
-
 module Textus
   class Store
     class LinkGraph

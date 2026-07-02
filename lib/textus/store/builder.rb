@@ -16,7 +16,7 @@ module Textus
         )
         link_graph  = Store::LinkGraph.new(database)
         workflows   = Workflow::Loader.load_all(root)
-        workflows.concat([Textus::Workflows::Materialize, Textus::Workflows::Index])
+        workflows.push(Textus::Workflows::Materialize, Textus::Workflows::Index)
         entry_store = Store::EntryStore.new(file_system:, manifest:, audit_log:, layout:)
 
         ttl_evaluator = Store::Freshness::TtlEvaluator.new(
@@ -50,11 +50,11 @@ module Textus
           Dispatch::Pipeline.new(
             registry: Dispatch::HandlerResolver.build(container),
             container:, middleware:
-          )
+          ),
         )
         registry = Dispatch::HandlerResolver.build(interim)
         container.with_pipeline(
-          Dispatch::Pipeline.new(registry:, container: interim, middleware:)
+          Dispatch::Pipeline.new(registry:, container: interim, middleware:),
         )
       end
     end

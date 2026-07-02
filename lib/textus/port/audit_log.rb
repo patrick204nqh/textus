@@ -261,8 +261,8 @@ module Textus
 
       def all_log_files
         rotated = @file_system.glob(@geometry.audit_log_glob)
-                     .reject { |path| path.end_with?(".meta.json") }
-                     .sort_by { |path| -path.scan(/\d+$/).first.to_i }
+                              .reject { |path| path.end_with?(".meta.json") }
+                              .sort_by { |path| -path.scan(/\d+$/).first.to_i }
         active_log = @file_system.exists?(@path) ? [@path] : []
         rotated + active_log
       end

@@ -21,7 +21,7 @@ module Textus
         writers_for("proposals").include?(role) ? "proposals" : nil
       end
 
-      def lanes_of_kind(*) = raise NotImplementedError, "kinds are removed — use writers_for(lane_name) directly"
+      def lanes_of_kind(*) = raise NotImplementedError.new("kinds are removed — use writers_for(lane_name) directly")
     end
   end
 end

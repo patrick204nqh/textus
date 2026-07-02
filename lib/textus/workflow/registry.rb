@@ -3,7 +3,8 @@
 module Textus
   module Workflow
     class Registry
-      UnknownWorkflow = Class.new(KeyError)
+      class UnknownWorkflow < KeyError
+      end
 
       def initialize(workflow_definitions)
         @by_event = {}
@@ -20,7 +21,7 @@ module Textus
       end
 
       def for(workflow_type)
-        @by_type[workflow_type.to_s] or raise UnknownWorkflow, "Unknown workflow type: #{workflow_type}"
+        @by_type[workflow_type.to_s] or raise(UnknownWorkflow.new("Unknown workflow type: #{workflow_type}"))
       end
     end
   end

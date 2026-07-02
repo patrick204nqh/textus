@@ -29,7 +29,7 @@ RSpec.describe "Knowledge pipeline conformance" do
   it "recent decisions (ADR-0119+) reference judgment engineering (pipeline: judgment → evidence)" do
     decisions = Dir[File.join(loop_dir, "evidence", "0*.md")].grep(/01(19|2[0-5])/)
     offenders = decisions.reject do |f|
-      File.read(f).match?(/knowledge\.loop\.judgment\.engineering\.|\.textus\/data\/knowledge\/loop\/judgment\/engineering/)
+      File.read(f).match?(%r{knowledge\.loop\.judgment\.engineering\.|\.textus/data/knowledge/loop/judgment/engineering})
     end
     expect(offenders).to be_empty,
                          "decisions after ADR-0119 missing architecture reference:\n#{offenders.map do |f|

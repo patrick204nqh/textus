@@ -20,7 +20,7 @@ module Textus
             raw: raw,
             key: key, path: path, lane: lane,
             format: format, naming: naming,
-            schema: raw["schema"],
+            schema: raw["schema"]
           }
 
           klass = Entry::REGISTRY[kind]
@@ -43,9 +43,7 @@ module Textus
         def self.resolve_format(key, kind, root, declared, explicit_path)
           return "markdown" if kind == :nested
 
-          if explicit_path
-            return Textus::Format.infer_from_extension(File.extname(explicit_path)) || declared || "markdown"
-          end
+          return Textus::Format.infer_from_extension(File.extname(explicit_path)) || declared || "markdown" if explicit_path
 
           dir = root ? File.join(root, "data", key.split(".").join("/")) : nil
           if dir

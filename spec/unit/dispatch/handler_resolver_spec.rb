@@ -5,7 +5,7 @@ RSpec.describe Textus::Dispatch::HandlerResolver do
     stub_const("FakeContract", Data.define(:key))
   end
 
-  let(:fake_manifest)  { instance_double(Textus::Manifest) }
+  let(:fake_manifest) { instance_double(Textus::Manifest) }
   let(:fake_event_store) { instance_double(Textus::Port::EventStore) }
 
   let(:storage)    { Textus::Store::Container::Storage.new(file_system: :fs, entry_store: nil, layout: :ly) }

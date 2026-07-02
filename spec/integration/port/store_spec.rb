@@ -35,6 +35,6 @@ RSpec.describe Textus::Port::Database do
     db.setup!
     db.close
 
-    expect(db.connection).to_not be_nil
+    expect(db.connection).not_to be_nil
   end
 end

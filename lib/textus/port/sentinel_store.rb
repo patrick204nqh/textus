@@ -29,11 +29,11 @@ module Textus
         @file_system.mkdir_p(File.dirname(path))
         repo_root = File.dirname(store_root)
         @file_system.write(path, JSON.generate(
-                           "source" => rel_or_abs(source, repo_root),
-                           "target" => rel_or_abs(target, repo_root),
-                           "sha256" => Digest::SHA256.hexdigest(@file_system.read(target)),
-                           "mode" => "copy",
-                         ))
+                                   "source" => rel_or_abs(source, repo_root),
+                                   "target" => rel_or_abs(target, repo_root),
+                                   "sha256" => Digest::SHA256.hexdigest(@file_system.read(target)),
+                                   "mode" => "copy",
+                                 ))
       end
 
       def load(path, repo_root)

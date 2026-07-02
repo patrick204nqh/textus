@@ -20,13 +20,13 @@ module Textus
         handler_modules.each do |mod|
           contract_class = if mod.respond_to?(:handles_contract)
                              mod.handles_contract
-                           else
-                             mod::HANDLES if mod.const_defined?(:HANDLES)
+                           elsif mod.const_defined?(:HANDLES)
+                             mod::HANDLES
                            end
           needs = if mod.respond_to?(:needs_fields)
                     mod.needs_fields
-                  else
-                    mod::NEEDS if mod.const_defined?(:NEEDS)
+                  elsif mod.const_defined?(:NEEDS)
+                    mod::NEEDS
                   end
           next unless contract_class && needs
 

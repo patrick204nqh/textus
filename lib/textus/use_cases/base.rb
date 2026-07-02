@@ -11,8 +11,7 @@ module Textus
           attr_reader(*fields)
         end
 
-        def handles_contract = @handles_contract
-        def needs_fields = @needs_fields
+        attr_reader :handles_contract, :needs_fields
 
         def call(command, call, deps)
           instance = new

@@ -15,8 +15,8 @@ module Textus
         end
 
         payload = {
-          "protocol"     => Textus::PROTOCOL,
-          "store_root"   => layout.root,
+          "protocol" => Textus::PROTOCOL,
+          "store_root" => layout.root,
           "contract_etag" => etag,
         }.merge(stable)
         payload["context"] = context if context
@@ -47,7 +47,7 @@ module Textus
         nil
       end
 
-      def self.inline_boot_content(manifest, latest_seq)
+      def self.inline_boot_content(manifest, _latest_seq)
         agent_role     = manifest.policy.proposer_role
         writable_lanes = manifest.data.declared_lane_kinds.keys.each_with_object([]) do |ln, acc|
           next unless agent_role

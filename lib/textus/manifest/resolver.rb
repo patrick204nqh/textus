@@ -72,7 +72,7 @@ module Textus
 
       def nested_row_for(entry, base, path)
         rel = path.sub(%r{\A#{Regexp.escape(base)}/?}, "")
-        
+
         stripped = rel.sub(/#{Regexp.escape(File.extname(rel))}\z/, "")
         segs = stripped.split("/").reject { |s| s.empty? || s == "." }
         return nil if segs.empty?

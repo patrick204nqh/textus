@@ -10,6 +10,7 @@ module Textus
       attr_reader :storage, :events, :governance, :logging, :links,
                   :pipeline, :root, :trace_buffer, :ttl_evaluator
 
+      # rubocop:disable Metrics/ParameterLists
       def initialize(storage:, events:, governance:, logging:, links:,
                      root: nil, pipeline: nil,
                      trace_buffer: nil, ttl_evaluator: nil)
@@ -24,6 +25,7 @@ module Textus
         @ttl_evaluator = ttl_evaluator
         freeze
       end
+      # rubocop:enable Metrics/ParameterLists
 
       def with_pipeline(pipeline)
         self.class.new(

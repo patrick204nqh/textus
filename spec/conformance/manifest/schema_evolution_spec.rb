@@ -86,5 +86,4 @@ RSpec.describe "Schema evolution" do
       expect(authority).to eq("human")
     end
   end
-
 end

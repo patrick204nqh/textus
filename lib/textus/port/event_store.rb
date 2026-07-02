@@ -4,10 +4,10 @@ module Textus
       module Interface
         def emit(event_type:, workflow_type:, key:, lane:, payload:, **) = raise NotImplementedError
         def consume_pending = raise NotImplementedError
-        def mark_done(id:) = raise NotImplementedError
-        def mark_failed(id:, retry_count:, error:) = raise NotImplementedError
-        def reschedule(id:, retry_count:, delay:, error:) = raise NotImplementedError
-        def search_entries(q:, schema:, lane:, prefix:) = raise NotImplementedError
+        def mark_done(event_id:) = raise NotImplementedError
+        def mark_failed(event_id:, retry_count:, error:) = raise NotImplementedError
+        def reschedule(event_id:, retry_count:, delay:, error:) = raise NotImplementedError
+        def search_entries(query:, schema:, lane:, prefix:) = raise NotImplementedError
       end
       include Interface
     end

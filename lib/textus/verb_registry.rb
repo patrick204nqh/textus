@@ -325,6 +325,5 @@ module Textus
        ArgSpec.arg(name: :lane, description: "restrict to entries in this lane")],
       %i[cli mcp], { default: identity }, nil, nil, :maintenance
     )
-
   end
 end

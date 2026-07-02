@@ -8,8 +8,7 @@ module Textus
       module Semantics
         module_function
 
-        def check!(raw) # rubocop:disable Lint/UnusedMethodArgument
-        end
+        def check!(raw); end
 
         def walk(raw, allowed, path)
           raw.each_key do |k|

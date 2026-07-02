@@ -46,7 +46,7 @@ module Textus
           Integer :retry_count, null: false, default: 0
           Integer :max_attempts, null: false, default: 3
           String :error, text: true
-          index [:state, :scheduled_at], where: "state = 'pending'"
+          index %i[state scheduled_at], where: "state = 'pending'"
         end
 
         @db.create_table?(:entries) do
@@ -60,7 +60,7 @@ module Textus
         @db.create_table?(:link_edges) do
           String :from_key, null: false
           String :to_key, null: false
-          primary_key [:from_key, :to_key]
+          primary_key %i[from_key to_key]
           index :to_key
           index :from_key
         end
@@ -76,12 +76,16 @@ module Textus
           index :seq
         end
 
-        @db.run(<<~SQL) rescue nil
-          CREATE VIRTUAL TABLE IF NOT EXISTS entries_fts USING fts5(
-            key, lane, content,
-            content=entries, content_rowid=rowid
-          )
-        SQL
+        begin
+          @db.run(<<~SQL)
+            CREATE VIRTUAL TABLE IF NOT EXISTS entries_fts USING fts5(
+              key, lane, content,
+              content=entries, content_rowid=rowid
+            )
+          SQL
+        rescue StandardError
+          nil
+        end
       end
     end
   end

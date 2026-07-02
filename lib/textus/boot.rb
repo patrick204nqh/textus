@@ -6,7 +6,7 @@ module Textus
   module Boot
     PROTOCOL_ID = PROTOCOL
 
-    def self.lane_label(manifest, kind, fallback)
+    def self.lane_label(_manifest, _kind, fallback)
       fallback
     end
 
@@ -15,10 +15,10 @@ module Textus
         manifest: container.governance.manifest,
         audit_log: container.logging.audit_log,
         file_system: container.storage.file_system,
-        layout: container.storage.layout
+        layout: container.storage.layout,
       )
       envelope.merge(
-        "catalog"  => Catalog.build,
+        "catalog" => Catalog.build,
         "protocol" => Protocol.build(container.governance.manifest),
       )
     end

@@ -15,7 +15,7 @@ module Textus
         def mv(from, to) = raise NotImplementedError
         def copy(source, target) = raise NotImplementedError
         def symlink?(path) = raise NotImplementedError
-        def identical?(a, b) = raise NotImplementedError
+        def identical?(left, right) = raise NotImplementedError
         def mtime(path) = raise NotImplementedError
         def directory?(path) = raise NotImplementedError
         def flock_exclusive(path, nonblock: false, &) = raise NotImplementedError

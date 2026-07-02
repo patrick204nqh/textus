@@ -8,15 +8,15 @@ RSpec.describe "naming-check workflow" do
     store_from_manifest(root, lanes: %w[knowledge artifacts], files: {
                           "workflows/config/naming_check.rb" => File.read(".textus/workflows/config/naming_check.rb"),
                         }, manifest: <<~YAML)
-      version: textus/4
-      data:
-        knowledge:
-          - key: knowledge.judgment
-            naming: sequential
-        artifacts:
-          - key: artifacts.doctor.naming-check
-            format: json
-    YAML
+                          version: textus/4
+                          data:
+                            knowledge:
+                              - key: knowledge.judgment
+                                naming: sequential
+                            artifacts:
+                              - key: artifacts.doctor.naming-check
+                                format: json
+                        YAML
   end
 
   it "flags a file that doesn't match its entry's declared naming" do

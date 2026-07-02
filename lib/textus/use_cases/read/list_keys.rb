@@ -9,9 +9,7 @@ module Textus
           q      = @command.respond_to?(:q)      ? @command.q      : nil
           schema = @command.respond_to?(:schema) ? @command.schema : nil
 
-          if @event_store && (q || schema)
-            return sqlite_list(query: q, schema: schema, lane: @command.lane, prefix: @command.prefix)
-          end
+          return sqlite_list(query: q, schema: schema, lane: @command.lane, prefix: @command.prefix) if @event_store && (q || schema)
 
           manifest_list(prefix: @command.prefix, lane: @command.lane)
         end

@@ -5,11 +5,13 @@ module Textus
     class FileSystem
       include Port::FileSystem::Interface
 
-      def read(path)    = File.binread(path)
+      def read(path) = File.binread(path)
+
       def write(path, bytes)
         FileUtils.mkdir_p(File.dirname(path))
         File.binwrite(path, bytes)
       end
+
       def delete(path)  = File.delete(path)
       def exists?(path) = File.exist?(path)
       def etag(path)    = Value::Etag.for_file(path)
@@ -21,8 +23,8 @@ module Textus
       def mv(from, to)  = File.rename(from, to)
       def copy(source, target) = FileUtils.cp(source, target)
       def symlink?(path) = File.symlink?(path)
-      def identical?(a, b) = FileUtils.identical?(a, b)
-      def mtime(path)   = File.mtime(path)
+      def identical?(left, right) = FileUtils.identical?(left, right)
+      def mtime(path)    = File.mtime(path)
       def directory?(path) = File.directory?(path)
 
       def flock_exclusive(path, nonblock: false)

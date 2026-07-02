@@ -6,9 +6,9 @@ module Textus
           "summary" => "every read/write payload is a JSON envelope with _meta, body, uid, and etag",
           "fields" => {
             "_meta" => "hash of structured frontmatter; schema-validated per entry family",
-            "body"  => "string payload (markdown/text) or nil for json/yaml formats",
-            "uid"   => "stable 16-char hex identifier; preserved across writes and key renames",
-            "etag"  => "content hash; pass back on writes to detect concurrent edits",
+            "body" => "string payload (markdown/text) or nil for json/yaml formats",
+            "uid" => "stable 16-char hex identifier; preserved across writes and key renames",
+            "etag" => "content hash; pass back on writes to detect concurrent edits",
           },
         },
       }.freeze

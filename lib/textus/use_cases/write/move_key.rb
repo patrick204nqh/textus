@@ -62,7 +62,7 @@ module Textus
           return nil if old_entry.lane == new_entry.lane
 
           failure(:usage_error,
-                   "mv: cross-zone moves are forbidden (from #{old_entry.lane} to #{new_entry.lane})")
+                  "mv: cross-zone moves are forbidden (from #{old_entry.lane} to #{new_entry.lane})")
         end
       end
     end

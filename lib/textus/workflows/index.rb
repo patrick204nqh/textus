@@ -6,7 +6,7 @@ module Textus
       wf.handles "entry.written", "entry.deleted"
       wf.priority 5
       wf.max_attempts 3
-      wf.step :index_entry do |data, ctx|
+      wf.step :index_entry do |_data, ctx|
         key = ctx.key
         container = ctx.container
         entry = container.manifest.resolver.resolve(key).entry

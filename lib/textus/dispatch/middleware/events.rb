@@ -3,10 +3,10 @@ module Textus
     module Middleware
       class Events < Base
         EVENT_MAP = {
-          Contracts::PutEntry       => "entry.written",
-          Contracts::DeleteKey      => "entry.deleted",
-          Contracts::MvKey          => "entry.moved",
-          Contracts::ProposeEntry   => "entry.written",
+          Contracts::PutEntry => "entry.written",
+          Contracts::DeleteKey => "entry.deleted",
+          Contracts::MvKey => "entry.moved",
+          Contracts::ProposeEntry => "entry.written",
           Contracts::AcceptProposal => "proposal.accepted",
           Contracts::RejectProposal => "entry.deleted",
         }.freeze
@@ -21,8 +21,8 @@ module Textus
           key = key_for(command)
           registry  = Workflow::Registry.new(container.events.workflows)
           emitter   = Produce::EventEmitter.new(
-            db: container.events.event_store.connection,
-            workflow_registry: registry
+            database: container.events.event_store.connection,
+            workflow_registry: registry,
           )
           emitter.emit(event_type:, key:)
           result

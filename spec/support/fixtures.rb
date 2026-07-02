@@ -122,7 +122,7 @@ module TextusSpecHelpers
     store.container
   end
 
-  def converge_now(store, prefix: nil, lane: nil, role: Textus::Value::Role::AUTOMATION) # rubocop:disable Lint/UnusedMethodArgument
+  def converge_now(store, prefix: nil, lane: nil, role: Textus::Value::Role::AUTOMATION)
     with_missing_workflows(store)
     registry = Textus::Workflow::Registry.new(store.container.workflows)
     db = store.event_store.db
