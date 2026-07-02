@@ -31,7 +31,6 @@ module Textus
             optional(:kind).value(:string)
             optional(:nested).value(:bool)
             optional(:tracked).value(:bool)
-            optional(:ignore)
             optional(:naming).value(:string)
             optional(:source)
             optional(:publish).value(:array)

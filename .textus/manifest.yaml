@@ -8,7 +8,6 @@ data:
     - key: knowledge.judgment.engineering
     - key: knowledge.judgment.agent-behavior
     - key: knowledge.evidence
-      ignore: ["**/README.md"]
     - key: knowledge.feedback
   scratchpad:
     - key: scratchpad.notes

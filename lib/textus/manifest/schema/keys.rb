@@ -9,7 +9,7 @@ module Textus
         LANE_KEYS  = %w[name kind owner desc].freeze
         ENTRY_KEYS = %w[
           key path lane kind schema owner nested format naming
-          source publish tracked ignore
+          source publish tracked
         ].freeze
         # ADR 0052: the typed publish block — `publish: { to: [...] }` (file
         # fan-out) xor `publish: { tree: "dir" }` (subtree mirror).

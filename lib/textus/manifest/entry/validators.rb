@@ -4,7 +4,6 @@ module Textus
       module Validators
         REGISTERED = [
           Publish,
-          Ignore,
           FormatMatrix,
         ].freeze
 
