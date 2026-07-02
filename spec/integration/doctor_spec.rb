@@ -132,7 +132,7 @@ RSpec.describe Textus::Doctor do
 
     after { FileUtils.remove_entry(tmp2) }
 
-    it "surfaces validate_all role_authority violations as error-level issues" do
+    it "does not include role_authority in doctor summary (ported to workflow artifact)" do
       ra_root = File.join(tmp2, ".textus")
       FileUtils.mkdir_p(File.join(ra_root, "schemas"))
       FileUtils.mkdir_p(File.join(ra_root, "data/knowledge/people"))
@@ -159,9 +159,9 @@ RSpec.describe Textus::Doctor do
       ra_store.with_role("agent").put(key: "proposals.people.alice",
                                       meta: { "name" => "alice", "full_name" => "Alice Wonder", "embedding" => [0.1, 0.2] }, body: "")
 
-      res = Textus::Doctor.build(container: ra_store.container, checks: ["schema_violations"])
+      res = Textus::Doctor.build(container: ra_store.container)
       codes = res["issues"].map { |i| i["code"] }
-      expect(codes).to include("role_authority")
+      expect(codes).not_to include("role_authority")
     end
   end
 

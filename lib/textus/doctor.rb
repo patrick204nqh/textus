@@ -9,7 +9,6 @@ module Textus
       Check::ManifestFiles,
       Check::Schemas,
       Check::Templates,
-      Check::SchemaViolations,
       Check::RuleAmbiguity,
       Check::OrphanedPublishTargets,
       Check::PublishTreeIndexOverlap,
