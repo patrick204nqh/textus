@@ -9,7 +9,6 @@ module Textus
       Check::ManifestFiles,
       Check::Schemas,
       Check::Templates,
-      Check::Sentinels,
       Check::AuditLog,
       Check::UnownedSchemaFields,
       Check::SchemaViolations,

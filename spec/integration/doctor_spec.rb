@@ -74,7 +74,7 @@ RSpec.describe Textus::Doctor do
     expect(issue).to be_nil
   end
 
-  it "reports sentinel.orphan when a sentinel's target is missing" do
+  it "does not include sentinel.orphan in doctor summary (ported to workflow artifact)" do
     FileUtils.mkdir_p(File.join(root, ".state", "tracking", "sentinels"))
     File.write(File.join(root, ".state/tracking/sentinels/missing.md.textus-managed.json"), JSON.generate(
                                                                                               "source" => "x",
@@ -84,12 +84,10 @@ RSpec.describe Textus::Doctor do
                                                                                             ))
     res = doctor
     issue = res["issues"].find { |i| i["code"] == "sentinel.orphan" }
-    expect(issue).not_to be_nil
-    expect(issue["level"]).to eq("warning")
-    expect(res["ok"]).to be true # warnings don't flip ok
+    expect(issue).to be_nil
   end
 
-  it "reports sentinel.drift when the published file's bytes diverge" do
+  it "does not include sentinel.drift in doctor summary (ported to workflow artifact)" do
     target = File.join(tmp, "CLAUDE.md")
     File.write(target, "original\n")
     sha = Digest::SHA256.hexdigest("original\n")
@@ -103,9 +101,7 @@ RSpec.describe Textus::Doctor do
     File.write(target, "tampered\n") # drift!
     res = doctor
     issue = res["issues"].find { |i| i["code"] == "sentinel.drift" }
-    expect(issue).not_to be_nil
-    expect(issue["level"]).to eq("warning")
-    expect(res["ok"]).to be true
+    expect(issue).to be_nil
   end
 
   it "reports audit.parse_error on malformed audit log lines" do
