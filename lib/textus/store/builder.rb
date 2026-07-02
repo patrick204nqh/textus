@@ -34,7 +34,7 @@ module Textus
         event_bus.subscribe(Event::ProposalRejected, &cascade_subscriber.method(:on_proposal_rejected))
 
         reader  = Store::Entry::Reader.new(file_store:, manifest:, layout:)
-        writer  = Store::Entry::Writer.new(file_store:, manifest:, schemas:,
+        writer  = Store::Entry::Writer.new(file_store:, manifest:,
                                            audit_log:, reader:, layout:)
 
         partial = Infrastructure.new(

@@ -13,10 +13,9 @@ module Textus
       # No permission check, no event firing — those belong to the caller
       # (Write::Put / ::Delete / ::Mv).
       class Writer
-        def initialize(file_store:, manifest:, schemas:, audit_log:, reader:, layout:)
+        def initialize(file_store:, manifest:, audit_log:, reader:, layout:)
           @file_store = file_store
           @manifest   = manifest
-          @schemas    = schemas
           @audit_log  = audit_log
           @reader     = reader
           @layout     = layout
@@ -30,7 +29,7 @@ module Textus
             etag_before: nil, envelope: nil
           )
           deps = WriteStep::WriteDeps.new(
-            file_store: @file_store, manifest: @manifest, schemas: @schemas,
+            file_store: @file_store, manifest: @manifest,
             audit_log: @audit_log, call:, reader: @reader, layout: @layout
           )
           ctx = WriteStep::DEFAULT_PUT.reduce(ctx) { |c, step| step.call(c, deps) }
@@ -43,7 +42,7 @@ module Textus
             path: nil, etag_before: nil
           )
           deps = WriteStep::WriteDeps.new(
-            file_store: @file_store, manifest: @manifest, schemas: @schemas,
+            file_store: @file_store, manifest: @manifest,
             audit_log: @audit_log, call:, reader: @reader, layout: @layout
           )
           WriteStep::DEFAULT_DELETE.reduce(ctx) { |c, step| step.call(c, deps) }
@@ -57,7 +56,7 @@ module Textus
             etag_before: nil, etag_after: nil, envelope: nil
           )
           deps = WriteStep::WriteDeps.new(
-            file_store: @file_store, manifest: @manifest, schemas: @schemas,
+            file_store: @file_store, manifest: @manifest,
             audit_log: @audit_log, call:, reader: @reader, layout: @layout
           )
           ctx = WriteStep::DEFAULT_MOVE.reduce(ctx) { |c, step| step.call(c, deps) }

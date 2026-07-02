@@ -13,7 +13,7 @@ module Textus
         end
 
         WriteDeps = Data.define(
-          :file_store, :manifest, :schemas, :audit_log, :call, :reader, :layout
+          :file_store, :manifest, :audit_log, :call, :reader, :layout
         )
 
         module ResolvePath
@@ -70,19 +70,6 @@ module Textus
           end
         end
 
-        module ValidateSchema
-          def self.call(ctx, deps)
-            schema = deps.schemas.fetch_or_nil(ctx.mentry.schema)
-            if schema
-              Format.for(ctx.mentry.format).validate_against(
-                schema,
-                { "_meta" => ctx.eff_meta, "content" => ctx.eff_content },
-              )
-            end
-            ctx
-          end
-        end
-
         module ValidateRaw
           def self.call(ctx, _deps)
             Textus::Format.for(ctx.mentry.format).validate_raw_entry!(
@@ -135,7 +122,7 @@ module Textus
 
         DEFAULT_PUT = [
           ResolvePath, ReadExisting, InjectMeta, Serialize,
-          EnforceNameMatch, ValidateSchema, ValidateRaw,
+          EnforceNameMatch, ValidateRaw,
           CheckEtag, WriteBytes, BuildEnvelope, AppendAudit
         ].freeze
 
