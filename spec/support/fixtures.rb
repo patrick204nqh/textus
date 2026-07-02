@@ -122,19 +122,39 @@ module TextusSpecHelpers
     store.container
   end
 
-  # Seed convergence jobs for the given scope and then burn the queue through
-  # Maintenance::Drain (which is queue-burn only).
   def converge_now(store, prefix: nil, lane: nil, role: Textus::Value::Role::AUTOMATION) # rubocop:disable Lint/UnusedMethodArgument
-    queue = Textus::Store::Jobs::Queue.new(store: store.job_store)
-    queue.purge("done")
     with_missing_workflows(store)
-    Textus::Store::Jobs::Planner.seed(container: store.container, queue: queue, role: role)
-    Textus::Store::Jobs::Worker.for(container: store.container, queue: queue).drain
+    registry = Textus::Workflow::Registry.new(store.container.workflows)
+    db = store.job_store.db
+
+    store.container.manifest.data.entries.each do |entry|
+      next if prefix && !entry.key.start_with?(prefix)
+      next if lane && entry.lane != lane
+
+      store.container.workflows.each do |wf|
+        next unless wf.match?(entry.key) || wf.handled_events.any?
+
+        db[:events].insert(
+          event_type: "convergence",
+          workflow_type: wf.type,
+          key: entry.key,
+          lane: entry.lane,
+          state: "pending",
+          retry_count: 0,
+          max_attempts: wf.max_attempts || 3,
+        )
+      end
+    end
+
+    consumer = Textus::Events::Consumer.new
+    consumer.drain(
+      db: db,
+      registry: registry,
+      container: store.container,
+      call: Textus::Value::Call.build(role: role, correlation_id: SecureRandom.uuid),
+    )
   end
 
-  # Auto-register no-op workflows for manifest entries that have publish config
-  # but no matching workflow definition. This lets legacy test manifests work
-  # with the workflow-only Planner.
   def with_missing_workflows(store)
     store.container.manifest.data.entries.each do |entry|
       has_publish = entry.publish_to.any? || entry.publish_tree
@@ -142,8 +162,10 @@ module TextusSpecHelpers
       next unless has_publish && !already_has
 
       defn = Textus::Workflow::DSL::Definition.new("auto-#{entry.key}")
+      defn.handles "entry.written"
       defn.match(entry.key)
       defn.step(:passthrough) { |data, _ctx| data || { content: nil } }
+      defn.publish
       store.container.workflows << defn
     end
   end

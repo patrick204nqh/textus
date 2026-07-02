@@ -3,7 +3,7 @@ module Textus
     module Write
       module AcceptProposal
         HANDLES = Dispatch::Contracts::AcceptProposal
-        NEEDS = %i[file_store manifest schemas audit_log layout event_bus writer reader].freeze
+        NEEDS = %i[file_store manifest audit_log layout job_store writer reader workflows].freeze
 
         def self.call(command, call, deps)
           reader = deps.reader
@@ -57,14 +57,9 @@ module Textus
           end
 
           writer.delete(command.pending_key, call: call)
-          if deps.respond_to?(:event_bus) && deps.event_bus
-            deps.event_bus.emit(Textus::Event::ProposalAccepted.new(
-                                  proposal_key: command.pending_key,
-                                  target_key: target,
-                                  role: call.role,
-                                  occurred_at: call.now,
-                                ))
-          end
+          registry = Textus::Workflow::Registry.new(deps.workflows)
+          emitter = Textus::Produce::EventEmitter.new(db: deps.job_store.db, workflow_registry: registry)
+          emitter.emit(event_type: "proposal.accepted", key: command.pending_key, payload: { target_key: target })
           Value::Result.success("protocol" => Textus::PROTOCOL, "accepted" => command.pending_key,
                                 "target_key" => target, "action" => action, "cascade_key" => target)
         end

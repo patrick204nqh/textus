@@ -31,8 +31,8 @@ module Textus
 
         def self.changed_since(since, call, deps)
           if deps.job_store
-            sqlite_rows = deps.job_store.audit_events_since(seq: since)
-            return sqlite_rows.map { |r| { "key" => r["key"], "verb" => r["verb"], "seq" => r["seq"] } } if sqlite_rows.any?
+            sqlite_rows = deps.job_store.db[:audit_events].where { seq > since }.order(:seq).all
+            return sqlite_rows.map { |r| { "key" => r[:key], "verb" => r[:verb], "seq" => r[:seq] } } if sqlite_rows.any?
           end
 
           audit = UseCases::Read::AuditEntries.call(

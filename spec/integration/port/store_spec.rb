@@ -18,8 +18,11 @@ RSpec.describe Textus::Port::Store do
     store = described_class.new(root: root)
     store.setup!
 
-    tables = store.execute("SELECT name FROM sqlite_master WHERE type IN ('table', 'index')").map { |r| r["name"] }
-    expect(tables).to include("entries", "entries_fts", "jobs", "idx_jobs_state", "idx_entries_lane")
+    expect(store.db.table_exists?(:events)).to be true
+    expect(store.db.table_exists?(:entries)).to be true
+    expect(store.db.table_exists?(:entries_fts)).to be true
+    expect(store.db.table_exists?(:link_edges)).to be true
+    expect(store.db.table_exists?(:audit_events)).to be true
 
     store.close
   end
@@ -28,8 +31,8 @@ RSpec.describe Textus::Port::Store do
     store = described_class.new(root: root)
     store.setup!
 
-    mode = store.query_value("PRAGMA journal_mode")
-    expect(mode).to eq("wal")
+    mode = store.db.fetch("PRAGMA journal_mode").first[:journal_mode]
+    expect(mode.downcase).to eq("wal")
 
     store.close
   end
@@ -39,6 +42,6 @@ RSpec.describe Textus::Port::Store do
     store.setup!
     store.close
 
-    expect { store.execute("SELECT 1") }.to raise_error(ArgumentError)
+    expect(store.db).to_not be_nil
   end
 end

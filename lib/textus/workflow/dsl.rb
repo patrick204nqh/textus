@@ -37,6 +37,12 @@ module Textus
           @workflow_type
         end
 
+        def max_attempts(n = nil)
+          return @max_attempts if n.nil?
+
+          @max_attempts = n.to_i
+        end
+
         def match(pattern)
           @match_pattern = pattern
         end

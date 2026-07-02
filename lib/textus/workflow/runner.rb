@@ -28,7 +28,7 @@ module Textus
       def run(key)
         ctx  = build_context(key)
         data = execute_steps(ctx)
-        publish(key, data, ctx)
+        publish(key, data, ctx) if data
         data
       end
 

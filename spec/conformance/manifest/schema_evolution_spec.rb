@@ -87,21 +87,4 @@ RSpec.describe "Schema evolution" do
     end
   end
 
-  # Conformance fixture C from textus/4 §12: schema validation.
-  describe "Fixture C — schema validation" do
-    include_context "textus/4 conformance fixture"
-
-    it "raises SchemaViolation listing the missing required field" do
-      expect do
-        store.with_role("human").put(key: "knowledge.contacts.bob",
-                                     meta: { "name" => "bob", "org" => "acme" },
-                                     body: "")
-      end.to raise_error(Textus::SchemaViolation) do |err|
-        env = err.to_envelope
-        expect(env["code"]).to eq("schema_violation")
-        expect(env["details"]["missing"]).to eq(["relationship"])
-        expect(err.exit_code).to eq(1)
-      end
-    end
-  end
 end

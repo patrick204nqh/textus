@@ -45,12 +45,6 @@ module Textus
 
       IngestEntry = Data.define(:kind, :slug, :url, :path, :lane, :label)
 
-      JobsList = Data.define(:state)
-
-      JobsRetry = Data.define(:job_id)
-
-      JobsPurge = Data.define(:state)
-
       DataMv = Data.define(:from, :to, :dry_run)
 
       KeyMvPrefix = Data.define(:from_prefix, :to_prefix, :dry_run)

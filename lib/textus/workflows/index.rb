@@ -23,9 +23,8 @@ module Textus
             indexed_at: Time.now.utc,
           )
         end
-        data || { content: nil }
+        nil
       end
-      wf.publish
     end
   end
 end

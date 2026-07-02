@@ -82,9 +82,6 @@ module Textus
       schema_show: Dispatch::Contracts::SchemaEnvelope,
       drain: Dispatch::Contracts::DrainStore,
       ingest: Dispatch::Contracts::IngestEntry,
-      jobs_list: Dispatch::Contracts::JobsList,
-      jobs_retry: Dispatch::Contracts::JobsRetry,
-      jobs_purge: Dispatch::Contracts::JobsPurge,
       data_mv: Dispatch::Contracts::DataMv,
       key_mv_prefix: Dispatch::Contracts::KeyMvPrefix,
       key_delete_prefix: Dispatch::Contracts::KeyDeletePrefix,
@@ -100,7 +97,7 @@ module Textus
     ].freeze
 
     OPS_VERBS = %i[
-      boot drain pulse jobs_list jobs_retry jobs_purge data_mv
+      boot drain pulse data_mv
       key_mv_prefix key_delete_prefix published
     ].freeze
 
@@ -329,28 +326,6 @@ module Textus
     register VerbSpec.new(
       :boot, "Return the orientation contract: lanes, agent_quickstart, agent_protocol.",
       [], %i[cli mcp], { default: identity }, nil, nil, :read
-    )
-
-    # ── jobs_list ────────────────────────────────────────
-    register VerbSpec.new(
-      :jobs_list, "List queued jobs by state.",
-      [ArgSpec.arg(name: :state, default: "ready",
-                   description: "ready|leased|done|failed")],
-      %i[cli mcp], { default: identity }, "jobs list", nil, :read
-    )
-
-    # ── jobs_retry ───────────────────────────────────────
-    register VerbSpec.new(
-      :jobs_retry, "Re-queue a dead-lettered job by id.",
-      [ArgSpec.arg(name: :job_id, required: true, positional: true, description: "job id to retry")],
-      %i[cli mcp], { default: identity }, "jobs retry", nil, :write
-    )
-
-    # ── jobs_purge ───────────────────────────────────────
-    register VerbSpec.new(
-      :jobs_purge, "Delete every job in a state.",
-      [ArgSpec.arg(name: :state, required: true, positional: true, description: "ready|leased|done|failed")],
-      %i[cli mcp], { default: identity }, "jobs purge", nil, :write
     )
 
     # ── data_mv ──────────────────────────────────────────

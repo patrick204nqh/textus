@@ -9,9 +9,8 @@ module Textus
       wf.max_attempts 3
       wf.step :converge do |data, ctx|
         Textus::Produce::Engine.converge(container: ctx.container, call: ctx.call, keys: [ctx.key])
-        data || { content: nil }
+        data
       end
-      wf.publish
     end
   end
 end
