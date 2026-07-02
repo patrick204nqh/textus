@@ -5,29 +5,35 @@ RSpec.shared_context "textus/4 conformance fixture" do
 
   before do
     FileUtils.mkdir_p(File.join(root, "schemas"))
-    FileUtils.mkdir_p(File.join(root, "data/knowledge/network/org"))
-    FileUtils.mkdir_p(File.join(root, "data/knowledge/projects"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge/execution"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge/intent"))
     FileUtils.mkdir_p(File.join(root, "data/knowledge/constraint"))
     FileUtils.mkdir_p(File.join(root, "data/knowledge/judgment"))
     FileUtils.mkdir_p(File.join(root, "data/knowledge/evidence"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge/feedback"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge/contacts"))
     FileUtils.mkdir_p(File.join(root, "data/scratchpad/notes"))
     FileUtils.mkdir_p(File.join(root, "data/scratchpad/sessions"))
     FileUtils.mkdir_p(File.join(root, "data/scratchpad/scripts"))
     FileUtils.mkdir_p(File.join(root, "data/proposals/notes"))
     FileUtils.mkdir_p(File.join(root, "data/raw"))
-    FileUtils.mkdir_p(File.join(root, "data/artifacts/catalogs"))
-    FileUtils.mkdir_p(File.join(root, "data/artifacts/feeds/calendar"))
+    FileUtils.mkdir_p(File.join(root, "data/artifacts"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/4
       data:
         knowledge:
-          - key: knowledge.network.org
-            schema: person
-          - key: knowledge.projects
+          - key: knowledge.intent
+            naming: sequential
+          - key: knowledge.execution
+            naming: sequential
           - key: knowledge.constraint
           - key: knowledge.judgment
           - key: knowledge.evidence
+            naming: sequential
+          - key: knowledge.feedback
+          - key: knowledge.contacts
+            schema: person
         scratchpad:
           - key: scratchpad.notes
             tracked: false
@@ -41,8 +47,8 @@ RSpec.shared_context "textus/4 conformance fixture" do
           - key: raw
             format: yaml
         artifacts:
-          - key: artifacts.catalogs.skills
-          - key: artifacts.feeds.calendar.events
+          - key: artifacts.boot
+            format: json
     YAML
 
     File.write(File.join(root, "schemas/person.yaml"), <<~YAML)
@@ -62,13 +68,18 @@ RSpec.shared_context "textus/4 conformance fixture" do
         notes:        { type: string, max: 2000 }
     YAML
 
-    File.write(File.join(root, "data/knowledge/network/org/jane.md"), <<~MD)
+    File.write(File.join(root, "data/knowledge/evidence/0001-topic.md"), <<~MD)
       ---
-      name: jane
-      relationship: peer
-      org: acme
+      title: A topic
       ---
-      Short body in Markdown.
+      Body content.
+    MD
+
+    File.write(File.join(root, "data/knowledge/intent/0001-north-star.md"), <<~MD)
+      ---
+      name: north-star
+      ---
+      Intent body.
     MD
   end
 

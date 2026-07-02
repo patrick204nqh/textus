@@ -93,7 +93,7 @@ RSpec.describe "Schema evolution" do
 
     it "raises SchemaViolation listing the missing required field" do
       expect do
-        store.with_role("human").put(key: "knowledge.network.org.bob",
+        store.with_role("human").put(key: "knowledge.contacts.bob",
                                      meta: { "name" => "bob", "org" => "acme" },
                                      body: "")
       end.to raise_error(Textus::SchemaViolation) do |err|

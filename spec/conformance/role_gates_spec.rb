@@ -7,7 +7,7 @@ RSpec.describe "textus/4 conformance — Fixture B: role gate on write" do
   describe "Fixture B — role gate on write" do
     it "raises WriteForbidden when an agent tries to write an artifacts entry" do
       expect do
-        store.with_role("agent").put(key: "artifacts.catalogs.skills",
+        store.with_role("agent").put(key: "artifacts.boot",
                                      meta: { "name" => "test" }, body: "n/a")
       end.to raise_error(Textus::WriteForbidden) do |err|
         env = err.to_envelope
