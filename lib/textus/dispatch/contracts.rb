@@ -9,7 +9,7 @@ module Textus
 
       DeleteKey = Data.define(:key, :if_etag)
 
-      MoveKey = Data.define(:old_key, :new_key, :if_etag, :dry_run)
+      MvKey = Data.define(:old_key, :new_key, :if_etag, :dry_run)
 
       ProposeEntry = Data.define(:key, :meta, :body, :content)
 
@@ -53,7 +53,11 @@ module Textus
 
       IngestEntry = Data.define(:kind, :slug, :url, :path, :lane, :label)
 
-      JobsAction = Data.define(:state, :action, :job_id)
+      JobsList = Data.define(:state)
+
+      JobsRetry = Data.define(:job_id)
+
+      JobsPurge = Data.define(:state)
 
       RuleLint = Data.define(:candidate_yaml)
 

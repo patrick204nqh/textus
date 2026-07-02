@@ -2,7 +2,7 @@ module Textus
   module UseCases
     module Write
       module MoveKey
-        HANDLES = Dispatch::Contracts::MoveKey
+        HANDLES = Dispatch::Contracts::MvKey
         NEEDS = %i[file_store manifest schemas audit_log layout writer reader].freeze
 
         def self.call(command, call, deps)

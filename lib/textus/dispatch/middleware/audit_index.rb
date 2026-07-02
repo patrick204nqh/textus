@@ -12,7 +12,7 @@ module Textus
         INDEXED_CONTRACTS = [
           Contracts::PutEntry,
           Contracts::DeleteKey,
-          Contracts::MoveKey,
+          Contracts::MvKey,
         ].freeze
 
         def initialize(job_store:, audit_log:)
@@ -21,7 +21,7 @@ module Textus
           @audit_log = audit_log
         end
 
-        def call(container:, command:, call:, next_handler:)
+        def call(container:, command:, call:, next_handler:) # rubocop:disable Lint/UnusedMethodArgument
           result = next_handler.call(command, call)
           return result unless result.success? && INDEXED_CONTRACTS.include?(command.class)
 

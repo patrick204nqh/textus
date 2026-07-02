@@ -64,7 +64,7 @@ module Textus
       put: Dispatch::Contracts::PutEntry,
       list: Dispatch::Contracts::ListKeys,
       key_delete: Dispatch::Contracts::DeleteKey,
-      key_mv: Dispatch::Contracts::MoveKey,
+      key_mv: Dispatch::Contracts::MvKey,
       propose: Dispatch::Contracts::ProposeEntry,
       accept: Dispatch::Contracts::AcceptProposal,
       reject: Dispatch::Contracts::RejectProposal,
@@ -86,7 +86,9 @@ module Textus
       schema_show: Dispatch::Contracts::SchemaEnvelope,
       drain: Dispatch::Contracts::DrainStore,
       ingest: Dispatch::Contracts::IngestEntry,
-      jobs: Dispatch::Contracts::JobsAction,
+      jobs_list: Dispatch::Contracts::JobsList,
+      jobs_retry: Dispatch::Contracts::JobsRetry,
+      jobs_purge: Dispatch::Contracts::JobsPurge,
       rule_lint: Dispatch::Contracts::RuleLint,
       rule_trace: Dispatch::Contracts::RuleTrace,
       data_mv: Dispatch::Contracts::DataMv,
@@ -104,7 +106,7 @@ module Textus
     ].freeze
 
     OPS_VERBS = %i[
-      boot drain doctor pulse jobs enqueue data_mv
+      boot drain doctor pulse jobs_list jobs_retry jobs_purge enqueue data_mv
       key_mv_prefix key_delete_prefix published
     ].freeze
 
@@ -253,7 +255,7 @@ module Textus
     register VerbSpec.new(
       :uid, "Return the stable UID of an entry without reading its body.",
       [ArgSpec.arg(name: :key, required: true, positional: true, description: "entry key")],
-      [:cli], { cli: ->(uid, inputs) { { "key" => inputs[:key], "uid" => uid } }, default: identity }, "key uid", nil, :read
+      %i[cli mcp], { cli: ->(uid, inputs) { { "key" => inputs[:key], "uid" => uid } }, default: identity }, "key uid", nil, :read
     )
 
     # ── blame ────────────────────────────────────────────
@@ -262,7 +264,7 @@ module Textus
       [ArgSpec.arg(name: :key, required: true, positional: true, description: "entry key to blame"),
        ArgSpec.arg(name: :limit, type: Integer,
                    description: "maximum number of audit rows to return")],
-      [:cli], {
+      %i[cli mcp], {
         cli: ->(rows, inputs) { { "verb" => "blame", "key" => inputs[:key], "rows" => rows } },
         default: identity,
       }, "blame", nil, :read
@@ -283,7 +285,7 @@ module Textus
                    description: "filter to rows with this correlation_id"),
        ArgSpec.arg(name: :limit, type: Integer,
                    description: "maximum number of rows to return")],
-      [:cli], { cli: ->(rows, _) { { "verb" => "audit", "rows" => rows } }, default: identity }, "audit", nil, :read
+      %i[cli mcp], { cli: ->(rows, _) { { "verb" => "audit", "rows" => rows } }, default: identity }, "audit", nil, :read
     )
 
     # ── deps ─────────────────────────────────────────────
@@ -344,13 +346,13 @@ module Textus
     # ── rule_list ────────────────────────────────────────
     register VerbSpec.new(
       :rule_list, "List every rule block in the manifest.",
-      [], [:cli], { cli: ->(p, _) { { "verb" => "rule_list", "policies" => p } }, default: identity }, "rule list", nil, :read
+      [], %i[cli mcp], { cli: ->(p, _) { { "verb" => "rule_list", "policies" => p } }, default: identity }, "rule list", nil, :read
     )
 
     # ── published ────────────────────────────────────────
     register VerbSpec.new(
       :published, "List all entries that declare a publish target.",
-      [], [:cli], { default: identity }, "published", nil, :read
+      [], %i[cli mcp], { default: identity }, "published", nil, :read
     )
 
     # ── schema_show ──────────────────────────────────────
@@ -366,7 +368,7 @@ module Textus
       :doctor, "Run health checks on the textus store.",
       [ArgSpec.arg(name: :checks, type: Array,
                    description: "subset of check names to run (default: all)")],
-      [:cli], { default: identity }, "doctor", nil, :read
+      %i[cli mcp], { default: identity }, "doctor", nil, :read
     )
 
     # ── boot ─────────────────────────────────────────────
@@ -375,14 +377,26 @@ module Textus
       [], %i[cli mcp], { default: identity }, nil, nil, :read
     )
 
-    # ── jobs ─────────────────────────────────────────────
+    # ── jobs_list ────────────────────────────────────────
     register VerbSpec.new(
-      :jobs, "List queued jobs by state; retry a dead-lettered job or purge.",
+      :jobs_list, "List queued jobs by state.",
       [ArgSpec.arg(name: :state, default: "ready",
-                   description: "ready|leased|done|failed"),
-       ArgSpec.arg(name: :action, description: "retry|purge (optional)"),
-       ArgSpec.arg(name: :job_id, description: "job id (required for action=retry)")],
-      %i[cli mcp], { default: identity }, "jobs", nil, :maintenance
+                   description: "ready|leased|done|failed")],
+      %i[cli mcp], { default: identity }, "jobs list", nil, :read
+    )
+
+    # ── jobs_retry ───────────────────────────────────────
+    register VerbSpec.new(
+      :jobs_retry, "Re-queue a dead-lettered job by id.",
+      [ArgSpec.arg(name: :job_id, required: true, positional: true, description: "job id to retry")],
+      %i[cli mcp], { default: identity }, "jobs retry", nil, :write
+    )
+
+    # ── jobs_purge ───────────────────────────────────────
+    register VerbSpec.new(
+      :jobs_purge, "Delete every job in a state.",
+      [ArgSpec.arg(name: :state, required: true, positional: true, description: "ready|leased|done|failed")],
+      %i[cli mcp], { default: identity }, "jobs purge", nil, :write
     )
 
     # ── data_mv ──────────────────────────────────────────

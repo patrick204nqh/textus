@@ -28,8 +28,7 @@ module Textus
           min = deps.audit_log.min_available_seq
           return unless min && seq_since < min - 1
 
-          Value::Result.failure(:cursor_expired, "requested seq #{seq_since} is below minimum available #{min}",
-                                details: { requested: seq_since, min_available: min })
+          Value::Result.from_error(Textus::CursorExpired.new(requested: seq_since, min_available: min))
         end
 
         def self.key_in_lane?(key, lane, deps)

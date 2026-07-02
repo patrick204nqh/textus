@@ -52,10 +52,17 @@ module Textus
         ]
 
         Dispatch::HandlerResolver.eager_load!
-        registry = Dispatch::HandlerResolver.build(partial)
-        pipeline = Dispatch::Pipeline.new(registry:, container: partial, middleware:)
 
-        partial.with(pipeline:, reader:, writer:)
+        # NEEDS deps are snapshotted at HandlerResolver.build time, so a handler
+        # declaring :pipeline in NEEDS (DoctorStore, to dispatch sub-checks like
+        # `list`/`get` against a live pipeline) would otherwise always see the
+        # `pipeline: nil` from `partial` above. Build once against `partial` to
+        # get a working pipeline, wire it into the container, then rebuild the
+        # registry against that container so :pipeline resolves to a real value.
+        interim_pipeline = Dispatch::Pipeline.new(registry: Dispatch::HandlerResolver.build(partial), container: partial, middleware:)
+        wired = partial.with(pipeline: interim_pipeline)
+        registry = Dispatch::HandlerResolver.build(wired)
+        wired.with(pipeline: Dispatch::Pipeline.new(registry:, container: wired, middleware:))
       end
     end
   end

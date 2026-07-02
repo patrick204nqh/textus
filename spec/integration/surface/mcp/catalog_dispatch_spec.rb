@@ -33,6 +33,8 @@ RSpec.describe Textus::Surface::MCP::Catalog do
     FileUtils.mkdir_p(File.join(root, "schemas"))
     FileUtils.mkdir_p(File.join(root, "hooks"))
     File.write(File.join(root, "manifest.yaml"), manifest_yaml)
+    File.write(File.join(root, "data/identity/self.md"), "---\nuid: 1234567890abcdef\n---\nidentity self\n")
+    File.write(File.join(root, "data/knowledge/note.md"), "---\nuid: abcdef1234567890\n---\nknowledge note\n")
     FileUtils.mkdir_p(audit_dir_path(root))
     File.write(audit_log_path(root), "")
   end
@@ -224,5 +226,66 @@ RSpec.describe Textus::Surface::MCP::Catalog do
         described_class.call("nope", store: agent_store, args: {})
       end.to raise_error(Textus::Surface::MCP::ToolError, /unknown tool/)
     end
+  end
+
+  # ── Newly-exposed observability verbs (verb-registry standardization) ──────
+
+  describe ".call('uid', ...)" do
+    it "returns the entry's stable uid" do
+      result = described_class.call("uid", store: human_store, args: { "key" => "identity.self" })
+      expect(result).to be_a(String)
+      expect(result).not_to be_empty
+    end
+  end
+
+  describe ".call('blame', ...)" do
+    it "returns an array of audit rows annotated with git info" do
+      result = described_class.call("blame", store: human_store, args: { "key" => "identity.self" })
+      expect(result).to be_an(Array)
+    end
+  end
+
+  describe ".call('audit', ...)" do
+    it "returns an array of audit rows" do
+      result = described_class.call("audit", store: human_store, args: {})
+      expect(result).to be_an(Array)
+    end
+  end
+
+  describe ".call('audit', ...) with an expired cursor" do
+    it "raises Textus::CursorExpired, not a generic ToolError, so the MCP server can emit JSONRPC -32002" do
+      allow(human_store.audit_log).to receive(:min_available_seq).and_return(20)
+
+      expect do
+        described_class.call("audit", store: human_store, args: { "seq_since" => 3 })
+      end.to raise_error(Textus::CursorExpired)
+    end
+  end
+
+  describe ".call('rule_list', ...)" do
+    it "returns an array of rule blocks" do
+      result = described_class.call("rule_list", store: human_store, args: {})
+      expect(result).to be_an(Array)
+    end
+  end
+
+  describe ".call('published', ...)" do
+    it "returns an array of published entries" do
+      result = described_class.call("published", store: human_store, args: {})
+      expect(result).to be_an(Array)
+    end
+  end
+
+  describe ".call('doctor', ...)" do
+    it "returns a health-check result hash" do
+      result = described_class.call("doctor", store: human_store, args: {})
+      expect(result).to include("ok")
+    end
+  end
+
+  it "advertises all six previously CLI-only verbs as MCP tool names" do
+    expect(Textus::Surface::MCP::Catalog.names).to include(
+      "uid", "blame", "audit", "rule_list", "published", "doctor"
+    )
   end
 end

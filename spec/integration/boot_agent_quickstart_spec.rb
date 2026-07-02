@@ -26,11 +26,11 @@ RSpec.describe Textus::Boot do
       expect(qs).to be_a(Hash)
       # read_verbs derives from the MCP catalog (ADR 0056): the verbs the agent
       # can actually call — including schema/rule_explain and the graph reads
-      # (deps/rdeps/where, ADR 0060) — and never audit/doctor (CLI-only) nor
-      # freshness (a Ruby-only internal scan, ADR 0085).
+      # (deps/rdeps/where, ADR 0060) and now audit/doctor (verb-registry
+      # standardization) — but never freshness (a Ruby-only internal scan, ADR 0085).
       expect(qs["read_verbs"]).to include("boot", "get", "list", "pulse", "schema_show",
-                                          "rule_explain", "deps", "rdeps", "where")
-      expect(qs["read_verbs"]).not_to include("audit", "freshness", "doctor")
+                                          "rule_explain", "deps", "rdeps", "where", "audit", "doctor")
+      expect(qs["read_verbs"]).not_to include("freshness")
       # write_verbs derives from the MCP catalog too (ADR 0057): bare verb names
       # the agent calls — not the old `put KEY --as=agent --stdin` CLI string.
       # accept/reject are advertised even though this agent lacks `author`

@@ -63,7 +63,7 @@ RSpec.describe "Textus::Surface::CLI verb return-value contract" do
       "rule" => Textus::Surface::CLI::Group::Rule,
       "schema" => Textus::Surface::CLI::Group::Schema,
       "drain" => Textus::Surface::CLI::Verb::GenDrain,
-      "jobs" => Textus::Surface::CLI::Verb::GenJobs,
+      "jobs" => Textus::Surface::CLI::Group::Jobs,
       "watch" => Textus::Surface::CLI::Verb::Watch,
       "where" => Textus::Surface::CLI::Verb::GenWhere,
     }
@@ -97,6 +97,14 @@ RSpec.describe "Textus::Surface::CLI verb return-value contract" do
       "init" => Textus::Surface::CLI::Verb::SchemaInit,
       "migrate" => Textus::Surface::CLI::Verb::SchemaMigrate,
       "show" => Textus::Surface::CLI::Verb::GenSchemaShow,
+    )
+  end
+
+  it "the jobs group subcommand table is auto-derived from parent_group" do
+    expect(Textus::Surface::CLI::Group::Jobs.subcommands).to eq(
+      "list" => Textus::Surface::CLI::Verb::GenJobsList,
+      "purge" => Textus::Surface::CLI::Verb::GenJobsPurge,
+      "retry" => Textus::Surface::CLI::Verb::GenJobsRetry,
     )
   end
 end
