@@ -13,6 +13,18 @@
       "enabled": true
     }
   },
+  "lsp": {
+    "yaml-ls": {},
+    "ruby-lsp": {},
+    "json-lsp": {
+      "command": ["/Users/patrick/.local/share/npm/bin/vscode-json-language-server", "--stdio"],
+      "extensions": [".json"]
+    },
+    "markdown-lsp": {
+      "command": ["/Users/patrick/.local/share/npm/bin/vscode-markdown-language-server", "--stdio"],
+      "extensions": [".md", ".markdown"]
+    }
+  },
   "instructions": [
     "AGENTS.md"
   ]

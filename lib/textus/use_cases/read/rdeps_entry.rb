@@ -3,7 +3,7 @@ module Textus
     module Read
       module RdepsEntry
         HANDLES = Dispatch::Contracts::RdepsEntry
-        NEEDS = %i[manifest link_edge_store].freeze
+        NEEDS = %i[manifest link_graph].freeze
 
         def self.call(command, _call, deps)
           source_rdeps = deps.manifest.data.entries.each_with_object([]) do |entry, acc|
@@ -13,7 +13,7 @@ module Textus
             acc << entry.key if sources.any? { |s| s == command.key || command.key.start_with?("#{s}.") }
           end
 
-          link_rdeps = deps.link_edge_store.dependents_of(command.key)
+          link_rdeps = deps.link_graph.links_to(command.key)
           rdeps      = (source_rdeps + link_rdeps).uniq.sort
           Value::Result.success("key" => command.key, "rdeps" => rdeps)
         end

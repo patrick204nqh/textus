@@ -4,7 +4,7 @@ module Textus
   class Store
     attr_reader :ctx, :container, :role, :correlation_id, :cursor, :propose_lane, :contract_etag, :root
 
-    %i[manifest file_system schemas audit_log event_store layout link_edge_store workflows].each do |field|
+    %i[manifest file_system schemas audit_log event_store layout link_graph workflows].each do |field|
       define_method(field) { @ctx.public_send(field) }
     end
 
