@@ -5,14 +5,14 @@ module Textus
         class UnknownJob < KeyError; end
 
         JOBS = {
-          "index" => ->(container:, call:, **) {
+          "index" => lambda { |container:, _call:, **|
             Textus::Store::Index::Builder.new(store: container.job_store)
-              .rebuild!(resolver: container.manifest.resolver)
+                                         .rebuild!(resolver: container.manifest.resolver)
           },
-          "materialize" => ->(container:, call:, key:, **) {
+          "materialize" => lambda { |container:, call:, key:, **|
             Textus::Produce::Engine.converge(container: container, call: call, keys: [key])
           },
-          "sweep" => ->(container:, call:, scope: {}, key: nil, **) {
+          "sweep" => lambda { |container:, call:, scope: {}, key: nil, **|
             rows = Retention::Sweep.new(
               manifest: container.manifest,
               workflows: container.workflows,

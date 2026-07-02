@@ -3,7 +3,7 @@ module Textus
     class StepScope
       include Helpers
 
-      def initialize(data, ctx, runner)
+      def initialize(data, ctx, _runner)
         @data = data
         @ctx  = ctx
         @container = ctx.container

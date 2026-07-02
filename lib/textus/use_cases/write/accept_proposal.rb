@@ -41,7 +41,7 @@ module Textus
         end
         private_class_method :dry_run_preview
 
-        def self.exec_and_cleanup(target, action, env, reader, deps, call, command, _parsed)
+        def self.exec_and_cleanup(target, action, env, _reader, deps, call, command, _parsed)
           writer = deps.writer
           case action
           when "put"
