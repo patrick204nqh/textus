@@ -30,8 +30,12 @@ RSpec.describe "Use-case module invariants (ADR-0125)" do
 
   it "each module defines HANDLES (singular, not plural)" do
     use_case_modules.each do |mod|
-      expect(mod.const_defined?(:HANDLES)).to be(true),
-                                              "#{mod.name} missing HANDLES constant"
+      if mod.respond_to?(:handles_contract)
+        expect(mod.handles_contract).not_to be_nil, "#{mod.name} handles_contract is nil"
+      else
+        expect(mod.const_defined?(:HANDLES)).to be(true),
+                                                "#{mod.name} missing HANDLES constant"
+      end
       expect(mod.const_defined?(:HANDLES_ALL)).to be(false),
                                                   "#{mod.name} defines HANDLES_ALL instead of HANDLES (one contract per module)"
     end
@@ -39,9 +43,13 @@ RSpec.describe "Use-case module invariants (ADR-0125)" do
 
   it "each module defines NEEDS with valid Infrastructure keys" do
     use_case_modules.each do |mod|
-      expect(mod.const_defined?(:NEEDS)).to be(true),
-                                            "#{mod.name} missing NEEDS constant"
-      needs = mod::NEEDS
+      needs = if mod.respond_to?(:needs_fields)
+                mod.needs_fields
+              else
+                expect(mod.const_defined?(:NEEDS)).to be(true),
+                                                      "#{mod.name} missing NEEDS constant"
+                mod::NEEDS
+              end
       expect(needs).to be_an(Array)
       needs.each do |key|
         expect(VALID_NEEDS_KEYS).to include(key),

@@ -18,10 +18,17 @@ module Textus
 
         registry = {}
         handler_modules.each do |mod|
-          next unless mod.const_defined?(:HANDLES) && mod.const_defined?(:NEEDS)
-
-          contract_classes = [mod::HANDLES]
-          needs = mod::NEEDS
+          contract_class = if mod.respond_to?(:handles_contract)
+                             mod.handles_contract
+                           else
+                             mod::HANDLES if mod.const_defined?(:HANDLES)
+                           end
+          needs = if mod.respond_to?(:needs_fields)
+                    mod.needs_fields
+                  else
+                    mod::NEEDS if mod.const_defined?(:NEEDS)
+                  end
+          next unless contract_class && needs
 
           deps_hash = needs.to_h do |field|
             unless ctx_hash.key?(field)
@@ -35,9 +42,7 @@ module Textus
 
           dep_struct = Data.define(*needs).new(**deps_hash)
 
-          contract_classes.each do |contract_class|
-            registry[contract_class] = ->(command:, call:) { mod.call(command, call, dep_struct) }
-          end
+          registry[contract_class] = ->(command:, call:) { mod.call(command, call, dep_struct) }
         end
         registry
       end

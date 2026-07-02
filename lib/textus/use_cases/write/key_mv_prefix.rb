@@ -1,14 +1,14 @@
 module Textus
   module UseCases
     module Write
-      module KeyMvPrefix
-        HANDLES = Dispatch::Contracts::KeyMvPrefix
-        NEEDS = %i[file_system manifest schemas audit_log layout event_store writer reader].freeze
+      class KeyMvPrefix < Base
+        handles Dispatch::Contracts::KeyMvPrefix
+        needs :file_system, :manifest, :schemas, :audit_log, :layout, :writer, :reader
 
-        def self.call(command, call, deps)
+        def call
           if command.from_prefix.nil? || command.to_prefix.nil?
-            return Value::Result.failure(:usage_error,
-                                         "from_prefix and to_prefix required")
+            return failure(:usage_error,
+                           "from_prefix and to_prefix required")
           end
 
           list_cmd = Data.define(:prefix, :lane, :q, :schema).new(
@@ -20,8 +20,8 @@ module Textus
           leaves = list.value || []
 
           if leaves.any? { |r| r["key"] == command.from_prefix }
-            return Value::Result.failure(:usage_error,
-                                         "from_prefix '#{command.from_prefix}' is itself a leaf — use `mv` to rename a single key")
+            return failure(:usage_error,
+                           "from_prefix '#{command.from_prefix}' is itself a leaf — use `mv` to rename a single key")
           end
 
           warnings = leaves.empty? ? ["no keys under #{command.from_prefix}"] : []
@@ -33,7 +33,7 @@ module Textus
           end
 
           plan = Textus::Store::Jobs::Plan.new(steps: steps, warnings: warnings)
-          return Value::Result.success(plan) if command.dry_run
+          return success(plan) if command.dry_run
 
           steps.each do |step|
             move = MoveKey.call(
@@ -45,7 +45,15 @@ module Textus
             )
             return move if move.failure?
           end
-          Value::Result.success(plan)
+          success(plan)
+        end
+
+        private
+
+        def deps
+          Struct.new(:file_system, :manifest, :schemas, :audit_log, :layout, :writer, :reader).new(
+            file_system, manifest, schemas, audit_log, layout, writer, reader
+          )
         end
       end
     end

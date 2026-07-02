@@ -1,12 +1,12 @@
 module Textus
   module UseCases
     module Write
-      module KeyDeletePrefix
-        HANDLES = Dispatch::Contracts::KeyDeletePrefix
-        NEEDS = %i[file_system manifest schemas audit_log layout event_store writer reader].freeze
+      class KeyDeletePrefix < Base
+        handles Dispatch::Contracts::KeyDeletePrefix
+        needs :file_system, :manifest, :schemas, :audit_log, :layout, :writer, :reader
 
-        def self.call(command, call, deps)
-          return Value::Result.failure(:usage_error, "prefix required") if command.prefix.nil? || command.prefix.empty?
+        def call
+          return failure(:usage_error, "prefix required") if command.prefix.nil? || command.prefix.empty?
 
           list_cmd = Data.define(:prefix, :lane, :q, :schema).new(
             prefix: command.prefix, lane: nil, q: nil, schema: nil,
@@ -20,7 +20,7 @@ module Textus
           steps = leaves.map { |row| { "op" => "delete", "key" => row["key"] } }
 
           plan = Textus::Store::Jobs::Plan.new(steps: steps, warnings: warnings)
-          return Value::Result.success(plan) if command.dry_run
+          return success(plan) if command.dry_run
 
           steps.each do |step|
             delete = DeleteKey.call(
@@ -32,7 +32,15 @@ module Textus
             )
             return delete if delete.failure?
           end
-          Value::Result.success(plan)
+          success(plan)
+        end
+
+        private
+
+        def deps
+          Struct.new(:file_system, :manifest, :schemas, :audit_log, :layout, :writer, :reader).new(
+            file_system, manifest, schemas, audit_log, layout, writer, reader
+          )
         end
       end
     end

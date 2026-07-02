@@ -3,21 +3,21 @@
 module Textus
   module UseCases
     module Ops
-      module DrainStore
-        HANDLES = Dispatch::Contracts::DrainStore
-        NEEDS = %i[event_store workflows manifest layout].freeze
+      class DrainStore < Base
+        handles Dispatch::Contracts::DrainStore
+        needs :event_store, :workflows, :manifest, :layout
 
         CONSUMER = Textus::Events::Consumer.new
 
-        def self.call(_command, call, deps)
-          workflow_registry = Textus::Workflow::Registry.new(deps.workflows)
+        def call
+          workflow_registry = Textus::Workflow::Registry.new(workflows)
           result = CONSUMER.drain(
-            db: deps.event_store.db,
+            db: event_store.db,
             registry: workflow_registry,
-            container: deps,
+            container: self,
             call: call,
           )
-          Value::Result.success(
+          success(
             "protocol" => Textus::PROTOCOL,
             "ok" => result[:failed].zero?,
             "completed" => result[:completed],

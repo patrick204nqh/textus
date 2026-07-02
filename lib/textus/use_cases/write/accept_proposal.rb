@@ -1,12 +1,11 @@
 module Textus
   module UseCases
     module Write
-      module AcceptProposal
-        HANDLES = Dispatch::Contracts::AcceptProposal
-        NEEDS = %i[file_system manifest audit_log layout event_store writer reader workflows].freeze
+      class AcceptProposal < Base
+        handles Dispatch::Contracts::AcceptProposal
+        needs :file_system, :manifest, :audit_log, :layout, :writer, :reader
 
-        def self.call(command, call, deps)
-          reader = deps.reader
+        def call
           env = reader.read(command.pending_key)
           parsed = extract_proposal(env, command.pending_key)
           return parsed if parsed.failure?
@@ -14,22 +13,23 @@ module Textus
           target = parsed.value[:target]
           action = parsed.value[:action]
 
-          return dry_run_preview(reader, target, env, command, action) if command.dry_run
+          return dry_run_preview(target, env, action) if command.dry_run
 
-          exec_and_cleanup(target, action, env, reader, deps, call, command, parsed)
+          exec_and_cleanup(target, action, env)
         end
 
-        def self.extract_proposal(env, pending_key)
+        private
+
+        def extract_proposal(env, pending_key)
           proposal = env&.meta&.dig("proposal") or
-            return Value::Result.failure(:proposal_error, "entry has no proposal block: #{pending_key}")
+            return failure(:proposal_error, "entry has no proposal block: #{pending_key}")
           target = proposal["target_key"] or
-            return Value::Result.failure(:proposal_error, "proposal missing target_key")
+            return failure(:proposal_error, "proposal missing target_key")
 
-          Value::Result.success({ target: target, action: proposal["action"] || "put" })
+          success({ target: target, action: proposal["action"] || "put" })
         end
-        private_class_method :extract_proposal
 
-        def self.dry_run_preview(reader, target, env, command, action)
+        def dry_run_preview(target, env, action)
           target_env = reader.read(target)
           body_diff = Textus::Diff.body(target_env&.body, env.body)
           meta_diff = Textus::Diff.meta(target_env&.meta&.dig("_meta") || {}, env.meta&.dig("_meta") || {})
@@ -37,15 +37,13 @@ module Textus
           result["body"] = body_diff if body_diff
           result["meta"] = meta_diff if meta_diff
           result["summary"] = Textus::Diff.summary(result)
-          Value::Result.success(result)
+          success(result)
         end
-        private_class_method :dry_run_preview
 
-        def self.exec_and_cleanup(target, action, env, _reader, deps, call, command, _parsed)
-          writer = deps.writer
+        def exec_and_cleanup(target, action, env)
           case action
           when "put"
-            mentry = deps.manifest.resolver.resolve(target).entry
+            mentry = manifest.resolver.resolve(target).entry
             writer.put(
               target, mentry: mentry, call: call,
                       payload: Textus::Value::Payload.new(meta: env.meta["_meta"] || {}, body: env.body, content: nil)
@@ -53,17 +51,13 @@ module Textus
           when "delete"
             writer.delete(target, call: call)
           else
-            return Value::Result.failure(:proposal_error, "unknown action: #{action}")
+            return failure(:proposal_error, "unknown action: #{action}")
           end
 
           writer.delete(command.pending_key, call: call)
-          registry = Textus::Workflow::Registry.new(deps.workflows)
-          emitter = Textus::Produce::EventEmitter.new(db: deps.event_store.db, workflow_registry: registry)
-          emitter.emit(event_type: "proposal.accepted", key: command.pending_key, payload: { target_key: target })
-          Value::Result.success("protocol" => Textus::PROTOCOL, "accepted" => command.pending_key,
-                                "target_key" => target, "action" => action, "cascade_key" => target)
+          success("protocol" => Textus::PROTOCOL, "accepted" => command.pending_key,
+                   "target_key" => target, "action" => action, "cascade_key" => target)
         end
-        private_class_method :exec_and_cleanup
       end
     end
   end

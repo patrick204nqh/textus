@@ -15,10 +15,8 @@
   },
   "lsp": {
     "yaml-ls": {},
-    "ruby-lsp": {},
-    "markdown": {
-      "command": ["marksman"],
-      "extensions": [".md", ".markdown"]
+    "ruby-lsp": {
+      "command": ["bundle", "exec", "ruby-lsp"]
     }
   },
   "instructions": [

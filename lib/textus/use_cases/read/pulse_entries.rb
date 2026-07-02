@@ -1,71 +1,83 @@
 module Textus
   module UseCases
     module Read
-      module PulseEntries
-        HANDLES = Dispatch::Contracts::PulseEntries
-        NEEDS = %i[file_system manifest audit_log event_store].freeze
+      class PulseEntries < Base
+        handles Dispatch::Contracts::PulseEntries
+        needs :file_system, :manifest, :audit_log, :event_store
 
-        def self.call(command, call, deps)
-          root  = deps.manifest.data.root
-          since = command.since || Textus::Store::Cursor.new(root: root, role: call.role).read
+        def call
+          root  = @manifest.data.root
+          since = @command.since || Textus::Store::Cursor.new(root: root, role: @call.role).read
 
-          changed = changed_since(since, call, deps)
+          changed = changed_since(since)
 
           result = {
-            "cursor" => deps.audit_log.latest_seq,
+            "cursor" => @audit_log.latest_seq,
             "changed" => changed,
-            "pending_review" => review_keys(call, deps),
+            "pending_review" => review_keys,
             "contract_etag" => Textus::Value::Etag.for_contract(root),
-            "index_etag" => index_etag(deps),
+            "index_etag" => index_etag,
           }
 
-          trace_buffer = deps.respond_to?(:trace_buffer) ? deps.trace_buffer : nil
+          trace_buffer = @call.respond_to?(:trace_buffer) ? @call.trace_buffer : nil
           if trace_buffer
             result["trace_stats"] = trace_buffer.stats
             result["recent_traces"] = trace_buffer.recent(limit: 10).map(&:to_h_for_wire)
           end
 
-          Textus::Store::Cursor.new(root: root, role: call.role).write(result["cursor"])
-          Value::Result.success(result)
+          Textus::Store::Cursor.new(root: root, role: @call.role).write(result["cursor"])
+          success(result)
         end
 
-        def self.changed_since(since, call, deps)
-          if deps.event_store
-            sqlite_rows = deps.event_store.db[:audit_events].where { seq > since }.order(:seq).all
+        private
+
+        def deps_for_audit
+          @deps_for_audit ||= Data.define(:manifest, :audit_log).new(manifest: @manifest, audit_log: @audit_log)
+        end
+
+        def deps_for_list
+          @deps_for_list ||= Data.define(:manifest, :event_store, :file_system, :layout).new(
+            manifest: @manifest, event_store: @event_store, file_system: @file_system, layout: nil,
+          )
+        end
+
+        def changed_since(since)
+          if @event_store
+            sqlite_rows = @event_store.db[:audit_events].where { seq > since }.order(:seq).all
             return sqlite_rows.map { |r| { "key" => r[:key], "verb" => r[:verb], "seq" => r[:seq] } } if sqlite_rows.any?
           end
 
-          audit = UseCases::Read::AuditEntries.call(
+          audit = AuditEntries.call(
             Data.define(:seq_since, :key, :lane, :role, :verb, :since, :correlation_id, :limit).new(
               seq_since: since, key: nil, lane: nil, role: nil, verb: nil, since: nil, correlation_id: nil, limit: nil,
             ),
-            call,
-            deps,
+            @call,
+            deps_for_audit,
           )
           return [] if audit.failure?
 
           audit.value || []
         end
 
-        def self.review_keys(call, deps)
-          queue = deps.manifest.policy.queue_lane
+        def review_keys
+          queue = @manifest.policy.queue_lane
           return [] unless queue
 
-          result = UseCases::Read::ListKeys.call(
+          result = ListKeys.call(
             Data.define(:prefix, :lane, :q, :schema).new(
               prefix: nil, lane: queue, q: nil, schema: nil,
             ),
-            call,
-            deps,
+            @call,
+            deps_for_list,
           )
           return [] unless result.success?
 
           result.value.map { |r| r["key"] }
         end
 
-        def self.index_etag(deps)
-          path = deps.manifest.resolver.resolve("artifacts.system.index").path
-          File.exist?(path) ? deps.file_system.etag(path) : nil
+        def index_etag
+          path = @manifest.resolver.resolve("artifacts.system.index").path
+          File.exist?(path) ? @file_system.etag(path) : nil
         rescue Textus::Error
           nil
         end

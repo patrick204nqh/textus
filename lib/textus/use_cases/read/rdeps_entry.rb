@@ -1,21 +1,21 @@
 module Textus
   module UseCases
     module Read
-      module RdepsEntry
-        HANDLES = Dispatch::Contracts::RdepsEntry
-        NEEDS = %i[manifest link_graph].freeze
+      class RdepsEntry < Base
+        handles Dispatch::Contracts::RdepsEntry
+        needs :manifest, :link_graph
 
-        def self.call(command, _call, deps)
-          source_rdeps = deps.manifest.data.entries.each_with_object([]) do |entry, acc|
+        def call
+          source_rdeps = @manifest.data.entries.each_with_object([]) do |entry, acc|
             next unless entry.external?
 
             sources = Array(entry.source&.sources).compact
-            acc << entry.key if sources.any? { |s| s == command.key || command.key.start_with?("#{s}.") }
+            acc << entry.key if sources.any? { |s| s == @command.key || @command.key.start_with?("#{s}.") }
           end
 
-          link_rdeps = deps.link_graph.links_to(command.key)
+          link_rdeps = @link_graph.links_to(@command.key)
           rdeps      = (source_rdeps + link_rdeps).uniq.sort
-          Value::Result.success("key" => command.key, "rdeps" => rdeps)
+          success("key" => @command.key, "rdeps" => rdeps)
         end
       end
     end

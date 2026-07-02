@@ -1,42 +1,44 @@
 module Textus
   module UseCases
     module Read
-      module GetEntry
-        HANDLES = Dispatch::Contracts::GetEntry
-        NEEDS = %i[entry_store manifest file_system].freeze
+      class GetEntry < Base
+        handles Dispatch::Contracts::GetEntry
+        needs :entry_store, :manifest, :file_system
 
-        def self.call(command, _call, deps)
-          envelope = deps.entry_store.read(command.key)
-          return Value::Result.failure(:not_found, "no entry at #{command.key}") unless envelope
+        def call
+          envelope = @entry_store.read(@command.key)
+          return failure(:not_found, "no entry at #{@command.key}") unless envelope
 
-          envelope = expand_sources(envelope, depth: 0, deps: deps)
-          Value::Result.success(envelope)
+          envelope = expand_sources(envelope, depth: 0)
+          success(envelope)
         end
 
-        def self.expand_sources(envelope, depth:, deps:)
+        private
+
+        def expand_sources(envelope, depth:)
           return envelope if depth >= 5
 
           raw_sources = Array(envelope.meta["sources"])
           return envelope if raw_sources.empty?
 
-          expanded = raw_sources.map { |src| expand_one_source(src, depth: depth, deps: deps) }
+          expanded = raw_sources.map { |src| expand_one_source(src, depth: depth) }
           envelope.with(sources: expanded)
         end
 
-        def self.expand_one_source(src, depth:, deps:)
+        def expand_one_source(src, depth:)
           src = { "key" => src } if src.is_a?(String)
           return src unless src.is_a?(Hash) && src["key"].is_a?(String)
 
           key = src["key"]
           stored_etag = src["etag"]
-          current_etag = resolve_current_etag(key, deps: deps)
+          current_etag = resolve_current_etag(key)
           suspended = stored_etag && current_etag ? stored_etag != current_etag : false
 
           result = src.merge("suspended" => suspended)
 
-          child_env = resolve_env(key, deps: deps)
+          child_env = resolve_env(key)
           if child_env
-            child_expanded = expand_sources(child_env, depth: depth + 1, deps: deps)
+            child_expanded = expand_sources(child_env, depth: depth + 1)
             child_sources = Array(child_expanded.sources)
             result = result.merge("sources" => child_sources) unless child_sources.empty?
           end
@@ -44,17 +46,17 @@ module Textus
           result
         end
 
-        def self.resolve_current_etag(key, deps:)
-          path = deps.manifest.resolver.resolve(key).path
-          return nil unless deps.file_system.exists?(path)
+        def resolve_current_etag(key)
+          path = @manifest.resolver.resolve(key).path
+          return nil unless @file_system.exists?(path)
 
-          deps.file_system.etag(path)
+          @file_system.etag(path)
         rescue Textus::Error
           nil
         end
 
-        def self.resolve_env(key, deps:)
-          deps.entry_store.read(key)
+        def resolve_env(key)
+          @entry_store.read(key)
         end
       end
     end

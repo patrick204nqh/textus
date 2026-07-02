@@ -41,6 +41,7 @@ module Textus
           Dispatch::Middleware::Binder.new,
           Dispatch::Middleware::Trace.new,
           Dispatch::Middleware::Auth.new,
+          Dispatch::Middleware::Events.new,
         ]
 
         Dispatch::HandlerResolver.eager_load!

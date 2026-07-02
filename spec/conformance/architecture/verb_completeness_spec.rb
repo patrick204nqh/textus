@@ -7,10 +7,14 @@ RSpec.describe "Verb completeness — every verb has contract + handler + CLI ve
     [Textus::UseCases::Read, Textus::UseCases::Write, Textus::UseCases::Ops].each do |ns|
       ns.constants(false).each do |c|
         mod = ns.const_get(c)
-        next unless mod.is_a?(Module) && mod.const_defined?(:HANDLES)
+        next unless mod.is_a?(Module)
 
-        handles = [mod::HANDLES]
-        all_handles.concat(handles)
+        contract = if mod.respond_to?(:handles_contract)
+                     mod.handles_contract
+                   elsif mod.const_defined?(:HANDLES)
+                     mod::HANDLES
+                   end
+        all_handles << contract if contract
       end
     end
     all_handles
