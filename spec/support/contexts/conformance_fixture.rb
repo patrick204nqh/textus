@@ -15,6 +15,7 @@ RSpec.shared_context "textus/4 conformance fixture" do
       data:
         knowledge:
           - key: knowledge.network.org
+            schema: person
           - key: knowledge.projects
         artifacts:
           - key: artifacts.catalogs.skills

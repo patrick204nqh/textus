@@ -11,9 +11,11 @@ RSpec.describe "naming-check workflow" do
       version: textus/4
       data:
         knowledge:
-          - { key: knowledge.judgment, naming: sequential, path: knowledge/judgment }
+          - key: knowledge.judgment
+            naming: sequential
         artifacts:
-          - { key: artifacts.doctor.naming-check, path: artifacts/doctor/naming-check.json }
+          - key: artifacts.doctor.naming-check
+            format: json
     YAML
   end
 

@@ -19,7 +19,8 @@ module Textus
           common = {
             raw: raw,
             key: key, path: path, lane: lane,
-            format: format,
+            format: format, naming: naming,
+            schema: raw["schema"],
           }
 
           klass = Entry::REGISTRY[kind]

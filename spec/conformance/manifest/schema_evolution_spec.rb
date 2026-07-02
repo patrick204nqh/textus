@@ -47,11 +47,13 @@ RSpec.describe "Schema evolution" do
     include_context "textus_store_fixture"
 
     it "uses the human role as migration author" do
+      FileUtils.mkdir_p(File.join(root, "data/knowledge"))
       store = store_from_manifest(root, lanes: %w[knowledge], schemas: { note: NOTE_SCHEMA_BODY }, manifest: <<~YAML)
         version: textus/4
         data:
           knowledge:
-            - { key: knowledge.note, path: knowledge/note.md, schema: note }
+            - key: knowledge.note
+              schema: note
       YAML
 
       store.with_role("human").put(key: "knowledge.note",
@@ -71,11 +73,13 @@ RSpec.describe "Schema evolution" do
     end
 
     it "uses knowledge lane's first writer as migration authority" do
+      FileUtils.mkdir_p(File.join(root, "data/knowledge"))
       store = store_from_manifest(root, lanes: %w[knowledge], schemas: { note: NOTE_SCHEMA_BODY }, manifest: <<~YAML)
         version: textus/4
         data:
           knowledge:
-            - { key: knowledge.note, path: knowledge/note.md, schema: note }
+            - key: knowledge.note
+              schema: note
       YAML
 
       authority = Textus::Schema::Tools.accept_role_for(store)

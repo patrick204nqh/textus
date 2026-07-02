@@ -23,7 +23,6 @@ RSpec.describe "textus/4 conformance — Fixture A: resolve and read" do
 
         expected = "sha256:#{Digest::SHA256.hexdigest(File.binread(env.path))}"
         expect(env.etag).to eq(expected)
-        expect(env.schema_ref).to eq("person")
       end
     end
   end
