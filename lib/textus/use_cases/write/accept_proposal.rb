@@ -3,10 +3,10 @@ module Textus
     module Write
       module AcceptProposal
         HANDLES = Dispatch::Contracts::AcceptProposal
-        NEEDS = %i[file_store manifest schemas audit_log layout event_bus].freeze
+        NEEDS = %i[file_store manifest schemas audit_log layout event_bus writer reader].freeze
 
         def self.call(command, call, deps)
-          reader = Store::Entry::Reader.new(file_store: deps.file_store, manifest: deps.manifest, layout: deps.layout)
+          reader = deps.reader
           env = reader.read(command.pending_key)
           parsed = extract_proposal(env, command.pending_key)
           return parsed if parsed.failure?
@@ -42,11 +42,7 @@ module Textus
         private_class_method :dry_run_preview
 
         def self.exec_and_cleanup(target, action, env, reader, deps, call, command, _parsed)
-          writer = Store::Entry::Writer.new(
-            file_store: deps.file_store, manifest: deps.manifest,
-            schemas: deps.schemas, audit_log: deps.audit_log,
-            reader: reader, layout: deps.layout
-          )
+          writer = deps.writer
           case action
           when "put"
             mentry = deps.manifest.resolver.resolve(target).entry

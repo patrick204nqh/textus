@@ -3,7 +3,7 @@ module Textus
     module Write
       module MoveKey
         HANDLES = Dispatch::Contracts::MoveKey
-        NEEDS = %i[file_store manifest schemas audit_log layout].freeze
+        NEEDS = %i[file_store manifest schemas audit_log layout writer reader].freeze
 
         def self.call(command, call, deps)
           Textus::Manifest::Data.validate_key!(command.old_key)
@@ -14,7 +14,7 @@ module Textus
           old_res = deps.manifest.resolver.resolve(command.old_key)
           new_res = deps.manifest.resolver.resolve(command.new_key)
 
-          reader = Store::Entry::Reader.new(file_store: deps.file_store, manifest: deps.manifest, layout: deps.layout)
+          reader = deps.reader
 
           unless reader.exists?(command.old_key)
             return Value::Result.failure(:not_found,
@@ -29,11 +29,7 @@ module Textus
           end
 
           pre_env = reader.read(command.old_key)
-          writer = Store::Entry::Writer.new(
-            file_store: deps.file_store, manifest: deps.manifest,
-            schemas: deps.schemas, audit_log: deps.audit_log,
-            reader: reader, layout: deps.layout
-          )
+          writer = deps.writer
           unless pre_env.uid
             writer.put(
               command.old_key, mentry: old_res.entry, call: call,

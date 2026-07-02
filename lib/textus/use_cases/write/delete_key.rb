@@ -3,15 +3,10 @@ module Textus
     module Write
       module DeleteKey
         HANDLES = Dispatch::Contracts::DeleteKey
-        NEEDS = %i[file_store manifest schemas audit_log layout event_bus].freeze
+        NEEDS = %i[file_store manifest schemas audit_log layout event_bus writer reader].freeze
 
         def self.call(command, call, deps)
-          reader = Store::Entry::Reader.new(file_store: deps.file_store, manifest: deps.manifest, layout: deps.layout)
-          writer = Store::Entry::Writer.new(
-            file_store: deps.file_store, manifest: deps.manifest,
-            schemas: deps.schemas, audit_log: deps.audit_log,
-            reader: reader, layout: deps.layout
-          )
+          writer = deps.writer
           writer.delete(command.key, if_etag: command.if_etag, call: call)
           if deps.respond_to?(:event_bus) && deps.event_bus
             deps.event_bus.emit(Textus::Event::EntryDeleted.new(

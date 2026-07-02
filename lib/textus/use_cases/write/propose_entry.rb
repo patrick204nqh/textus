@@ -3,7 +3,7 @@ module Textus
     module Write
       module ProposeEntry
         HANDLES = Dispatch::Contracts::ProposeEntry
-        NEEDS = %i[file_store manifest schemas audit_log layout event_bus].freeze
+        NEEDS = %i[file_store manifest schemas audit_log layout event_bus writer reader].freeze
 
         def self.call(command, call, deps)
           zone = deps.manifest.policy.propose_lane_for(call.role)
@@ -15,12 +15,7 @@ module Textus
 
           key = "#{zone}.#{command.key}"
           mentry = deps.manifest.resolver.resolve(key).entry
-          reader = Store::Entry::Reader.new(file_store: deps.file_store, manifest: deps.manifest, layout: deps.layout)
-          writer = Store::Entry::Writer.new(
-            file_store: deps.file_store, manifest: deps.manifest,
-            schemas: deps.schemas, audit_log: deps.audit_log,
-            reader: reader, layout: deps.layout
-          )
+          writer = deps.writer
           envelope = writer.put(
             key, mentry: mentry, call: call,
                  payload: Textus::Value::Payload.new(meta: command.meta || {}, body: command.body, content: command.content)

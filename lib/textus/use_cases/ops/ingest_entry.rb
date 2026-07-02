@@ -9,7 +9,7 @@ module Textus
     module Ops
       module IngestEntry
         HANDLES = Dispatch::Contracts::IngestEntry
-        NEEDS = %i[file_store manifest schemas audit_log layout job_store].freeze
+        NEEDS = %i[file_store manifest schemas audit_log layout job_store writer reader].freeze
 
         SOURCE_KINDS = %w[url file asset].freeze
         CONTENT_HASH_ALGO = "sha256"
@@ -94,12 +94,7 @@ module Textus
         end
 
         def self.write_entry(key, structured, mentry, call, deps)
-          reader = Store::Entry::Reader.new(file_store: deps.file_store, manifest: deps.manifest, layout: deps.layout)
-          writer = Store::Entry::Writer.new(
-            file_store: deps.file_store, manifest: deps.manifest,
-            schemas: deps.schemas, audit_log: deps.audit_log,
-            reader: reader, layout: deps.layout
-          )
+          writer = deps.writer
           writer.put(key, mentry: mentry, call: call,
                           payload: Textus::Value::Payload.new(meta: nil, body: nil, content: structured))
         end
@@ -114,8 +109,7 @@ module Textus
 
         def self.supersede_entry(old_key, new_key, structured, call, deps)
           old_mentry = deps.manifest.resolver.resolve(old_key).entry
-          reader = Store::Entry::Reader.new(file_store: deps.file_store, manifest: deps.manifest, layout: deps.layout)
-          old_env = reader.read(old_key)
+          old_env = deps.reader.read(old_key)
           old_content = old_env&.content || {}
           tombstone = {}
           %w[ingested_at].each { |k| tombstone[k] = old_content[k] if old_content.key?(k) }
@@ -123,11 +117,7 @@ module Textus
           tombstone["source"] = { "kind" => source_kind } if source_kind
           tombstone["superseded_by"] = new_key
 
-          writer = Store::Entry::Writer.new(
-            file_store: deps.file_store, manifest: deps.manifest,
-            schemas: deps.schemas, audit_log: deps.audit_log,
-            reader: reader, layout: deps.layout
-          )
+          writer = deps.writer
           writer.put(old_key, mentry: old_mentry, call: call,
                               payload: Textus::Value::Payload.new(meta: nil, body: nil, content: tombstone))
 

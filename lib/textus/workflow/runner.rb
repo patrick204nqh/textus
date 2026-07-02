@@ -169,29 +169,17 @@ module Textus
 
       def write_and_publish(key, data, ctx, targets)
         normalized = Textus::Format.data_to_payload(data, ctx.entry.format)
-        Textus::Store::Entry::Writer.new(
-          file_store: @container.file_store, manifest: @container.manifest,
-          schemas: @container.schemas, audit_log: @container.audit_log,
-          reader: Textus::Store::Entry::Reader.new(
-            file_store: @container.file_store, manifest: @container.manifest,
-            layout: @container.layout
-          ),
-          layout: @container.layout
-        ).put(key, mentry: ctx.entry,
-                   payload: Textus::Value::Payload.new(**normalized), call: @call)
+        @container.writer.put(key, mentry: ctx.entry,
+                                  payload: Textus::Value::Payload.new(**normalized), call: @call)
 
         targets.each do |target|
           attrs = { "to" => target.to, "template" => target.template,
                     "tree" => target.tree }
           attrs["inject_boot"] = true if target.inject_boot
           pub_target = Textus::Manifest::Policy::PublishTarget.new(attrs)
-          reader = Textus::Store::Entry::Reader.new(
-            file_store: @container.file_store, manifest: @container.manifest,
-            layout: @container.layout
-          )
           pctx = Textus::Manifest::Entry::Base::PublishContext.new(
             container: @container, call: @call,
-            reader: reader.method(:read)
+            reader: @container.reader.method(:read)
           )
           entry = ctx.entry.with_publish_targets([pub_target])
           entry.publish_via(pctx)
@@ -207,27 +195,15 @@ module Textus
           action: :converge, actor: @call.role, key: key,
           rule_predicates: rule_preds
         )
-        Textus::Store::Entry::Writer.new(
-          file_store: @container.file_store, manifest: @container.manifest,
-          schemas: @container.schemas, audit_log: @container.audit_log,
-          reader: Textus::Store::Entry::Reader.new(
-            file_store: @container.file_store, manifest: @container.manifest,
-            layout: @container.layout
-          ),
-          layout: @container.layout
-        ).put(key, mentry: ctx.entry,
-                   payload: Textus::Value::Payload.new(**normalized), call: @call)
+        @container.writer.put(key, mentry: ctx.entry,
+                                  payload: Textus::Value::Payload.new(**normalized), call: @call)
 
         entry = @container.manifest.resolver.resolve(key).entry
         return unless entry.publish_tree || !Array(entry.publish_to).empty?
 
-        reader = Textus::Store::Entry::Reader.new(
-          file_store: @container.file_store, manifest: @container.manifest,
-          layout: @container.layout
-        )
         pctx = Textus::Manifest::Entry::Base::PublishContext.new(
           container: @container, call: @call,
-          reader: reader.method(:read),
+          reader: @container.reader.method(:read),
         )
         entry.publish_via(pctx)
       end

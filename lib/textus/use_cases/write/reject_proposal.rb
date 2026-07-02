@@ -3,7 +3,7 @@ module Textus
     module Write
       module RejectProposal
         HANDLES = Dispatch::Contracts::RejectProposal
-        NEEDS = %i[file_store manifest schemas audit_log layout event_bus].freeze
+        NEEDS = %i[file_store manifest schemas audit_log layout event_bus writer reader].freeze
 
         def self.call(command, call, deps)
           mentry = deps.manifest.resolver.resolve(command.pending_key).entry
@@ -12,17 +12,13 @@ module Textus
                                          "reject: '#{command.pending_key}' is not in a proposal zone (zone=#{mentry.lane})")
           end
 
-          reader = Store::Entry::Reader.new(file_store: deps.file_store, manifest: deps.manifest, layout: deps.layout)
+          reader = deps.reader
           env = reader.read(command.pending_key)
           proposal = env&.meta&.dig("proposal") or
             return Value::Result.failure(:proposal_error, "entry has no proposal block: #{command.pending_key}")
           target_key = proposal["target_key"]
 
-          writer = Store::Entry::Writer.new(
-            file_store: deps.file_store, manifest: deps.manifest,
-            schemas: deps.schemas, audit_log: deps.audit_log,
-            reader: reader, layout: deps.layout
-          )
+          writer = deps.writer
           writer.delete(command.pending_key, mentry: mentry, call: call)
           if deps.respond_to?(:event_bus) && deps.event_bus
             deps.event_bus.emit(Textus::Event::ProposalRejected.new(

@@ -3,7 +3,7 @@ module Textus
     module Write
       module KeyMvPrefix
         HANDLES = Dispatch::Contracts::KeyMvPrefix
-        NEEDS = %i[file_store manifest schemas audit_log layout job_store].freeze
+        NEEDS = %i[file_store manifest schemas audit_log layout job_store writer reader].freeze
 
         def self.call(command, call, deps)
           if command.from_prefix.nil? || command.to_prefix.nil?
