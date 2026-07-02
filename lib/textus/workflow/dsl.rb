@@ -10,7 +10,8 @@ module Textus
         include Textus::Workflow::Helpers
 
         attr_reader :name, :steps, :match_pattern, :publish_block, :publish_targets,
-                    :validate_steps, :depends_on_patterns
+                    :validate_steps, :depends_on_patterns,
+                    :handled_events, :max_attempts, :workflow_type
 
         def initialize(name)
           @name                = name
@@ -23,6 +24,17 @@ module Textus
           @depends_on_patterns = []
           @ttl                 = nil
           @on_expire           = nil
+          @handled_events      = []
+          @max_attempts        = 3
+          @workflow_type       = name
+        end
+
+        def handles(*event_types)
+          @handled_events.concat(event_types.map(&:to_s).freeze)
+        end
+
+        def type
+          @workflow_type
         end
 
         def match(pattern)

@@ -5,21 +5,24 @@ module Textus
     module Ops
       module DrainStore
         HANDLES = Dispatch::Contracts::DrainStore
-        NEEDS = %i[manifest file_store schemas audit_log job_store layout workflows].freeze
+        NEEDS = %i[job_store workflows manifest layout].freeze
+
+        CONSUMER = Textus::Events::Consumer.new
 
         def self.call(_command, call, deps)
-          proxy = Store::Infrastructure.build(
-            manifest: deps.manifest, file_store: deps.file_store,
-            schemas: deps.schemas, audit_log: deps.audit_log,
-            job_store: deps.job_store, layout: deps.layout,
-            workflows: deps.workflows, root: deps.layout.root
+          workflow_registry = Textus::Workflow::Registry.new(deps.workflows)
+          result = CONSUMER.drain(
+            db: deps.job_store.db,
+            registry: workflow_registry,
+            container: deps,
+            call: call,
           )
-          queue = Textus::Store::Jobs::Queue.new(store: deps.job_store)
-          Textus::Store::Jobs::Planner.seed(container: proxy, queue: queue, role: call.role)
-          queue.reclaim(now: Textus::Port::Clock.new.now)
-          summary = Textus::Store::Jobs::Worker.for(container: proxy, queue: queue).drain
-          Value::Result.success("protocol" => Textus::PROTOCOL, "ok" => summary.failed.zero?,
-                                "completed" => summary.completed, "failed" => summary.failed)
+          Value::Result.success(
+            "protocol" => Textus::PROTOCOL,
+            "ok" => result[:failed].zero?,
+            "completed" => result[:completed],
+            "failed" => result[:failed],
+          )
         end
       end
     end

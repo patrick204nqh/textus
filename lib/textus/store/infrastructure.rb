@@ -1,21 +1,22 @@
+# frozen_string_literal: true
+
 module Textus
   class Store
     Infrastructure = Data.define(
-      :manifest,          # Textus::Manifest
-      :file_store,        # Port::Storage::FileStore
-      :schemas,           # Schema::Registry
-      :audit_log,         # Port::AuditLog
-      :job_store,         # Port::Store
-      :layout,            # Store::Layout
-      :link_edge_store,   # Links::LinkEdgeStore
-      :workflows,         # Array<Workflow::DSL::Definition>
-      :root,              # String — store root path
-      :reader,            # Store::Entry::Reader
-      :writer,            # Store::Entry::Writer
-      :event_bus,         # Event::Bus (session-scoped)
-      :ttl_evaluator, # Store::Freshness::TtlEvaluator
-      :trace_buffer, # Store::TraceBuffer (ring buffer for dispatch traces)
-      :pipeline, # Dispatch::Pipeline (nil until wired)
+      :manifest,
+      :file_store,
+      :schemas,
+      :audit_log,
+      :job_store,
+      :layout,
+      :link_edge_store,
+      :workflows,
+      :root,
+      :reader,
+      :writer,
+      :ttl_evaluator,
+      :trace_buffer,
+      :pipeline,
     ) do
       def self.build(**kwargs)
         members = self.members

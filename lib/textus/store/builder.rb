@@ -13,8 +13,9 @@ module Textus
           keep: manifest.data.audit_config[:keep],
         )
         link_edge_store = Links::LinkEdgeStore.new(database: job_store)
+
         workflows = Workflow::Loader.load_all(root)
-        event_bus = Event::Bus.new
+        workflows.concat([Textus::Workflows::Materialize, Textus::Workflows::Index])
 
         ttl_evaluator = Store::Freshness::TtlEvaluator.new(
           manifest:,
@@ -24,15 +25,6 @@ module Textus
 
         trace_buffer = Store::TraceBuffer.new
 
-        cascade_subscriber = Produce::CascadeSubscriber.new(
-          manifest:, workflows:, job_store:, file_store:,
-        )
-        event_bus.subscribe(Event::EntryWritten,     &cascade_subscriber.method(:on_entry_written))
-        event_bus.subscribe(Event::EntryDeleted,     &cascade_subscriber.method(:on_entry_deleted))
-        event_bus.subscribe(Event::EntryMoved,       &cascade_subscriber.method(:on_entry_moved))
-        event_bus.subscribe(Event::ProposalAccepted, &cascade_subscriber.method(:on_proposal_accepted))
-        event_bus.subscribe(Event::ProposalRejected, &cascade_subscriber.method(:on_proposal_rejected))
-
         reader  = Store::Entry::Reader.new(file_store:, manifest:, layout:)
         writer  = Store::Entry::Writer.new(file_store:, manifest:,
                                            audit_log:, reader:, layout:)
@@ -40,7 +32,7 @@ module Textus
         partial = Infrastructure.new(
           manifest:, file_store:, schemas:, audit_log:, job_store:,
           layout:, link_edge_store:, workflows:, root:,
-          reader:, writer:, event_bus:,
+          reader:, writer:,
           ttl_evaluator:, trace_buffer:, pipeline: nil
         )
 
@@ -48,16 +40,10 @@ module Textus
           Dispatch::Middleware::Binder.new,
           Dispatch::Middleware::Trace.new,
           Dispatch::Middleware::Auth.new,
-          Dispatch::Middleware::AuditIndex.new(job_store: partial.job_store, audit_log: partial.audit_log),
         ]
 
         Dispatch::HandlerResolver.eager_load!
 
-        # NEEDS deps are snapshotted at HandlerResolver.build time, so a handler
-        # declaring :pipeline in NEEDS would otherwise always see the
-        # `pipeline: nil` from `partial` above. Build once against `partial` to
-        # get a working pipeline, wire it into the container, then rebuild the
-        # registry against that container so :pipeline resolves to a real value.
         interim_pipeline = Dispatch::Pipeline.new(registry: Dispatch::HandlerResolver.build(partial), container: partial, middleware:)
         wired = partial.with(pipeline: interim_pipeline)
         registry = Dispatch::HandlerResolver.build(wired)

@@ -5,23 +5,24 @@ require "securerandom"
 module Textus
   module Surface
     class Watcher
+      CONSUMER = Textus::Events::Consumer.new
+
       def initialize(container:)
         @container = container
+        @registry = Textus::Workflow::Registry.new(container.workflows)
       end
 
       def tick
-        queue = Textus::Store::Jobs::Queue.new(store: @container.job_store)
-        Textus::Store::Jobs::Planner.seed(
+        CONSUMER.drain(
+          db: @container.job_store.db,
+          registry: @registry,
           container: @container,
-          queue: queue,
-          role: Textus::Value::Role::AUTOMATION,
+          call: Textus::Value::Call.build(role: Textus::Value::Role::AUTOMATION, correlation_id: SecureRandom.uuid),
         )
-        queue.reclaim(now: Textus::Port::Clock.new.now)
-        Textus::Store::Jobs::Worker.for(container: @container, queue: queue).drain
       end
 
       def run(poll: nil)
-        interval = poll || @container.manifest.data.worker_config[:poll]
+        interval = poll || @container.manifest.data.worker_config[:poll] || 2
         lock = Textus::Port::WatcherLock.new(@container.root)
         lock.acquire
         begin
