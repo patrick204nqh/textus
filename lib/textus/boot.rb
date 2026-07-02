@@ -6,11 +6,10 @@ module Textus
     PROTOCOL_ID = PROTOCOL
 
     # Human-readable name(s) for the live lane(s) of a given kind, or `fallback`
-    # when the manifest declares none. Lets write-flow guidance name the live
-    # lane by kind instead of a hardcoded instance name (ADR 0034).
+    # when the manifest declares none. With fixed Protocol::V4::LANES, lane kinds
+    # are removed — this is preserved as a pass-through for backward compatibility.
     def self.lane_label(manifest, kind, fallback)
-      lanes = manifest.policy.lanes_of_kind(kind)
-      lanes.empty? ? fallback : lanes.join(", ")
+      fallback
     end
 
     # Static, store-independent parts of the agent-facing protocol. The
@@ -103,8 +102,7 @@ module Textus
       writable_lanes = manifest.data.declared_lane_kinds.keys.each_with_object([]) do |ln, acc|
         next unless agent_role
 
-        verb    = manifest.policy.verb_for_lane(ln)
-        writers = manifest.policy.roles_with_capability(verb)
+        writers = manifest.policy.writers_for(ln)
         acc << ln if writers.include?(agent_role)
       end
 
@@ -122,7 +120,7 @@ module Textus
 
     def self.agent_protocol(manifest)
       queue = manifest.policy.queue_lane
-      feeds = lane_label(manifest, :machine, "the machine lane")
+      feeds = "artifacts"
       AGENT_PROTOCOL_TEMPLATE.merge(
         "recipes" => {
           "read" => { "purpose" => "find and read an entry",
@@ -139,7 +137,7 @@ module Textus
         "role_resolution" => {
           "summary" => "write role is resolved in order: --as flag, TEXTUS_ROLE env var, .textus/role file, " \
                        "then a transport default ('human' for CLI, 'agent' for MCP)",
-          "roles" => manifest.data.role_caps.keys,
+          "roles" => Textus::Protocol::V4::LANES.values.flat_map { |r| r[:writers] }.uniq,
           "ref" => "SPEC.md §5",
         },
       )
@@ -147,10 +145,7 @@ module Textus
 
     def self.lanes_for(manifest)
       manifest.data.declared_lane_kinds.keys.map do |name|
-        verb = manifest.policy.verb_for_lane(name)
-        row  = { "name" => name, "writers" => manifest.policy.roles_with_capability(verb) }
-        kind = manifest.policy.declared_kind(name)
-        row["kind"] = kind.to_s if kind
+        row = { "name" => name, "writers" => manifest.policy.writers_for(name) }
         purpose = manifest.data.lane_descs[name]
         row["purpose"] = purpose if purpose && !purpose.empty?
         row

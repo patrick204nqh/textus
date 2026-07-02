@@ -2,24 +2,23 @@ module Textus
   class Manifest
     class Entry
       class Base < Entry
-        attr_reader :raw, :key, :path, :lane, :schema, :owner, :format, :publish_targets
+        attr_reader :raw, :key, :path, :lane, :schema, :naming, :format, :publish_targets
 
         # rubocop:disable Lint/MissingSuper
-        def initialize(raw:, key:, path:, lane:, schema:, owner:, format:, publish_targets: [])
+        def initialize(raw:, key:, path:, lane:, schema:, naming:, format:, publish_targets: [])
           @raw = raw
           @key = key
           @path = path
           @lane = lane
           @schema = schema
-          @owner = owner
+          @naming = naming
           @format = format
           @publish_targets = Array(publish_targets)
         end
         # rubocop:enable Lint/MissingSuper
 
         def lane_writers(policy)
-          verb = policy.verb_for_lane(@lane)
-          policy.roles_with_capability(verb)
+          policy.writers_for(@lane)
         rescue UsageError => e
           raise UsageError.new("entry '#{@key}': #{e.message}")
         end

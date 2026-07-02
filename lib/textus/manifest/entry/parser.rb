@@ -22,7 +22,7 @@ module Textus
           common = {
             raw: raw,
             key: key, path: path, lane: lane,
-            schema: raw["schema"], owner: raw["owner"],
+            schema: raw["schema"], naming: raw["naming"],
             format: format,
             publish_targets: publish_targets(raw)
           }

@@ -59,7 +59,7 @@ module Textus
         return if last_writer.nil?
 
         last_writer_is_authority =
-          @manifest.policy.roles_with_capability("author").include?(last_writer)
+          @manifest.policy.writers_for("knowledge").include?(last_writer)
         env.meta.each_key do |field|
           owner = schema.maintained_by(field)
           next if owner.nil? || last_writer == owner || last_writer_is_authority

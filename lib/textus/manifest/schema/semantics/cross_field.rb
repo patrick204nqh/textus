@@ -5,7 +5,6 @@ module Textus
         module CrossField
           def check_cross_field!(raw)
             check_owners!(raw["lanes"], raw["entries"])
-            check_lane_kind_consistency!(raw)
           end
 
           def check_owners!(lanes, entries)
@@ -33,19 +32,7 @@ module Textus
             OWNER_SUBJECT_PATTERN.match?(subject)
           end
 
-          def check_lane_kind_consistency!(raw)
-            held = Capabilities.resolve(raw["roles"]).values.flatten.uniq
 
-            Array(raw["lanes"]).each_with_index do |z, i|
-              verb = KIND_REQUIRES_VERB[z["kind"]]
-              next if verb.nil? || held.include?(verb)
-
-              raise BadManifest.new(
-                "lane '#{z["name"]}' (#{z["kind"]}) at '$.lanes[#{i}]' " \
-                "needs a role with capability '#{verb}'; none declared",
-              )
-            end
-          end
         end
       end
     end

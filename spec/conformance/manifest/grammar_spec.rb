@@ -12,41 +12,16 @@ RSpec.describe "Textus::Manifest grammar" do
     end
   end
 
-  describe "zones block" do
+  describe "writers_for" do
     include_context "textus/4 conformance fixture"
 
-    it "derives zone writers from capability × zone-kind" do
-      File.write(File.join(root, "manifest.yaml"), <<~YAML)
-        version: textus/4
-        lanes:
-          - { name: identity, kind: canon }
-          - { name: proposals,  kind: queue }
-        entries:
-          - { key: identity.self, path: identity/self.md, lane: identity, owner: human:patrick, kind: leaf}
-
-      YAML
-      FileUtils.mkdir_p(File.join(root, "data/identity"))
-      File.write(File.join(root, "data/identity/self.md"), "---\nname: self\n---\n")
+    it "returns writers for a fixed lane" do
       m = Textus::Manifest.load(root)
-      # canon requires author; only human holds it under the default mapping.
-      expect(m.policy.roles_with_capability(m.policy.verb_for_lane("identity"))).to eq(["human"])
-      # queue requires propose; both human and agent hold it.
-      expect(m.policy.roles_with_capability(m.policy.verb_for_lane("proposals"))).to contain_exactly("human", "agent")
-    end
-
-    it "raises BadFrontmatter if zones block is absent" do
-      File.write(File.join(root, "manifest.yaml"), <<~YAML)
-        version: textus/4
-        entries:
-          - { key: state.x, path: state/x.md, lane: state, owner: human:self, kind: leaf}
-
-      YAML
-      expect { Textus::Manifest.load(root) }
-        .to raise_error(Textus::BadFrontmatter, /manifest must declare lanes/)
+      expect(m.policy.writers_for("proposals")).to contain_exactly("human", "agent")
     end
   end
 
-  describe "zone desc (ADR 0033)" do
+  describe "zone desc" do
     include_context "textus_store_fixture"
 
     let(:store) do

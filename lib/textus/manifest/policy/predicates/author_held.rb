@@ -4,14 +4,14 @@ module Textus
       module Predicates
         class AuthorHeld
           def self.call(manifest:, actor:, action:, key:, schemas: nil, envelope: nil, extra: {})
-            holders = manifest.policy.roles_with_capability("author")
+            holders = manifest.policy.writers_for("knowledge")
             pass = holders.include?(actor.to_s)
             reason = if pass
                        nil
                      elsif holders.empty?
-                       "no role holds the 'author' capability; #{action} is disabled"
+                       "no role can write knowledge; #{action} is disabled"
                      else
-                       "role '#{actor}' lacks the 'author' capability (held by: #{holders.join(", ")})"
+                       "role '#{actor}' cannot write knowledge (held by: #{holders.join(", ")})"
                      end
             { pass:, reason: }
           end

@@ -1,5 +1,4 @@
 require_relative "schema"
-require_relative "capabilities"
 
 module Textus
   class Manifest
@@ -13,7 +12,7 @@ module Textus
       WORKER_DEFAULTS = { pool: 4, poll: 5, lease_ttl: 60, max_attempts: 3 }.freeze
 
       attr_reader :raw, :root, :entries, :declared_lane_kinds,
-                  :lane_descs, :lane_owners,
+                  :lane_descs,
                   :audit_config, :worker_config, :role_caps
 
       def self.validate_key!(key)
@@ -46,10 +45,9 @@ module Textus
         @lane_descs  = Array(raw["lanes"]).to_h { |z| [z["name"], z["desc"]] }
         # Only lanes that actually declare an owner — keep nil-tombstones out so a
         # future `lane_owners.key?(name)` means "owner declared", not "lane exists".
-        @lane_owners = Array(raw["lanes"]).to_h { |z| [z["name"], z["owner"]] }.compact
         @audit_config = build_audit_config(raw)
         @worker_config = build_worker_config(raw)
-        @role_caps = Capabilities.resolve(raw["roles"])
+        @role_caps = {}
         @entries = build_entries(raw)
         validate_declared_keys!
         freeze

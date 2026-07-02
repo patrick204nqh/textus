@@ -4,54 +4,15 @@ module Textus
       module Semantics
         module Invariants
           def check_invariants!(raw)
-            check_roles!(raw["roles"])
             check_lanes!(raw["lanes"])
             check_entries!(raw["entries"])
             check_rules!(raw["rules"])
-            check_single_queue!(raw)
-            check_single_machine!(raw)
             walk(raw["audit"], AUDIT_KEYS, "$.audit") if raw["audit"].is_a?(Hash)
-          end
-
-          def check_roles!(roles)
-            return if roles.nil?
-
-            roles.each_with_index do |r, i|
-              path = "$.roles[#{i}]"
-              name = r["name"]
-              unless Textus::Value::Role::NAMES.include?(name)
-                raise BadManifest.new(
-                  "unknown role name '#{name}' at '#{path}' (allowed: #{Textus::Value::Role::NAMES.join(", ")})",
-                )
-              end
-              Array(r["can"]).each do |verb|
-                next if CAPABILITIES.include?(verb)
-
-                hint = %w[ingest fetch].include?(verb) ? " — the quarantine capability folded into 'converge' (ADR 0090)" : ""
-                raise BadManifest.new(
-                  "unknown capability '#{verb}' for role '#{name}' at '#{path}' " \
-                  "(known: #{CAPABILITIES.join(", ")})#{hint}",
-                )
-              end
-            end
-
-            author_holders = roles.count { |r| Array(r["can"]).include?("author") }
-            return if author_holders <= 1
-
-            raise BadManifest.new(
-              "manifest declares #{author_holders} roles with the author capability; at most one is allowed",
-            )
           end
 
           def check_lanes!(lanes)
             Array(lanes).each_with_index do |z, i|
               walk(z, LANE_KEYS, "$.lanes[#{i}]")
-              next unless %w[quarantine derived].include?(z["kind"])
-
-              raise BadManifest.new(
-                "lane kind '#{z["kind"]}' at '$.lanes[#{i}]' was folded into 'machine' (ADR 0091) — " \
-                "use `kind: machine`",
-              )
             end
           end
 
@@ -95,19 +56,7 @@ module Textus
             end
           end
 
-          def check_single_queue!(raw)
-            queues = Array(raw["lanes"]).select { |z| z["kind"] == "queue" }.map { |z| z["name"] }
-            return if queues.size <= 1
 
-            raise BadManifest.new("at most one lane may declare kind: queue (found: #{queues.join(", ")})")
-          end
-
-          def check_single_machine!(raw)
-            machines = Array(raw["lanes"]).select { |z| z["kind"] == "machine" }.map { |z| z["name"] }
-            return if machines.size <= 1
-
-            raise BadManifest.new("at most one lane may declare kind: machine (found: #{machines.join(", ")})")
-          end
 
           def walk(hash, allowed, path)
             return unless hash.is_a?(Hash)
