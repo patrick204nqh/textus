@@ -3,20 +3,20 @@
 module Textus
   module Links
     class LinkEdgeStore
-      def initialize(db:)
-        @db = db
+      def initialize(database:)
+        @database = database
       end
 
       def record(from_key:, to_key:)
-        @db.execute(
+        @database.execute(
           "INSERT OR IGNORE INTO link_edges (from_key, to_key) VALUES (?, ?)",
           [from_key, to_key],
         )
       end
 
       def dependents_of(key)
-        @db.execute("SELECT from_key FROM link_edges WHERE to_key = ?", [key])
-           .map { |r| r["from_key"] }
+        @database.execute("SELECT from_key FROM link_edges WHERE to_key = ?", [key])
+                 .map { |row| row["from_key"] }
       end
 
       def neighbors_of(key)
@@ -25,7 +25,7 @@ module Textus
           UNION
           SELECT from_key AS key FROM link_edges WHERE to_key = ?
         SQL
-        @db.execute(sql, [key, key]).map { |r| r["key"] }
+        @database.execute(sql, [key, key]).map { |row| row["key"] }
       end
 
       def reachable(key, depth: nil)
@@ -40,7 +40,7 @@ module Textus
             )
             SELECT DISTINCT k FROM reachable
           SQL
-          @db.execute(sql, [key, depth]).map { |r| r["k"] }
+          @database.execute(sql, [key, depth]).map { |row| row["k"] }
         else
           sql = <<~SQL
             WITH RECURSIVE reachable(k) AS (
@@ -51,7 +51,7 @@ module Textus
             )
             SELECT DISTINCT k FROM reachable
           SQL
-          @db.execute(sql, [key]).map { |r| r["k"] }
+          @database.execute(sql, [key]).map { |row| row["k"] }
         end
       end
     end

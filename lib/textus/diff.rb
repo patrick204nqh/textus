@@ -36,10 +36,10 @@ module Textus
     end
 
     # Myers diff algorithm — returns edit script as array of [:eq|:ins|:del, a_line, b_line]
-    def myers_diff(a, b)
-      n = a.size
-      m = b.size
-      max_d = n + m
+    def myers_diff(a_lines, b_lines)
+      a_count = a_lines.size
+      b_count = b_lines.size
+      max_d = a_count + b_count
       v = Hash.new(0)
       v[1] = 0
       trace = []
@@ -52,24 +52,24 @@ module Textus
                 v[k - 1] + 1
               end
           y = x - k
-          while x < n && y < m && a[x] == b[y]
+          while x < a_count && y < b_count && a_lines[x] == b_lines[y]
             x += 1
             y += 1
           end
           v[k] = x
-          return backtrack(trace, a, b, n, m) if x >= n && y >= m
+          return backtrack(trace, x, y) if x >= a_count && y >= b_count
         end
         trace << v.dup
       end
       []
     end
 
-    def backtrack(trace, _a, _b, x, y)
+    def backtrack(trace, x_pos, y_pos)
       script = []
       d = trace.size - 1
       return script if d.negative?
 
-      k = x - y
+      k = x_pos - y_pos
       while d.positive?
         prev_v = trace[d - 1]
         prev_k = if k == -d || (k != d && (prev_v[k - 1] || -1) < (prev_v[k + 1] || -1))
@@ -80,24 +80,24 @@ module Textus
         prev_x = prev_v[prev_k] || 0
         prev_y = prev_x - prev_k
 
-        while x > prev_x && y > prev_y
-          script.unshift([:eq, x - 1, y - 1])
-          x -= 1
-          y -= 1
+        while x_pos > prev_x && y_pos > prev_y
+          script.unshift([:eq, x_pos - 1, y_pos - 1])
+          x_pos -= 1
+          y_pos -= 1
         end
 
-        if x > prev_x
-          script.unshift([:del, x - 1, nil])
-          x -= 1
-        elsif y > prev_y
-          script.unshift([:ins, nil, y - 1])
-          y -= 1
+        if x_pos > prev_x
+          script.unshift([:del, x_pos - 1, nil])
+          x_pos -= 1
+        elsif y_pos > prev_y
+          script.unshift([:ins, nil, y_pos - 1])
+          y_pos -= 1
         end
 
         d -= 1
         k = prev_k
-        x = prev_x
-        y = prev_y
+        x_pos = prev_x
+        y_pos = prev_y
       end
 
       script

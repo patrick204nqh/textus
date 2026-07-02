@@ -12,7 +12,7 @@ module Textus
           max_size: manifest.data.audit_config[:max_size],
           keep: manifest.data.audit_config[:keep],
         )
-        link_edge_store = Links::LinkEdgeStore.new(db: job_store)
+        link_edge_store = Links::LinkEdgeStore.new(database: job_store)
         workflows = Workflow::Loader.load_all(root)
         event_bus = Event::Bus.new
 
