@@ -11,60 +11,44 @@ module Textus
             raise BadManifest.new("entry '#{key}': unknown naming alias '#{naming}' (known: #{Textus::Protocol::V4::NAMING_PATTERNS.keys.join(", ")})")
           end
 
-          kind = infer_kind(key, lane, raw, root:)
+          kind = infer_kind(key, raw, root:)
           explicit_path = raw["path"]
-          declared_format = raw["format"]
-          format = resolve_format(explicit_path, declared_format)
-          path   = explicit_path || derive_path(key, kind, format)
+          format = resolve_format(key, kind, root, raw["format"])
+          path = explicit_path || derive_path(key, kind, format)
 
           common = {
             raw: raw,
             key: key, path: path, lane: lane,
-            schema: raw["schema"], naming: naming,
             format: format,
-            publish_targets: publish_targets(raw),
           }
 
-          klass = Entry::REGISTRY[kind] or
-            raise BadManifest.new("entry '#{key}': unknown inferred kind: #{kind.inspect}")
+          klass = Entry::REGISTRY[kind]
+          raise BadManifest.new("entry '#{key}': unknown inferred kind: #{kind.inspect}") unless klass
+
           klass.from_raw(common, raw)
         end
 
-        def self.infer_kind(key, lane, raw, root:)
-          path = raw["path"] || key.split(".").join("/")
-          full_path = root ? File.join(root, "data", path) : nil
+        def self.infer_kind(key, raw, root:)
+          base = raw["path"] || key.split(".").join("/")
+          dir = root ? File.join(root, "data", base) : nil
 
-          return :nested if full_path && File.directory?(full_path)
-          return :leaf if full_path && File.file?(full_path)
+          return :nested if dir && File.directory?(dir)
+          return :leaf if dir && Dir.glob("#{dir}.*").any? { |p| File.file?(p) }
 
           :leaf
         end
         private_class_method :infer_kind
 
-        def self.parse_source(raw, _key)
-          block = raw["source"]
-          return nil if block.nil?
+        def self.resolve_format(key, kind, root, declared)
+          return "markdown" if kind == :nested
 
-          Textus::Manifest::Policy::Source.new(block)
-        end
-
-        def self.publish_targets(raw)
-          block = raw["publish"]
-          return [] if block.nil?
-
-          unless block.is_a?(Array)
-            raise BadManifest.new(
-              "entry '#{raw["key"]}': `publish:` must be a list of targets " \
-              "[{to:, template:?} | {tree:}] (ADR 0094); the `publish: { … }` map form was retired",
-            )
+          dir = root ? File.join(root, "data", key.split(".").join("/")) : nil
+          if dir
+            existing = Dir.glob("#{dir}.*").find { |p| File.file?(p) }
+            return Textus::Format.infer_from_extension(File.extname(existing)) if existing
           end
-          block.map { |t| Textus::Manifest::Policy::PublishTarget.new(t) }
-        end
 
-        def self.resolve_format(path, declared = nil)
-          return declared || "markdown" if path.nil? || path.empty?
-
-          Textus::Format.infer_from_extension(File.extname(path)) || declared || "markdown"
+          declared || "markdown"
         end
 
         def self.derive_path(key, kind_sym, format)
