@@ -1,6 +1,6 @@
 RSpec.describe "Knowledge pipeline conformance" do
   let(:known_sections) do
-    %w[intent constraint evidence judgment execution feedback readme project]
+    %w[intent constraint evidence judgment execution feedback readme]
   end
 
   def knowledge_dir
@@ -16,7 +16,7 @@ RSpec.describe "Knowledge pipeline conformance" do
 
   it "no orphan entry files outside sections" do
     entries = Dir.children(knowledge_dir).reject { |e| e.start_with?(".") || File.directory?(File.join(knowledge_dir, e)) }
-    known_root = %w[project.md]
+    known_root = []
     orphans = entries - known_root
     expect(orphans).to be_empty,
                        "entries outside sections: #{orphans.join(", ")}"

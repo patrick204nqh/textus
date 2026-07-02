@@ -6,6 +6,7 @@ RSpec.describe "artifacts.config.plugin build (ADR 0086)" do
 
   let(:store) do
     FileUtils.mkdir_p(File.join(root, "data/knowledge"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge/intent"))
     FileUtils.mkdir_p(File.join(root, "data/artifacts"))
     FileUtils.mkdir_p(File.join(root, "steps/transform"))
 
@@ -40,7 +41,7 @@ RSpec.describe "artifacts.config.plugin build (ADR 0086)" do
         - { name: knowledge, kind: canon }
         - { name: artifacts, kind: machine }
       entries:
-        - { key: knowledge.project, path: knowledge/project.md, lane: knowledge, kind: leaf }
+        - { key: knowledge.project, path: knowledge/intent/0003-project.md, lane: knowledge, kind: leaf }
 
         - key: artifacts.config.plugin
           kind: produced
@@ -51,7 +52,7 @@ RSpec.describe "artifacts.config.plugin build (ADR 0086)" do
             - { to: .claude-plugin/plugin.json }
     YAML
 
-    File.write(File.join(root, "data/knowledge/project.md"),
+    File.write(File.join(root, "data/knowledge/intent/0003-project.md"),
                "---\nname: testproject\nrepo: https://example.com/testproject\n---\n")
 
     s

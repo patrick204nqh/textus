@@ -138,7 +138,7 @@ RSpec.describe "Textus::Init with_agent profile" do
 
         store = Textus::Store.new(root)
         store.with_role("human").put(key: "knowledge.project",
-                                     meta: { "name" => "project", "description" => "double-entry accounting service" },
+                                     meta: { "name" => "0003-project", "description" => "double-entry accounting service" },
                                      body: "")
         expect { store.with_role("automation").drain }.not_to raise_error
       end
