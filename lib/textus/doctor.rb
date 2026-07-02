@@ -8,7 +8,6 @@ module Textus
     CHECKS = [
       Check::ManifestFiles,
       Check::Schemas,
-      Check::SchemaParseError,
       Check::Templates,
       Check::IllegalKeys,
       Check::Sentinels,
