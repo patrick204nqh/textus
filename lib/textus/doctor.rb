@@ -10,7 +10,6 @@ module Textus
       Check::Schemas,
       Check::Templates,
       Check::RuleAmbiguity,
-      Check::PublishTreeIndexOverlap,
       Check::ProposalTargets,
       Check::GeneratorDrift,
       Check::RawAssetPaths,

@@ -1,31 +1,40 @@
-# Replaces Doctor::Check::PublishTreeIndexOverlap. Checks no publish_tree shares
-# a target directory with a derived entry without an ignore: pattern.
+# Replaces Doctor::Check::PublishTreeIndexOverlap. Warns when a publish_tree
+# target can prune a derived publish_to file unless ignored.
 
+# rubocop:disable Metrics/BlockLength
 Textus.workflow "publish-tree-overlap" do
   match "artifacts.doctor.publish-tree-overlap"
 
   step :check do |_, ctx|
-    manifest = ctx.container.manifest
-    entries = manifest.data.entries
-    tree_entries = entries.select { |e| e.publish_tree }
-    derived_entries = entries.select { |e| e.publish_to.any? }
-    issues = []
-    tree_entries.each do |tree_e|
-      tree_path = tree_e.publish_tree.chomp("/")
-      derived_entries.each do |derived_e|
-        derived_to = derived_e.publish_to.map { |t| t.respond_to?(:to) ? t.to : t.to_s }.compact
-        derived_to.each do |to|
-          next unless to.start_with?(tree_path)
-          next if tree_e.ignored?(to)
-          issues << { "code" => "publish.tree_overlap", "severity" => "warning",
-                      "subject" => tree_e.key,
-                      "message" => "publish_tree '#{tree_path}' overlaps with '#{derived_e.key}' target '#{to}'",
-                      "fix" => "add an ignore: pattern to '#{tree_e.key}' that excludes '#{to}'" }
-        end
+    entries = ctx.container.manifest.data.entries
+    trees = entries.select { |entry| entry.nested? && entry.publish_tree }
+    derived_targets = entries.flat_map { |entry| Array(entry.publish_to).map { |rel| [entry, rel] } }
+
+    issues = trees.flat_map do |tree|
+      target_prefix = "#{tree.publish_tree.chomp("/")}/"
+
+      derived_targets.filter_map do |(derived, rel)|
+        next nil unless rel.start_with?(target_prefix)
+
+        rel_to_target = rel.delete_prefix(target_prefix)
+        next nil if tree.ignored?(rel_to_target)
+
+        basename = File.basename(rel_to_target)
+        {
+          "code" => "publish.tree_index_overlap",
+          "level" => "warning",
+          "subject" => tree.key,
+          "message" => "publish_tree '#{tree.publish_tree}' overlaps derived entry " \
+                       "'#{derived.key}' publish_to '#{rel}'; the tree's prune will delete it on rebuild",
+          "fix" => "add a glob covering '#{rel_to_target}' to entry '#{tree.key}' ignore " \
+                   "(e.g. ignore: [\"**/#{basename}\"])",
+        }
       end
     end
+
     { "content" => { "ok" => issues.empty?, "issues" => issues, "count" => issues.size } }
   end
 
   publish
 end
+# rubocop:enable Metrics/BlockLength
