@@ -2,7 +2,7 @@ module Textus
   class Manifest
     class Entry
       module Parser
-        def self.call(raw)
+        def self.call(raw, root: nil)
           key = raw["key"] or raise UsageError.new("manifest entry missing key")
           lane = raw["lane"] or raise UsageError.new("manifest entry '#{key}' missing lane")
 
