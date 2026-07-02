@@ -68,7 +68,6 @@ module Textus
       propose: Dispatch::Contracts::ProposeEntry,
       accept: Dispatch::Contracts::AcceptProposal,
       reject: Dispatch::Contracts::RejectProposal,
-      enqueue: Dispatch::Contracts::EnqueueJob,
       audit: Dispatch::Contracts::AuditEntries,
       pulse: Dispatch::Contracts::PulseEntries,
       blame: Dispatch::Contracts::BlameEntry,
@@ -105,7 +104,7 @@ module Textus
     ].freeze
 
     OPS_VERBS = %i[
-      boot drain pulse jobs_list jobs_retry jobs_purge enqueue data_mv
+      boot drain pulse jobs_list jobs_retry jobs_purge data_mv
       key_mv_prefix key_delete_prefix published
     ].freeze
 
@@ -215,16 +214,6 @@ module Textus
                    description: "the queued proposal's key"),
        ArgSpec.arg(name: :reason, description: "optional explanation for the rejection")],
       %i[cli mcp], { default: identity }, "reject", nil, :write
-    )
-
-    # ── enqueue ──────────────────────────────────────────
-    register VerbSpec.new(
-      :enqueue, "Push a registered job type onto the convergence queue.",
-      [ArgSpec.arg(name: :type, required: true, positional: true,
-                   description: "registered job type (e.g. materialize, re-pull, sweep)"),
-       ArgSpec.arg(name: :args, type: Hash, default: {},
-                   description: "type-specific arguments (e.g. { key: ... })")],
-      %i[cli mcp], { default: identity }, "enqueue", nil, :write
     )
 
     # ── ingest ───────────────────────────────────────────

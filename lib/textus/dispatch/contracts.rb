@@ -17,8 +17,6 @@ module Textus
 
       RejectProposal = Data.define(:pending_key, :reason)
 
-      EnqueueJob = Data.define(:type, :args)
-
       AuditEntries = Data.define(:key, :lane, :role, :verb, :since, :seq_since, :correlation_id, :limit)
 
       PulseEntries = Data.define(:since)
