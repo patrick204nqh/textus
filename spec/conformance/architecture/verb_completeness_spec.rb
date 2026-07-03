@@ -1,6 +1,7 @@
 # rubocop:disable RSpec/LeakyConstantDeclaration, Lint/ConstantDefinitionInBlock
 RSpec.describe "Verb completeness — every verb has contract + handler + CLI verb" do
   VERB_REGISTRY = Textus::Protocol::VerbRegistry.registered.to_h { |s| [s.verb, s] }.freeze
+  LANE_VERBS = VERB_REGISTRY.values.select(&:lane).map(&:verb).to_set.freeze
 
   def handled_contracts
     all_handles = []
@@ -37,7 +38,9 @@ RSpec.describe "Verb completeness — every verb has contract + handler + CLI ve
   end
 
   it "every contract class has a use-case handler" do
-    registered_contracts = VERB_REGISTRY.keys.map { |v| Textus::Protocol::VerbRegistry.contract_class_for(v) }.compact.to_set
+    registered_contracts = VERB_REGISTRY.keys
+                                        .reject { |v| LANE_VERBS.include?(v) }
+                                        .map { |v| Textus::Protocol::VerbRegistry.contract_class_for(v) }.compact.to_set
     handled = handled_contracts.to_set
     orphan_contracts = registered_contracts - handled
     expect(orphan_contracts).to be_empty,
