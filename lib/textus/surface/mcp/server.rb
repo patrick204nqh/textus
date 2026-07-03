@@ -60,7 +60,7 @@ module Textus
                     previous_etag: short_etag(previous_etag)
           )
 
-          @store = @store.advance_cursor(@store.audit_log.latest_seq) if verb_name == :pulse
+          @store = @store.advance_cursor(@store.container.audit_log.latest_seq) if verb_name == :pulse
           @store = @store.with_role(@store.role) if verb_name == :boot
           ::MCP::Tool::Response.new([{ type: "text", text: JSON.dump(result) }])
         rescue Textus::CursorExpired => e
@@ -75,7 +75,7 @@ module Textus
 
         def resume_from_cursor_file!
           saved = Textus::Protocol::Cursor.new(root: @store.root, role: @store.role).read
-          latest = @store.audit_log.latest_seq
+          latest = @store.container.audit_log.latest_seq
           @store = @store.advance_cursor(saved) if saved.positive? && saved <= latest
         end
 
@@ -94,10 +94,10 @@ module Textus
         # added by a later reconcile are invisible until the server restarts — this is
         # intentional: a ContractDrift will gate writes on any mid-session manifest change.
         def build_resources
-          machine_lane = @store.manifest.policy.machine_lane
+          machine_lane = @store.container.manifest.policy.machine_lane
           return [] unless machine_lane
 
-          @store.manifest.data.entries
+          @store.container.manifest.data.entries
                 .select { |e| e.lane == machine_lane }
                 .map { |e| ::MCP::Resource.new(uri: "textus://#{e.key.tr(".", "/")}", name: e.key, mime_type: mime_for_format(e.format)) }
         end

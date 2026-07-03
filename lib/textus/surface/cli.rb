@@ -40,7 +40,7 @@ module Textus
         # `textus hook list --root=X`). Without this, `order!` below only sees
         # options before the first verb token, so a trailing `--root` reached the
         # verb's own parser and raised InvalidOption (#161 F5). TEXTUS_ROOT already
-        # works everywhere via Store.discover, so this brings the flag to parity.
+        # works everywhere via Session, so this brings the flag to parity.
         @root_arg = extract_root!(argv)
 
         # Define --version/--help ourselves so OptionParser doesn't intercept them
@@ -99,7 +99,27 @@ module Textus
       end
 
       def store
-        @store ||= Store.discover(@cwd, root: @root_arg)
+        @store ||= Textus::Protocol::Session.new(store_root)
+      end
+
+      def store_root
+        @store_root ||= explicit_root || discovered_root
+      end
+
+      def explicit_root
+        @root_arg || ENV["TEXTUS_ROOT"]
+      end
+
+      def discovered_root
+        dir = File.expand_path(@cwd)
+        loop do
+          return dir if File.directory?(File.join(dir, ".textus")) && File.exist?(File.join(dir, ".textus", "manifest.yaml"))
+
+          parent = File.dirname(dir)
+          raise Textus::IoError.new("no .textus directory found from #{@cwd}") if parent == dir
+
+          dir = parent
+        end
       end
 
       def dispatch(klass, argv)
