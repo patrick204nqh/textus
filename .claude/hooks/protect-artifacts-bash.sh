@@ -15,12 +15,17 @@ print(d.get('tool_input', {}).get('command', ''))
 
 [ -z "$COMMAND" ] && exit 0
 
+# Gitignored, never-published subtree — exempt before the protected check below.
+if echo "$COMMAND" | grep -qE "(>|>>|tee|cat >)\s*docs/plans/" 2>/dev/null; then
+  exit 0
+fi
+
 # Patterns that suggest writing to a protected artifact.
 # Match: redirect (> or >>) into a protected path, or tee/cp targeting one.
-PROTECTED_PATTERN='(>|>>|tee|cat >)\s*(docs/|CHANGELOG\.md|README\.md|AGENTS\.md|CLAUDE\.md|CONTRIBUTING\.md|SECURITY\.md|CODE_OF_CONDUCT\.md|\.mcp\.json|opencode\.json|\.claude-plugin/)'
+PROTECTED_PATTERN='(>|>>|tee|cat >)\s*(docs/|CHANGELOG\.md|README\.md|AGENTS\.md|CLAUDE\.md|CONTRIBUTING\.md|SECURITY\.md|CODE_OF_CONDUCT\.md|\.mcp\.json|opencode\.json|\.claude-plugin/|\.textus/data/knowledge/|\.textus/data/artifacts/|\.textus/data/proposals/)'
 
 if echo "$COMMAND" | grep -qP "$PROTECTED_PATTERN" 2>/dev/null || \
-   echo "$COMMAND" | grep -qE "(>|>>)\s*(docs/|CHANGELOG\.md|README\.md|CONTRIBUTING\.md|SECURITY\.md|CODE_OF_CONDUCT\.md|AGENTS\.md|CLAUDE\.md|\.mcp\.json|opencode\.json)" 2>/dev/null; then
+   echo "$COMMAND" | grep -qE "(>|>>)\s*(docs/|CHANGELOG\.md|README\.md|CONTRIBUTING\.md|SECURITY\.md|CODE_OF_CONDUCT\.md|AGENTS\.md|CLAUDE\.md|\.mcp\.json|opencode\.json|\.textus/data/knowledge/|\.textus/data/artifacts/|\.textus/data/proposals/)" 2>/dev/null; then
   cat >&2 <<'EOF'
 
   ✗  Shell write to textus-managed artifact detected.

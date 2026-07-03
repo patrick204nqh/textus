@@ -61,11 +61,26 @@ REL_PATH="${FILE_PATH#"$REPO_ROOT"/}"
 # If path didn't change, the file is outside the repo — skip.
 [ "$REL_PATH" = "$FILE_PATH" ] && exit 0
 
+# Gitignored, never-published subtrees that would otherwise match a protected
+# prefix below — checked first so they always stay writable.
+EXEMPT_PREFIXES=(
+  "docs/plans/"
+)
+
+for exempt in "${EXEMPT_PREFIXES[@]}"; do
+  if [[ "$REL_PATH" == "$exempt"* ]]; then
+    exit 0
+  fi
+done
+
 # Published artifact prefixes — anything under these directories.
 # Update when new artifact trees are added to the manifest.
 PROTECTED_PREFIXES=(
   "docs/"
   ".claude-plugin/"
+  ".textus/data/knowledge/"
+  ".textus/data/artifacts/"
+  ".textus/data/proposals/"
 )
 
 # Published artifact exact paths — root-level files managed by drain.
