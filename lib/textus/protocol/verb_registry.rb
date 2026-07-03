@@ -146,7 +146,7 @@ module Textus
         surfaces: %i[cli mcp],
         views: { default: ->(env, _) { env.to_h_for_wire } },
         cli: nil, cli_stdin: :json, category: :write,
-        lane: :human
+        lane: :proposal
       )
    
       # ── accept ───────────────────────────────────────────
@@ -159,7 +159,7 @@ module Textus
         surfaces: %i[cli mcp],
         views: { default: identity },
         cli: "accept", cli_stdin: nil, category: :write,
-        lane: :human
+        lane: :proposal
       )
    
       # ── reject ───────────────────────────────────────────
@@ -171,7 +171,7 @@ module Textus
         surfaces: %i[cli mcp],
         views: { default: identity },
         cli: "reject", cli_stdin: nil, category: :write,
-        lane: :human
+        lane: :proposal
       )
    
       # ── ingest ───────────────────────────────────────────
@@ -271,7 +271,7 @@ module Textus
         surfaces: %i[cli mcp],
         views: { default: identity },
         cli: nil, cli_stdin: nil, category: :read,
-        lane: :human
+        lane: :proposal
       )
    
       # ── pulse ────────────────────────────────────────────
