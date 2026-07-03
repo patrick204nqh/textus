@@ -6,7 +6,7 @@ module Textus
           def self.for(locals:, resolver: nil, from_path: nil, from_key: nil, edge_store: nil)
             new(locals, resolver, from_path, from_key, edge_store)
           end
-   
+
           def initialize(locals, resolver, from_path, from_key, edge_store)
             @locals     = locals
             @resolver   = resolver
@@ -14,12 +14,12 @@ module Textus
             @from_key   = from_key
             @edge_store = edge_store
           end
-   
+
           def to_erb_binding
             mod = Module.new
             @locals.each { |k, v| mod.define_method(k.to_sym) { v } }
             obj = Object.new.extend(mod)
-   
+
             if @resolver && @from_path
               resolver   = @resolver
               from_path  = @from_path
@@ -33,11 +33,11 @@ module Textus
                 "`textus get #{key}`"
               end
             end
-   
+
             obj.instance_eval { binding }
+          end
+        end
+      end
+    end
   end
-  end
-  end
-  end
-  end
-  end
+end

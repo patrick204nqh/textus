@@ -30,17 +30,17 @@ module Textus
 
       def put(key, if_etag: nil, mentry: nil, payload: nil, call: nil, **)
         Textus::Infra::Store::WritePipeline.put(key, mentry:, payload:, call:, if_etag:, file_system: @file_system, manifest: @manifest, audit_log: @audit_log,
-                                                 layout: @layout, reader: self, entry_index: @entry_index)
+                                                     layout: @layout, reader: self, entry_index: @entry_index)
       end
 
       def delete(key, if_etag: nil, call: nil, mentry: nil, **)
         Textus::Infra::Store::WritePipeline.delete(key, call:, mentry:, if_etag:, file_system: @file_system, manifest: @manifest, audit_log: @audit_log,
-                                                    layout: @layout, reader: self, entry_index: @entry_index)
+                                                        layout: @layout, reader: self, entry_index: @entry_index)
       end
 
       def move(from_key: nil, to_key: nil, new_mentry: nil, call: nil, if_etag: nil, **)
         Textus::Infra::Store::WritePipeline.move(from_key:, to_key:, new_mentry:, call:, if_etag:, file_system: @file_system, manifest: @manifest,
-                                                  audit_log: @audit_log, layout: @layout, reader: self, entry_index: @entry_index)
+                                                 audit_log: @audit_log, layout: @layout, reader: self, entry_index: @entry_index)
       end
     end
   end

@@ -3,7 +3,7 @@ module Textus
     module Handlers
       module_function
 
-      def propose(key:, meta: nil, body: nil, content: nil, container:, call:)
+      def propose(key:, container:, call:, meta: nil, body: nil, content: nil)
         zone = container.manifest.policy.propose_lane_for(call.role)
         return { error: { code: "propose_forbidden", message: "role '#{call.role}' has no writable propose_lane" } } unless zone
 
@@ -11,12 +11,12 @@ module Textus
         mentry = container.manifest.resolver.resolve(full_key).entry
         env = container.writer.put(
           full_key, mentry:, call:,
-          payload: Textus::Value::Payload.new(meta: meta || {}, body:, content:)
+                    payload: Textus::Value::Payload.new(meta: meta || {}, body:, content:)
         )
         env.to_h_for_wire
       end
 
-      def accept(pending_key:, dry_run: false, container:, call:)
+      def accept(pending_key:, container:, call:, dry_run: false)
         env = container.reader.read(pending_key)
         proposal = env&.meta&.dig("proposal")
         return { error: { code: "proposal_error", message: "entry has no proposal block: #{pending_key}" } } unless proposal
@@ -41,7 +41,7 @@ module Textus
         when "put"
           mentry = container.manifest.resolver.resolve(target).entry
           container.writer.put(target, mentry:, call:,
-                               payload: Textus::Value::Payload.new(meta: env.meta["_meta"] || {}, body: env.body, content: nil))
+                                       payload: Textus::Value::Payload.new(meta: env.meta["_meta"] || {}, body: env.body, content: nil))
         when "delete"
           container.writer.delete(target, call:)
         else
@@ -53,7 +53,7 @@ module Textus
           "target_key" => target, "action" => action, "cascade_key" => target }
       end
 
-      def reject(pending_key:, reason: nil, container:, call:)
+      def reject(pending_key:, container:, call:, reason: nil)
         mentry = container.manifest.resolver.resolve(pending_key).entry
         unless mentry.in_proposal_lane?(container.manifest.policy)
           return { error: { code: "proposal_error", message: "reject: '#{pending_key}' is not in a proposal zone (zone=#{mentry.lane})" } }

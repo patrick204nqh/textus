@@ -31,14 +31,14 @@ module Textus
 
         def read_verbs
           Textus::Protocol::VerbRegistry.registered
-                      .select { |s| s.read? && s.mcp? }
-                      .map { |s| s.verb.to_s }
+                                        .select { |s| s.read? && s.mcp? }
+                                        .map { |s| s.verb.to_s }
         end
 
         def write_verbs
           Textus::Protocol::VerbRegistry.registered
-                      .select { |s| s.write? && s.mcp? }
-                      .map { |s| s.verb.to_s }
+                                        .select { |s| s.write? && s.mcp? }
+                                        .map { |s| s.verb.to_s }
         end
 
         def call(name, store:, args:)

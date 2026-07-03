@@ -26,9 +26,7 @@ module Textus
           return container.gate.dispatch(@role.to_sym, name, kwargs, call: call_obj)
         end
 
-        if container.respond_to?(name)
-          return container.public_send(name, *args, **kwargs)
-        end
+        return container.public_send(name, *args, **kwargs) if container.respond_to?(name)
 
         super
       end

@@ -41,7 +41,7 @@ module Textus
         h = {
           "protocol" => protocol, "key" => key, "lane" => lane,
           "path" => path, "format" => format, "_meta" => meta,
-          "body" => body, "etag" => etag, "schema_ref" => schema_ref, "uid" => uid,
+          "body" => body, "etag" => etag, "schema_ref" => schema_ref, "uid" => uid
         }
         h["sources"] = sources if sources
         h["content"] = content unless content.nil?
@@ -52,8 +52,6 @@ module Textus
       def stale? = freshness.is_a?(Hash) && freshness["stale"] == true
 
       def fetching? = freshness.is_a?(Hash) && freshness["fetching"] == true
-
-      private
 
       def self.extract_uid(meta)
         v = meta.is_a?(Hash) ? meta["uid"] : nil

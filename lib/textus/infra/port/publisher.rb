@@ -17,31 +17,32 @@ module Textus
           def unpublish(target:, store_root:) = raise NotImplementedError
         end
         include Interface
-   
+
         def initialize(file_system: Infra::FileStore.new)
           @file_system = file_system
         end
-   
+
         def publish(source:, target:, store_root:, provenance_source: source)
           @file_system.mkdir_p(File.dirname(target))
           guard_clobber(source, target, store_root)
           @file_system.delete(target) if @file_system.symlink?(target)
           @file_system.copy(source, target)
-          Textus::Infra::Port::SentinelStore.new(file_system: @file_system).write!(target: target, source: provenance_source, store_root: store_root)
+          Textus::Infra::Port::SentinelStore.new(file_system: @file_system).write!(target: target, source: provenance_source,
+                                                                                   store_root: store_root)
         end
-   
+
         # Removes a previously-published file and its sentinel. No-op unless the
         # target is textus-managed — never deletes an unmanaged file.
         def unpublish(target:, store_root:)
           return unless managed?(target, store_root)
-   
+
           @file_system.delete(target)
           sentinel = Textus::Infra::Port::SentinelStore.new(file_system: @file_system).sentinel_path(target, store_root)
           @file_system.delete(sentinel)
         end
-   
+
         private
-   
+
         # Refuse to clobber an unmanaged target — EXCEPT adopt one whose bytes
         # already equal the source (ADR 0050: a migration copies files into the
         # store and publishes them back to where they already live, so the target
@@ -53,18 +54,18 @@ module Textus
           return unless @file_system.exists?(target) || @file_system.symlink?(target)
           return if managed?(target, store_root)
           return if adoptable?(source, target)
-   
+
           raise PublishError.new("refusing to clobber unmanaged file at #{target}", target: target)
         end
-   
+
         def adoptable?(source, target)
           !@file_system.symlink?(target) && File.file?(target) && @file_system.identical?(source, target)
         end
-   
+
         def managed?(target, store_root)
           @file_system.exists?(Textus::Infra::Port::SentinelStore.new(file_system: @file_system).sentinel_path(target, store_root))
+        end
+      end
+    end
   end
-  end
-  end
-  end
-  end
+end

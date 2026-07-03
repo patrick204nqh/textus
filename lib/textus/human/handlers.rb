@@ -9,7 +9,7 @@ module Textus
         Runner.new(manifest).advance(active_index:)
       end
 
-      def self.evidence_attach(store, node_key, evidence_key, note: nil)
+      def self.evidence_attach(_store, node_key, evidence_key, note: nil)
         { node: node_key, evidence: evidence_key, note:, attached_at: Time.now.utc.iso8601 }
       end
     end

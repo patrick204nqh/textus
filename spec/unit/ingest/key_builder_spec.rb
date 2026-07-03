@@ -31,9 +31,9 @@ RSpec.describe Textus::Ingest::KeyBuilder do
     end
 
     it "raises on unknown kind" do
-      expect {
+      expect do
         described_class.compute_hash(kind: "unknown")
-      }.to raise_error(ArgumentError, /unknown kind/)
+      end.to raise_error(ArgumentError, /unknown kind/)
     end
   end
 end

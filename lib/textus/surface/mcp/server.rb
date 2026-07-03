@@ -93,7 +93,7 @@ module Textus
         # Snapshot at server init against the boot-time manifest. New produced entries
         # added by a later reconcile are invisible until the server restarts — this is
         # intentional: a ContractDrift will gate writes on any mid-session manifest change.
-          def build_resources
+        def build_resources
           machine_lane = @store.respond_to?(:container) ? @store.container.manifest.policy.machine_lane : nil
           return [] unless machine_lane
 

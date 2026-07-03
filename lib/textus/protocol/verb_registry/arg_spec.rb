@@ -6,7 +6,7 @@ module Textus
         :description, :wire_name, :default, :source, :coerce, :cli_default
       ) do
         def wire = wire_name || name
-   
+
         # rubocop:disable Metrics/ParameterLists
         def self.arg(name:, type: String, required: false, positional: false,
                      session_default: nil, description: nil, wire_name: nil,
@@ -15,7 +15,7 @@ module Textus
               description:, wire_name:, default:, source:, coerce:, cli_default:)
         end
         # rubocop:enable Metrics/ParameterLists
+      end
+    end
   end
-  end
-  end
-  end
+end

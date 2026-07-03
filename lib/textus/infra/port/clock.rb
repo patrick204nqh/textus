@@ -8,11 +8,11 @@ module Textus
         module Interface
           def now = raise NotImplementedError
         end
-   
+
         include Interface
-   
+
         def now = Time.now
+      end
+    end
   end
-  end
-  end
-  end
+end

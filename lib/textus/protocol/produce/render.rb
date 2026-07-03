@@ -9,10 +9,10 @@ module Textus
           @entry_key           = entry_key
           @edge_store          = edge_store
         end
-   
+
         def bytes_for(target:, data:, boot:)
           raise ArgumentError.new("Produce::Render called for a verbatim target #{target.to.inspect}") unless target.renders?
-   
+
           locals   = target.inject_boot ? data.merge("boot" => boot) : data
           resolver = @manifest ? Textus::Protocol::Links::Resolver.new(manifest: @manifest) : nil
           ctx      = Render::Context.for(
@@ -25,20 +25,20 @@ module Textus
           raw = ERB.new(@template_loader.call(target.template), trim_mode: "-").result(ctx.to_erb_binding)
           rewrite(raw, target.to, resolver)
         end
-   
+
         private
-   
+
         def rewrite(bytes, from_path, resolver)
           return bytes unless resolver && bytes.include?("textus:")
-   
+
           Textus::Protocol::Links::UriRewriter.new(
             resolver: resolver,
             from_path: from_path,
             from_key: @entry_key,
             edge_store: @edge_store,
           ).rewrite(bytes)
+        end
+      end
+    end
   end
-  end
-  end
-  end
-  end
+end

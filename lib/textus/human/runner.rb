@@ -6,9 +6,9 @@ module Textus
       end
 
       def loop_nodes
-        @manifest.data.entries.select { |e|
+        @manifest.data.entries.select do |e|
           e.key.start_with?("knowledge.loop.") && e.key.count(".") == 2
-        }
+        end
       end
 
       def flow

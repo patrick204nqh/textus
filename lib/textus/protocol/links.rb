@@ -1,5 +1,3 @@
-require "set"
-
 module Textus
   module Protocol
     class Links

@@ -1,19 +1,19 @@
 module Textus
   module Protocol
-  class Manifest
-    class Entry
-      class Nested < Base
-        def nested? = true
+    class Manifest
+      class Entry
+        class Nested < Base
+          def nested? = true
 
-        KIND = :nested
+          KIND = :nested
 
-        def self.from_raw(common, _raw)
-          new(**common)
+          def self.from_raw(common, _raw)
+            new(**common)
+          end
+
+          Entry::REGISTRY[KIND] = self
         end
-
-        Entry::REGISTRY[KIND] = self
       end
     end
-  end
   end
 end

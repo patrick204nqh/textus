@@ -3,9 +3,15 @@ require "tmpdir"
 
 RSpec.describe Textus::Infra::Database do
   subject(:db) { described_class.new(root: tmpdir) }
+
   let(:tmpdir) { Dir.mktmpdir }
+
   after do
-    db.close rescue nil
+    begin
+      db.close
+    rescue StandardError
+      nil
+    end
     FileUtils.rm_rf(tmpdir)
   end
 

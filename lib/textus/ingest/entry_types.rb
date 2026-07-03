@@ -8,14 +8,14 @@ module Textus
       module_function
 
       def for(kind)
-        registry[kind] or raise ArgumentError, "unknown ingest kind: #{kind}"
+        registry[kind] or raise(ArgumentError.new("unknown ingest kind: #{kind}"))
       end
 
       def registry
         @registry ||= {
-          "link"  => Link,
+          "link" => Link,
           "asset" => Asset,
-          "text"  => Text,
+          "text" => Text,
         }.freeze
       end
     end

@@ -1,16 +1,16 @@
 module Textus
   module Agent
     module Handlers
-      def self.session_open(store)
+      def self.session_open(_store)
         session = Session.new
         { session_id: session.id, created_at: session.created_at }
       end
 
-      def self.session_close(store, session_id)
+      def self.session_close(_store, session_id)
         { session_id:, status: :sealed }
       end
 
-      def self.exec(store, session_id, script_path)
+      def self.exec(_store, _session_id, script_path)
         Runner.new.exec(script_path)
       end
 

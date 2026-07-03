@@ -65,7 +65,13 @@ module Textus
             "lanes" => lanes_for(manifest),
             "agent_quickstart" => {
               "read_verbs" => Textus::Protocol::VerbRegistry.registered.select { |s| s.read? && s.mcp? }.map { |s| s.verb.to_s },
-              "write_verbs" => agent_role ? Textus::Protocol::VerbRegistry.registered.select { |s| s.write? && s.mcp? }.map { |s| s.verb.to_s } : [],
+              "write_verbs" => if agent_role
+                                 Textus::Protocol::VerbRegistry.registered.select do |s|
+                                   s.write? && s.mcp?
+                                 end.map { |s| s.verb.to_s }
+                               else
+                                 []
+                               end,
               "writable_lanes" => writable_lanes,
               "propose_lane" => manifest.policy.propose_lane_for(agent_role),
             },

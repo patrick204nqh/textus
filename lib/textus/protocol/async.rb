@@ -11,7 +11,7 @@ module Textus
             event_type: "workflow", workflow_type:,
             key:, lane:,
             payload: payload&.to_json,
-            scheduled_at: scheduled_at || Time.now.utc,
+            scheduled_at: scheduled_at || Time.now.utc
           )
         end
 

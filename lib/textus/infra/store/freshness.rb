@@ -2,9 +2,9 @@
 
 module Textus
   module Infra
-  class Store
-    module Freshness
+    class Store
+      module Freshness
+      end
     end
-  end
   end
 end

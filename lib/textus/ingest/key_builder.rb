@@ -14,13 +14,15 @@ module Textus
         digest = Digest::SHA256.new
         case kind
         when "url"
-          raise ArgumentError, "url required" unless url
+          raise ArgumentError.new("url required") unless url
+
           digest.update(url)
         when "file", "asset"
-          raise ArgumentError, "path required" unless path
+          raise ArgumentError.new("path required") unless path
+
           digest.file(path)
         else
-          raise ArgumentError, "unknown kind: #{kind}"
+          raise ArgumentError.new("unknown kind: #{kind}")
         end
         "#{CONTENT_HASH_ALGO}:#{digest.hexdigest}"
       end

@@ -22,9 +22,9 @@ RSpec.describe Textus::Ingest::EntryTypes do
       it "returns url source hash" do
         result = described_class.build(url: "https://example.com", label: "Example")
         expect(result).to eq({
-          "source" => { "kind" => "url", "url" => "https://example.com", "label" => "Example" },
-          "body" => nil
-        })
+                               "source" => { "kind" => "url", "url" => "https://example.com", "label" => "Example" },
+                               "body" => nil,
+                             })
       end
 
       it "uses url as default label" do
@@ -76,7 +76,7 @@ RSpec.describe Textus::Ingest::EntryTypes do
         layout = instance_double("Layout")
         expect(layout).to receive(:asset_resolve).with("raw/2026/06/01/diagrams/old.png").and_return("/tmp/assets/raw/2026/06/01/diagrams/old.png")
         expect(File).to receive(:exist?).with("/tmp/assets/raw/2026/06/01/diagrams/old.png").and_return(true)
-        expect(layout).to receive(:asset_raw_dir).with(/2026\/07\/03/, "diagrams").and_return("/tmp/assets/raw/2026/07/03/diagrams")
+        expect(layout).to receive(:asset_raw_dir).with(%r{2026/07/03}, "diagrams").and_return("/tmp/assets/raw/2026/07/03/diagrams")
         expect(FileUtils).to receive(:mkdir_p).with("/tmp/assets/raw/2026/07/03/diagrams")
         expect(FileUtils).to receive(:mv).with("/tmp/assets/raw/2026/06/01/diagrams/old.png", "/tmp/assets/raw/2026/07/03/diagrams/old.png")
 

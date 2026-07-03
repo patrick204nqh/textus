@@ -5,7 +5,7 @@ module Textus
 
       module_function
 
-      def ingest(kind:, slug:, url: nil, path: nil, lane: nil, label: nil, container:, call:)
+      def ingest(kind:, slug:, container:, call:, url: nil, path: nil, lane: nil, label: nil)
         unless SOURCE_KINDS.include?(kind)
           return { error: { code: "usage_error", message: "kind must be one of #{SOURCE_KINDS.join("|")}" } }
         end
@@ -42,7 +42,7 @@ module Textus
         structured["supersedes"] = duplicate_key if duplicate_key && duplicate_key != key
 
         env = container.writer.put(key, mentry:, call:,
-                                   payload: Textus::Value::Payload.new(meta: nil, body: nil, content: structured))
+                                        payload: Textus::Value::Payload.new(meta: nil, body: nil, content: structured))
 
         IndexRebuilder.rebuild!(container.event_store, container.manifest.resolver)
 

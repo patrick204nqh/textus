@@ -29,15 +29,15 @@ module Textus
           expand_sources(env, depth: 0)
         end
 
-        def builtin_put(key:, meta: nil, body: nil, content: nil, if_etag: nil, call:)
+        def builtin_put(key:, call:, meta: nil, body: nil, content: nil, if_etag: nil)
           env = writer.put(key,
-            mentry: manifest.resolver.resolve(key).entry,
-            payload: Textus::Value::Payload.new(meta: meta || {}, body:, content:),
-            if_etag:, call:)
+                           mentry: manifest.resolver.resolve(key).entry,
+                           payload: Textus::Value::Payload.new(meta: meta || {}, body:, content:),
+                           if_etag:, call:)
           { "uid" => env.uid, "etag" => env.etag }
         end
 
-        def builtin_list(prefix: nil, lane: nil, q: nil, schema: nil, call:)
+        def builtin_list(call:, prefix: nil, lane: nil, q: nil, schema: nil)
           if entry_index && (q || schema)
             rows = entry_index.search(query: q, schema:, lane:, prefix:)
             (rows || []).map { |r| { "key" => r["key"], "lane" => r["lane"] } }
@@ -48,7 +48,7 @@ module Textus
           end
         end
 
-        def builtin_delete(key:, if_etag: nil, call:)
+        def builtin_delete(key:, call:, if_etag: nil)
           writer.delete(key, if_etag:, call:)
           { "protocol" => Textus::PROTOCOL, "ok" => true, "key" => key, "deleted" => true }
         end
@@ -66,7 +66,7 @@ module Textus
           env.uid
         end
 
-        def builtin_move(old_key:, new_key:, if_etag: nil, dry_run: false, call:)
+        def builtin_move(old_key:, new_key:, call:, if_etag: nil, dry_run: false)
           Textus::Protocol::Manifest::Data.validate_key!(old_key)
           Textus::Protocol::Manifest::Data.validate_key!(new_key)
           return USAGE_ERROR.call("old and new keys are identical") if old_key == new_key
@@ -76,11 +76,15 @@ module Textus
 
           return USAGE_ERROR.call("source key '#{old_key}' not found") unless reader.exists?(old_key)
           return USAGE_ERROR.call("target '#{new_key}' already exists") if reader.exists?(new_key)
-          return USAGE_ERROR.call("cross-zone moves forbidden (#{old_res.entry.lane} \u2192 #{new_res.entry.lane})") unless old_res.entry.lane == new_res.entry.lane
+          unless old_res.entry.lane == new_res.entry.lane
+            return USAGE_ERROR.call("cross-zone moves forbidden (#{old_res.entry.lane} \u2192 #{new_res.entry.lane})")
+          end
 
           pre_env = reader.read(old_key)
-          writer.put(old_key, mentry: old_res.entry, call:,
-                     payload: Textus::Value::Payload.new(meta: pre_env.meta, body: pre_env.body, content: pre_env.content)) unless pre_env.uid
+          unless pre_env.uid
+            writer.put(old_key, mentry: old_res.entry, call:,
+                                payload: Textus::Value::Payload.new(meta: pre_env.meta, body: pre_env.body, content: pre_env.content))
+          end
 
           if dry_run
             return { "protocol" => Textus::PROTOCOL, "ok" => true, "dry_run" => true,
@@ -102,6 +106,7 @@ module Textus
         def builtin_rdeps(key:, call:)
           source_rdeps = manifest.data.entries.each_with_object([]) do |entry, acc|
             next unless entry.external?
+
             sources = Array(entry.source&.sources).compact
             acc << entry.key if sources.any? { |s| s == key || key.start_with?("#{s}.") }
           end
@@ -109,7 +114,7 @@ module Textus
           { "key" => key, "rdeps" => (source_rdeps + link_rdeps).uniq.sort }
         end
 
-        def builtin_graph(key:, depth: nil, call:)
+        def builtin_graph(key:, call:, depth: nil)
           from = link_graph.links_from(key)
           to   = link_graph.links_to(key)
           { "key" => key, "neighbors" => (from + to).uniq.sort,
@@ -118,14 +123,16 @@ module Textus
 
         def builtin_boot(call:)
           storage    = Textus::Infra::Store::Container::Storage.new(
-            file_system:, entry_store: nil, layout:, entry_index: nil)
+            file_system:, entry_store: nil, layout:, entry_index: nil,
+          )
           events     = Textus::Infra::Store::Container::Events.new(event_store: nil, workflows: nil)
           governance = Textus::Infra::Store::Container::Governance.new(manifest:, schemas:)
           logging    = Textus::Infra::Store::Container::Logging.new(audit_log:)
           links      = Textus::Infra::Store::Container::Links.new(link_graph: nil)
           proxy = Textus::Infra::Store::Container.new(
             storage:, events:, governance:, logging:, links:,
-            root: layout.root, pipeline:)
+            root: layout.root, pipeline:
+          )
           Textus::Protocol::Boot.build(container: proxy)
         end
 
@@ -142,7 +149,7 @@ module Textus
           end
         end
 
-        def builtin_audit(key: nil, lane: nil, role: nil, verb: nil, since: nil, seq_since: nil, correlation_id: nil, limit: nil, call:)
+        def builtin_audit(call:, key: nil, lane: nil, role: nil, verb: nil, since: nil, seq_since: nil, correlation_id: nil, limit: nil)
           if seq_since
             min = audit_log.min_available_seq
             raise Textus::CursorExpired.new(requested: seq_since, min_available: min) if min && seq_since < min - 1
@@ -150,12 +157,13 @@ module Textus
           rows = audit_log.scan(seq_since:, key:, role:, verb:, correlation_id:, limit:).select do |row|
             next false if lane && !key_in_lane?(row["key"], lane)
             next false if since && row["ts"] && Time.parse(row["ts"]) < since
+
             true
           end
           { "verb" => "audit", "rows" => rows }
         end
 
-        def builtin_blame(key:, limit: nil, call:)
+        def builtin_blame(key:, call:, limit: nil)
           audit_result = builtin_audit(key:, call:)
           audit_rows = audit_result["rows"] || []
           root = manifest.data.root
@@ -165,7 +173,7 @@ module Textus
           audit_rows.map { |row| row.merge("git" => git_commit_at(path, timestamp: row["ts"], root:)) }
         end
 
-        def builtin_pulse(since: nil, call:)
+        def builtin_pulse(call:, since: nil)
           root = manifest.data.root
           cursor_val = since || Textus::Protocol::Cursor.new(root:, role: call.role).read
           audit_result = builtin_audit(seq_since: cursor_val, call:)
@@ -183,16 +191,18 @@ module Textus
           result
         end
 
-        def builtin_drain(prefix: nil, lane: nil, call:)
+        def builtin_drain(call:, prefix: nil, lane: nil)
           registry = Textus::Workflow::Registry.new(workflows)
           result = Textus::Protocol::Events::Consumer.new.drain(
-            event_store:, registry:, container: @pipeline.container, call:)
+            event_store:, registry:, container: @pipeline.container, call:,
+          )
           { "protocol" => Textus::PROTOCOL, "ok" => result[:failed].zero?,
             "completed" => result[:completed], "failed" => result[:failed] }
         end
 
-        def builtin_key_mv_prefix(from_prefix:, to_prefix:, dry_run: false, call:)
+        def builtin_key_mv_prefix(from_prefix:, to_prefix:, call:, dry_run: false)
           return USAGE_ERROR.call("from_prefix and to_prefix required") unless from_prefix && to_prefix
+
           leaves = builtin_list(prefix: from_prefix, call:)
           return leaves if leaves.is_a?(Hash) && leaves[:error]
           return USAGE_ERROR.call("from_prefix is a leaf \u2014 use mv") if leaves.any? { |r| r["key"] == from_prefix }
@@ -204,12 +214,14 @@ module Textus
           end
           plan = Textus::Infra::Store::Retention::Plan.new(steps:, warnings:)
           return plan.to_h if dry_run
+
           steps.each { |s| builtin_move(old_key: s["from"], new_key: s["to"], call:) }
           plan.to_h
         end
 
-        def builtin_key_delete_prefix(prefix:, dry_run: false, call:)
+        def builtin_key_delete_prefix(prefix:, call:, dry_run: false)
           return USAGE_ERROR.call("prefix required") unless prefix && !prefix.empty?
+
           leaves = builtin_list(prefix:, call:)
           return leaves if leaves.is_a?(Hash) && leaves[:error]
 
@@ -217,11 +229,12 @@ module Textus
           steps = leaves.map { |row| { "op" => "delete", "key" => row["key"] } }
           plan = Textus::Infra::Store::Retention::Plan.new(steps:, warnings:)
           return plan.to_h if dry_run
+
           steps.each { |s| builtin_delete(key: s["key"], call:) }
           plan.to_h
         end
 
-        def builtin_data_mv(from:, to:, dry_run: false, call:)
+        def builtin_data_mv(from:, to:, call:, dry_run: false)
           return USAGE_ERROR.call("from and to required") unless from && to
           return USAGE_ERROR.call("data lane '#{from}' not declared") unless manifest.data.declared_lane_kinds.key?(from)
 
@@ -243,8 +256,10 @@ module Textus
 
         def expand_sources(envelope, depth:)
           return envelope if depth >= 5
+
           raw_sources = Array(envelope.meta["sources"])
           return envelope if raw_sources.empty?
+
           expanded = raw_sources.map { |src| expand_one_source(src, depth:) }
           envelope.with(sources: expanded)
         end
@@ -252,6 +267,7 @@ module Textus
         def expand_one_source(src, depth:)
           src = { "key" => src } if src.is_a?(String)
           return src unless src.is_a?(Hash) && src["key"].is_a?(String)
+
           key = src["key"]
           stored_etag = src["etag"]
           path = manifest.resolver.resolve(key).path
@@ -283,6 +299,7 @@ module Textus
 
         def git_tracked?(path, root:)
           return false if path.nil? || !File.exist?(path) || !git_repo?(root)
+
           _out, _err, status = Open3.capture3("git", "ls-files", "--error-unmatch", path, chdir: root)
           status.success?
         rescue Errno::ENOENT
@@ -293,8 +310,10 @@ module Textus
           dir = root
           loop do
             return true if File.directory?(File.join(dir, ".git"))
+
             parent = File.dirname(dir)
             return false if parent == dir
+
             dir = parent
           end
         end
@@ -305,8 +324,10 @@ module Textus
           args += ["--format=%H%x09%an%x09%aI%x09%s", "--", path]
           out, _err, status = Open3.capture3(*args, chdir: root)
           return nil unless status.success?
+
           sha, author, date, subject = out.strip.split("\t", 4)
           return nil if sha.nil? || sha.empty?
+
           { "sha" => sha, "author" => author, "date" => date, "subject" => subject }
         rescue Errno::ENOENT
           nil

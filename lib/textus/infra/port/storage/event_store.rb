@@ -11,8 +11,8 @@ module Textus
             def reschedule(event_id:, retry_count:, delay:, error:) = raise NotImplementedError
           end
           include Interface
+        end
+      end
+    end
   end
-  end
-  end
-  end
-  end
+end

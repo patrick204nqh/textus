@@ -10,13 +10,13 @@ module Textus
             def close = raise NotImplementedError
           end
           include Interface
-   
+
           SEQUEL_ADAPTER = Textus::Infra::Adapters::SequelAdapter.new
-   
+
           def initialize(root:)
             @layout = Textus::Protocol::Layout.new(root)
           end
-   
+
           def setup!
             FileUtils.mkdir_p(File.dirname(@layout.store_db_path))
             @db = SEQUEL_ADAPTER.connect(@layout.store_db_path)
@@ -25,13 +25,13 @@ module Textus
             create_tables
             self
           end
-   
+
           def connection = @db
           def transaction(&) = @db.transaction(&)
           def close = @db.disconnect
-   
+
           private
-   
+
           def create_tables
             @db.create_table?(:events) do
               primary_key :id
@@ -48,7 +48,7 @@ module Textus
               String :error, text: true
               index %i[state scheduled_at], where: "state = 'pending'"
             end
-   
+
             @db.create_table?(:entries) do
               String :key, primary_key: true
               String :lane, null: false
@@ -57,7 +57,7 @@ module Textus
               String :content, text: true
               DateTime :indexed_at, null: false
             end
-   
+
             @db.create_table?(:link_edges) do
               String :from_key, null: false
               String :to_key, null: false
@@ -65,12 +65,12 @@ module Textus
               index :to_key
               index :from_key
             end
-   
+
             # (audit_events table removed — was created but never written to)
-   
+
             create_entries_fts_objects
           end
-   
+
           def create_entries_fts_objects
             begin
               @db.run(<<~SQL)
@@ -79,21 +79,21 @@ module Textus
                   content=entries, content_rowid=rowid
                 )
               SQL
-   
+
               @db.run(<<~SQL)
                 CREATE TRIGGER IF NOT EXISTS entries_ai AFTER INSERT ON entries BEGIN
                   INSERT INTO entries_fts(rowid, key, lane, schema, content)
                   VALUES (new.rowid, new.key, new.lane, new.schema, new.content);
                 END
               SQL
-   
+
               @db.run(<<~SQL)
                 CREATE TRIGGER IF NOT EXISTS entries_ad AFTER DELETE ON entries BEGIN
                   INSERT INTO entries_fts(entries_fts, rowid, key, lane, schema, content)
                   VALUES ('delete', old.rowid, old.key, old.lane, old.schema, old.content);
                 END
               SQL
-   
+
               @db.run(<<~SQL)
                 CREATE TRIGGER IF NOT EXISTS entries_au AFTER UPDATE ON entries BEGIN
                   INSERT INTO entries_fts(entries_fts, rowid, key, lane, schema, content)
@@ -104,10 +104,10 @@ module Textus
               SQL
             rescue StandardError
               nil
+            end
+          end
+        end
+      end
+    end
   end
-  end
-  end
-  end
-  end
-  end
-  end
+end

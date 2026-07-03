@@ -107,7 +107,7 @@ module Textus
       end
 
       def explicit_root
-        @root_arg || ENV["TEXTUS_ROOT"]
+        @root_arg || ENV.fetch("TEXTUS_ROOT", nil)
       end
 
       def discovered_root

@@ -6,11 +6,11 @@ module Textus
           @event_store = event_store
           @registry = workflow_registry
         end
-   
+
         def emit(event_type:, key: nil, lane: nil, payload: {})
           workflows = @registry.workflows_for(event_type)
           return 0 if workflows.empty?
-   
+
           workflows.each do |wf|
             @event_store.emit(
               event_type: event_type.to_s, workflow_type: wf.type,
@@ -19,8 +19,8 @@ module Textus
             )
           end
           workflows.size
+        end
+      end
+    end
   end
-  end
-  end
-  end
-  end
+end

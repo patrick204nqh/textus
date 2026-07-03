@@ -3,8 +3,10 @@ require "tmpdir"
 
 RSpec.describe Textus::Infra::FileStore do
   subject(:store) { described_class.new }
+
   let(:tmpdir) { Dir.mktmpdir }
   let(:path) { File.join(tmpdir, "test.txt") }
+
   after { FileUtils.rm_rf(tmpdir) }
 
   describe "#write" do

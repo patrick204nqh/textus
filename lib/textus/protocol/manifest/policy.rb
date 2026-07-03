@@ -1,47 +1,47 @@
 module Textus
   module Protocol
-  class Manifest
-    class Policy
-      def initialize(data)
-        @data    = data
-        @entries = nil
-      end
+    class Manifest
+      class Policy
+        def initialize(data)
+          @data    = data
+          @entries = nil
+        end
 
-      attr_writer :entries
+        attr_writer :entries
 
-      def writers_for(lane_name)
-        Protocol::Lane.writers_for(lane_name)
-      end
+        def writers_for(lane_name)
+          Protocol::Lane.writers_for(lane_name)
+        end
 
-      def proposer_role
-        Protocol::Lane.proposer_role
-      end
+        def proposer_role
+          Protocol::Lane.proposer_role
+        end
 
-      def actor_for(lane_name)
-        Protocol::Lane.actor_for(lane_name)
-      end
+        def actor_for(lane_name)
+          Protocol::Lane.actor_for(lane_name)
+        end
 
-      def derived_entry?(key)
-        entry = Array(@entries).find { |e| e.key == key }
-        entry && entry.lane == "artifacts"
-      end
+        def derived_entry?(key)
+          entry = Array(@entries).find { |e| e.key == key }
+          entry && entry.lane == "artifacts"
+        end
 
-      def queue_lane
-        "proposals"
-      end
+        def queue_lane
+          "proposals"
+        end
 
-      def machine_lane
-        "artifacts"
-      end
+        def machine_lane
+          "artifacts"
+        end
 
-      def queue_lane?(lane_name)
-        lane_name == "proposals"
-      end
+        def queue_lane?(lane_name)
+          lane_name == "proposals"
+        end
 
-      def propose_lane_for(role)
-        Protocol::Lane.propose_lane_for(role)
+        def propose_lane_for(role)
+          Protocol::Lane.propose_lane_for(role)
+        end
       end
     end
-  end
   end
 end

@@ -44,6 +44,7 @@ module Textus
 
         def release
           return unless @file
+
           @file.flock(File::LOCK_UN)
           @file.close
           @file = nil
@@ -70,6 +71,7 @@ module Textus
         def self.running?(root, file_store: Infra::FileStore.new)
           path = File.join(root, ".state", "ephemeral", "locks", "watcher.lock")
           return false unless file_store.exists?(path)
+
           File.open(path, "r+") do |file|
             got = file.flock(File::LOCK_EX | File::LOCK_NB)
             file.flock(File::LOCK_UN) if got
@@ -82,6 +84,7 @@ module Textus
         def acquire
           @file = File.open(@path, File::RDWR | File::CREAT, 0o644)
           raise "watcher already running" unless @file.flock(File::LOCK_EX | File::LOCK_NB)
+
           @file.write("pid=#{Process.pid} host=#{Socket.gethostname}\n")
           @file.flush
           self
@@ -89,6 +92,7 @@ module Textus
 
         def release
           return unless @file
+
           @file.flock(File::LOCK_UN)
           @file.close
           @file_store.delete(@path) if @file_store.exists?(@path)

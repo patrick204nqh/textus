@@ -23,11 +23,10 @@ module Textus
         if spec.lane
           handler = Lane.handler_for(spec.lane)
           result = handler.public_send(verb, **bound, container: @pipeline.container, call: call_obj)
-          Value::Result.extract(Value::Result.success(result))
         else
           result = send(:"builtin_#{verb}", **bound, call: call_obj)
-          Value::Result.extract(Value::Result.success(result))
         end
+        Value::Result.extract(Value::Result.success(result))
       rescue Textus::WriteForbidden
         raise
       rescue Textus::Error => e

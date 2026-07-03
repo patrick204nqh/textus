@@ -3,21 +3,21 @@ module Textus
     module VerbRegistry
       require_relative "verb_registry/arg_spec"
       require_relative "verb_registry/verb_spec"
-   
+
       VERBS = {}
       POSITIONAL = {}
-   
+
       def self.register(spec)
         VERBS[spec.verb] = spec
         POSITIONAL[spec.verb] = spec.args.select(&:positional).map(&:name)
       end
-   
+
       def self.for(verb) = VERBS[verb]
       def self.positional_for(verb) = POSITIONAL[verb] || []
       def self.summary_for(verb) = VERBS[verb]&.summary
       def self.registered = VERBS.values
       def self.contract_class_for(verb) = VERB_TO_CONTRACT[verb]
-   
+
       VERB_TO_CONTRACT = {
         get: Protocol::Contracts::GetEntry,
         put: Protocol::Contracts::PutEntry,
@@ -45,34 +45,34 @@ module Textus
         key_mv_prefix: Protocol::Contracts::KeyMvPrefix,
         key_delete_prefix: Protocol::Contracts::KeyDeletePrefix,
       }.freeze
-   
+
       CONTRACT_TO_VERB = VERB_TO_CONTRACT.invert.freeze
-   
+
       private_constant :VERB_TO_CONTRACT, :CONTRACT_TO_VERB
-   
+
       ENTRY_VERBS = %i[
         get put list key_delete key_mv propose accept reject
         audit blame where uid deps rdeps graph diff ingest
       ].freeze
-   
+
       OPS_VERBS = %i[
         boot drain pulse data_mv
         key_mv_prefix key_delete_prefix published
       ].freeze
-   
+
       VERB_DOMAIN = ENTRY_VERBS.to_h { |v| [v, :entry] }
                                .merge(OPS_VERBS.to_h { |v| [v, :ops] }).freeze
-   
+
       def self.contract_to_verb(klass)
         CONTRACT_TO_VERB[klass] || klass.name.split("::").last.gsub(/([a-z])([A-Z])/, '\1_\2').downcase
       end
-   
+
       def self.contract_to_verb!(klass)
         CONTRACT_TO_VERB.fetch(klass) { raise "unknown contract class: #{klass}" }
       end
-   
+
       identity = ->(v, _) { v }
-   
+
       # ── get ──────────────────────────────────────────────
       register VerbSpec.new(
         :get, "Read one entry — on-disk read with freshness verdict.",
@@ -80,7 +80,7 @@ module Textus
                      description: "dotted entry key to read, e.g. 'knowledge.project'")],
         %i[cli mcp], { default: ->(v, _i) { v&.to_h_for_wire } }, nil, nil, :read
       )
-   
+
       # ── put ──────────────────────────────────────────────
       register VerbSpec.new(
         :put, "Create or update an entry. Schema-validated. Returns {uid, etag}.",
@@ -96,7 +96,7 @@ module Textus
                      description: "optimistic-concurrency guard; write rejected if entry changed since")],
         %i[cli mcp], { default: ->(env, _) { { "uid" => env.uid, "etag" => env.etag } } }, nil, nil, :write
       )
-   
+
       # ── list ─────────────────────────────────────────────
       register VerbSpec.new(
         :list, "List keys filtered by lane and/or prefix.",
@@ -110,7 +110,7 @@ module Textus
                      description: "filter to entries whose schema matches this name")],
         %i[cli mcp], { cli: ->(rows, _) { { "entries" => rows } }, default: identity }, nil, nil, :read
       )
-   
+
       # ── delete ───────────────────────────────────────────
       register VerbSpec.new(
         :key_delete, "Delete one entry by key. Returns {ok, key, deleted}.",
@@ -120,7 +120,7 @@ module Textus
                      description: "optimistic-concurrency guard: etag you last read")],
         %i[cli mcp], { default: identity }, "key delete", nil, :write
       )
-   
+
       # ── move ─────────────────────────────────────────────
       register VerbSpec.new(
         :key_mv, "Rename one entry (same zone + format). Refuses if target exists.",
@@ -131,7 +131,7 @@ module Textus
                      description: "when true, returns planned move without applying")],
         %i[cli mcp], { default: identity }, "key mv", nil, :write
       )
-   
+
       # ── propose ──────────────────────────────────────────
       register VerbSpec.new(
         verb: :propose, summary: "Write a proposal to the role's propose_lane. Auto-prefixes the key.",
@@ -148,7 +148,7 @@ module Textus
         cli: nil, cli_stdin: :json, category: :write,
         lane: :proposal
       )
-   
+
       # ── accept ───────────────────────────────────────────
       register VerbSpec.new(
         verb: :accept, summary: "Apply a queued proposal to its target zone; requires author.",
@@ -161,7 +161,7 @@ module Textus
         cli: "accept", cli_stdin: nil, category: :write,
         lane: :proposal
       )
-   
+
       # ── reject ───────────────────────────────────────────
       register VerbSpec.new(
         verb: :reject, summary: "Discard a queued proposal without applying it.",
@@ -173,7 +173,7 @@ module Textus
         cli: "reject", cli_stdin: nil, category: :write,
         lane: :proposal
       )
-   
+
       # ── ingest ───────────────────────────────────────────
       register VerbSpec.new(
         verb: :ingest, summary: "Capture external source material into the raw lane. Write-once.",
@@ -192,21 +192,21 @@ module Textus
         cli: nil, cli_stdin: nil, category: :write,
         lane: :ingest
       )
-   
+
       # ── where ────────────────────────────────────────────
       register VerbSpec.new(
         :where, "Resolve a key to its zone, owner, and path without reading the body.",
         [ArgSpec.arg(name: :key, required: true, positional: true, description: "dotted key to locate")],
         %i[cli mcp], { default: identity }, nil, nil, :read
       )
-   
+
       # ── uid ──────────────────────────────────────────────
       register VerbSpec.new(
         :uid, "Return the stable UID of an entry without reading its body.",
         [ArgSpec.arg(name: :key, required: true, positional: true, description: "entry key")],
         %i[cli mcp], { cli: ->(uid, inputs) { { "key" => inputs[:key], "uid" => uid } }, default: identity }, "key uid", nil, :read
       )
-   
+
       # ── blame ────────────────────────────────────────────
       register VerbSpec.new(
         :blame, "Annotate audit rows with the git commit that introduced each file state.",
@@ -218,7 +218,7 @@ module Textus
           default: identity,
         }, "blame", nil, :read
       )
-   
+
       # ── audit ────────────────────────────────────────────
       register VerbSpec.new(
         :audit, "Query the audit log with optional filters.",
@@ -236,7 +236,7 @@ module Textus
                      description: "maximum number of rows to return")],
         %i[cli mcp], { cli: ->(rows, _) { { "verb" => "audit", "rows" => rows } }, default: identity }, "audit", nil, :read
       )
-   
+
       # ── deps ─────────────────────────────────────────────
       register VerbSpec.new(
         :deps, "List the keys a derived entry depends on.",
@@ -244,7 +244,7 @@ module Textus
                      description: "dotted key of the derived entry whose source keys you want")],
         %i[cli mcp], { default: identity }, nil, nil, :read
       )
-   
+
       # ── rdeps ────────────────────────────────────────────
       register VerbSpec.new(
         :rdeps, "List the derived entries that depend on a key (reverse deps).",
@@ -252,7 +252,7 @@ module Textus
                      description: "dotted key whose dependents you want")],
         %i[cli mcp], { default: identity }, nil, nil, :read
       )
-   
+
       # ── graph ────────────────────────────────────────────
       register VerbSpec.new(
         :graph, "Query the link graph — neighbors (direct links) or reachable (transitive, with optional depth limit).",
@@ -262,7 +262,7 @@ module Textus
                      description: "max traversal depth for reachable query (unlimited when omitted)")],
         %i[cli mcp], { default: identity }, nil, nil, :read
       )
-   
+
       # ── diff ─────────────────────────────────────────────
       register VerbSpec.new(
         verb: :diff, summary: "Preview the diff between a proposal and its target — body, meta, and schema.",
@@ -273,7 +273,7 @@ module Textus
         cli: nil, cli_stdin: nil, category: :read,
         lane: :proposal
       )
-   
+
       # ── pulse ────────────────────────────────────────────
       register VerbSpec.new(
         :pulse, "Delta since cursor — changed entries, pending proposals, index freshness.",
@@ -281,13 +281,13 @@ module Textus
                      description: "audit seq to diff from; defaults to the session cursor")],
         %i[cli mcp], { default: identity }, nil, nil, :read
       )
-   
+
       # ── published ────────────────────────────────────────
       register VerbSpec.new(
         :published, "List all entries that declare a publish target.",
         [], %i[cli mcp], { default: identity }, "published", nil, :read
       )
-   
+
       # ── schema_show ──────────────────────────────────────
       register VerbSpec.new(
         :schema_show, "Return the schema (field shape) for an entry's family.",
@@ -295,13 +295,13 @@ module Textus
                      description: "any key in the family whose schema you want")],
         %i[cli mcp], { default: identity }, "schema show", nil, :read
       )
-   
+
       # ── boot ─────────────────────────────────────────────
       register VerbSpec.new(
         :boot, "Return the orientation contract: lanes, agent_quickstart, agent_protocol.",
         [], %i[cli mcp], { default: identity }, nil, nil, :read
       )
-   
+
       # ── data_mv ──────────────────────────────────────────
       register VerbSpec.new(
         :data_mv, "Rename a data lane — manifest + files. Refuses if destination exists.",
@@ -311,7 +311,7 @@ module Textus
                      description: "when true, returns planned zone move without applying")],
         %i[cli mcp], { default: ->(v, _) { v.to_h } }, "data mv", nil, :write
       )
-   
+
       # ── key_mv_prefix ────────────────────────────────────
       register VerbSpec.new(
         :key_mv_prefix, "Bulk-rename every leaf key under from_prefix to to_prefix.",
@@ -323,7 +323,7 @@ module Textus
                      description: "when true, returns planned moves without applying")],
         %i[cli mcp], { default: ->(v, _) { v.to_h } }, "key mv-prefix", nil, :write
       )
-   
+
       # ── key_delete_prefix ────────────────────────────────
       register VerbSpec.new(
         :key_delete_prefix, "Bulk-delete every leaf key under prefix.",
@@ -333,7 +333,7 @@ module Textus
                      description: "when true, returns keys that would be deleted without deleting")],
         %i[cli mcp], { default: ->(v, _) { v.to_h } }, "key delete-prefix", nil, :write
       )
-   
+
       # ── drain ────────────────────────────────────────────
       register VerbSpec.new(
         :drain, "Seed materialize + sweep jobs then drain the queue to empty.",
@@ -341,6 +341,6 @@ module Textus
          ArgSpec.arg(name: :lane, description: "restrict to entries in this lane")],
         %i[cli mcp], { default: identity }, nil, nil, :maintenance
       )
+    end
   end
-  end
-  end
+end

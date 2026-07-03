@@ -14,6 +14,7 @@ module Textus
               key = row[:key]
               mentry = resolver.resolve(key)
               next unless mentry
+
               entry = mentry.entry
               entry_index.record(
                 key:, lane: entry.lane, format: entry.format,

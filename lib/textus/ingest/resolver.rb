@@ -14,7 +14,7 @@ module Textus
         tombstone["superseded_by"] = new_key
 
         container.writer.put(old_key, mentry: old_mentry, call:,
-                            payload: Textus::Value::Payload.new(meta: nil, body: nil, content: tombstone))
+                                      payload: Textus::Value::Payload.new(meta: nil, body: nil, content: tombstone))
       end
     end
   end

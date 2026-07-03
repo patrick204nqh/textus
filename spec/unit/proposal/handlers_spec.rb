@@ -1,18 +1,18 @@
 RSpec.describe Textus::Proposal::Handlers do
   describe ".propose" do
     it "writes to the proposal zone with prefixed key" do
-      container = instance_double("Container")
-      manifest = instance_double("Manifest", policy: instance_double("Policy"), resolver: instance_double("Resolver"))
+      container = instance_double(Container)
+      manifest = instance_double(Manifest, policy: instance_double("Policy"), resolver: instance_double("Resolver"))
       writer = instance_double("Writer")
       allow(container).to receive_messages(manifest:, writer:)
       allow(manifest.policy).to receive(:propose_lane_for).with("human").and_return("proposals")
-      entry = instance_double("Entry", entry: instance_double("Mentry"))
+      entry = double("entry", entry: instance_double(Mentry))
       allow(manifest.resolver).to receive(:resolve).with("proposals.decisions.feature-x").and_return(entry)
-      env = instance_double("Envelope")
+      env = instance_double(Envelope)
       allow(env).to receive(:to_h_for_wire).and_return({ "key" => "proposals.decisions.feature-x", "uid" => "abc" })
       allow(writer).to receive(:put).and_return(env)
 
-      call = instance_double("Call", role: "human", correlation_id: "abc")
+      call = instance_double(Call, role: "human", correlation_id: "abc")
 
       result = described_class.propose(
         key: "decisions.feature-x", meta: { "proposal" => { "target_key" => "knowledge.foo" } },
@@ -23,21 +23,21 @@ RSpec.describe Textus::Proposal::Handlers do
         "proposals.decisions.feature-x",
         mentry: entry.entry,
         call:,
-        payload: instance_of(Textus::Value::Payload)
+        payload: instance_of(Textus::Value::Payload),
       )
       expect(result).to eq({ "key" => "proposals.decisions.feature-x", "uid" => "abc" })
     end
 
     it "returns error when role has no propose lane" do
-      container = instance_double("Container")
-      manifest = instance_double("Manifest", policy: instance_double("Policy"))
+      container = instance_double(Container)
+      manifest = instance_double(Manifest, policy: instance_double("Policy"))
       allow(container).to receive(:manifest).and_return(manifest)
       allow(manifest.policy).to receive(:propose_lane_for).with("viewer").and_return(nil)
 
-      call = instance_double("Call", role: "viewer", correlation_id: "abc")
+      call = instance_double(Call, role: "viewer", correlation_id: "abc")
 
       result = described_class.propose(
-        key: "test", container:, call:
+        key: "test", container:, call:,
       )
 
       expect(result).to have_key(:error)
@@ -47,23 +47,23 @@ RSpec.describe Textus::Proposal::Handlers do
 
   describe ".accept" do
     it "reads proposal and writes to target, then deletes proposal" do
-      container = instance_double("Container")
+      container = instance_double(Container)
       reader = instance_double("Reader")
       writer = instance_double("Writer")
-      manifest = instance_double("Manifest", resolver: instance_double("Resolver"))
+      manifest = instance_double(Manifest, resolver: instance_double("Resolver"))
       allow(container).to receive_messages(reader:, writer:, manifest:)
 
-      pending_env = instance_double("Envelope",
-        meta: { "proposal" => { "target_key" => "knowledge.foo", "action" => "put" } },
-        body: "proposed content")
+      pending_env = instance_double(Envelope,
+                                    meta: { "proposal" => { "target_key" => "knowledge.foo", "action" => "put" } },
+                                    body: "proposed content")
       allow(reader).to receive(:read).with("proposals.test").and_return(pending_env)
 
-      entry = instance_double("Entry", entry: instance_double("Mentry"))
+      entry = double("entry", entry: instance_double(Mentry))
       allow(manifest.resolver).to receive(:resolve).with("knowledge.foo").and_return(entry)
       allow(writer).to receive(:put)
       allow(writer).to receive(:delete)
 
-      call = instance_double("Call", role: "human", correlation_id: "abc")
+      call = instance_double(Call, role: "human", correlation_id: "abc")
 
       result = described_class.accept(pending_key: "proposals.test", dry_run: false, container:, call:)
 
@@ -73,23 +73,21 @@ RSpec.describe Textus::Proposal::Handlers do
     end
 
     it "returns dry_run diff without writing" do
-      container = instance_double("Container")
+      container = instance_double(Container)
       reader = instance_double("Reader")
       allow(container).to receive(:reader).and_return(reader)
       allow(container).to receive(:writer)
 
-      pending_env = instance_double("Envelope",
-        meta: { "proposal" => { "target_key" => "knowledge.foo", "action" => "put" } },
-        body: "new content")
+      pending_env = instance_double(Envelope,
+                                    meta: { "proposal" => { "target_key" => "knowledge.foo", "action" => "put" } },
+                                    body: "new content")
       allow(reader).to receive(:read).with("proposals.test").and_return(pending_env)
       allow(reader).to receive(:read).with("knowledge.foo").and_return(
-        instance_double("Envelope", body: "old content", meta: { "_meta" => {} })
+        instance_double(Envelope, body: "old content", meta: { "_meta" => {} }),
       )
-      allow(Textus::Protocol::Diff).to receive(:body).and_return({ "type" => "diff" })
-      allow(Textus::Protocol::Diff).to receive(:meta).and_return({})
-      allow(Textus::Protocol::Diff).to receive(:summary).and_return({ "changes" => 1 })
+      allow(Textus::Protocol::Diff).to receive_messages(body: { "type" => "diff" }, meta: {}, summary: { "changes" => 1 })
 
-      call = instance_double("Call", role: "human", correlation_id: "abc")
+      call = instance_double(Call, role: "human", correlation_id: "abc")
 
       result = described_class.accept(pending_key: "proposals.test", dry_run: true, container:, call:)
 
@@ -98,13 +96,13 @@ RSpec.describe Textus::Proposal::Handlers do
     end
 
     it "returns error when proposal block missing" do
-      container = instance_double("Container")
+      container = instance_double(Container)
       reader = instance_double("Reader")
       allow(container).to receive(:reader).and_return(reader)
-      env = instance_double("Envelope", meta: {})
+      env = instance_double(Envelope, meta: {})
       allow(reader).to receive(:read).and_return(env)
 
-      call = instance_double("Call", role: "human", correlation_id: "abc")
+      call = instance_double(Call, role: "human", correlation_id: "abc")
 
       result = described_class.accept(pending_key: "bad", container:, call:)
       expect(result[:error][:code]).to eq("proposal_error")
@@ -113,22 +111,22 @@ RSpec.describe Textus::Proposal::Handlers do
 
   describe ".reject" do
     it "deletes the proposal and returns result" do
-      container = instance_double("Container")
+      container = instance_double(Container)
       reader = instance_double("Reader")
       writer = instance_double("Writer")
-      manifest = instance_double("Manifest", policy: instance_double("Policy"), resolver: instance_double("Resolver"))
+      manifest = instance_double(Manifest, policy: instance_double("Policy"), resolver: instance_double("Resolver"))
       allow(container).to receive_messages(reader:, writer:, manifest:)
 
-      mentry = instance_double("Mentry")
+      mentry = instance_double(Mentry)
       allow(mentry).to receive(:in_proposal_lane?).and_return(true)
-      entry = instance_double("Entry", entry: mentry)
+      entry = double("entry", entry: mentry)
       allow(manifest.resolver).to receive(:resolve).with("proposals.test").and_return(entry)
 
-      env = instance_double("Envelope", meta: { "proposal" => { "target_key" => "knowledge.foo" } })
+      env = instance_double(Envelope, meta: { "proposal" => { "target_key" => "knowledge.foo" } })
       allow(reader).to receive(:read).with("proposals.test").and_return(env)
       allow(writer).to receive(:delete)
 
-      call = instance_double("Call", role: "human", correlation_id: "abc")
+      call = instance_double(Call, role: "human", correlation_id: "abc")
 
       result = described_class.reject(pending_key: "proposals.test", reason: "not needed", container:, call:)
 
@@ -138,16 +136,15 @@ RSpec.describe Textus::Proposal::Handlers do
     end
 
     it "returns error when key is not in proposal zone" do
-      container = instance_double("Container")
-      manifest = instance_double("Manifest", resolver: instance_double("Resolver"), policy: instance_double("Policy"))
+      container = instance_double(Container)
+      manifest = instance_double(Manifest, resolver: instance_double("Resolver"), policy: instance_double("Policy"))
       allow(container).to receive(:manifest).and_return(manifest)
-      mentry = instance_double("Mentry")
-      allow(mentry).to receive(:in_proposal_lane?).and_return(false)
-      allow(mentry).to receive(:lane).and_return("knowledge")
-      entry = instance_double("Entry", entry: mentry)
+      mentry = instance_double(Mentry)
+      allow(mentry).to receive_messages(in_proposal_lane?: false, lane: "knowledge")
+      entry = double("entry", entry: mentry)
       allow(manifest.resolver).to receive(:resolve).with("knowledge.foo").and_return(entry)
 
-      call = instance_double("Call", role: "human", correlation_id: "abc")
+      call = instance_double(Call, role: "human", correlation_id: "abc")
 
       result = described_class.reject(pending_key: "knowledge.foo", container:, call:)
       expect(result[:error][:code]).to eq("proposal_error")
@@ -156,30 +153,28 @@ RSpec.describe Textus::Proposal::Handlers do
 
   describe ".diff" do
     it "returns diff between proposal and target" do
-      container = instance_double("Container")
+      container = instance_double(Container)
       reader = instance_double("Reader")
-      manifest = instance_double("Manifest")
+      manifest = instance_double(Manifest)
       manifest_data = double("ManifestData")
       allow(manifest).to receive(:data).and_return(manifest_data)
       allow(container).to receive_messages(reader:, manifest:)
 
-      env = instance_double("Envelope",
-        meta: { "proposal" => { "target_key" => "knowledge.foo" }, "_meta" => { "schema" => "v2" } },
-        body: "new body")
+      env = instance_double(Envelope,
+                            meta: { "proposal" => { "target_key" => "knowledge.foo" }, "_meta" => { "schema" => "v2" } },
+                            body: "new body")
       allow(reader).to receive(:read).with("proposals.test").and_return(env)
 
-      target_env = instance_double("Envelope", body: "old body", meta: { "_meta" => {} })
+      target_env = instance_double(Envelope, body: "old body", meta: { "_meta" => {} })
       allow(reader).to receive(:read).with("knowledge.foo").and_return(target_env)
 
-      entry = instance_double("Entry", key: "knowledge.foo", schema_ref: "v1")
+      entry = double("entry", key: "knowledge.foo", schema_ref: "v1")
       allow(manifest_data).to receive(:entries).and_return([entry])
 
-      allow(Textus::Protocol::Diff).to receive(:body).and_return({ "type" => "diff" })
-      allow(Textus::Protocol::Diff).to receive(:meta).and_return({})
-      allow(Textus::Protocol::Diff).to receive(:schema).and_return({ "schema" => { "from" => "v1", "to" => "v2" } })
-      allow(Textus::Protocol::Diff).to receive(:summary).and_return({ "changes" => 2 })
+      allow(Textus::Protocol::Diff).to receive_messages(body: { "type" => "diff" }, meta: {},
+                                                        schema: { "schema" => { "from" => "v1", "to" => "v2" } }, summary: { "changes" => 2 })
 
-      call = instance_double("Call", role: "human", correlation_id: "abc")
+      call = instance_double(Call, role: "human", correlation_id: "abc")
 
       result = described_class.diff(pending_key: "proposals.test", container:, call:)
 
@@ -191,13 +186,13 @@ RSpec.describe Textus::Proposal::Handlers do
     end
 
     it "returns error when proposal block missing" do
-      container = instance_double("Container")
+      container = instance_double(Container)
       reader = instance_double("Reader")
       allow(container).to receive(:reader).and_return(reader)
-      env = instance_double("Envelope", meta: {})
+      env = instance_double(Envelope, meta: {})
       allow(reader).to receive(:read).and_return(env)
 
-      call = instance_double("Call", role: "human", correlation_id: "abc")
+      call = instance_double(Call, role: "human", correlation_id: "abc")
 
       result = described_class.diff(pending_key: "bad", container:, call:)
       expect(result[:error][:code]).to eq("proposal_error")

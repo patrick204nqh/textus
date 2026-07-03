@@ -5,7 +5,7 @@ module Textus
         ns = lane_name.to_s.split("_").map(&:capitalize).join
         Textus.const_get(ns)::Handlers
       rescue NameError
-        raise ArgumentError, "no handler for lane: #{lane_name}"
+        raise ArgumentError.new("no handler for lane: #{lane_name}")
       end
 
       module_function

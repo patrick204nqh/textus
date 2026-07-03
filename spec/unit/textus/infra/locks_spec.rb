@@ -3,7 +3,9 @@ require "tmpdir"
 
 RSpec.describe Textus::Infra::Locks::BuildLock do
   subject(:lock) { described_class.new(tmpdir) }
+
   let(:tmpdir) { Dir.mktmpdir }
+
   after { FileUtils.rm_rf(tmpdir) }
 
   describe "#acquire_or_raise" do
@@ -43,9 +45,15 @@ end
 
 RSpec.describe Textus::Infra::Locks::WatcherLock do
   subject(:lock) { described_class.new(tmpdir) }
+
   let(:tmpdir) { Dir.mktmpdir }
+
   after do
-    lock.release rescue nil
+    begin
+      lock.release
+    rescue StandardError
+      nil
+    end
     FileUtils.rm_rf(tmpdir)
   end
 
