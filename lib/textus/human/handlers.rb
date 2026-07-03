@@ -53,6 +53,23 @@ module Textus
           "target_key" => target, "action" => action, "cascade_key" => target }
       end
 
+      def reject(pending_key:, reason: nil, container:, call:)
+        mentry = container.manifest.resolver.resolve(pending_key).entry
+        unless mentry.in_proposal_lane?(container.manifest.policy)
+          return { error: { code: "proposal_error", message: "reject: '#{pending_key}' is not in a proposal zone (zone=#{mentry.lane})" } }
+        end
+
+        env = container.reader.read(pending_key)
+        proposal = env&.meta&.dig("proposal")
+        return { error: { code: "proposal_error", message: "entry has no proposal block: #{pending_key}" } } unless proposal
+
+        target_key = proposal["target_key"]
+        container.writer.delete(pending_key, mentry:, call:)
+        result = { "protocol" => Textus::PROTOCOL, "rejected" => pending_key, "target_key" => target_key }
+        result["reason"] = reason if reason
+        result
+      end
+
       def self.loop_status(manifest, active_index: 0)
         Runner.new(manifest).current_node(active_index:)
       end

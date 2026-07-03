@@ -65,6 +65,49 @@ RSpec.describe Textus::Human::Handlers do
     end
   end
 
+  describe ".reject" do
+    it "deletes the proposal and returns result" do
+      container = instance_double("Container")
+      reader = instance_double("Reader")
+      writer = instance_double("Writer")
+      manifest = instance_double("Manifest", policy: instance_double("Policy"), resolver: instance_double("Resolver"))
+      allow(container).to receive_messages(reader:, writer:, manifest:)
+
+      mentry = instance_double("Mentry")
+      allow(mentry).to receive(:in_proposal_lane?).and_return(true)
+      entry = instance_double("Entry", entry: mentry)
+      allow(manifest.resolver).to receive(:resolve).with("proposals.test").and_return(entry)
+
+      env = instance_double("Envelope", meta: { "proposal" => { "target_key" => "knowledge.foo" } })
+      allow(reader).to receive(:read).with("proposals.test").and_return(env)
+      allow(writer).to receive(:delete)
+
+      call = instance_double("Call", role: "human", correlation_id: "abc")
+
+      result = described_class.reject(pending_key: "proposals.test", reason: "not needed", container:, call:)
+
+      expect(writer).to have_received(:delete).with("proposals.test", mentry:, call:)
+      expect(result["rejected"]).to eq("proposals.test")
+      expect(result["reason"]).to eq("not needed")
+    end
+
+    it "returns error when key is not in proposal zone" do
+      container = instance_double("Container")
+      manifest = instance_double("Manifest", resolver: instance_double("Resolver"), policy: instance_double("Policy"))
+      allow(container).to receive(:manifest).and_return(manifest)
+      mentry = instance_double("Mentry")
+      allow(mentry).to receive(:in_proposal_lane?).and_return(false)
+      allow(mentry).to receive(:lane).and_return("knowledge")
+      entry = instance_double("Entry", entry: mentry)
+      allow(manifest.resolver).to receive(:resolve).with("knowledge.foo").and_return(entry)
+
+      call = instance_double("Call", role: "human", correlation_id: "abc")
+
+      result = described_class.reject(pending_key: "knowledge.foo", container:, call:)
+      expect(result[:error][:code]).to eq("proposal_error")
+    end
+  end
+
   describe ".propose" do
     it "writes to the proposal zone with prefixed key" do
       container = instance_double("Container")
