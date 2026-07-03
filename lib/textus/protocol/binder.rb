@@ -11,13 +11,7 @@ module Textus
     end
 
     module Binder
-      Pending = Data.define(:spec, :inputs)
-
       module_function
-
-      def command(spec, inputs)
-        Pending.new(spec: spec, inputs: inputs)
-      end
 
       def bind(spec, inputs)
         missing = spec.required_args.reject { |a| inputs.key?(a.name) }
