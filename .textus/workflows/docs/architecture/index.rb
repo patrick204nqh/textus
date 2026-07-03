@@ -5,11 +5,8 @@ Textus.workflow "architecture-index-generator" do
     data   = ctx.container.manifest.data
     policy = ctx.container.manifest.policy
 
-    kind_to_cap = Textus::Manifest::Schema::Vocabulary::LANES
-
     lanes = data.declared_lane_kinds.map do |name, kind|
-      cap     = kind_to_cap[kind.to_s]
-      writers = cap ? policy.roles_with_capability(cap) : []
+      writers = policy.writers_for(name)
       { "name" => name.to_s, "kind" => kind.to_s,
         "purpose" => data.lane_descs[name].to_s, "writers" => writers.map(&:to_s) }
     end

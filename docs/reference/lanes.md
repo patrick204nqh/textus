@@ -24,9 +24,6 @@ A role holds a set of **capabilities** from the closed five-element set. Write a
 
 | Role | Capabilities |
 |---|---|
-| `human` | `author`, `propose`, `ingest` |
-| `agent` | `propose`, `keep`, `ingest` |
-| `automation` | `converge`, `ingest` |
 
 What each capability **means**:
 
@@ -46,20 +43,20 @@ Note: `accept` and `reject` are **transition verbs**, not capabilities. Both req
 
 | Kind | Required capability | Writers in this store |
 |---|---|---|
-| `canon` | `author` | `human` |
-| `workspace` | `keep` | `agent` |
-| `queue` | `propose` | `human`, `agent` |
-| `machine` | `converge` | `automation` |
+| `knowledge` | `` | `human` |
+| `scratchpad` | `` | `agent` |
+| `proposals` | `` | `human`, `agent` |
+| `artifacts` | `` | `automation` |
 | `raw` | `ingest` | `human`, `agent`, `automation` |
 
 ### Declared lanes
 
 | Name | Kind | Purpose |
 |---|---|---|
-| `knowledge` | `canon` | the maintained source of truth about the repo |
-| `scratchpad` | `workspace` | the agent's own durable scratchpad (working memory) |
-| `proposals` | `queue` | changes awaiting a human accept |
-| `artifacts` | `machine` | machine-maintained computed outputs |
+| `knowledge` | `knowledge` | the maintained source of truth about the repo |
+| `scratchpad` | `scratchpad` | the agent's own durable scratchpad (working memory) |
+| `proposals` | `proposals` | changes awaiting a human accept |
+| `artifacts` | `artifacts` | machine-maintained computed outputs |
 | `raw` | `raw` | ingested external source material (write-once) |
 
 `owner:` on a lane is **optional, informational** metadata. Write authority is **derived** — there is no `write_policy:`.
@@ -93,7 +90,7 @@ entries:
 | `publish:` | no | A list of publish targets. `{ to:, template?: }` or `{ tree: "dir" }`. |
 | `ignore:` | no | For `nested:` entries — gitignore-style globs excluded from enumeration. |
 
-The full schema lives in the entry schema (`textus get knowledge.specs.04-manifest`).
+The full schema lives in the entry schema (`textus get knowledge.constraint.protocol.0004-manifest`).
 
 ---
 
@@ -111,6 +108,6 @@ The full schema lives in the entry schema (`textus get knowledge.specs.04-manife
 
 ## Where to go from here
 
-- [configuring-lanes](../how-to/configuring-lanes.md) — lane-setup procedures
-- [architecture overview](../architecture/README.md) — Ruby implementation layout
+- [configuring-lanes](`textus get artifacts.how-to.configuring-lanes`) — lane-setup procedures
+- [architecture overview](`textus get artifacts.architecture.index`) — Ruby implementation layout
 - [`conventions.md`](conventions.md) — store patterns and idiomatic choices

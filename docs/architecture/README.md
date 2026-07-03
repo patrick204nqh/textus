@@ -11,19 +11,16 @@
 
 | Name | Kind | Writers | Purpose |
 |---|---|---|---|
-| `knowledge` | `canon` | `human` | the maintained source of truth about the repo |
-| `scratchpad` | `workspace` | `agent` | the agent's own durable scratchpad (working memory) |
-| `proposals` | `queue` | `human`, `agent` | changes awaiting a human accept |
-| `artifacts` | `machine` | `automation` | machine-maintained computed outputs |
+| `knowledge` | `knowledge` | `human` | the maintained source of truth about the repo |
+| `scratchpad` | `scratchpad` | `agent` | the agent's own durable scratchpad (working memory) |
+| `proposals` | `proposals` | `human`, `agent` | changes awaiting a human accept |
+| `artifacts` | `artifacts` | `automation` | machine-maintained computed outputs |
 | `raw` | `raw` | `human`, `agent`, `automation` | ingested external source material (write-once) |
 
 ## Roles and capabilities
 
 | Role | Capabilities |
 |---|---|
-| `human` | `author`, `propose`, `ingest` |
-| `agent` | `propose`, `keep`, `ingest` |
-| `automation` | `converge`, `ingest` |
 
 ## Implementation layers
 
@@ -262,7 +259,7 @@ For each key, `Engine#produce_one`:
 ```ruby
 Textus.workflow "my-producer", priority: 10 do
   match "artifacts.derived.*"
-  depends_on "knowledge.project"
+  depends_on "knowledge.intent.0003-identity"
 
   step :fetch do |data, ctx|
     { content: fetch_json("https://api.example.com/data") }
@@ -303,4 +300,4 @@ Contract drift surfaces as `ContractDrift` (contract_etag mismatch); audit curso
 ## See also
 
 - [`decisions/README.md`](decisions/README.md) — curated decision reading guide
-- [decision log](../decisions.md) — live decision log (all statuses)
+- [decision log](`textus get artifacts.decisions.log`) — live decision log (all statuses)

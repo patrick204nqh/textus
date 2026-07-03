@@ -10,14 +10,14 @@ Textus.workflow "loop-shape" do
   script_pattern = /\A\d{4}-[a-z0-9-]+\.\w+\z/
   session_pattern = /\A\d{4}-\d{2}-\d{2}-[a-z0-9-]+\.md\z/
 
-  shape "knowledge.intent.*", naming: node_pattern
-  shape "knowledge.constraint.repo.*", naming: node_pattern
-  shape "knowledge.constraint.protocol.*", naming: node_pattern
-  shape "knowledge.judgment.engineering.*", naming: node_pattern
-  shape "knowledge.judgment.agent-behavior.*", naming: node_pattern
-  shape "knowledge.evidence.*", naming: node_pattern
-  shape "knowledge.execution.*", naming: node_pattern
-  shape "knowledge.feedback.*", naming: node_pattern
+  shape "knowledge.loop.intent.*", naming: node_pattern
+  shape "knowledge.loop.constraint.repo.*", naming: node_pattern
+  shape "knowledge.loop.constraint.protocol.*", naming: node_pattern
+  shape "knowledge.loop.judgment.engineering.*", naming: node_pattern
+  shape "knowledge.loop.judgment.agent-behavior.*", naming: node_pattern
+  shape "knowledge.loop.evidence.*", naming: node_pattern
+  shape "knowledge.loop.execution.*", naming: node_pattern
+  shape "knowledge.loop.feedback.*", naming: node_pattern
   shape "scratchpad.sessions.*", naming: session_pattern
   shape "scratchpad.notes.*", naming: node_pattern
   shape "scratchpad.scripts.*", naming: script_pattern

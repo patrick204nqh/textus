@@ -9,6 +9,12 @@ module Textus
         @db[:link_edges].insert_ignore.insert(from_key:, to_key:)
       end
 
+      # Compatibility shim for call sites that still use the previous edge-store
+      # interface name.
+      def record(from_key:, to_key:)
+        add_edge(from_key:, to_key:)
+      end
+
       def remove_edge(from_key:, to_key:)
         @db[:link_edges].where(from_key:, to_key:).delete
       end

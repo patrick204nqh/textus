@@ -19,18 +19,14 @@ Textus.workflow "doctor-proposal-targets" do
 
       rows.each do |row|
         key = row["key"]
-        envelope = Textus::Store::Entry::Reader.new(
-          file_store: ctx.container.file_store,
-          manifest: ctx.container.manifest,
-          layout: ctx.container.layout,
-        ).read(key)
+        envelope = ctx.container.reader.read(key)
 
         target = envelope&.meta&.dig("proposal", "target_key")
         next if target.nil?
 
         begin
           lane = manifest.resolver.resolve(target).entry.lane
-          next if manifest.policy.declared_kind(lane.to_s) == :canon
+          next if lane.to_s == "knowledge"
 
           issues << {
             "code" => "proposal.target_not_canon",

@@ -5,12 +5,12 @@
   "writable_agent_lanes": [
     {
       "name": "scratchpad",
-      "kind": "workspace",
+      "kind": "scratchpad",
       "purpose": "the agent's own durable scratchpad (working memory)"
     },
     {
       "name": "proposals",
-      "kind": "queue",
+      "kind": "proposals",
       "purpose": "changes awaiting a human accept"
     },
     {
@@ -20,50 +20,5 @@
     }
   ],
   "propose_lane": "proposals",
-  "role_authority": [
-    {
-      "role": "human",
-      "capabilities": [
-        "author",
-        "propose",
-        "ingest"
-      ],
-      "lane_writes": {
-        "knowledge": true,
-        "scratchpad": false,
-        "proposals": true,
-        "artifacts": false,
-        "raw": true
-      }
-    },
-    {
-      "role": "agent",
-      "capabilities": [
-        "propose",
-        "keep",
-        "ingest"
-      ],
-      "lane_writes": {
-        "knowledge": false,
-        "scratchpad": true,
-        "proposals": true,
-        "artifacts": false,
-        "raw": true
-      }
-    },
-    {
-      "role": "automation",
-      "capabilities": [
-        "converge",
-        "ingest"
-      ],
-      "lane_writes": {
-        "knowledge": false,
-        "scratchpad": false,
-        "proposals": false,
-        "artifacts": true,
-        "raw": true
-      }
-    }
-  ]
+  "role_authority": []
 }

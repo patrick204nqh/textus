@@ -6,12 +6,7 @@ Textus.workflow "pattern-crossrefs" do
   match "knowledge.judgment.engineering.**"
 
   validate :check_refs do |_data, ctx|
-    reader = Textus::Store::Entry::Reader.new(
-      file_store: ctx.container.file_store,
-      manifest: ctx.container.manifest,
-      layout: ctx.container.layout,
-    )
-    body = reader.read(ctx.key)&.body.to_s
+    body = ctx.container.reader.read(ctx.key)&.body.to_s
     if body.match?(/ADR-\d+/)
       []
     else

@@ -1,37 +1,42 @@
-# Replaces Doctor::Check::SchemaViolations. Validates entry data against
-# declared schemas and role-authority constraints.
-
 # rubocop:disable Metrics/BlockLength
+# Replaces Doctor::Check::SchemaViolations. Validates frontmatter against
+# declared schemas for every resolvable key.
+
 Textus.workflow "doctor-schema-violations" do
   match "artifacts.doctor.schema-violations"
 
   step :scan do |_, ctx|
-    result = Textus::Doctor::Validator.new(
-      reader: lambda { |key, ctnr, _c|
-        Textus::Store::Entry::Reader.new(
-          file_store: ctnr.file_store,
-          manifest: ctnr.manifest,
-          layout: ctnr.layout,
-        ).read(key)
-      },
-      manifest: ctx.container.manifest,
-      audit_log: ctx.container.audit_log,
-      schema_for: ->(name) { ctx.container.schemas.fetch_or_nil(name) },
-    ).call(container: ctx.container, call: Textus::Value::Call.build(role: Textus::Value::Role::DEFAULT))
+    manifest = ctx.container.manifest
+    schemas = ctx.container.schemas
+    reader = ctx.container.reader
 
-    issues = result.fetch("violations").map do |v|
-      fix = v["expected"] &&
-            "field '#{v["field"]}' should be written by '#{v["expected"]}' (last writer: #{v["last_writer"]})"
-      {
-        "code" => v["code"],
-        "level" => "error",
-        "subject" => v["key"],
-        "message" => v["message"] || "#{v["code"]} on #{v["key"]}",
-        "fix" => fix,
-      }.compact
+    violations = manifest.resolver.enumerate(include_keyless: true).filter_map do |row|
+      key = row[:key]
+      envelope = reader.read(key)
+      next unless envelope
+
+      schema_ref = envelope.schema_ref
+      next unless schema_ref
+
+      schema = schemas.fetch_or_nil(schema_ref)
+      next unless schema
+
+      frontmatter = envelope.meta&.dig("_meta") || envelope.meta || {}
+      begin
+        schema.validate!(frontmatter)
+        nil
+      rescue Textus::SchemaViolation => e
+        {
+          "code" => "schema_violation",
+          "level" => "error",
+          "subject" => key,
+          "message" => "#{schema_ref}: #{e.message}",
+          "fix" => "update _meta to satisfy schema '#{schema_ref}'",
+        }
+      end
     end
 
-    { "content" => { "ok" => issues.empty?, "issues" => issues, "count" => issues.size } }
+    { "content" => { "ok" => violations.empty?, "issues" => violations, "count" => violations.size } }
   end
 
   publish

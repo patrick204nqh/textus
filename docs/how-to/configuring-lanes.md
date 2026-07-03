@@ -7,7 +7,7 @@
 
 How to shape your context: declare your own lanes, wire external data through workflows, wire derived data out through projections and publishing, and a full worked example.
 
-For the exact lane, role, and entry semantics this guide builds on, see [lanes reference](../reference/lanes.md). For the wire protocol, see the wire protocol (`textus get knowledge.specs.*`).
+For the exact lane, role, and entry semantics this guide builds on, see [lanes reference](`textus get artifacts.reference.lanes`). For the wire protocol, see the wire protocol (`textus get knowledge.constraint.protocol.*`).
 
 ## Table of contents
 
@@ -33,10 +33,10 @@ The kind→capability bijection (ADR 0091/0116):
 
 | Kind | Capability | Writers in this store |
 |---|---|---|
-| `canon` | `author` | `human` |
-| `workspace` | `keep` | `agent` |
-| `queue` | `propose` | `human`, `agent` |
-| `machine` | `converge` | `automation` |
+| `knowledge` | `` | `human` |
+| `scratchpad` | `` | `agent` |
+| `proposals` | `` | `human`, `agent` |
+| `artifacts` | `` | `automation` |
 | `raw` | `ingest` | `human`, `agent`, `automation` |
 
 `kind:` is required — a manifest with a kind-less lane is rejected at load. The kind fixes the capability a writer must hold. This is a **bijection**: one kind maps to exactly one capability.
@@ -47,10 +47,10 @@ Rules: at most one `queue` lane, at most one `machine` lane, and at most one rol
 
 ```yaml
 lanes:
-  - { name: knowledge, kind: canon, desc: "the maintained source of truth about the repo" }
-  - { name: scratchpad, kind: workspace, desc: "the agent's own durable scratchpad (working memory)" }
-  - { name: proposals, kind: queue, desc: "changes awaiting a human accept" }
-  - { name: artifacts, kind: machine, desc: "machine-maintained computed outputs" }
+  - { name: knowledge, kind: knowledge, desc: "the maintained source of truth about the repo" }
+  - { name: scratchpad, kind: scratchpad, desc: "the agent's own durable scratchpad (working memory)" }
+  - { name: proposals, kind: proposals, desc: "changes awaiting a human accept" }
+  - { name: artifacts, kind: artifacts, desc: "machine-maintained computed outputs" }
   - { name: raw, kind: raw, desc: "ingested external source material (write-once)" }
 ```
 
@@ -72,9 +72,6 @@ Role **names** are a closed set — `human`, `agent`, `automation` — but each 
 
 ```yaml
 roles:
-  - { name: human, can: [author, propose, ingest] }
-  - { name: agent, can: [propose, keep, ingest] }
-  - { name: automation, can: [converge, ingest] }
 ```
 
 ### Rules to keep in mind
@@ -158,4 +155,4 @@ publish:
 
 ## Where to go from here
 
-- [lanes reference](../reference/lanes.md) — the exact lane, role, and entry semantics
+- [lanes reference](`textus get artifacts.reference.lanes`) — the exact lane, role, and entry semantics

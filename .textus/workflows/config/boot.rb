@@ -6,13 +6,20 @@ Textus.workflow "boot" do
     manifest = ctx.container.manifest
     reader = ctx.container.reader
 
+    read_family = lambda do |prefix|
+      manifest.resolver.enumerate(prefix: prefix, include_keyless: true)
+              .reject { |row| row[:key] == prefix }
+              .sort_by { |row| row[:key] }
+              .filter_map { |row| reader.read(row[:key]) }
+    end
+
     fetch = ->(key) { begin; reader.read(key); rescue StandardError; nil; end }
 
     # Project context (was artifacts.config.orientation)
     identity_env = fetch.call("knowledge.intent.0003-identity")
     identity = identity_env&.meta || {}
 
-    runbooks = ctx.container.read_family("knowledge.execution").filter_map(&:meta)
+    runbooks = read_family.call("knowledge.loop.execution").filter_map(&:meta)
 
     loop_nodes = %w[intent constraint.repo constraint.protocol judgment.engineering
                     judgment.agent-behavior evidence execution feedback]
@@ -24,9 +31,8 @@ Textus.workflow "boot" do
 
     # Lanes (was Boot.lanes_for)
     lanes = manifest.data.declared_lane_kinds.keys.map do |name|
-      verb = manifest.policy.verb_for_lane(name)
-      row  = { "name" => name, "writers" => manifest.policy.roles_with_capability(verb) }
-      kind = manifest.policy.declared_kind(name)
+      row  = { "name" => name, "writers" => manifest.policy.writers_for(name) }
+      kind = manifest.data.declared_lane_kinds[name]
       row["kind"] = kind.to_s if kind
       desc = manifest.data.lane_descs[name]
       row["purpose"] = desc if desc && !desc.empty?
@@ -38,8 +44,7 @@ Textus.workflow "boot" do
     writable_lanes  = manifest.data.declared_lane_kinds.keys.each_with_object([]) do |lane_name, acc|
       next unless agent_role
 
-      verb    = manifest.policy.verb_for_lane(lane_name)
-      writers = manifest.policy.roles_with_capability(verb)
+      writers = manifest.policy.writers_for(lane_name)
       acc << lane_name if writers.include?(agent_role)
     end
     propose_lane = manifest.policy.propose_lane_for(agent_role)

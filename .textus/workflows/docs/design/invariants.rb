@@ -2,16 +2,20 @@ Textus.workflow "invariants-assembler" do
   match "artifacts.design.invariants"
 
   step :assemble do |_, ctx|
+    reader = ctx.container.reader
+    resolver = ctx.container.manifest.resolver
+
     read_atoms = lambda do |prefix|
-      ctx.container.read_family(prefix, include_keyless: true)
-         .reject { |env| env.key == prefix }
-         .uniq(&:key)
-         .sort_by(&:key)
-         .map { |env| { "key" => env.key, "slug" => env.key.split(".").last, "body" => env.body.to_s } }
+      resolver.enumerate(prefix: prefix, include_keyless: true)
+              .reject { |row| row[:key] == prefix }
+              .sort_by { |row| row[:key] }
+              .filter_map { |row| reader.read(row[:key]) }
+              .uniq(&:key)
+              .map { |env| { "key" => env.key, "slug" => env.key.split(".").last, "body" => env.body.to_s } }
     end
 
-    goals = read_atoms.call("knowledge.intent")
-    rules = read_atoms.call("knowledge.constraint.repo")
+    goals = read_atoms.call("knowledge.loop.intent")
+    rules = read_atoms.call("knowledge.loop.constraint.repo")
 
     { "content" => { "goals" => goals, "rules" => rules } }
   end
