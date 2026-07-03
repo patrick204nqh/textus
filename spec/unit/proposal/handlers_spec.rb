@@ -39,12 +39,8 @@ RSpec.describe Textus::Lanes::Proposal::Handlers do
 
       call = instance_double(Call, role: "viewer", correlation_id: "abc")
 
-      result = described_class.propose(
-        key: "test", ctx:, call:,
-      )
-
-      expect(result).to have_key(:error)
-      expect(result[:error][:code]).to eq("propose_forbidden")
+      expect { described_class.propose(key: "test", ctx:, call:) }
+        .to raise_error(Textus::ProposalError, /no writable propose_lane/)
     end
   end
 
@@ -110,8 +106,8 @@ RSpec.describe Textus::Lanes::Proposal::Handlers do
 
       call = instance_double(Call, role: "human", correlation_id: "abc")
 
-      result = described_class.accept(pending_key: "bad", ctx:, call:)
-      expect(result[:error][:code]).to eq("proposal_error")
+      expect { described_class.accept(pending_key: "bad", ctx:, call:) }
+        .to raise_error(Textus::ProposalError, /no proposal block/)
     end
   end
 
@@ -154,8 +150,8 @@ RSpec.describe Textus::Lanes::Proposal::Handlers do
 
       call = instance_double(Call, role: "human", correlation_id: "abc")
 
-      result = described_class.reject(pending_key: "knowledge.foo", ctx:, call:)
-      expect(result[:error][:code]).to eq("proposal_error")
+      expect { described_class.reject(pending_key: "knowledge.foo", ctx:, call:) }
+        .to raise_error(Textus::ProposalError, /not in a proposal zone/)
     end
   end
 
@@ -204,8 +200,8 @@ RSpec.describe Textus::Lanes::Proposal::Handlers do
 
       call = instance_double(Call, role: "human", correlation_id: "abc")
 
-      result = described_class.diff(pending_key: "bad", ctx:, call:)
-      expect(result[:error][:code]).to eq("proposal_error")
+      expect { described_class.diff(pending_key: "bad", ctx:, call:) }
+        .to raise_error(Textus::ProposalError, /no proposal block/)
     end
   end
 end

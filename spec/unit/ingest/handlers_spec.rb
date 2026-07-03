@@ -76,11 +76,8 @@ RSpec.describe Textus::Lanes::Ingest::Handlers do
       ctx = Textus::Protocol::HandlerContext.new(container)
       call = instance_double(Call)
 
-      result = described_class.ingest(
-        kind: "invalid", slug: "test", ctx:, call:,
-      )
-
-      expect(result).to be_a(Hash)
+      expect { described_class.ingest(kind: "invalid", slug: "test", ctx:, call:) }
+        .to raise_error(Textus::UsageError, /kind must be one of/)
     end
   end
 end

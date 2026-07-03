@@ -27,7 +27,7 @@ module Textus
         def session_close(session_id:, ctx:, call:)
           key = "scratchpad.sessions.#{session_id}.session"
           env = ctx.read(key)
-          return { error: { code: "not_found", message: "session not found: #{session_id}" } } unless env
+          raise Textus::UsageError.new("session not found: #{session_id}") unless env
 
           mentry = parent_mentry(ctx)
           current = JSON.parse(env.body || "{}")

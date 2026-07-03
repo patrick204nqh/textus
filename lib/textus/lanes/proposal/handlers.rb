@@ -6,7 +6,7 @@ module Textus
   
         def propose(key:, ctx:, call:, meta: nil, body: nil, content: nil)
           zone = ctx.manifest.policy.propose_lane_for(call.role)
-          return { error: { code: "propose_forbidden", message: "role '#{call.role}' has no writable propose_lane" } } unless zone
+          raise Textus::ProposalError.new("role '#{call.role}' has no writable propose_lane") unless zone
   
           full_key = "#{zone}.#{key}"
           mentry = ctx.mentry_for(full_key)
@@ -20,10 +20,10 @@ module Textus
         def accept(pending_key:, ctx:, call:, dry_run: false)
           env = ctx.read(pending_key)
           proposal = env&.meta&.dig("proposal")
-          return { error: { code: "proposal_error", message: "entry has no proposal block: #{pending_key}" } } unless proposal
-  
+          raise Textus::ProposalError.new("entry has no proposal block: #{pending_key}") unless proposal
+
           target = proposal["target_key"]
-          return { error: { code: "proposal_error", message: "proposal missing target_key" } } unless target
+          raise Textus::ProposalError.new("proposal missing target_key") unless target
   
           action = proposal["action"] || "put"
   
@@ -46,7 +46,7 @@ module Textus
           when "delete"
             ctx.delete(target, call:)
           else
-            return { error: { code: "proposal_error", message: "unknown action: #{action}" } }
+            raise Textus::ProposalError.new("unknown action: #{action}")
           end
   
           ctx.delete(pending_key, call:)
@@ -57,12 +57,12 @@ module Textus
         def reject(pending_key:, ctx:, call:, reason: nil)
           mentry = ctx.mentry_for(pending_key)
           unless mentry.in_proposal_lane?(ctx.manifest.policy)
-            return { error: { code: "proposal_error", message: "reject: '#{pending_key}' is not in a proposal zone (zone=#{mentry.lane})" } }
+            raise Textus::ProposalError.new("reject: '#{pending_key}' is not in a proposal zone (zone=#{mentry.lane})")
           end
-  
+
           env = ctx.read(pending_key)
           proposal = env&.meta&.dig("proposal")
-          return { error: { code: "proposal_error", message: "entry has no proposal block: #{pending_key}" } } unless proposal
+          raise Textus::ProposalError.new("entry has no proposal block: #{pending_key}") unless proposal
   
           target_key = proposal["target_key"]
           ctx.delete(pending_key, mentry:, call:)
@@ -74,10 +74,10 @@ module Textus
         def diff(pending_key:, ctx:, call:)
           env = ctx.read(pending_key)
           proposal = env&.meta&.dig("proposal")
-          return { error: { code: "proposal_error", message: "entry has no proposal block: #{pending_key}" } } unless proposal
-  
+          raise Textus::ProposalError.new("entry has no proposal block: #{pending_key}") unless proposal
+
           target_key = proposal["target_key"]
-          return { error: { code: "proposal_error", message: "proposal missing target_key" } } unless target_key
+          raise Textus::ProposalError.new("proposal missing target_key") unless target_key
   
           target_env = ctx.read(target_key)
   

@@ -5,7 +5,7 @@ module Textus
 
       def get(key:, ctx:, call:)
         env = ctx.read(key)
-        return { error: { code: "not_found", message: "no entry at #{key}" } } unless env
+        raise Textus::UnknownKey.new(key) unless env
 
         expand_sources(env, ctx, depth: 0)
       end
@@ -42,7 +42,7 @@ module Textus
 
       def uid(key:, ctx:, call:)
         env = ctx.read(key)
-        return { error: { code: "not_found", message: "no entry at #{key}" } } unless env
+        raise Textus::UnknownKey.new(key) unless env
 
         env.uid
       end
@@ -50,15 +50,15 @@ module Textus
       def move(old_key:, new_key:, ctx:, call:, if_etag: nil, dry_run: false)
         Textus::Protocol::Manifest::Data.validate_key!(old_key)
         Textus::Protocol::Manifest::Data.validate_key!(new_key)
-        return { error: { code: "usage_error", message: "old and new keys are identical" } } if old_key == new_key
+        raise Textus::UsageError.new("old and new keys are identical") if old_key == new_key
 
         old_res = ctx.resolve(old_key)
         new_res = ctx.resolve(new_key)
 
-        return { error: { code: "usage_error", message: "source key '#{old_key}' not found" } } unless ctx.exists?(old_key)
-        return { error: { code: "usage_error", message: "target '#{new_key}' already exists" } } if ctx.exists?(new_key)
+        raise Textus::UnknownKey.new(old_key) unless ctx.exists?(old_key)
+        raise Textus::UsageError.new("target '#{new_key}' already exists") if ctx.exists?(new_key)
         unless old_res.entry.lane == new_res.entry.lane
-          return { error: { code: "usage_error", message: "cross-zone moves forbidden (#{old_res.entry.lane} → #{new_res.entry.lane})" } }
+          raise Textus::UsageError.new("cross-zone moves forbidden (#{old_res.entry.lane} → #{new_res.entry.lane})")
         end
 
         pre_env = ctx.read(old_key)
@@ -182,11 +182,10 @@ module Textus
       end
 
       def key_mv_prefix(from_prefix:, to_prefix:, ctx:, call:, dry_run: false)
-        return { error: { code: "usage_error", message: "from_prefix and to_prefix required" } } unless from_prefix && to_prefix
+        raise Textus::UsageError.new("from_prefix and to_prefix required") unless from_prefix && to_prefix
 
         leaves = list(prefix: from_prefix, ctx:, call:)
-        return leaves if leaves.is_a?(Hash) && leaves[:error]
-        return { error: { code: "usage_error", message: "from_prefix is a leaf — use mv" } } if leaves.any? { |r| r["key"] == from_prefix }
+        raise Textus::UsageError.new("from_prefix is a leaf — use mv") if leaves.any? { |r| r["key"] == from_prefix }
 
         warnings = leaves.empty? ? ["no keys under #{from_prefix}"] : []
         steps = leaves.map do |row|
@@ -201,10 +200,9 @@ module Textus
       end
 
       def key_delete_prefix(prefix:, ctx:, call:, dry_run: false)
-        return { error: { code: "usage_error", message: "prefix required" } } unless prefix && !prefix.empty?
+        raise Textus::UsageError.new("prefix required") unless prefix && !prefix.empty?
 
         leaves = list(prefix:, ctx:, call:)
-        return leaves if leaves.is_a?(Hash) && leaves[:error]
 
         warnings = leaves.empty? ? ["no keys under #{prefix}"] : []
         steps = leaves.map { |row| { "op" => "delete", "key" => row["key"] } }
@@ -216,11 +214,11 @@ module Textus
       end
 
       def data_mv(from:, to:, ctx:, call:, dry_run: false)
-        return { error: { code: "usage_error", message: "from and to required" } } unless from && to
-        return { error: { code: "usage_error", message: "data lane '#{from}' not declared" } } unless ctx.manifest.data.declared_lane_kinds.key?(from)
+        raise Textus::UsageError.new("from and to required") unless from && to
+        raise Textus::UsageError.new("data lane '#{from}' not declared") unless ctx.manifest.data.declared_lane_kinds.key?(from)
 
         dest_dir = ctx.layout.lane_path(to)
-        return { error: { code: "usage_error", message: "destination data/#{to} already exists" } } if File.exist?(dest_dir)
+        raise Textus::UsageError.new("destination data/#{to} already exists") if File.exist?(dest_dir)
 
         affected_keys = ctx.manifest.data.entries.select { |e| e.lane == from }.map(&:key)
         steps = [{ "op" => "rename_zone", "from" => from, "to" => to }]

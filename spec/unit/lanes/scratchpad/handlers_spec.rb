@@ -51,8 +51,8 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
       ctx = instance_double("HandlerContext")
       allow(ctx).to receive(:read).and_return(nil)
 
-      result = described_class.session_close(session_id: "missing", ctx:, call: nil)
-      expect(result[:error][:code]).to eq("not_found")
+      expect { described_class.session_close(session_id: "missing", ctx:, call: nil) }
+        .to raise_error(Textus::UsageError, /session not found/)
     end
   end
 end

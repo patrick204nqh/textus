@@ -154,7 +154,7 @@ module Textus
                            description: "asset group subdirectory (required when kind=asset)"),
                ArgSpec.arg(name: :label, description: "human label stored in source.label")],
         surfaces: %i[cli mcp],
-        views: { default: ->(env, _) { { "key" => env.key, "uid" => env.uid, "etag" => env.etag } } },
+        views: { default: identity },
         cli: nil, cli_stdin: nil, category: :write,
         lane: :ingest
       )

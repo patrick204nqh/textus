@@ -34,8 +34,8 @@ RSpec.describe Textus::Protocol::Gate do
       allow(Textus::Protocol::VerbRegistry).to receive(:for).with(:get).and_return(get_spec)
       allow(reader).to receive(:read).with("test").and_return(nil)
 
-      result = gate.dispatch(:human, :get, { key: "test" })
-      expect(result).to be_a(Hash)
+      expect { gate.dispatch(:human, :get, { key: "test" }) }
+        .to raise_error(Textus::UnknownKey)
     end
   end
 end

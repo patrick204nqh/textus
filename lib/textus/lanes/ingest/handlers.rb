@@ -8,15 +8,15 @@ module Textus
   
         def ingest(kind:, slug:, ctx:, call:, url: nil, path: nil, lane: nil, label: nil)
           unless SOURCE_KINDS.include?(kind)
-            return { error: { code: "usage_error", message: "kind must be one of #{SOURCE_KINDS.join("|")}" } }
+            raise Textus::UsageError.new("kind must be one of #{SOURCE_KINDS.join("|")}")
           end
-  
+
           case kind
-          when "url"   then return { error: { code: "usage_error", message: "url required" } } unless url
-          when "file"  then return { error: { code: "usage_error", message: "path required" } } unless path
+          when "url"   then raise Textus::UsageError.new("url required") unless url
+          when "file"  then raise Textus::UsageError.new("path required") unless path
           when "asset"
-            return { error: { code: "usage_error", message: "path required" } } unless path
-            return { error: { code: "usage_error", message: "lane required" } } unless lane
+            raise Textus::UsageError.new("path required") unless path
+            raise Textus::UsageError.new("lane required") unless lane
           end
   
           now = Time.now.utc
