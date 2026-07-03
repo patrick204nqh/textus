@@ -6,7 +6,7 @@ module Textus
           @view_key = view_key
         end
 
-        def dispatch(verb_name, inputs:, store:)
+        def dispatch(verb_name, inputs:, store:, role: Textus::Value::Role::AGENT)
           spec = VerbRegistry.for(verb_name.to_sym)
           raise Textus::UsageError.new("unknown verb: #{verb_name}") unless spec
 

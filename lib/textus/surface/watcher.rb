@@ -1,29 +1,30 @@
-# frozen_string_literal: true
-
 require "securerandom"
 
 module Textus
   module Surface
     class Watcher
-      CONSUMER = Textus::Events::Consumer.new
-
       def initialize(container:)
         @container = container
-        @registry = Textus::Workflow::Registry.new(container.workflows)
+        @async = Protocol::Async::Queue.new(container.event_store)
       end
 
       def tick
-        CONSUMER.drain(
-          event_store: @container.event_store,
-          registry: @registry,
-          container: @container,
-          call: Textus::Value::Call.build(role: Textus::Value::Role::AUTOMATION, correlation_id: SecureRandom.uuid),
-        )
+        loop do
+          row = @async.consume_pending
+          break unless row
+
+          result = run_workflow(row)
+          if result
+            @async.mark_done(event_id: row[:id])
+          else
+            @async.mark_failed(event_id: row[:id], retry_count: row[:retry_count] || 0, error: "failed")
+          end
+        end
       end
 
       def run(poll: nil)
         interval = poll || @container.manifest.data.worker_config[:poll] || 2
-        lock = Textus::Port::Concurrency::WatcherLock.new(@container.root)
+        lock = Infra::Locks::WatcherLock.new(@container.root)
         lock.acquire
         begin
           loop do
@@ -33,6 +34,19 @@ module Textus
         ensure
           lock.release
         end
+      end
+
+      private
+
+      def run_workflow(row)
+        Textus::Workflow::Runner.new(
+          Textus::Workflow::Registry.new(@container.workflows).for(row[:workflow_type]),
+          container: @container,
+          call: Textus::Value::Call.build(role: Textus::Value::Role::AUTOMATION, correlation_id: SecureRandom.uuid),
+        ).run(row[:key])
+        true
+      rescue StandardError
+        false
       end
     end
   end
