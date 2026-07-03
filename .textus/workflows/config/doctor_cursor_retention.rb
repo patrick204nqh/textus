@@ -18,7 +18,7 @@ Textus.workflow "doctor-cursor-retention" do
       end
       next if cursor_seq.nil? || cursor_seq <= 0
 
-      audit_log = Textus::Port::AuditLog.new(
+      audit_log = Textus::Protocol::Audit.new(
         ctx.container.root,
         layout: ctx.container.layout,
         keep: ctx.container.manifest.data.audit_config[:keep],

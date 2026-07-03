@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Port::AuditLog do
+RSpec.describe Textus::Protocol::Audit do
   let(:root) { Dir.mktmpdir("textus-audit-seq-") }
   let(:log) { described_class.new(root) }
 

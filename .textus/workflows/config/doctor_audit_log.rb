@@ -5,7 +5,7 @@ Textus.workflow "doctor-audit-log" do
 
   step :scan do |_, ctx|
     path = Textus::Store::Layout.new(ctx.container.root).audit_log_path
-    issues = Textus::Port::AuditLog.new(ctx.container.root).verify_integrity.map do |v|
+    issues = Textus::Protocol::Audit.new(ctx.container.root).verify_integrity.map do |v|
       detail = case v["reason"]
                when "invalid_json"
                  "audit log line #{v["lineno"]} is invalid JSON: #{v["detail"]}"

@@ -15,7 +15,6 @@ RSpec.describe Textus::Port::Storage::Database do
     expect(db.connection.table_exists?(:entries)).to be true
     expect(db.connection.table_exists?(:entries_fts)).to be true
     expect(db.connection.table_exists?(:link_edges)).to be true
-    expect(db.connection.table_exists?(:audit_events)).to be true
 
     db.close
   end

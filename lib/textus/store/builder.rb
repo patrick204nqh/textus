@@ -5,17 +5,17 @@ module Textus
         manifest    = Manifest.load(root)
         database    = Infra::Database.new(root: root).setup!
         event_store = Store::EventStore.new(database)
-        layout      = Store::Layout.new(root)
+        layout      = Protocol::Layout.new(root)
         file_store  = Infra::FileStore.new
         schemas     = Schema::Registry.new(layout.schemas_dir)
-        audit_log   = Port::AuditLog.new(
+        audit_log   = Protocol::Audit.new(
           layout:,
           max_size: manifest.data.audit_config[:max_size],
           keep: manifest.data.audit_config[:keep],
           file_system: file_store,
         )
-        link_graph  = Store::LinkGraph.new(database)
-        entry_index = Store::EntryIndex.new(database)
+        link_graph  = Protocol::Links.new(database)
+        entry_index = Protocol::Index.new(database)
         workflows   = Workflow::Loader.load_all(root)
         workflows.push(Textus::Workflow::Instances::Materialize)
         entry_store = Store::EntryStore.new(file_system: file_store, manifest:, audit_log:, layout:, entry_index:)
@@ -27,22 +27,6 @@ module Textus
         )
 
         trace_buffer = Store::TraceBuffer.new
-
-        # Protocol layer components
-        protocol_manifest = Protocol::Manifest.load(root)
-        protocol_layout   = Protocol::Layout.new(root)
-        protocol_index    = Protocol::Index.new(database)
-        protocol_links    = Protocol::Links.new(database)
-        protocol_audit    = Protocol::Audit.new(
-          layout: protocol_layout,
-          max_size: protocol_manifest.data.audit_config[:max_size],
-          keep: protocol_manifest.data.audit_config[:keep],
-          file_system: file_store,
-        )
-        protocol_gate     = Protocol::Gate.new(
-          manifest: protocol_manifest,
-          resolver: protocol_manifest.resolver,
-        )
 
         storage    = Container::Storage.new(file_system: file_store, entry_store:, layout:, entry_index:)
         events     = Container::Events.new(event_store:, workflows:)
@@ -70,8 +54,21 @@ module Textus
           ),
         )
         registry = Dispatch::HandlerResolver.build(interim)
-        container.with_pipeline(
+        finalized = container.with_pipeline(
           Dispatch::Pipeline.new(registry:, container: interim, middleware:),
+        )
+        gate = Protocol::Gate.new(
+          manifest:,
+          resolver: manifest.resolver,
+          pipeline: finalized.pipeline,
+        )
+        finalized.class.new(
+          storage: finalized.storage, events: finalized.events,
+          governance: finalized.governance, logging: finalized.logging,
+          links: finalized.links, root: finalized.root,
+          pipeline: finalized.pipeline, gate:,
+          trace_buffer: finalized.trace_buffer,
+          ttl_evaluator: finalized.ttl_evaluator,
         )
       end
     end

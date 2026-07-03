@@ -20,7 +20,7 @@ module Textus
 
       SUFFIX = ".textus-managed.json".freeze
 
-      def initialize(file_system: Store::FileSystem.new)
+      def initialize(file_system: Infra::FileStore.new)
         @file_system = file_system
       end
 

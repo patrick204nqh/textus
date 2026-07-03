@@ -8,11 +8,11 @@ module Textus
       Links      = Data.define(:link_graph)
 
       attr_reader :storage, :events, :governance, :logging, :links,
-                  :pipeline, :root, :trace_buffer, :ttl_evaluator
+                  :pipeline, :gate, :root, :trace_buffer, :ttl_evaluator
 
       # rubocop:disable Metrics/ParameterLists
       def initialize(storage:, events:, governance:, logging:, links:,
-                     root: nil, pipeline: nil,
+                     root: nil, pipeline: nil, gate: nil,
                      trace_buffer: nil, ttl_evaluator: nil)
         @storage = storage
         @events = events
@@ -21,6 +21,7 @@ module Textus
         @links = links
         @root = root
         @pipeline = pipeline
+        @gate = gate
         @trace_buffer = trace_buffer
         @ttl_evaluator = ttl_evaluator
         freeze
@@ -30,7 +31,7 @@ module Textus
       def with_pipeline(pipeline)
         self.class.new(
           storage:, events:, governance:, logging:, links:,
-          root:, pipeline:,
+          root:, pipeline:, gate:,
           trace_buffer:, ttl_evaluator:
         )
       end

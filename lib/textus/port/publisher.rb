@@ -19,7 +19,7 @@ module Textus
       end
       include Interface
 
-      def initialize(file_system: Store::FileSystem.new)
+      def initialize(file_system: Infra::FileStore.new)
         @file_system = file_system
       end
 

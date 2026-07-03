@@ -30,11 +30,6 @@ RSpec.describe Textus::Infra::Database do
       expect(db.connection.table_exists?(:link_edges)).to be true
     end
 
-    it "creates audit_events table" do
-      db.setup!
-      expect(db.connection.table_exists?(:audit_events)).to be true
-    end
-
     it "creates entries_fts virtual table" do
       db.setup!
       expect(db.connection.table_exists?(:entries_fts)).to be true

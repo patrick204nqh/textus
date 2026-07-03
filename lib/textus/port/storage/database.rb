@@ -67,16 +67,7 @@ module Textus
             index :from_key
           end
 
-          @db.create_table?(:audit_events) do
-            Integer :seq, primary_key: true
-            DateTime :ts, null: false
-            String :role, null: false
-            String :verb, null: false
-            String :key, null: false
-            String :etag_before
-            String :etag_after
-            index :seq
-          end
+          # (audit_events table removed — was created but never written to)
 
           create_entries_fts_objects
         end

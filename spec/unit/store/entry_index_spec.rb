@@ -1,7 +1,7 @@
 require "spec_helper"
 require "tmpdir"
 
-RSpec.describe Textus::Store::EntryIndex do
+RSpec.describe Textus::Protocol::Index do
   subject(:index) { described_class.new(database) }
 
   let(:root) { Dir.mktmpdir }

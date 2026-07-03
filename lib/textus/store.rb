@@ -58,13 +58,8 @@ module Textus
 
       raise ArgumentError.new("#{name} accepts keyword arguments only") unless args.empty?
 
-      spec = VerbRegistry.for(name)
-      raise NoMethodError.new("unknown verb: #{name}") unless spec
-
-      pending = Dispatch::Binder.command(spec, kwargs)
       call_obj = Value::Call.build(role: @role, correlation_id: @correlation_id)
-      result = @ctx.pipeline.dispatch(pending, call: call_obj)
-      Value::Result.extract(result)
+      @ctx.gate.dispatch(@role.to_sym, name, kwargs, call: call_obj)
     end
 
     def respond_to_missing?(name, include_private = false)

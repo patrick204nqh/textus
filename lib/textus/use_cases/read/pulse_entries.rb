@@ -42,11 +42,6 @@ module Textus
         end
 
         def changed_since(since)
-          if @event_store
-            sqlite_rows = @event_store.db[:audit_events].where { seq > since }.order(:seq).all
-            return sqlite_rows.map { |r| { "key" => r[:key], "verb" => r[:verb], "seq" => r[:seq] } } if sqlite_rows.any?
-          end
-
           audit = AuditEntries.call(
             Data.define(:seq_since, :key, :lane, :role, :verb, :since, :correlation_id, :limit).new(
               seq_since: since, key: nil, lane: nil, role: nil, verb: nil, since: nil, correlation_id: nil, limit: nil,

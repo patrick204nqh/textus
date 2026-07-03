@@ -3,8 +3,6 @@ require "fileutils"
 module Textus
   class Store
     class FileSystem
-      include Port::Storage::FileSystem::Interface
-
       def read(path) = File.binread(path)
 
       def write(path, bytes)
