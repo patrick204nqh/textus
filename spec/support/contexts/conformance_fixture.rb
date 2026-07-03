@@ -1,7 +1,7 @@
 RSpec.shared_context "textus/4 conformance fixture" do
   let(:tmp)  { Dir.mktmpdir("textus-spec") }
   let(:root) { File.join(tmp, ".textus") }
-  let(:store) { Textus::Infra::Store.new(root) }
+  let(:store) { Textus::Protocol::Session.new(root) }
 
   before do
     FileUtils.mkdir_p(File.join(root, "schemas"))

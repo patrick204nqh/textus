@@ -93,13 +93,13 @@ module Textus
         # Snapshot at server init against the boot-time manifest. New produced entries
         # added by a later reconcile are invisible until the server restarts — this is
         # intentional: a ContractDrift will gate writes on any mid-session manifest change.
-        def build_resources
-          machine_lane = @store.container.manifest.policy.machine_lane
+          def build_resources
+          machine_lane = @store.respond_to?(:container) ? @store.container.manifest.policy.machine_lane : nil
           return [] unless machine_lane
 
-          @store.container.manifest.data.entries
-                .select { |e| e.lane == machine_lane }
-                .map { |e| ::MCP::Resource.new(uri: "textus://#{e.key.tr(".", "/")}", name: e.key, mime_type: mime_for_format(e.format)) }
+          entries = @store.respond_to?(:container) ? @store.container.manifest.data.entries : []
+          entries.select { |e| e.lane == machine_lane }
+                 .map { |e| ::MCP::Resource.new(uri: "textus://#{e.key.tr(".", "/")}", name: e.key, mime_type: mime_for_format(e.format)) }
         end
 
         def handle_resource_read(uri, _server_context)
