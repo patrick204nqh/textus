@@ -9,24 +9,37 @@ module Textus
       end
 
       def dispatch(role, verb, params = {}, call: nil)
-        key = params[:key]
-        authorize!(role, verb, key)
-
-        if key
-          resolution = @resolver.resolve(key)
-          return error(:not_found, "Key not found: #{key}") unless resolution
-        end
-
         spec = VerbRegistry.for(verb)
         return error(:unknown_verb, "Unknown verb: #{verb}") unless spec
 
-        pending = Dispatch::Binder.command(spec, params)
-        call_obj = call || Value::Call.build(role: role, correlation_id: SecureRandom.uuid)
-        result = @pipeline.dispatch(pending, call: call_obj)
-        Value::Result.extract(result)
+        key = params[:key]
+        authorize!(role, verb, key)
+
+        if spec.lane
+          dispatch_to_lane(role, verb, spec, params, call)
+        else
+          dispatch_via_pipeline(role, verb, spec, params, call)
+        end
       end
 
       private
+
+      def dispatch_to_lane(role, verb, spec, params, call)
+        bound = Dispatch::Binder.inputs_from_wire(spec, params)
+        handler = Lane.handler_for(spec.lane)
+        call_obj = call || Value::Call.build(role:, correlation_id: SecureRandom.uuid)
+        result = handler.public_send(verb, **bound, container: @pipeline.container, call: call_obj)
+        Value::Result.extract(Value::Result.success(result))
+      rescue Textus::Error => e
+        Value::Result.failure(e.code, e.message, details: e.details)
+      end
+
+      def dispatch_via_pipeline(role, verb, spec, params, call)
+        pending = Dispatch::Binder.command(spec, params)
+        call_obj = call || Value::Call.build(role:, correlation_id: SecureRandom.uuid)
+        result = @pipeline.dispatch(pending, call: call_obj)
+        Value::Result.extract(result)
+      end
 
       def authorize!(role, verb, key)
         spec = VerbRegistry.for(verb)
