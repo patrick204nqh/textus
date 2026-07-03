@@ -11,7 +11,9 @@ RSpec.describe Textus::Workflow::Loader do
     File.write(File.join(root, "workflows", "test.rb"), <<~RUBY)
       Textus.workflow "test_wf" do
         match "knowledge.notes.*"
-        step(:fetch) { |data, ctx| { content: "loaded" } }
+        step :fetch do |_data, _ctx|
+          { content: "loaded" }
+        end
       end
     RUBY
 

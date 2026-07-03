@@ -47,16 +47,22 @@ module Textus
           @match_pattern = pattern
         end
 
-        def step(name, callable_or_opt = nil, timeout: nil, &block)
-          callable = if callable_or_opt.respond_to?(:call)
-                       callable_or_opt
+        def step(name, callable = nil, timeout: nil, &block)
+          if callable.is_a?(Hash)
+            raise ArgumentError.new(
+              "step :#{name} no longer accepts options hash; pass timeout: keyword instead",
+            )
+          end
+
+          resolved = if callable.respond_to?(:call)
+                       callable
                      elsif block
                        block
                      else
                        raise ArgumentError.new("step :#{name} requires a block or a callable (got neither)")
                      end
-          t = callable_or_opt.is_a?(Hash) ? callable_or_opt[:timeout] : timeout
-          @steps << Step.new(name: name, callable: callable, timeout: t)
+
+          @steps << Step.new(name: name, callable: resolved, timeout: timeout)
         end
 
         def validate(name, &block)

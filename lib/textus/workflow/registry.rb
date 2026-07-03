@@ -7,6 +7,7 @@ module Textus
       end
 
       def initialize(workflow_definitions)
+        @definitions = workflow_definitions
         @by_event = {}
         @by_type  = {}
 
@@ -22,6 +23,10 @@ module Textus
 
       def for(workflow_type)
         @by_type[workflow_type.to_s] or raise(UnknownWorkflow.new("Unknown workflow type: #{workflow_type}"))
+      end
+
+      def match_for_key(key)
+        @definitions.find { |wf| wf.match?(key) }
       end
     end
   end

@@ -11,8 +11,8 @@ module Textus
         end
 
         def initialize(manifest:, workflows:, file_stat:, clock:)
-          @manifest  = manifest
-          @workflows = workflows
+          @manifest = manifest
+          @workflow_registry = Textus::Workflow::Registry.new(workflows)
           @file_stat = file_stat
           @clock     = clock
         end
@@ -50,7 +50,7 @@ module Textus
         end
 
         def lifecycle_for(key)
-          wf = @workflows.find { |d| d.match?(key) }
+          wf = @workflow_registry.match_for_key(key)
           return [wf.ttl, wf.on_expire.to_s] if wf&.ttl
 
           entry = @manifest.data.entries.find { |e| e.key == key || key.start_with?("#{e.key}.") }

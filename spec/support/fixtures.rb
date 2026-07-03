@@ -76,7 +76,7 @@ module TextusSpecHelpers
         "workflows/test_produce.rb" => <<~RUBY,
           Textus.workflow "test_produce" do
             match "#{lane}.doc"
-            step :fetch do |data, ctx|
+            step :fetch do |_data, _ctx|
               #{workflow_body}
             end
             publish
@@ -156,15 +156,19 @@ module TextusSpecHelpers
   end
 
   def with_missing_workflows(store)
+    registry = Textus::Workflow::Registry.new(store.container.workflows)
+
     store.container.manifest.data.entries.each do |entry|
       has_publish = entry.publish_to.any? || entry.publish_tree
-      already_has = store.container.workflows.any? { |d| d.match?(entry.key) }
+      already_has = !registry.match_for_key(entry.key).nil?
       next unless has_publish && !already_has
 
       defn = Textus::Workflow::DSL::Definition.new("auto-#{entry.key}")
       defn.handles "entry.written"
       defn.match(entry.key)
-      defn.step(:passthrough) { |data, _ctx| data || { content: nil } }
+      defn.step :passthrough do |data, _ctx|
+        data || { content: nil }
+      end
       defn.publish
       store.container.workflows << defn
     end

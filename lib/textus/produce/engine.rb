@@ -8,6 +8,7 @@ module Textus
       def initialize(container:, call:)
         @container = container
         @call      = call
+        @workflow_registry = Textus::Workflow::Registry.new(container.workflows)
       end
 
       def run(keys)
@@ -21,7 +22,7 @@ module Textus
       private
 
       def produce_one(key)
-        workflow = @container.workflows.find { |d| d.match?(key) }
+        workflow = @workflow_registry.match_for_key(key)
         if workflow
           Workflow::Runner.new(workflow, container: @container, call: @call).run(key)
         else
