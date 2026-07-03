@@ -3,14 +3,16 @@
 module Textus
   module Events
     class Consumer
-      BACKOFF_DELAYS = [10, 30, 60].freeze
+      def initialize(retry_policy: Textus::Events::RetryPolicy.new)
+        @retry_policy = retry_policy
+      end
 
-      def drain(database:, registry:, container:, call:)
+      def drain(event_store:, registry:, container:, call:)
         completed = 0
         failed = 0
 
         loop do
-          row = consume_one(database, registry, container, call)
+          row = consume_one(event_store:, registry:, container:, call:)
           break unless row
 
           if row[:state] == "done"
@@ -23,35 +25,30 @@ module Textus
         { completed: completed, failed: failed }
       end
 
-      def consume_one(database, registry, container, call)
-        row = database[:events]
-              .where(state: "pending")
-              .where(Sequel.|({ scheduled_at: nil }, Sequel.lit("scheduled_at <= datetime('now')")))
-              .order(:created_at, :id)
-              .limit(1)
-              .first
+      def consume_one(event_store:, registry:, container:, call:)
+        row = event_store.consume_pending
         return nil unless row
 
         workflow = registry.for(row[:workflow_type])
         Textus::Workflow::Runner.new(workflow, container: container, call: call).run(row[:key])
-        database[:events].where(id: row[:id]).update(state: "done")
+        event_store.mark_done(event_id: row[:id])
         row.merge(state: "done")
       rescue StandardError => e
+        handle_failure(event_store, row, e)
+      end
+
+      private
+
+      def handle_failure(event_store, row, error)
         retry_count = (row[:retry_count] || 0) + 1
         max_attempts = row[:max_attempts] || 3
+        decision = @retry_policy.decide(retry_count:, max_attempts:)
 
-        if retry_count >= max_attempts
-          db[:events].where(id: row[:id]).update(
-            state: "failed", retry_count: retry_count, error: e.message,
-          )
-          row.merge(state: "failed", error: e.message)
+        if decision.terminal?
+          event_store.mark_failed(event_id: row[:id], retry_count:, error: error.message)
+          row.merge(state: "failed", error: error.message)
         else
-          delay = BACKOFF_DELAYS[[retry_count - 1, BACKOFF_DELAYS.length - 1].min]
-          db[:events].where(id: row[:id]).update(
-            state: "pending", retry_count: retry_count,
-            scheduled_at: (Time.now.utc + delay).iso8601,
-            error: e.message
-          )
+          event_store.reschedule(event_id: row[:id], retry_count:, delay: decision.delay, error: error.message)
           row.merge(state: "retrying")
         end
       end
