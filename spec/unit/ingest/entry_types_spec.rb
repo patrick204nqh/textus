@@ -1,15 +1,15 @@
-RSpec.describe Textus::Ingest::EntryTypes do
+RSpec.describe Textus::Lanes::Ingest::EntryTypes do
   describe ".for" do
     it "returns Link module for link kind" do
-      expect(described_class.for("link")).to eq(Textus::Ingest::EntryTypes::Link)
+      expect(described_class.for("link")).to eq(Textus::Lanes::Ingest::EntryTypes::Link)
     end
 
     it "returns Asset module for asset kind" do
-      expect(described_class.for("asset")).to eq(Textus::Ingest::EntryTypes::Asset)
+      expect(described_class.for("asset")).to eq(Textus::Lanes::Ingest::EntryTypes::Asset)
     end
 
     it "returns Text module for text kind" do
-      expect(described_class.for("text")).to eq(Textus::Ingest::EntryTypes::Text)
+      expect(described_class.for("text")).to eq(Textus::Lanes::Ingest::EntryTypes::Text)
     end
 
     it "raises for unknown kind" do
@@ -17,7 +17,7 @@ RSpec.describe Textus::Ingest::EntryTypes do
     end
   end
 
-  describe Textus::Ingest::EntryTypes::Link do
+  describe Textus::Lanes::Ingest::EntryTypes::Link do
     describe ".build" do
       it "returns url source hash" do
         result = described_class.build(url: "https://example.com", label: "Example")
@@ -34,7 +34,7 @@ RSpec.describe Textus::Ingest::EntryTypes do
     end
   end
 
-  describe Textus::Ingest::EntryTypes::Asset do
+  describe Textus::Lanes::Ingest::EntryTypes::Asset do
     describe ".build" do
       it "copies file and returns asset reference" do
         layout = instance_double("Layout")
@@ -95,7 +95,7 @@ RSpec.describe Textus::Ingest::EntryTypes do
     end
   end
 
-  describe Textus::Ingest::EntryTypes::Text do
+  describe Textus::Lanes::Ingest::EntryTypes::Text do
     describe ".build" do
       it "reads file and returns body" do
         Tempfile.create do |f|

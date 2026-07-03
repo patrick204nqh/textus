@@ -1,4 +1,4 @@
-RSpec.describe Textus::Proposal::Handlers do
+RSpec.describe Textus::Lanes::Proposal::Handlers do
   describe ".propose" do
     it "writes to the proposal zone with prefixed key" do
       container = instance_double(Container)

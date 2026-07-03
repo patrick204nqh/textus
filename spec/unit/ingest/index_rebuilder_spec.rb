@@ -1,4 +1,4 @@
-RSpec.describe Textus::Ingest::IndexRebuilder do
+RSpec.describe Textus::Lanes::Ingest::IndexRebuilder do
   describe ".rebuild!" do
     it "delegates to Index::Builder" do
       event_store = instance_double("EventStore")

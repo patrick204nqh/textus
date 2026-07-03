@@ -1,4 +1,4 @@
-RSpec.describe Textus::Ingest::Handlers do
+RSpec.describe Textus::Lanes::Ingest::Handlers do
   describe ".ingest" do
     it "validates kind and calls sub-components" do
       container = instance_double(Container)
@@ -14,11 +14,11 @@ RSpec.describe Textus::Ingest::Handlers do
       entry = double("entry", entry: instance_double(Mentry, format: "yaml", lane: "raw"))
       allow(manifest.resolver).to receive(:resolve).and_return(entry)
 
-      allow(Textus::Ingest::KeyBuilder).to receive_messages(derive_key: "raw.2026.07.03.url-test", compute_hash: "sha256:abc123")
-      allow(Textus::Ingest::EntryTypes).to receive(:for).with("url").and_return(Textus::Ingest::EntryTypes::Link)
-      allow(Textus::Ingest::Dedup).to receive(:find).and_return(nil)
+      allow(Textus::Lanes::Ingest::KeyBuilder).to receive_messages(derive_key: "raw.2026.07.03.url-test", compute_hash: "sha256:abc123")
+      allow(Textus::Lanes::Ingest::EntryTypes).to receive(:for).with("url").and_return(Textus::Lanes::Ingest::EntryTypes::Link)
+      allow(Textus::Lanes::Ingest::Dedup).to receive(:find).and_return(nil)
       allow(writer).to receive(:put).and_return(instance_double(Envelope, uid: "uid123", etag: "etag456"))
-      allow(Textus::Ingest::IndexRebuilder).to receive(:rebuild!)
+      allow(Textus::Lanes::Ingest::IndexRebuilder).to receive(:rebuild!)
 
       allow(Time).to receive(:now).and_return(Time.new(2026, 7, 3, 12, 0, 0, "UTC"))
 
@@ -34,7 +34,7 @@ RSpec.describe Textus::Ingest::Handlers do
         call:,
         payload: instance_of(Textus::Value::Payload),
       )
-      expect(Textus::Ingest::IndexRebuilder).to have_received(:rebuild!)
+      expect(Textus::Lanes::Ingest::IndexRebuilder).to have_received(:rebuild!)
     end
 
     it "handles duplicate by superseding" do
@@ -52,12 +52,12 @@ RSpec.describe Textus::Ingest::Handlers do
       allow(manifest.resolver).to receive(:resolve).with("raw.2026.07.03.url-test").and_return(entry)
       allow(manifest.resolver).to receive(:resolve).with("raw.2026.06.01.old").and_return(entry)
 
-      allow(Textus::Ingest::KeyBuilder).to receive_messages(derive_key: "raw.2026.07.03.url-test", compute_hash: "sha256:dup")
-      allow(Textus::Ingest::EntryTypes).to receive(:for).with("url").and_return(Textus::Ingest::EntryTypes::Link)
-      allow(Textus::Ingest::Dedup).to receive(:find).and_return("raw.2026.06.01.old")
-      allow(Textus::Ingest::Resolver).to receive(:supersede)
+      allow(Textus::Lanes::Ingest::KeyBuilder).to receive_messages(derive_key: "raw.2026.07.03.url-test", compute_hash: "sha256:dup")
+      allow(Textus::Lanes::Ingest::EntryTypes).to receive(:for).with("url").and_return(Textus::Lanes::Ingest::EntryTypes::Link)
+      allow(Textus::Lanes::Ingest::Dedup).to receive(:find).and_return("raw.2026.06.01.old")
+      allow(Textus::Lanes::Ingest::Resolver).to receive(:supersede)
       allow(writer).to receive(:put).and_return(instance_double(Envelope, uid: "uid456", etag: "etag789"))
-      allow(Textus::Ingest::IndexRebuilder).to receive(:rebuild!)
+      allow(Textus::Lanes::Ingest::IndexRebuilder).to receive(:rebuild!)
 
       allow(Time).to receive(:now).and_return(Time.new(2026, 7, 3, 12, 0, 0, "UTC"))
 
@@ -66,7 +66,7 @@ RSpec.describe Textus::Ingest::Handlers do
         ctx:, call:
       )
 
-      expect(Textus::Ingest::Resolver).to have_received(:supersede).with(
+      expect(Textus::Lanes::Ingest::Resolver).to have_received(:supersede).with(
         "raw.2026.06.01.old", "raw.2026.07.03.url-test", ctx, call:
       )
     end

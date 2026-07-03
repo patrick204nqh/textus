@@ -3,6 +3,6 @@ module Textus
   end
 end
 
-require_relative "artifact/cache"
-require_relative "artifact/lifecycle"
-require_relative "artifact/handlers"
+require_relative "lanes/artifact/cache"
+require_relative "lanes/artifact/lifecycle"
+require_relative "lanes/artifact/handlers"

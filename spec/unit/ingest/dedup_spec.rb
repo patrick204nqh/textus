@@ -1,4 +1,4 @@
-RSpec.describe Textus::Ingest::Dedup do
+RSpec.describe Textus::Lanes::Ingest::Dedup do
   describe ".find" do
     it "returns key when content hash matches" do
       lookup = double("Index::Lookup")

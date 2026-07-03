@@ -1,4 +1,4 @@
-RSpec.describe Textus::Ingest::KeyBuilder do
+RSpec.describe Textus::Lanes::Ingest::KeyBuilder do
   describe ".derive_key" do
     it "formats key from date, kind, slug" do
       now = Time.new(2026, 7, 3, 12, 0, 0, "UTC")

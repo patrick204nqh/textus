@@ -1,4 +1,4 @@
-RSpec.describe Textus::Ingest::Resolver do
+RSpec.describe Textus::Lanes::Ingest::Resolver do
   describe ".supersede" do
     it "writes tombstone to old key and returns" do
       container = instance_double(Container)

@@ -3,6 +3,6 @@ module Textus
   end
 end
 
-require_relative "ingest/resolver"
-require_relative "ingest/entry_types"
-require_relative "ingest/handlers"
+require_relative "lanes/ingest/resolver"
+require_relative "lanes/ingest/entry_types"
+require_relative "lanes/ingest/handlers"
