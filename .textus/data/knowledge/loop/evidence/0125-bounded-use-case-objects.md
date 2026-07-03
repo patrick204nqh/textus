@@ -32,3 +32,10 @@ We will transition from "God Modules" to Bounded Use-Case Objects.
 - Positive: Easier to test use cases in isolation.
 - Negative: Increased number of files in the lib/textus/use_cases/ directory.
 - Negative: Initial refactoring effort to split existing modules.
+
+
+## Superseded (2026-07-03)
+
+The container-fragmentation and double-event-emission sections from the earlier deepening draft are stale as of the jobs/events/index foundation work (`docs/plans/2026-07-03-jobs-events-index-foundation.md`). `Store::Container` already unifies the container role that draft proposed; there is no `UseCaseContainer`, no `Writer.from`/`Reader.from` factory path, and no double event emission in the current codebase. These concerns were resolved by prior work without a closure note.
+
+The bounded-use-case-object direction captured in this ADR remains active; only the stale container/double-emission concerns are superseded by this note.
