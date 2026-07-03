@@ -5,8 +5,14 @@ module Textus
         String => "string", Integer => "integer", Hash => "object",
         Array => "array", :boolean => "boolean"
       }.freeze
-   
+
       VerbSpec = Data.define(:verb, :summary, :args, :surfaces, :views, :cli, :cli_stdin, :category) do
+        def initialize(verb:, summary:, args:, surfaces:, views:, cli:, cli_stdin:, category:, lane: nil)
+          @lane = lane
+          super(verb:, summary:, args:, surfaces:, views:, cli:, cli_stdin:, category:)
+        end
+
+        def lane = @lane
         def mcp? = surfaces.include?(:mcp)
         def cli? = surfaces.include?(:cli)
         def view(surface = :default) = views[surface] || views.fetch(:default)
@@ -18,7 +24,7 @@ module Textus
         def read? = category == :read
         def write? = category == :write
         def maintenance? = category == :maintenance
-   
+
         def input_schema
           props = args.to_h do |a|
             json_type = VerbRegistry::TYPE_MAP[a.type] || "string"
@@ -27,8 +33,8 @@ module Textus
             [a.wire.to_s, h]
           end
           { type: "object", properties: props, required: required_args.map { |a| a.wire.to_s } }
+        end
+      end
+    end
   end
-  end
-  end
-  end
-  end
+end
