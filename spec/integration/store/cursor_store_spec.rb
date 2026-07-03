@@ -1,7 +1,7 @@
 require "spec_helper"
 require "tmpdir"
 
-RSpec.describe Textus::Store::Cursor do
+RSpec.describe Textus::Infra::Store::Cursor do
   subject(:cursor) { described_class.new(root: root, role: :agent) }
 
   let(:tmp) { Dir.mktmpdir }

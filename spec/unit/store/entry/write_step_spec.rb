@@ -1,8 +1,8 @@
 require "spec_helper"
 
-RSpec.describe Textus::Store::WritePipeline do
+RSpec.describe Textus::Infra::Store::WritePipeline do
   let(:key) { "knowledge.demo" }
-  let(:mentry) { instance_double(Textus::Manifest::Entry::Leaf, format: :markdown, lane: "knowledge", schema: nil) }
+  let(:mentry) { instance_double(Textus::Protocol::Manifest::Entry::Leaf, format: :markdown, lane: "knowledge", schema: nil) }
   let(:payload) { Textus::Value::Payload.new(meta: { "title" => "Demo" }, body: "hello", content: nil) }
 
   describe "WriteContext" do

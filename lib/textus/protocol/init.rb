@@ -131,7 +131,7 @@ module Textus
       end
 
       def self.derived_gitignore(target_root)
-        manifest = Textus::Manifest.load(target_root)
+        manifest = Textus::Protocol::Manifest.load(target_root)
         root = Pathname.new(target_root)
         untracked = manifest.data.entries.reject(&:tracked?).map do |e|
           if e.nested?

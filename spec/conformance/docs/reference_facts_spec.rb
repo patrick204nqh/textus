@@ -16,7 +16,7 @@ RSpec.describe "reference doc facts cover their projections" do
 
   it "lanes.md documents every manifest lane" do
     doc = read_doc("docs/reference/lanes.md")
-    lanes = Textus::Manifest.load((repo + ".textus").to_s).data.declared_lane_kinds.keys
+    lanes = Textus::Protocol::Manifest.load((repo + ".textus").to_s).data.declared_lane_kinds.keys
     missing = lanes.map(&:to_s).reject { |z| doc.include?(z) }
     expect(missing).to be_empty, "lanes.md missing: #{missing.join(", ")}"
   end

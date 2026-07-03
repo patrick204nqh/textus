@@ -7,7 +7,7 @@ module Textus
 
         def call
           root  = @manifest.data.root
-          since = @command.since || Textus::Store::Cursor.new(root: root, role: @call.role).read
+          since = @command.since || Textus::Infra::Store::Cursor.new(root: root, role: @call.role).read
 
           changed = changed_since(since)
 
@@ -25,7 +25,7 @@ module Textus
             result["recent_traces"] = trace_buffer.recent(limit: 10).map(&:to_h_for_wire)
           end
 
-          Textus::Store::Cursor.new(root: root, role: @call.role).write(result["cursor"])
+          Textus::Infra::Store::Cursor.new(root: root, role: @call.role).write(result["cursor"])
           success(result)
         end
 

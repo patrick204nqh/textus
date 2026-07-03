@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Manifest::Data do
+RSpec.describe Textus::Protocol::Manifest::Data do
   describe ".parse" do
     it "parses data: grouped by lane into flat entries with lane inferred" do
       data = described_class.parse(

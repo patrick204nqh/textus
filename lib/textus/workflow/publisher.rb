@@ -30,8 +30,8 @@ module Textus
           attrs = { "to" => target.to, "template" => target.template,
                     "tree" => target.tree }
           attrs["inject_boot"] = true if target.inject_boot
-          pub_target = Textus::Manifest::Policy::PublishTarget.new(attrs)
-          pctx = Textus::Manifest::Entry::Base::PublishContext.new(
+          pub_target = Textus::Protocol::Manifest::Policy::PublishTarget.new(attrs)
+          pctx = Textus::Protocol::Manifest::Entry::Base::PublishContext.new(
             container: @container, call: @call,
             reader: @container.reader.method(:read)
           )
@@ -48,7 +48,7 @@ module Textus
         entry = @container.manifest.resolver.resolve(key).entry
         return unless entry.publish_tree || !Array(entry.publish_to).empty?
 
-        pctx = Textus::Manifest::Entry::Base::PublishContext.new(
+        pctx = Textus::Protocol::Manifest::Entry::Base::PublishContext.new(
           container: @container, call: @call,
           reader: @container.reader.method(:read)
         )

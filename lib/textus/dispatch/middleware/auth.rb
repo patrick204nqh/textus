@@ -8,7 +8,7 @@ module Textus
           verb = Textus::Protocol::VerbRegistry.contract_to_verb!(command.class).to_sym
           key = key_for(command)
 
-          Manifest::Policy::Predicates.evaluate(
+          Textus::Protocol::Manifest::Policy::Predicates.evaluate(
             manifest: container.manifest, schemas: container.schemas,
             action: verb, actor: call.role, key: key,
             rule_predicates: []

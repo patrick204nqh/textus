@@ -1,7 +1,7 @@
 require "spec_helper"
 require "tmpdir"
 
-RSpec.describe Textus::Store::EventStore do
+RSpec.describe Textus::Infra::Store::EventStore do
   subject(:event_store) { described_class.new(database) }
 
   let(:root) { Dir.mktmpdir }

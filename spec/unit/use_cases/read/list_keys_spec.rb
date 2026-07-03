@@ -3,7 +3,7 @@ require "spec_helper"
 RSpec.describe Textus::UseCases::Read::ListKeys do
   subject(:use_case) { described_class.new }
 
-  let(:manifest) { instance_double(Textus::Manifest) }
+  let(:manifest) { instance_double(Textus::Protocol::Manifest) }
   let(:file_system) { instance_double(Textus::Infra::FileStore) }
   let(:layout) { instance_double(Textus::Protocol::Layout) }
   let(:entry_index) { instance_double(Textus::Protocol::Index) }

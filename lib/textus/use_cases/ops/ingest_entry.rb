@@ -36,7 +36,7 @@ module Textus
 
           structured = build_structured(ts, now, content_hash, command)
           store = event_store
-          index = Textus::Store::Index::Lookup.new(store:)
+          index = Textus::Infra::Store::Index::Lookup.new(store:)
 
           duplicate_key = find_duplicate(index, content_hash, command)
 
@@ -148,7 +148,7 @@ module Textus
         end
 
         def rebuild_index(store)
-          Textus::Store::Index::Builder.new(store:).rebuild!(resolver: manifest.resolver)
+          Textus::Infra::Store::Index::Builder.new(store:).rebuild!(resolver: manifest.resolver)
         end
       end
     end

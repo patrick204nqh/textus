@@ -38,7 +38,7 @@ module TextusSpecHelpers
       File.write(path, body)
     end
     File.write(File.join(textus_dir, "manifest.yaml"), manifest)
-    Textus::Store.new(textus_dir)
+    Textus::Infra::Store.new(textus_dir)
   end
 
   def minimal_store(root, lane: "knowledge", key: "#{lane}.foo")
@@ -97,7 +97,7 @@ module TextusSpecHelpers
   end
 
   def build_envelope_reader(store)
-    Textus::Store::EntryStore.new(
+    Textus::Infra::Store::EntryStore.new(
       file_system: store.file_system,
       manifest: store.manifest,
       audit_log: store.audit_log,
@@ -109,7 +109,7 @@ module TextusSpecHelpers
   def build_envelope_writer(store, call, reader: nil)
     _reader = reader || build_envelope_reader(store)
     _call = call
-    Textus::Store::EntryStore.new(
+    Textus::Infra::Store::EntryStore.new(
       file_system: store.file_system,
       manifest: store.manifest,
       audit_log: store.audit_log,

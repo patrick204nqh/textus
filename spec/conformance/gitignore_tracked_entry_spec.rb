@@ -8,6 +8,6 @@ RSpec.describe "tracked:false entries drive a derived .gitignore" do
   end
 
   it "defaults entries to tracked: true" do
-    expect(Textus::Manifest::Schema::ENTRY_KEYS).to include("tracked")
+    expect(Textus::Protocol::Manifest::Schema::ENTRY_KEYS).to include("tracked")
   end
 end

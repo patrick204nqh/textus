@@ -6,17 +6,17 @@ RSpec.describe Textus::Dispatch::HandlerResolver do
     stub_const("FakeContract", Data.define(:key))
   end
 
-  let(:fake_manifest) { instance_double(Textus::Manifest) }
+  let(:fake_manifest) { instance_double(Textus::Protocol::Manifest) }
   let(:fake_event_store) { instance_double(Textus::Infra::Port::Storage::EventStore) }
 
-  let(:storage)    { Textus::Store::Container::Storage.new(file_system: :fs, entry_store: nil, layout: :ly, entry_index: nil) }
-  let(:events)     { Textus::Store::Container::Events.new(event_store: fake_event_store, workflows: :wf) }
-  let(:governance) { Textus::Store::Container::Governance.new(manifest: fake_manifest, schemas: :sc) }
-  let(:logging)    { Textus::Store::Container::Logging.new(audit_log: :al) }
-  let(:links)      { Textus::Store::Container::Links.new(link_graph: :lg) }
+  let(:storage)    { Textus::Infra::Store::Container::Storage.new(file_system: :fs, entry_store: nil, layout: :ly, entry_index: nil) }
+  let(:events)     { Textus::Infra::Store::Container::Events.new(event_store: fake_event_store, workflows: :wf) }
+  let(:governance) { Textus::Infra::Store::Container::Governance.new(manifest: fake_manifest, schemas: :sc) }
+  let(:logging)    { Textus::Infra::Store::Container::Logging.new(audit_log: :al) }
+  let(:links)      { Textus::Infra::Store::Container::Links.new(link_graph: :lg) }
 
   let(:ctx) do
-    Textus::Store::Container.new(
+    Textus::Infra::Store::Container.new(
       storage:, events:, governance:, logging:, links:,
       root: "/tmp", trace_buffer: :tb, ttl_evaluator: :fe, pipeline: nil
     )

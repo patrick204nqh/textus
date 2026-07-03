@@ -6,8 +6,8 @@ module Textus
         needs :file_system, :manifest, :schemas, :audit_log, :layout, :writer, :reader
 
         def call
-          Textus::Manifest::Data.validate_key!(command.old_key)
-          Textus::Manifest::Data.validate_key!(command.new_key)
+          Textus::Protocol::Manifest::Data.validate_key!(command.old_key)
+          Textus::Protocol::Manifest::Data.validate_key!(command.new_key)
 
           return failure(:usage_error, "mv: old and new keys are identical") if command.old_key == command.new_key
 

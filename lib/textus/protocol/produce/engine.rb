@@ -53,7 +53,7 @@ module Textus
             @container.manifest.resolver.resolve(key).path,
           )
    
-          pctx = Textus::Manifest::Entry::Base::PublishContext.new(
+          pctx = Textus::Protocol::Manifest::Entry::Base::PublishContext.new(
             container: @container, call: @call,
             reader: @container.entry_store.method(:read)
           )

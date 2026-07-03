@@ -29,7 +29,7 @@ module Textus
           res = manifest.resolver.resolve(key)
           return nil unless res.path && file_system.exists?(res.path)
 
-          entry_store = Textus::Store::EntryStore.new(
+          entry_store = Textus::Infra::Store::EntryStore.new(
             file_system:, manifest:, audit_log: nil, layout:, entry_index: NullEntryIndex.new,
           )
           env = entry_store.read(key)
@@ -42,7 +42,7 @@ module Textus
           res = manifest.resolver.resolve("knowledge.boot")
           return nil unless res.path && file_system.exists?(res.path)
 
-          entry_store = Textus::Store::EntryStore.new(
+          entry_store = Textus::Infra::Store::EntryStore.new(
             file_system:, manifest:, audit_log: nil, layout:, entry_index: NullEntryIndex.new,
           )
           env = entry_store.read("knowledge.boot")

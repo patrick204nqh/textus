@@ -3,10 +3,10 @@ require "spec_helper"
 RSpec.describe Textus::Protocol::Events::Consumer do
   subject(:consumer) { described_class.new }
 
-  let(:event_store) { instance_double(Textus::Store::EventStore) }
+  let(:event_store) { instance_double(Textus::Infra::Store::EventStore) }
   let(:registry) { instance_double(Textus::Workflow::Registry) }
   let(:workflow) { instance_double(Textus::Workflow::DSL::Definition, type: "materialize") }
-  let(:container) { instance_double(Textus::Store::Container) }
+  let(:container) { instance_double(Textus::Infra::Store::Container) }
   let(:call) { instance_double(Textus::Value::Call) }
   let(:pending_row) { { id: 1, key: "knowledge.a", workflow_type: "materialize", retry_count: 0, max_attempts: 3, state: "pending" } }
 
