@@ -21,7 +21,7 @@ RSpec.describe Textus::Protocol::Gate do
       allow(Textus::Protocol::VerbRegistry).to receive(:for).with(:ingest).and_return(lane_spec(lane: :ingest))
 
       expect(handler).to receive(:ingest).with(hash_including(ctx: instance_of(Textus::Protocol::HandlerContext), call: anything))
-      gate.dispatch(:agent, :ingest, { kind: "url", slug: "test" })
+      gate.dispatch(:automation, :ingest, { kind: "url", slug: "test" })
     end
 
     it "falls through to builtin dispatch when spec has no lane" do

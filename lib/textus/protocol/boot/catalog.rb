@@ -5,6 +5,7 @@ module Textus
         CURATED_CLI_VERBS = [
           { "name" => "boot" },
           { "name" => "list" },
+          { "name" => "loop" },
           { "name" => "get" },
           { "name" => "ingest" },
           { "name" => "where" },
@@ -17,6 +18,8 @@ module Textus
           { "name" => "audit" },
           { "name" => "blame" },
           { "name" => "pulse" },
+          { "name" => "session_open" },
+          { "name" => "session_close" },
         ].freeze
 
         def self.build

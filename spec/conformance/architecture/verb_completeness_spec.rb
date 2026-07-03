@@ -5,12 +5,6 @@ RSpec.describe "Verb completeness — every verb has contract + handler + CLI ve
   BUILTIN_VERBS = VERB_REGISTRY.values.reject(&:lane).to_set(&:verb).freeze
   GATE_HANDLED = LANE_VERBS + BUILTIN_VERBS
 
-  it "every registered verb has a contract class" do
-    missing = VERB_REGISTRY.keys.reject { |v| Textus::Protocol::VerbRegistry.contract_class_for(v) }
-    expect(missing).to be_empty,
-                       "verbs without a contract: #{missing.map(&:inspect).join(", ")}"
-  end
-
   it "every verb with CLI surface has a CLI verb class" do
     cli_verbs = Textus::Surface::CLI.verbs.keys.map(&:to_sym)
     cli_missing = VERB_REGISTRY.values

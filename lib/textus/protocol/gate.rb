@@ -38,7 +38,10 @@ module Textus
         lane = key&.split(".")&.first || spec.lane&.to_s
         return true unless lane
 
-        writers = Textus::Protocol::V4::LANES.dig(lane, :writers) || []
+        zone = Textus::Protocol::V4::LANES[lane]
+        return true unless zone
+
+        writers = zone[:writers] || []
         allowed = writers.map(&:to_sym).include?(role)
         raise Textus::WriteForbidden.new(key, lane, holders: writers) unless allowed
 
