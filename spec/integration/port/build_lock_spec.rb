@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Port::BuildLock do
+RSpec.describe Textus::Port::Concurrency::BuildLock do
   include_context "textus_store_fixture"
 
   before { FileUtils.mkdir_p(root) }
@@ -78,11 +78,14 @@ RSpec.describe Textus::Port::BuildLock do
 
     pid = fork do
       parent_read.close
+      lock_path = Textus::Store::Layout.new(root).lock_path("build")
+      FileUtils.mkdir_p(File.dirname(lock_path))
+
       # rubocop:disable Style/FileOpen
       # Intentionally leak the FD: the child sleeps until SIGKILL, and the
       # kernel releases the flock when the process dies. A block form would
       # close the FD (and release the lock) before SIGKILL arrives.
-      file = File.open(Textus::Store::Layout.new(root).lock_path("build"), File::RDWR | File::CREAT, 0o644)
+      file = File.open(lock_path, File::RDWR | File::CREAT, 0o644)
       # rubocop:enable Style/FileOpen
       file.flock(File::LOCK_EX | File::LOCK_NB) or exit!(1)
       child_write.puts("locked")

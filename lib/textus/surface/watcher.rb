@@ -23,7 +23,7 @@ module Textus
 
       def run(poll: nil)
         interval = poll || @container.manifest.data.worker_config[:poll] || 2
-        lock = Textus::Port::WatcherLock.new(@container.root)
+        lock = Textus::Port::Concurrency::WatcherLock.new(@container.root)
         lock.acquire
         begin
           loop do

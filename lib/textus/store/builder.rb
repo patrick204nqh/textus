@@ -3,7 +3,7 @@ module Textus
     class Builder
       def call(root)
         manifest    = Manifest.load(root)
-        database    = Port::Database.new(root: root).setup!
+        database    = Port::Storage::Database.new(root: root).setup!
         event_store = Store::EventStore.new(database)
         layout      = Store::Layout.new(root)
         file_system = Store::FileSystem.new

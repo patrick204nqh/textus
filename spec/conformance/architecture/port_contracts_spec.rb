@@ -1,11 +1,11 @@
 # rubocop:disable RSpec/LeakyConstantDeclaration, RSpec/ContextWording, Lint/ConstantDefinitionInBlock
 RSpec.describe "Port contract conformance" do
   PORT_INTERFACES = {
-    Textus::Port::FileSystem::Interface => [Textus::Store::FileSystem],
+    Textus::Port::Storage::FileSystem::Interface => [Textus::Store::FileSystem],
     Textus::Port::AuditLog::Interface => [Textus::Port::AuditLog],
     Textus::Port::Publisher::Interface => [Textus::Port::Publisher],
     Textus::Port::Clock::Interface => [Textus::Port::Clock],
-    Textus::Port::BuildLock::Interface => [Textus::Port::BuildLock],
+    Textus::Port::Concurrency::BuildLock::Interface => [Textus::Port::Concurrency::BuildLock],
   }.freeze
 
   PORT_INTERFACES.each do |interface_mod, implementations|

@@ -5,7 +5,7 @@ RSpec.describe Textus::Store::EntryIndex do
   subject(:index) { described_class.new(database) }
 
   let(:root) { Dir.mktmpdir }
-  let(:database) { Textus::Port::Database.new(root: root).setup! }
+  let(:database) { Textus::Port::Storage::Database.new(root: root).setup! }
 
   after { FileUtils.remove_entry(root) }
 

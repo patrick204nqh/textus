@@ -4,7 +4,7 @@ RSpec.shared_context "core domain doubles" do
   let(:file_registry) { {} }
 
   let(:fake_file_stat) do
-    instance_double(Textus::Port::FileSystem).tap do |s|
+    instance_double(Textus::Port::Storage::FileSystem).tap do |s|
       allow(s).to receive(:exists?)    { |p| file_registry.key?(p) }
       allow(s).to receive(:mtime)      { |p| file_registry.fetch(p, {})[:mtime] }
       allow(s).to receive(:read)       { |p| file_registry.fetch(p, {})[:content] || "" }

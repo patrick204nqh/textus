@@ -7,7 +7,7 @@ RSpec.describe Textus::Dispatch::HandlerResolver do
   end
 
   let(:fake_manifest) { instance_double(Textus::Manifest) }
-  let(:fake_event_store) { instance_double(Textus::Port::EventStore) }
+  let(:fake_event_store) { instance_double(Textus::Port::Storage::EventStore) }
 
   let(:storage)    { Textus::Store::Container::Storage.new(file_system: :fs, entry_store: nil, layout: :ly, entry_index: nil) }
   let(:events)     { Textus::Store::Container::Events.new(event_store: fake_event_store, workflows: :wf) }
