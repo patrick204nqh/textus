@@ -21,12 +21,10 @@ module Textus
             end
 
             result = SubtreeMirror.new(entry, pctx).mirror(
-              base: store_base(pctx),
               walk_root: store_base(pctx),
               target_dir: target_dir,
               key: entry.key,
               envelope: nil,
-              prune_honors_ignore: true,
             )
             { kind: :leaves, value: result[:written], pruned: result[:pruned] }
           end

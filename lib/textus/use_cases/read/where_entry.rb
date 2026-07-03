@@ -1,15 +1,15 @@
 module Textus
   module UseCases
     module Read
-      module WhereEntry
-        HANDLES = Dispatch::Contracts::WhereEntry
-        NEEDS = %i[manifest].freeze
+      class WhereEntry < Base
+        handles Dispatch::Contracts::WhereEntry
+        needs :manifest
 
-        def self.call(command, _call, deps)
-          res = deps.manifest.resolver.resolve(command.key)
+        def call
+          res = @manifest.resolver.resolve(@command.key)
           mentry = res.entry
-          Value::Result.success("protocol" => Textus::PROTOCOL, "key" => command.key,
-                                "lane" => mentry.lane, "owner" => mentry.owner, "path" => res.path)
+          success("protocol" => Textus::PROTOCOL, "key" => @command.key,
+                  "lane" => mentry.lane, "path" => res.path)
         end
       end
     end

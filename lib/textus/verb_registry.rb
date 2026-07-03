@@ -1,49 +1,7 @@
 module Textus
   module VerbRegistry
-    ArgSpec = Data.define(
-      :name, :type, :required, :positional, :session_default,
-      :description, :wire_name, :default, :source, :coerce, :cli_default
-    ) do
-      def wire = wire_name || name
-
-      # rubocop:disable Metrics/ParameterLists
-      def self.arg(name:, type: String, required: false, positional: false,
-                   session_default: nil, description: nil, wire_name: nil,
-                   default: nil, source: nil, coerce: nil, cli_default: nil)
-        new(name:, type:, required:, positional:, session_default:,
-            description:, wire_name:, default:, source:, coerce:, cli_default:)
-      end
-      # rubocop:enable Metrics/ParameterLists
-    end
-
-    TYPE_MAP = {
-      String => "string", Integer => "integer", Hash => "object",
-      Array => "array", :boolean => "boolean"
-    }.freeze
-
-    VerbSpec = Data.define(:verb, :summary, :args, :surfaces, :views, :cli, :cli_stdin, :category) do
-      def mcp? = surfaces.include?(:mcp)
-      def cli? = surfaces.include?(:cli)
-      def view(surface = :default) = views[surface] || views.fetch(:default)
-      def cli_path = cli || verb.to_s
-      def cli_words = cli_path.split
-      def cli_group = cli_words.size > 1 ? cli_words.first : nil
-      def cli_leaf  = cli_words.last
-      def required_args = args.select(&:required)
-      def read? = category == :read
-      def write? = category == :write
-      def maintenance? = category == :maintenance
-
-      def input_schema
-        props = args.to_h do |a|
-          json_type = VerbRegistry::TYPE_MAP[a.type] || "string"
-          h = { "type" => json_type }
-          h["description"] = a.description if a.description
-          [a.wire.to_s, h]
-        end
-        { type: "object", properties: props, required: required_args.map { |a| a.wire.to_s } }
-      end
-    end
+    require_relative "verb_registry/arg_spec"
+    require_relative "verb_registry/verb_spec"
 
     VERBS = {}
     POSITIONAL = {}
@@ -64,11 +22,10 @@ module Textus
       put: Dispatch::Contracts::PutEntry,
       list: Dispatch::Contracts::ListKeys,
       key_delete: Dispatch::Contracts::DeleteKey,
-      key_mv: Dispatch::Contracts::MoveKey,
+      key_mv: Dispatch::Contracts::MvKey,
       propose: Dispatch::Contracts::ProposeEntry,
       accept: Dispatch::Contracts::AcceptProposal,
       reject: Dispatch::Contracts::RejectProposal,
-      enqueue: Dispatch::Contracts::EnqueueJob,
       audit: Dispatch::Contracts::AuditEntries,
       pulse: Dispatch::Contracts::PulseEntries,
       blame: Dispatch::Contracts::BlameEntry,
@@ -79,16 +36,10 @@ module Textus
       graph: Dispatch::Contracts::GraphEntry,
       diff: Dispatch::Contracts::DiffEntry,
       boot: Dispatch::Contracts::BootStore,
-      doctor: Dispatch::Contracts::DoctorStore,
       published: Dispatch::Contracts::PublishedEntries,
-      rule_explain: Dispatch::Contracts::RuleExplain,
-      rule_list: Dispatch::Contracts::RuleList,
       schema_show: Dispatch::Contracts::SchemaEnvelope,
       drain: Dispatch::Contracts::DrainStore,
       ingest: Dispatch::Contracts::IngestEntry,
-      jobs: Dispatch::Contracts::JobsAction,
-      rule_lint: Dispatch::Contracts::RuleLint,
-      rule_trace: Dispatch::Contracts::RuleTrace,
       data_mv: Dispatch::Contracts::DataMv,
       key_mv_prefix: Dispatch::Contracts::KeyMvPrefix,
       key_delete_prefix: Dispatch::Contracts::KeyDeletePrefix,
@@ -104,15 +55,12 @@ module Textus
     ].freeze
 
     OPS_VERBS = %i[
-      boot drain doctor pulse jobs enqueue data_mv
+      boot drain pulse data_mv
       key_mv_prefix key_delete_prefix published
     ].freeze
 
-    RULE_VERBS = %i[rule_explain rule_list schema_show rule_lint rule_trace].freeze
-
     VERB_DOMAIN = ENTRY_VERBS.to_h { |v| [v, :entry] }
-                             .merge(OPS_VERBS.to_h { |v| [v, :ops] })
-                             .merge(RULE_VERBS.to_h { |v| [v, :rule] }).freeze
+                             .merge(OPS_VERBS.to_h { |v| [v, :ops] }).freeze
 
     def self.contract_to_verb(klass)
       CONTRACT_TO_VERB[klass] || klass.name.split("::").last.gsub(/([a-z])([A-Z])/, '\1_\2').downcase
@@ -152,7 +100,7 @@ module Textus
     register VerbSpec.new(
       :list, "List keys filtered by lane and/or prefix.",
       [ArgSpec.arg(name: :prefix,
-                   description: "restrict to keys starting with this dotted prefix, e.g. 'knowledge.runbooks'"),
+                   description: "restrict to keys starting with this dotted prefix, e.g. 'knowledge.execution'"),
        ArgSpec.arg(name: :lane,
                    description: "restrict to one lane by name (see `boot` lanes)"),
        ArgSpec.arg(name: :q,
@@ -216,16 +164,6 @@ module Textus
       %i[cli mcp], { default: identity }, "reject", nil, :write
     )
 
-    # ── enqueue ──────────────────────────────────────────
-    register VerbSpec.new(
-      :enqueue, "Push a registered job type onto the convergence queue.",
-      [ArgSpec.arg(name: :type, required: true, positional: true,
-                   description: "registered job type (e.g. materialize, re-pull, sweep)"),
-       ArgSpec.arg(name: :args, type: Hash, default: {},
-                   description: "type-specific arguments (e.g. { key: ... })")],
-      %i[cli mcp], { default: identity }, "enqueue", nil, :write
-    )
-
     # ── ingest ───────────────────────────────────────────
     register VerbSpec.new(
       :ingest, "Capture external source material into the raw lane. Write-once.",
@@ -253,7 +191,7 @@ module Textus
     register VerbSpec.new(
       :uid, "Return the stable UID of an entry without reading its body.",
       [ArgSpec.arg(name: :key, required: true, positional: true, description: "entry key")],
-      [:cli], { cli: ->(uid, inputs) { { "key" => inputs[:key], "uid" => uid } }, default: identity }, "key uid", nil, :read
+      %i[cli mcp], { cli: ->(uid, inputs) { { "key" => inputs[:key], "uid" => uid } }, default: identity }, "key uid", nil, :read
     )
 
     # ── blame ────────────────────────────────────────────
@@ -262,7 +200,7 @@ module Textus
       [ArgSpec.arg(name: :key, required: true, positional: true, description: "entry key to blame"),
        ArgSpec.arg(name: :limit, type: Integer,
                    description: "maximum number of audit rows to return")],
-      [:cli], {
+      %i[cli mcp], {
         cli: ->(rows, inputs) { { "verb" => "blame", "key" => inputs[:key], "rows" => rows } },
         default: identity,
       }, "blame", nil, :read
@@ -283,7 +221,7 @@ module Textus
                    description: "filter to rows with this correlation_id"),
        ArgSpec.arg(name: :limit, type: Integer,
                    description: "maximum number of rows to return")],
-      [:cli], { cli: ->(rows, _) { { "verb" => "audit", "rows" => rows } }, default: identity }, "audit", nil, :read
+      %i[cli mcp], { cli: ->(rows, _) { { "verb" => "audit", "rows" => rows } }, default: identity }, "audit", nil, :read
     )
 
     # ── deps ─────────────────────────────────────────────
@@ -328,29 +266,10 @@ module Textus
       %i[cli mcp], { default: identity }, nil, nil, :read
     )
 
-    # ── rule_explain ─────────────────────────────────────
-    register VerbSpec.new(
-      :rule_explain, "Effective rules for a key. Lean by default; detail: true adds matched blocks.",
-      [ArgSpec.arg(name: :key, required: true, positional: true,
-                   description: "dotted key whose effective rules you want"),
-       ArgSpec.arg(name: :detail, type: :boolean,
-                   description: "detail: true adds matched blocks + guard predicates")],
-      %i[cli mcp], {
-        cli: ->(r, _) { { "verb" => "rule_explain" }.merge(r.transform_keys(&:to_s)) },
-        default: identity,
-      }, "rule explain", nil, :read
-    )
-
-    # ── rule_list ────────────────────────────────────────
-    register VerbSpec.new(
-      :rule_list, "List every rule block in the manifest.",
-      [], [:cli], { cli: ->(p, _) { { "verb" => "rule_list", "policies" => p } }, default: identity }, "rule list", nil, :read
-    )
-
     # ── published ────────────────────────────────────────
     register VerbSpec.new(
       :published, "List all entries that declare a publish target.",
-      [], [:cli], { default: identity }, "published", nil, :read
+      [], %i[cli mcp], { default: identity }, "published", nil, :read
     )
 
     # ── schema_show ──────────────────────────────────────
@@ -361,28 +280,10 @@ module Textus
       %i[cli mcp], { default: identity }, "schema show", nil, :read
     )
 
-    # ── doctor ───────────────────────────────────────────
-    register VerbSpec.new(
-      :doctor, "Run health checks on the textus store.",
-      [ArgSpec.arg(name: :checks, type: Array,
-                   description: "subset of check names to run (default: all)")],
-      [:cli], { default: identity }, "doctor", nil, :read
-    )
-
     # ── boot ─────────────────────────────────────────────
     register VerbSpec.new(
       :boot, "Return the orientation contract: lanes, agent_quickstart, agent_protocol.",
       [], %i[cli mcp], { default: identity }, nil, nil, :read
-    )
-
-    # ── jobs ─────────────────────────────────────────────
-    register VerbSpec.new(
-      :jobs, "List queued jobs by state; retry a dead-lettered job or purge.",
-      [ArgSpec.arg(name: :state, default: "ready",
-                   description: "ready|leased|done|failed"),
-       ArgSpec.arg(name: :action, description: "retry|purge (optional)"),
-       ArgSpec.arg(name: :job_id, description: "job id (required for action=retry)")],
-      %i[cli mcp], { default: identity }, "jobs", nil, :maintenance
     )
 
     # ── data_mv ──────────────────────────────────────────
@@ -423,26 +324,6 @@ module Textus
       [ArgSpec.arg(name: :prefix, description: "restrict to keys under this dotted prefix"),
        ArgSpec.arg(name: :lane, description: "restrict to entries in this lane")],
       %i[cli mcp], { default: identity }, nil, nil, :maintenance
-    )
-
-    # ── rule_lint ────────────────────────────────────────
-    register VerbSpec.new(
-      :rule_lint, "Diff candidate manifest rules against the live manifest.",
-      [ArgSpec.arg(name: :candidate_yaml, required: true,
-                   wire_name: :against, source: :file,
-                   description: "path to candidate manifest YAML")],
-      %i[cli mcp], { default: ->(v, _) { v.to_h } }, "rule lint", nil, :maintenance
-    )
-
-    # ── rule_trace ───────────────────────────────────────
-    register VerbSpec.new(
-      :rule_trace, "Trace rule resolution for a key — all candidates, winners, and the effective RuleSet.",
-      [ArgSpec.arg(name: :key, required: true, positional: true,
-                   description: "dotted key whose rule resolution to trace")],
-      %i[cli mcp], {
-        cli: ->(r, _) { r },
-        default: ->(r, _) { r },
-      }, "rule trace", nil, :read
     )
   end
 end

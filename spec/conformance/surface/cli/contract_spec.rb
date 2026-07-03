@@ -8,9 +8,8 @@ RSpec.describe "Textus::Surface::CLI verb return-value contract" do
       FileUtils.mkdir_p(File.join(textus, "data", "knowledge"))
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/4
-        lanes:
-          - { name: knowledge, kind: canon }
-        entries: []
+        data:
+          knowledge: []
       YAML
       yield root
     end
@@ -26,7 +25,7 @@ RSpec.describe "Textus::Surface::CLI verb return-value contract" do
   it "every registered verb returns an Integer from a no-op invocation" do
     with_store do |root|
       Textus::Surface::CLI.verbs.each_key do |verb|
-        next if verb == "watch" # the daemon blocks forever by design; it has no no-op invocation
+        next if verb == "watch"
 
         code, = run_cli([verb], cwd: root)
         expect(code).to be_an(Integer),
@@ -36,16 +35,14 @@ RSpec.describe "Textus::Surface::CLI verb return-value contract" do
   end
 
   it "the auto-derived verb table matches the prior surface exactly" do # rubocop:disable RSpec/ExampleLength
-    actual = Textus::Surface::CLI.verbs # triggers Runner.install! so Verb::GenWhere exists
+    actual = Textus::Surface::CLI.verbs
     expected = {
       "accept" => Textus::Surface::CLI::Verb::GenAccept,
       "audit" => Textus::Surface::CLI::Verb::GenAudit,
       "blame" => Textus::Surface::CLI::Verb::GenBlame,
       "deps" => Textus::Surface::CLI::Verb::GenDeps,
       "diff" => Textus::Surface::CLI::Verb::GenDiff,
-      "doctor" => Textus::Surface::CLI::Verb::Doctor,
       "graph" => Textus::Surface::CLI::Verb::GenGraph,
-      "enqueue" => Textus::Surface::CLI::Verb::GenEnqueue,
       "get" => Textus::Surface::CLI::Verb::Get,
       "ingest" => Textus::Surface::CLI::Verb::GenIngest,
       "init" => Textus::Surface::CLI::Verb::Init,
@@ -60,10 +57,8 @@ RSpec.describe "Textus::Surface::CLI verb return-value contract" do
       "put" => Textus::Surface::CLI::Verb::Put,
       "rdeps" => Textus::Surface::CLI::Verb::GenRdeps,
       "reject" => Textus::Surface::CLI::Verb::GenReject,
-      "rule" => Textus::Surface::CLI::Group::Rule,
       "schema" => Textus::Surface::CLI::Group::Schema,
       "drain" => Textus::Surface::CLI::Verb::GenDrain,
-      "jobs" => Textus::Surface::CLI::Verb::GenJobs,
       "watch" => Textus::Surface::CLI::Verb::Watch,
       "where" => Textus::Surface::CLI::Verb::GenWhere,
     }
@@ -82,12 +77,6 @@ RSpec.describe "Textus::Surface::CLI verb return-value contract" do
       "mv" => Textus::Surface::CLI::Verb::GenKeyMv,
       "mv-prefix" => Textus::Surface::CLI::Verb::GenKeyMvPrefix,
       "uid" => Textus::Surface::CLI::Verb::GenUid,
-    )
-    expect(Textus::Surface::CLI::Group::Rule.subcommands).to eq(
-      "explain" => Textus::Surface::CLI::Verb::GenRuleExplain,
-      "lint" => Textus::Surface::CLI::Verb::GenRuleLint,
-      "list" => Textus::Surface::CLI::Verb::GenRuleList,
-      "trace" => Textus::Surface::CLI::Verb::GenRuleTrace,
     )
     expect(Textus::Surface::CLI::Group::Data.subcommands).to eq(
       "mv" => Textus::Surface::CLI::Verb::GenDataMv,

@@ -4,11 +4,11 @@ module Textus
   class Store
     attr_reader :ctx, :container, :role, :correlation_id, :cursor, :propose_lane, :contract_etag, :root
 
-    %i[manifest file_store schemas audit_log job_store layout link_edge_store workflows].each do |field|
+    %i[manifest file_system schemas audit_log event_store layout link_graph workflows].each do |field|
       define_method(field) { @ctx.public_send(field) }
     end
 
-    DOMAIN_VERBS = (VerbRegistry::ENTRY_VERBS + VerbRegistry::OPS_VERBS + VerbRegistry::RULE_VERBS).to_set.freeze
+    DOMAIN_VERBS = (VerbRegistry::ENTRY_VERBS + VerbRegistry::OPS_VERBS).to_set.freeze
 
     def self.discover(start_dir = Dir.pwd, root: nil)
       explicit = root || ENV.fetch("TEXTUS_ROOT", nil)

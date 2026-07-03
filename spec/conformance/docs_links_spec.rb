@@ -19,7 +19,7 @@ RSpec.describe "documentation links" do
     # and silently swallow real links between them.
     content = File.read(file)
                   .gsub(/^[ \t]*```.*?^[ \t]*```/m, "") # fenced code blocks
-                  .gsub(/`[^`\n]*`/, "``")              # inline code spans (single line)
+                  .gsub(/`[^`\n]*`/, "")                # inline code spans (single line)
     targets = content.scan(/\]\(([^)]+)\)/).flatten
     rel = Pathname.new(file).relative_path_from(DOCS_REPO_ROOT).to_s # rubocop:disable RSpec/LeakyLocalVariable
 

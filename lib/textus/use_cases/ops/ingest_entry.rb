@@ -7,55 +7,55 @@ require "digest"
 module Textus
   module UseCases
     module Ops
-      module IngestEntry
-        HANDLES = Dispatch::Contracts::IngestEntry
-        NEEDS = %i[file_store manifest schemas audit_log layout job_store].freeze
+      class IngestEntry < Base
+        handles Dispatch::Contracts::IngestEntry
+        needs :file_system, :manifest, :schemas, :audit_log, :layout, :event_store, :writer, :reader
 
         SOURCE_KINDS = %w[url file asset].freeze
         CONTENT_HASH_ALGO = "sha256"
 
-        def self.call(command, call, deps)
+        def call
           unless SOURCE_KINDS.include?(command.kind)
-            return Value::Result.failure(:usage_error,
-                                         "ingest kind must be one of #{SOURCE_KINDS.join("|")}")
+            return failure(:usage_error,
+                           "ingest kind must be one of #{SOURCE_KINDS.join("|")}")
           end
 
           case command.kind
-          when "url"   then return Value::Result.failure(:usage_error, "ingest url requires url") unless command.url
-          when "file"  then return Value::Result.failure(:usage_error, "ingest file requires path") unless command.path
+          when "url"   then return failure(:usage_error, "ingest url requires url") unless command.url
+          when "file"  then return failure(:usage_error, "ingest file requires path") unless command.path
           when "asset"
-            return Value::Result.failure(:usage_error, "ingest asset requires path") unless command.path
-            return Value::Result.failure(:usage_error, "ingest asset requires lane") unless command.lane
+            return failure(:usage_error, "ingest asset requires path") unless command.path
+            return failure(:usage_error, "ingest asset requires lane") unless command.lane
           end
 
           now = Time.now.utc
           key = derive_key(now, command.kind, command.slug)
           content_hash = compute_content_hash(command)
-          mentry = deps.manifest.resolver.resolve(key).entry
+          mentry = manifest.resolver.resolve(key).entry
           ts = now.iso8601
 
-          structured = build_structured(ts, now, content_hash, command, deps)
-          store = deps.job_store
+          structured = build_structured(ts, now, content_hash, command)
+          store = event_store
           index = Textus::Store::Index::Lookup.new(store:)
 
           duplicate_key = find_duplicate(index, content_hash, command)
 
           env = if duplicate_key && duplicate_key != key
-                  supersede_entry(duplicate_key, key, structured, call, deps)
+                  supersede_entry(duplicate_key, key, structured)
                 else
-                  write_entry(key, structured, mentry, call, deps)
+                  write_entry(key, structured, mentry)
                 end
 
-          rebuild_index(store, deps)
-          Value::Result.success(env)
+          rebuild_index(store)
+          success(env)
         end
 
-        def self.derive_key(now, kind, slug)
+        def derive_key(now, kind, slug)
           date = now.strftime("%Y.%m.%d")
           "raw.#{date}.#{kind}-#{slug}"
         end
 
-        def self.compute_content_hash(command)
+        def compute_content_hash(command)
           digest = Digest::SHA256.new
           case command.kind
           when "url" then digest.update(command.url)
@@ -64,7 +64,7 @@ module Textus
           "#{CONTENT_HASH_ALGO}:#{digest.hexdigest}"
         end
 
-        def self.build_structured(timestamp, now, content_hash, command, deps)
+        def build_structured(timestamp, now, content_hash, command)
           base = { "ingested_at" => timestamp, "content_hash" => content_hash }
           case command.kind
           when "url"
@@ -75,36 +75,30 @@ module Textus
                                      "label" => command.label || File.basename(command.path) },
                        "body" => File.read(command.path))
           when "asset"
-            asset_rel = copy_asset(now, command.path, command.lane, deps)
+            asset_rel = copy_asset(now, command.path, command.lane)
             base.merge("source" => { "kind" => "asset",
                                      "label" => command.label || File.basename(command.path) },
                        "asset" => asset_rel, "body" => nil)
           end
         end
 
-        def self.copy_asset(now, path, lane, deps)
+        def copy_asset(now, path, lane)
           date_path = now.strftime("%Y/%m/%d")
           filename  = File.basename(path)
-          assets_dir = deps.layout.asset_raw_dir(date_path, lane)
+          assets_dir = layout.asset_raw_dir(date_path, lane)
           FileUtils.mkdir_p(assets_dir)
           FileUtils.cp(path, File.join(assets_dir, filename))
-          sentinel = deps.layout.asset_sentinel_path
+          sentinel = layout.asset_sentinel_path
           File.write(sentinel, "*\n") unless File.exist?(sentinel)
           "raw/#{date_path}/#{lane}/#{filename}"
         end
 
-        def self.write_entry(key, structured, mentry, call, deps)
-          reader = Store::Entry::Reader.new(file_store: deps.file_store, manifest: deps.manifest, layout: deps.layout)
-          writer = Store::Entry::Writer.new(
-            file_store: deps.file_store, manifest: deps.manifest,
-            schemas: deps.schemas, audit_log: deps.audit_log,
-            reader: reader, layout: deps.layout
-          )
-          writer.put(key, mentry: mentry, call: call,
+        def write_entry(key, structured, mentry)
+          writer.put(key, mentry: mentry, call: @call,
                           payload: Textus::Value::Payload.new(meta: nil, body: nil, content: structured))
         end
 
-        def self.find_duplicate(index, content_hash, command)
+        def find_duplicate(index, content_hash, command)
           dup = index.find_by_hash(content_hash)
           return dup if dup
           return unless command.kind == "url"
@@ -112,9 +106,8 @@ module Textus
           index.find_by_url(command.url)
         end
 
-        def self.supersede_entry(old_key, new_key, structured, call, deps)
-          old_mentry = deps.manifest.resolver.resolve(old_key).entry
-          reader = Store::Entry::Reader.new(file_store: deps.file_store, manifest: deps.manifest, layout: deps.layout)
+        def supersede_entry(old_key, new_key, structured)
+          old_mentry = manifest.resolver.resolve(old_key).entry
           old_env = reader.read(old_key)
           old_content = old_env&.content || {}
           tombstone = {}
@@ -123,33 +116,28 @@ module Textus
           tombstone["source"] = { "kind" => source_kind } if source_kind
           tombstone["superseded_by"] = new_key
 
-          writer = Store::Entry::Writer.new(
-            file_store: deps.file_store, manifest: deps.manifest,
-            schemas: deps.schemas, audit_log: deps.audit_log,
-            reader: reader, layout: deps.layout
-          )
-          writer.put(old_key, mentry: old_mentry, call: call,
+          writer.put(old_key, mentry: old_mentry, call: @call,
                               payload: Textus::Value::Payload.new(meta: nil, body: nil, content: tombstone))
 
           structured["supersedes"] = old_key
           env = write_entry(new_key, structured,
-                            deps.manifest.resolver.resolve(new_key).entry, call, deps)
+                            manifest.resolver.resolve(new_key).entry)
 
           lane = command.lane
-          move_asset(old_content["asset"], lane, deps) if command.kind == "asset" && old_content["asset"]
+          move_asset(old_content["asset"], lane) if command.kind == "asset" && old_content["asset"]
 
-          rebuild_index(deps.job_store, deps)
+          rebuild_index(event_store)
           env
         end
 
-        def self.move_asset(old_rel, lane, deps)
-          old_path = deps.layout.asset_resolve(old_rel)
+        def move_asset(old_rel, lane)
+          old_path = layout.asset_resolve(old_rel)
           return unless File.exist?(old_path)
 
           now = Time.now.utc
           date_path = now.strftime("%Y/%m/%d")
           filename = File.basename(old_path)
-          new_dir = deps.layout.asset_raw_dir(date_path, lane)
+          new_dir = layout.asset_raw_dir(date_path, lane)
           new_path = File.join(new_dir, filename)
           return if old_path == new_path
 
@@ -159,8 +147,8 @@ module Textus
           warn "[textus ingest] could not move asset #{old_rel}: #{e.message}"
         end
 
-        def self.rebuild_index(store, deps)
-          Textus::Store::Index::Builder.new(store:).rebuild!(resolver: deps.manifest.resolver)
+        def rebuild_index(store)
+          Textus::Store::Index::Builder.new(store:).rebuild!(resolver: manifest.resolver)
         end
       end
     end

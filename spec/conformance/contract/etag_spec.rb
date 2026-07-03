@@ -1,8 +1,8 @@
 require "spec_helper"
 
 # Guard spec (ADR 0048 D4): application use cases under read/ and write/ must
-# compute etags through the FileStore port (container.file_store.etag), never by
-# calling Etag.for_file directly. The port (ports/storage/file_store.rb) and the
+# compute etags through the FileStore port (container.file_system.etag), never by
+# calling Etag.for_file directly. The port (ports/storage/file_system.rb) and the
 # Etag helper itself are the sanctioned homes; the envelope persist pipeline
 # (envelope/io/writer.rb) is adjacent to the port and out of this guard's scope.
 ETAG_SPEC_APP_GLOBS = [
@@ -71,8 +71,8 @@ RSpec.describe "Textus::Value::Etag.for_contract" do
   end
 
   # Guard spec (ADR 0048 D4): application actions under dispatch/actions/ must
-  # compute etags through the FileStore port (container.file_store.etag), never by
-  # calling Etag.for_file directly. The port (ports/storage/file_store.rb) and the
+  # compute etags through the FileStore port (container.file_system.etag), never by
+  # calling Etag.for_file directly. The port (ports/storage/file_system.rb) and the
   # Etag helper itself are the sanctioned homes; the envelope persist pipeline
   # (envelope/io/writer.rb) is adjacent to the port and out of this guard's scope.
   describe "application use cases compute etags through the port (ADR 0048 D4)" do
@@ -95,7 +95,7 @@ RSpec.describe "Textus::Value::Etag.for_contract" do
 
       expect(violations).to be_empty,
                             "Direct Etag.for_file in an application use case — " \
-                            "use container.file_store.etag(path):\n\n#{violations.join("\n")}"
+                            "use container.file_system.etag(path):\n\n#{violations.join("\n")}"
     end
   end
 

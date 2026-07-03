@@ -1,16 +1,16 @@
 module Textus
   module UseCases
     module Read
-      module UidEntry
-        HANDLES = Dispatch::Contracts::UidEntry
-        NEEDS = %i[file_store manifest layout].freeze
+      class UidEntry < Base
+        handles Dispatch::Contracts::UidEntry
+        needs :file_system, :manifest, :layout
 
-        def self.call(command, _call, deps)
-          reader = Store::Entry::Reader.new(file_store: deps.file_store, manifest: deps.manifest, layout: deps.layout)
-          envelope = reader.read(command.key)
-          return Value::Result.failure(:not_found, "no entry at #{command.key}") unless envelope
+        def call
+          reader = Store::Entry::Reader.new(file_system: @file_system, manifest: @manifest, layout: @layout)
+          envelope = reader.read(@command.key)
+          return failure(:not_found, "no entry at #{@command.key}") unless envelope
 
-          Value::Result.success(envelope.uid)
+          success(envelope.uid)
         end
       end
     end

@@ -55,7 +55,7 @@ module Textus
               manifest: pctx.manifest,
               source_publish_path: target.to,
               entry_key: entry.key,
-              edge_store: pctx.container.link_edge_store,
+              edge_store: pctx.container.link_graph,
             )
             renderer.bytes_for(target: target, data: content, boot: boot)
           end

@@ -5,32 +5,50 @@ RSpec.shared_context "textus/4 conformance fixture" do
 
   before do
     FileUtils.mkdir_p(File.join(root, "schemas"))
-    FileUtils.mkdir_p(File.join(root, "data/knowledge/network/org"))
-    FileUtils.mkdir_p(File.join(root, "data/knowledge/projects"))
-    FileUtils.mkdir_p(File.join(root, "data/artifacts/catalogs"))
-    FileUtils.mkdir_p(File.join(root, "data/artifacts/feeds/calendar"))
-    FileUtils.mkdir_p(File.join(root, "data/identity"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge/execution"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge/intent"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge/constraint"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge/judgment"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge/evidence"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge/feedback"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge/contacts"))
+    FileUtils.mkdir_p(File.join(root, "data/scratchpad/notes"))
+    FileUtils.mkdir_p(File.join(root, "data/scratchpad/sessions"))
+    FileUtils.mkdir_p(File.join(root, "data/scratchpad/scripts"))
+    FileUtils.mkdir_p(File.join(root, "data/proposals/notes"))
+    FileUtils.mkdir_p(File.join(root, "data/raw"))
+    FileUtils.mkdir_p(File.join(root, "data/artifacts"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/4
-      lanes:
-        - { name: identity,  kind: canon }
-        - { name: knowledge,   kind: canon }
-        - { name: artifacts, kind: machine }
-      entries:
-        - { key: identity.self,         path: identity/self,         lane: identity,   owner: human:patrick, kind: leaf}
-
-        - { key: knowledge.network.org,   path: knowledge/network/org,   lane: knowledge,  schema: person, owner: human:patrick, kind: nested}
-
-        - { key: knowledge.projects,      path: knowledge/projects,      lane: knowledge,    owner: human:patrick, kind: nested}
-
-        - { key: artifacts.catalogs.skills, path: artifacts/catalogs/skills, lane: artifacts, owner: automation:catalog, kind: produced, source: { from: external, command: "rake catalog:skills", sources: [knowledge.projects] } }
-        - key: artifacts.feeds.calendar.events
-          kind: nested
-          path: artifacts/feeds/calendar/events
-          lane: artifacts
-          owner: automation:cron
-          nested: true
+      data:
+        knowledge:
+          - key: knowledge.intent
+            naming: sequential
+          - key: knowledge.execution
+            naming: sequential
+          - key: knowledge.constraint
+          - key: knowledge.judgment
+          - key: knowledge.evidence
+            naming: sequential
+          - key: knowledge.feedback
+          - key: knowledge.contacts
+            schema: person
+        scratchpad:
+          - key: scratchpad.notes
+            tracked: false
+          - key: scratchpad.sessions
+            tracked: false
+          - key: scratchpad.scripts
+            tracked: false
+        proposals:
+          - key: proposals.notes
+        raw:
+          - key: raw
+            format: yaml
+        artifacts:
+          - key: artifacts.boot
+            format: json
     YAML
 
     File.write(File.join(root, "schemas/person.yaml"), <<~YAML)
@@ -50,13 +68,18 @@ RSpec.shared_context "textus/4 conformance fixture" do
         notes:        { type: string, max: 2000 }
     YAML
 
-    File.write(File.join(root, "data/knowledge/network/org/jane.md"), <<~MD)
+    File.write(File.join(root, "data/knowledge/evidence/0001-topic.md"), <<~MD)
       ---
-      name: jane
-      relationship: peer
-      org: acme
+      title: A topic
       ---
-      Short body in Markdown.
+      Body content.
+    MD
+
+    File.write(File.join(root, "data/knowledge/intent/0001-north-star.md"), <<~MD)
+      ---
+      name: north-star
+      ---
+      Intent body.
     MD
   end
 

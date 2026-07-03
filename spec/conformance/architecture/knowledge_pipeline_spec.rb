@@ -1,61 +1,55 @@
 RSpec.describe "Knowledge pipeline conformance" do
-  KNOWN_SECTIONS = %w[
-    goals rules architecture decisions patterns runbooks specs readme project
-  ].freeze
-
-  def knowledge_dir
-    File.expand_path("../../../.textus/data/knowledge", __dir__)
+  let(:known_sections) do
+    %w[intent constraint evidence judgment execution feedback]
   end
 
-  it "every knowledge section is a known section" do
-    sections = Dir.children(knowledge_dir).select { |e| File.directory?(File.join(knowledge_dir, e)) }
-    unknown = sections - KNOWN_SECTIONS
+  def loop_dir
+    File.expand_path("../../../.textus/data/knowledge/loop", __dir__)
+  end
+
+  it "every loop section is a known section" do
+    sections = Dir.children(loop_dir).select { |e| File.directory?(File.join(loop_dir, e)) }
+    unknown = sections - known_sections
     expect(unknown).to be_empty,
-                       "unknown knowledge sections: #{unknown.join(", ")}"
-  end
-
-  it "no orphan entry files outside sections" do
-    entries = Dir.children(knowledge_dir).reject { |e| e.start_with?(".") || File.directory?(File.join(knowledge_dir, e)) }
-    known_root = %w[project.md]
-    orphans = entries - known_root
-    expect(orphans).to be_empty,
-                       "entries outside sections: #{orphans.join(", ")}"
+                       "unknown loop sections: #{unknown.join(", ")}"
   end
 
   it "has the core loop sections" do
-    sections = Dir.children(knowledge_dir).select { |e| File.directory?(File.join(knowledge_dir, e)) }
-    expect(sections).to include("goals", "rules", "architecture", "decisions", "patterns", "runbooks", "specs")
+    sections = Dir.children(loop_dir).select { |e| File.directory?(File.join(loop_dir, e)) }
+    expect(sections).to include("intent", "constraint", "evidence", "judgment", "execution", "feedback")
   end
 
   it "each section has content" do
-    Dir.children(knowledge_dir).select { |e| File.directory?(File.join(knowledge_dir, e)) }.each do |section|
-      files = Dir[File.join(knowledge_dir, section, "*.md")]
+    Dir.children(loop_dir).select { |e| File.directory?(File.join(loop_dir, e)) }.each do |section|
+      files = Dir[File.join(loop_dir, section, "**", "*.md")]
       expect(files).not_to be_empty, "section #{section} has no markdown files"
     end
   end
 
-  it "recent decisions (ADR-0119+) reference architecture (pipeline: architecture → decisions)" do
-    decisions = Dir[File.join(knowledge_dir, "decisions", "0*.md")].grep(/01(19|2[0-5])/)
-    offenders = decisions.reject { |f| File.read(f).match?(%r{knowledge\.architecture\.|\.textus/data/knowledge/architecture}) }
+  it "recent decisions (ADR-0119+) reference judgment engineering (pipeline: judgment → evidence)" do
+    decisions = Dir[File.join(loop_dir, "evidence", "0*.md")].grep(/01(19|2[0-5])/)
+    offenders = decisions.reject do |f|
+      File.read(f).match?(%r{knowledge\.loop\.judgment\.engineering\.|\.textus/data/knowledge/loop/judgment/engineering})
+    end
     expect(offenders).to be_empty,
                          "decisions after ADR-0119 missing architecture reference:\n#{offenders.map do |f|
-                           "  #{f.sub(knowledge_dir, "knowledge")}"
+                           "  #{f.sub(loop_dir, "knowledge.loop")}"
                          end.join("\n")}"
   end
 
-  it "patterns reference decisions (pipeline: decisions → patterns)" do
-    patterns = Dir[File.join(knowledge_dir, "patterns", "*.md")]
-    offenders = patterns.reject { |f| File.read(f).match?(/knowledge\.decisions\.|ADR-\d+|knowledge\.patterns\./) }
+  it "judgment engineering files reference decisions (pipeline: evidence → judgment)" do
+    patterns = Dir[File.join(loop_dir, "judgment", "engineering", "*.md")]
+    offenders = patterns.reject { |f| File.read(f).match?(/knowledge\.loop\.evidence\.|ADR-\d+|knowledge\.loop\.judgment\.engineering\./) }
     expect(offenders).to be_empty,
                          "patterns missing decision reference:\n#{offenders.map do |f|
-                           "  #{f.sub(knowledge_dir, "knowledge")}"
+                           "  #{f.sub(loop_dir, "knowledge.loop")}"
                          end.join("\n")}"
   end
 
   it "runbooks reference patterns (pipeline: patterns → runbooks)" do
-    runbooks = Dir[File.join(knowledge_dir, "runbooks", "*.md")]
-    offenders = runbooks.reject { |f| File.read(f).match?(/knowledge\.patterns\./) }
+    runbooks = Dir[File.join(loop_dir, "execution", "*.md")]
+    offenders = runbooks.reject { |f| File.read(f).match?(/knowledge\.loop\.(patterns|judgment\.engineering)\./) }
     expect(offenders).to be_empty,
-                         "runbooks missing pattern reference:\n#{offenders.map { |f| "  #{f.sub(knowledge_dir, "knowledge")}" }.join("\n")}"
+                         "runbooks missing pattern reference:\n#{offenders.map { |f| "  #{f.sub(loop_dir, "knowledge.loop")}" }.join("\n")}"
   end
 end

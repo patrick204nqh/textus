@@ -2,7 +2,7 @@ Textus.workflow "claude_plugin" do
   match "artifacts.config.plugin"
 
   step :build do |_, ctx|
-    project_env = ctx.container.reader.read("knowledge.project")
+    project_env = ctx.container.reader.read("knowledge.intent.0003-identity")
     project = project_env&.meta || {}
     repo    = project["repo"]
     command = { "type" => "command", "command" => "textus boot" }

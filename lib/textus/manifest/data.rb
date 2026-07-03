@@ -1,19 +1,13 @@
 require_relative "schema"
-require_relative "capabilities"
 
 module Textus
   class Manifest
-    # Immutable, parsed view of a manifest YAML document.
-    #
-    # Holds raw structural data (lanes, entries, audit_config, role_caps)
-    # but no behaviour beyond accessors. Behaviour (lane authority, key
-    # resolution, rules) lives on Manifest::Policy / Resolver / Rules.
     class Data
       AUDIT_DEFAULTS = { max_size: 10_485_760, keep: 1000 }.freeze
       WORKER_DEFAULTS = { pool: 4, poll: 5, lease_ttl: 60, max_attempts: 3 }.freeze
 
       attr_reader :raw, :root, :entries, :declared_lane_kinds,
-                  :lane_descs, :lane_owners,
+                  :lane_descs,
                   :audit_config, :worker_config, :role_caps
 
       def self.validate_key!(key)
@@ -22,12 +16,18 @@ module Textus
         Key::Grammar.validate!(key)
       end
 
-      # Forwarder used by Resolver and Entry classes that received a Data
-      # but were written against the historical Manifest API.
       def validate_key!(key) = self.class.validate_key!(key)
 
       def self.parse(raw, root:)
-        raise BadFrontmatter.new(File.join(root.to_s, "manifest.yaml"), "manifest must declare lanes:") if Array(raw["lanes"]).empty?
+        %w[roles lanes owner].each do |stale_key|
+          next unless raw.key?(stale_key)
+
+          raise BadManifest.new(
+            "unknown top-level key '#{stale_key}' — protocol textus/4 fixes roles/lanes in " \
+            "code; remove this section from manifest.yaml (see CHANGELOG)",
+          )
+        end
+        raise BadManifest.new("manifest must declare data:") if Array(raw["data"]).empty? && raw["data"] != {}
 
         Schema.validate!(raw)
         new(raw: raw, root: root)
@@ -36,20 +36,11 @@ module Textus
       def initialize(raw:, root:)
         @raw = raw
         @root = root
-        # Write authority is derived from capabilities × lane-kind (ADR 0030),
-        # not a per-lane writer list. "Which lanes are declared" lives in the
-        # one kind-keyed map below (declared_lane_kinds); membership checks by
-        # read-side callers (boot, maintenance/data_mv) use its keyset (ADR 0034).
-        @declared_lane_kinds = Array(raw["lanes"]).to_h do |z|
-          [z["name"], z["kind"]&.to_sym]
-        end
-        @lane_descs  = Array(raw["lanes"]).to_h { |z| [z["name"], z["desc"]] }
-        # Only lanes that actually declare an owner — keep nil-tombstones out so a
-        # future `lane_owners.key?(name)` means "owner declared", not "lane exists".
-        @lane_owners = Array(raw["lanes"]).to_h { |z| [z["name"], z["owner"]] }.compact
+        @declared_lane_kinds = Textus::Protocol::V4::LANES.keys.to_h { |name| [name, name] }
+        @lane_descs = Textus::Protocol::V4::LANES.transform_values { |row| row[:desc] }
         @audit_config = build_audit_config(raw)
         @worker_config = build_worker_config(raw)
-        @role_caps = Capabilities.resolve(raw["roles"])
+        @role_caps = {}
         @entries = build_entries(raw)
         validate_declared_keys!
         freeze
@@ -65,9 +56,6 @@ module Textus
         }.freeze
       end
 
-      # Worker/queue tunables (ADR: job-queue execution model). All optional;
-      # the daemon (serve) and batch drain read these, falling back to defaults
-      # so a manifest with no `worker:` block runs the queue out of the box.
       def build_worker_config(raw)
         w = raw["worker"] || {}
         {
@@ -79,7 +67,13 @@ module Textus
       end
 
       def build_entries(raw)
-        Array(raw["entries"]).map { |e| Manifest::Entry::Parser.call(e) }.freeze
+        (raw["data"] || {}).flat_map do |lane_name, lane_entries|
+          unless Textus::Protocol::V4::LANES.key?(lane_name)
+            raise BadManifest.new("unknown lane '#{lane_name}' (known: #{Textus::Protocol::V4::LANES.keys.join(", ")})")
+          end
+
+          Array(lane_entries).map { |e| Manifest::Entry::Parser.call(e.merge("lane" => lane_name), root: @root) }
+        end.freeze
       end
 
       def validate_declared_keys!

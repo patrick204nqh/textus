@@ -19,12 +19,16 @@ module Textus
       end
       include Interface
 
+      def initialize(file_system: Store::FileSystem.new)
+        @file_system = file_system
+      end
+
       def publish(source:, target:, store_root:, provenance_source: source)
-        FileUtils.mkdir_p(File.dirname(target))
+        @file_system.mkdir_p(File.dirname(target))
         guard_clobber(source, target, store_root)
-        File.delete(target) if File.symlink?(target)
-        FileUtils.cp(source, target)
-        Textus::Port::SentinelStore.new.write!(target: target, source: provenance_source, store_root: store_root)
+        @file_system.delete(target) if @file_system.symlink?(target)
+        @file_system.copy(source, target)
+        Textus::Port::SentinelStore.new(file_system: @file_system).write!(target: target, source: provenance_source, store_root: store_root)
       end
 
       # Removes a previously-published file and its sentinel. No-op unless the
@@ -32,9 +36,9 @@ module Textus
       def unpublish(target:, store_root:)
         return unless managed?(target, store_root)
 
-        FileUtils.rm_f(target)
-        sentinel = Textus::Port::SentinelStore.new.sentinel_path(target, store_root)
-        FileUtils.rm_f(sentinel)
+        @file_system.delete(target)
+        sentinel = Textus::Port::SentinelStore.new(file_system: @file_system).sentinel_path(target, store_root)
+        @file_system.delete(sentinel)
       end
 
       private
@@ -47,7 +51,7 @@ module Textus
       # An unmanaged target whose content DIFFERS, or any unmanaged symlink, is
       # still refused — that is the guard's real job.
       def guard_clobber(source, target, store_root)
-        return unless File.exist?(target) || File.symlink?(target)
+        return unless @file_system.exists?(target) || @file_system.symlink?(target)
         return if managed?(target, store_root)
         return if adoptable?(source, target)
 
@@ -55,11 +59,11 @@ module Textus
       end
 
       def adoptable?(source, target)
-        !File.symlink?(target) && File.file?(target) && FileUtils.identical?(source, target)
+        !@file_system.symlink?(target) && File.file?(target) && @file_system.identical?(source, target)
       end
 
       def managed?(target, store_root)
-        File.exist?(Textus::Port::SentinelStore.new.sentinel_path(target, store_root))
+        @file_system.exists?(Textus::Port::SentinelStore.new(file_system: @file_system).sentinel_path(target, store_root))
       end
     end
   end

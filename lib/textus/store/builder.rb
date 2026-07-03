@@ -2,60 +2,61 @@ module Textus
   class Store
     class Builder
       def call(root)
-        manifest = Manifest.load(root)
-        job_store = Port::Store.new(root: root).setup!
-        layout = Store::Layout.new(root)
-        file_store = Port::Storage::FileStore.new
-        schemas = Schema::Registry.new(layout.schemas_dir)
-        audit_log = Port::AuditLog.new(
+        manifest    = Manifest.load(root)
+        database    = Port::Storage::Database.new(root: root).setup!
+        event_store = Store::EventStore.new(database)
+        layout      = Store::Layout.new(root)
+        file_system = Store::FileSystem.new
+        schemas     = Schema::Registry.new(layout.schemas_dir)
+        audit_log   = Port::AuditLog.new(
           layout:,
           max_size: manifest.data.audit_config[:max_size],
           keep: manifest.data.audit_config[:keep],
+          file_system:,
         )
-        link_edge_store = Links::LinkEdgeStore.new(db: job_store)
-        workflows = Workflow::Loader.load_all(root)
-        event_bus = Event::Bus.new
+        link_graph  = Store::LinkGraph.new(database)
+        entry_index = Store::EntryIndex.new(database)
+        workflows   = Workflow::Loader.load_all(root)
+        workflows.push(Textus::Workflow::Instances::Materialize)
+        entry_store = Store::EntryStore.new(file_system:, manifest:, audit_log:, layout:, entry_index:)
 
-        freshness_evaluator = Store::Freshness::TtlEvaluator.new(
+        ttl_evaluator = Store::Freshness::TtlEvaluator.new(
           manifest:,
-          file_stat: Port::Storage::FileStat.new,
+          file_stat: file_system,
           clock: Port::Clock.new,
         )
 
         trace_buffer = Store::TraceBuffer.new
 
-        cascade_subscriber = Produce::CascadeSubscriber.new(
-          manifest:, workflows:, job_store:, file_store:,
-        )
-        event_bus.subscribe(Event::EntryWritten,     &cascade_subscriber.method(:on_entry_written))
-        event_bus.subscribe(Event::EntryDeleted,     &cascade_subscriber.method(:on_entry_deleted))
-        event_bus.subscribe(Event::EntryMoved,       &cascade_subscriber.method(:on_entry_moved))
-        event_bus.subscribe(Event::ProposalAccepted, &cascade_subscriber.method(:on_proposal_accepted))
-        event_bus.subscribe(Event::ProposalRejected, &cascade_subscriber.method(:on_proposal_rejected))
+        storage    = Container::Storage.new(file_system:, entry_store:, layout:, entry_index:)
+        events     = Container::Events.new(event_store:, workflows:)
+        governance = Container::Governance.new(manifest:, schemas:)
+        logging    = Container::Logging.new(audit_log:)
+        links      = Container::Links.new(link_graph:)
 
-        reader  = Store::Entry::Reader.new(file_store:, manifest:, layout:)
-        writer  = Store::Entry::Writer.new(file_store:, manifest:, schemas:,
-                                           audit_log:, reader:, layout:)
-
-        partial = Infrastructure.new(
-          manifest:, file_store:, schemas:, audit_log:, job_store:,
-          layout:, link_edge_store:, workflows:, root:,
-          reader:, writer:, event_bus:,
-          freshness_evaluator:, trace_buffer:, pipeline: nil
+        container = Container.new(
+          storage:, events:, governance:, logging:, links:,
+          root:, trace_buffer:, ttl_evaluator:
         )
 
         middleware = [
           Dispatch::Middleware::Binder.new,
           Dispatch::Middleware::Trace.new,
           Dispatch::Middleware::Auth.new,
-          Dispatch::Middleware::AuditIndex.new(job_store: partial.job_store, audit_log: partial.audit_log),
+          Dispatch::Middleware::Events.new,
         ]
 
         Dispatch::HandlerResolver.eager_load!
-        registry = Dispatch::HandlerResolver.build(partial)
-        pipeline = Dispatch::Pipeline.new(registry:, container: partial, middleware:)
-
-        partial.with(pipeline:, reader:, writer:)
+        interim = container.with_pipeline(
+          Dispatch::Pipeline.new(
+            registry: Dispatch::HandlerResolver.build(container),
+            container:, middleware:
+          ),
+        )
+        registry = Dispatch::HandlerResolver.build(interim)
+        container.with_pipeline(
+          Dispatch::Pipeline.new(registry:, container: interim, middleware:),
+        )
       end
     end
   end

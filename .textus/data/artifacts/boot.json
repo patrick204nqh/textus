@@ -3,28 +3,45 @@
     "uid": "e64946ac4be8f8f1"
   },
   "project": {
-    "name": "textus",
-    "description": "A coordination space for humans, AI, and automation — durable, multi-writer repo memory that survives the session, the model, and the vendor.",
-    "commands": "- **test**: `bundle exec rspec`\n- **lint**: `bundle exec rubocop`\n- **lint-fix**: `bundle exec rubocop -A`\n- **setup**: `bundle install`\n- **help**: `bundle exec exe/textus --help`\n- **drain**: `bundle exec exe/textus drain --as=automation`",
-    "has_commands": true
+    "name": null,
+    "description": null,
+    "commands": "",
+    "has_commands": false
   },
   "runbooks": [
+    {
+      "name": "release",
+      "description": "Cut a textus release — bump the version, regenerate Gemfile.lock, then tag via PR."
+    },
     {
       "name": "adr",
       "description": "Add an Architecture Decision Record for a load-bearing decision."
     },
     {
-      "name": "release",
-      "description": "Cut a textus release — bump the version, regenerate Gemfile.lock, then tag via PR."
+      "name": null,
+      "description": null
     }
   ],
+  "loop": {
+    "nodes": [
+      "intent",
+      "constraint.repo",
+      "constraint.protocol",
+      "judgment.engineering",
+      "judgment.agent-behavior",
+      "evidence",
+      "execution",
+      "feedback"
+    ],
+    "excerpt": ""
+  },
   "lanes": [
     {
       "name": "knowledge",
       "writers": [
         "human"
       ],
-      "kind": "canon",
+      "kind": "knowledge",
       "purpose": "the maintained source of truth about the repo"
     },
     {
@@ -32,7 +49,7 @@
       "writers": [
         "agent"
       ],
-      "kind": "workspace",
+      "kind": "scratchpad",
       "purpose": "the agent's own durable scratchpad (working memory)"
     },
     {
@@ -41,7 +58,7 @@
         "human",
         "agent"
       ],
-      "kind": "queue",
+      "kind": "proposals",
       "purpose": "changes awaiting a human accept"
     },
     {
@@ -49,7 +66,7 @@
       "writers": [
         "automation"
       ],
-      "kind": "machine",
+      "kind": "artifacts",
       "purpose": "machine-maintained computed outputs"
     },
     {
@@ -68,10 +85,15 @@
       "get",
       "list",
       "where",
+      "uid",
+      "blame",
+      "audit",
       "deps",
       "rdeps",
+      "graph",
+      "diff",
       "pulse",
-      "rule_explain",
+      "published",
       "schema_show",
       "boot"
     ],
@@ -82,7 +104,6 @@
       "propose",
       "accept",
       "reject",
-      "enqueue",
       "ingest",
       "data_mv",
       "key_mv_prefix",
@@ -132,11 +153,7 @@
     },
     "role_resolution": {
       "summary": "role resolved: --as flag → TEXTUS_ROLE env → .textus/role file → transport default",
-      "roles": [
-        "human",
-        "agent",
-        "automation"
-      ],
+      "roles": [],
       "ref": "SPEC.md §5"
     }
   }

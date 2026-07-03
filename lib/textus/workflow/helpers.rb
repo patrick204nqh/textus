@@ -29,7 +29,7 @@ module Textus
         template = File.read(path)
         ctx = Textus::Produce::Render::Context.new(
           container: @container, call: @call,
-          key: @ctx&.key, entry: @ctx&.entry,
+          key: @ctx&.key, entry: @ctx&.entry
         )
         renderer = Textus::Produce::Render.new(template, ctx)
         renderer.bytes_for(data)
@@ -40,13 +40,38 @@ module Textus
       end
 
       def pluck(source, *keys)
-        source.select { |k, _| keys.include?(k) }
+        source.slice(*keys)
+      end
+
+      def check_naming(entries, pattern:, code:, fix:)
+        entries.filter_map do |entry|
+          key = entry_value(entry, :key)
+          path = entry_value(entry, :path)
+          name = path && !path.to_s.empty? ? File.basename(path.to_s) : key.to_s.split(".").last
+          next if pattern.match?(name)
+
+          {
+            "code" => code,
+            "level" => "warning",
+            "subject" => key,
+            "message" => "#{key} does not match the required naming pattern #{pattern.inspect}",
+            "fix" => fix,
+          }
+        end
       end
 
       private
 
-      def deep_merge(a, b)
-        a.merge(b) do |_key, old_val, new_val|
+      def entry_value(entry, key)
+        return entry.public_send(key) if !entry.is_a?(Hash) && entry.respond_to?(key)
+        return entry[key] if entry.is_a?(Hash) && entry.key?(key)
+        return entry[key.to_s] if entry.is_a?(Hash) && entry.key?(key.to_s)
+
+        nil
+      end
+
+      def deep_merge(left_hash, right_hash)
+        left_hash.merge(right_hash) do |_key, old_val, new_val|
           if old_val.is_a?(Hash) && new_val.is_a?(Hash)
             deep_merge(old_val, new_val)
           else

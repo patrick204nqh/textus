@@ -6,19 +6,33 @@ Textus.workflow "boot" do
     manifest = ctx.container.manifest
     reader = ctx.container.reader
 
+    read_family = lambda do |prefix|
+      manifest.resolver.enumerate(prefix: prefix, include_keyless: true)
+              .reject { |row| row[:key] == prefix }
+              .sort_by { |row| row[:key] }
+              .filter_map { |row| reader.read(row[:key]) }
+    end
+
     fetch = ->(key) { begin; reader.read(key); rescue StandardError; nil; end }
 
     # Project context (was artifacts.config.orientation)
-    project_env = fetch.call("knowledge.project")
-    project = project_env&.meta || {}
+    identity_env = fetch.call("knowledge.intent.0003-identity")
+    identity = identity_env&.meta || {}
 
-    runbooks = ctx.container.read_family("knowledge.runbooks").filter_map(&:meta)
+    runbooks = read_family.call("knowledge.loop.execution").filter_map(&:meta)
+
+    loop_nodes = %w[intent constraint.repo constraint.protocol judgment.engineering
+                    judgment.agent-behavior evidence execution feedback]
+    agent_behavior_excerpt = fetch.call("knowledge.judgment.agent-behavior.0001-loop-behavior")&.body.to_s
+    loop_summary = {
+      "nodes" => loop_nodes,
+      "excerpt" => agent_behavior_excerpt.lines.first(5).join,
+    }
 
     # Lanes (was Boot.lanes_for)
     lanes = manifest.data.declared_lane_kinds.keys.map do |name|
-      verb = manifest.policy.verb_for_lane(name)
-      row  = { "name" => name, "writers" => manifest.policy.roles_with_capability(verb) }
-      kind = manifest.policy.declared_kind(name)
+      row  = { "name" => name, "writers" => manifest.policy.writers_for(name) }
+      kind = manifest.data.declared_lane_kinds[name]
       row["kind"] = kind.to_s if kind
       desc = manifest.data.lane_descs[name]
       row["purpose"] = desc if desc && !desc.empty?
@@ -30,18 +44,19 @@ Textus.workflow "boot" do
     writable_lanes  = manifest.data.declared_lane_kinds.keys.each_with_object([]) do |lane_name, acc|
       next unless agent_role
 
-      verb    = manifest.policy.verb_for_lane(lane_name)
-      writers = manifest.policy.roles_with_capability(verb)
+      writers = manifest.policy.writers_for(lane_name)
       acc << lane_name if writers.include?(agent_role)
     end
     propose_lane = manifest.policy.propose_lane_for(agent_role)
+    read_verbs = Textus::VerbRegistry.registered.select { |s| s.read? && s.mcp? }.map { |s| s.verb.to_s }
+    write_verbs = if agent_role
+                    Textus::VerbRegistry.registered.select { |s| s.write? && s.mcp? }.map { |s| s.verb.to_s }
+                  else
+                    []
+                  end
     agent_quickstart = {
-      "read_verbs" => Textus::VerbRegistry.registered
-                        .select { |s| s.read? && s.mcp? }
-                        .map { |s| s.verb.to_s },
-      "write_verbs" => agent_role ? Textus::VerbRegistry.registered
-                        .select { |s| s.write? && s.mcp? }
-                        .map { |s| s.verb.to_s } : [],
+      "read_verbs" => read_verbs,
+      "write_verbs" => write_verbs,
       "writable_lanes" => writable_lanes,
       "propose_lane" => propose_lane,
     }
@@ -76,12 +91,13 @@ Textus.workflow "boot" do
     {
       "content" => {
         "project" => {
-          "name" => project["name"],
-          "description" => project["description"],
-          "commands" => (project["commands"] || {}).map { |k, v| "- **#{k}**: `#{v}`" }.join("\n"),
-          "has_commands" => !(project["commands"] || {}).empty?,
+          "name" => identity["name"],
+          "description" => identity["description"],
+          "commands" => (identity["commands"] || {}).map { |k, v| "- **#{k}**: `#{v}`" }.join("\n"),
+          "has_commands" => !(identity["commands"] || {}).empty?,
         },
         "runbooks" => runbooks.map { |r| { "name" => r["name"], "description" => r["description"] } },
+        "loop" => loop_summary,
         "lanes" => lanes,
         "agent_quickstart" => agent_quickstart,
         "agent_protocol" => agent_protocol,

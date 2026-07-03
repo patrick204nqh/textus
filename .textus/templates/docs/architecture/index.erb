@@ -260,7 +260,7 @@ For each key, `Engine#produce_one`:
 ```ruby
 Textus.workflow "my-producer", priority: 10 do
   match "artifacts.derived.*"
-  depends_on "knowledge.project"
+  depends_on "knowledge.intent.0003-identity"
 
   step :fetch do |data, ctx|
     { content: fetch_json("https://api.example.com/data") }

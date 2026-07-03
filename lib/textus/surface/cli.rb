@@ -131,11 +131,8 @@ module Textus
             textus blame KEY [--limit=N]
             textus pulse [--since=N]
             textus boot
-            textus doctor
             textus drain [PREFIX] --as=ROLE
             textus watch
-            textus jobs
-
             textus key {delete,mv,mv-prefix,delete-prefix,uid}
             textus rule {explain,lint,list}
             textus schema {diff,init,migrate,show}

@@ -7,20 +7,19 @@ module Textus
             return { pass: true } if key.nil?
 
             mentry = manifest.resolver.resolve(key).entry
-            is_raw = manifest.policy.declared_kind(mentry.lane.to_s) == :raw
-            lane_verb = manifest.policy.verb_for_lane(mentry.lane.to_s)
-            caps = Set.new(manifest.data.role_caps.fetch(actor.to_s, []))
+            is_raw = mentry.lane.to_s == "raw"
+            writers = manifest.policy.writers_for(mentry.lane.to_s)
+            author_writers = manifest.policy.writers_for("knowledge")
 
             pass = if is_raw
-                     caps.include?("author")
+                     author_writers.include?(actor.to_s)
                    else
-                     caps.include?(lane_verb.to_s) || caps.include?("author")
+                     writers.include?(actor.to_s) || author_writers.include?(actor.to_s)
                    end
             return { pass: true } if pass
 
-            extra_holders = is_raw ? ["author"] : [lane_verb.to_s, "author"]
-            holders = extra_holders.flat_map { |v| manifest.policy.roles_with_capability(v) }.uniq
-            { pass: false, error: Textus::WriteForbidden.new(mentry.key, mentry.lane, verb: lane_verb, holders:) }
+            holders = (writers + author_writers).uniq
+            { pass: false, error: Textus::WriteForbidden.new(mentry.key, mentry.lane, holders:) }
           rescue Textus::UnknownKey
             { pass: true }
           end

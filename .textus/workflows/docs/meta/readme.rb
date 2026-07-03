@@ -2,13 +2,15 @@ Textus.workflow "readme" do
   match "artifacts.docs.readme"
 
   step :assemble do |_, ctx|
-    order = %w[intro concept body].each_with_index.to_h.freeze
+    pitch = ctx.container.reader.read("knowledge.intent.0004-pitch")&.body.to_s
+    idea = ctx.container.reader.read("knowledge.constraint.protocol.0015-idea")&.body.to_s
+    quickstart = ctx.container.reader.read("knowledge.execution.0003-quickstart")&.body.to_s
 
-    sections = ctx.container.read_family("knowledge.readme")
-                  .reject { |env| env.key == "knowledge.readme" }
-                  .uniq(&:key)
-                  .sort_by { |env| order.fetch(env.key.split(".").last, 99) }
-                  .map { |env| { "key" => env.key, "body" => env.body.to_s } }
+    sections = [
+      { "key" => "intro", "body" => pitch },
+      { "key" => "concept", "body" => idea },
+      { "key" => "body", "body" => quickstart },
+    ].reject { |s| s["body"].nil? || s["body"].empty? }
 
     { "content" => { "sections" => sections } }
   end

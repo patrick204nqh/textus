@@ -18,11 +18,14 @@ module TextusSpecHelpers
   #   include_context "textus_store_fixture"
   #   let(:store) { store_from_manifest(root, lanes: %w[knowledge], manifest: <<~YAML) }
   #     version: textus/4
-  #     ...
+  #     data:
+  #       knowledge:
+  #         - key: knowledge.foo
   #   YAML
   #
-  # `schemas` maps name => YAML body (written to schemas/<name>.yaml);
-  # `files` maps a path relative to the .textus dir => contents.
+  # `lanes:` creates the data/<lane> directories; `schemas` maps name => YAML
+  # body (written to schemas/<name>.yaml); `files` maps a path relative to the
+  # .textus dir => contents.
   def store_from_manifest(textus_dir, manifest:, lanes: [], schemas: {}, files: {})
     lanes.each { |lane| FileUtils.mkdir_p(File.join(textus_dir, "data", lane)) }
     schemas.each do |name, body|
@@ -38,69 +41,42 @@ module TextusSpecHelpers
     Textus::Store.new(textus_dir)
   end
 
-  # Canonical zone name for each kind (ADR 0034; docs/reference/zones.md). The
-  # presets name their zone after its kind, so a `kind_zone:` override yields a
-  # correctly-named lane (e.g. canon → "knowledge") rather than a mislabeled one.
-  LANE_ZONE = {
-    "canon" => "knowledge", "workspace" => "scratchpad", "machine" => "feeds",
-    "queue" => "proposals"
-  }.freeze
-
-  # Preset: a single canon zone "knowledge" holding one leaf entry. The most
-  # common read/write shape. Override `kind_zone:` for machine/queue/workspace;
-  # the zone name follows the kind via LANE_ZONE.
-  #
-  #   let(:store) { minimal_store(root) }                       # knowledge.foo leaf
-  #   let(:store) { minimal_store(root, key: "knowledge.doc",   # custom key/path
-  #                                     path: "knowledge/doc.md") }
-  def minimal_store(root, kind_zone: "canon", lane: LANE_ZONE.fetch(kind_zone), key: "#{lane}.foo", path: "#{lane}/foo.md")
+  def minimal_store(root, lane: "knowledge", key: "#{lane}.foo")
     store_from_manifest(root, lanes: [lane], manifest: <<~YAML)
       version: textus/4
-      lanes:
-        - { name: #{lane}, kind: #{kind_zone} }
-      entries:
-        - { key: #{key}, path: #{path}, lane: #{lane}, kind: leaf }
+      data:
+        #{lane}:
+          - key: #{key}
     YAML
   end
 
-  # Preset: a machine "feeds" zone + a canon "knowledge" zone, each with one
-  # leaf. The standard write-path shape (untrusted intake in machine, owned
-  # content in canon). Used by put/delete/mv/accept/reject specs.
   def machine_store(root)
-    store_from_manifest(root, lanes: %w[feeds knowledge], manifest: <<~YAML)
+    store_from_manifest(root, lanes: %w[artifacts knowledge], manifest: <<~YAML)
       version: textus/4
-      lanes:
-        - { name: feeds, kind: machine }
-        - { name: knowledge, kind: canon }
-      entries:
-        - { key: feeds.foo, path: feeds/foo.md, lane: feeds, kind: leaf }
-        - { key: knowledge.bar, path: knowledge/bar.md, lane: knowledge, kind: leaf }
+      data:
+        artifacts:
+          - key: artifacts.foo
+        knowledge:
+          - key: knowledge.bar
     YAML
   end
 
-  # Preset: a machine lane with one produced entry (key artifacts.doc) driven
-  # by a user-registered workflow. Pass the workflow step body as a block.
-  # Optionally pass `retention:` to add a retention rule.
-  def workflow_store(root, workflow_body:, retention: nil, lane_kind: "machine")
-    zone = LANE_ZONE.fetch(lane_kind)
+  def workflow_store(root, workflow_body:, retention: nil, lane: "artifacts")
     manifest = <<~YAML
       version: textus/4
-      lanes:
-        - { name: #{zone}, kind: #{lane_kind} }
-      entries:
-        - key: #{zone}.doc
-          path: #{zone}/doc.md
-          lane: #{zone}
+      data:
+        #{lane}:
+          - key: #{lane}.doc
     YAML
-    manifest << "rules:\n  - { match: #{zone}.doc, retention: #{retention} }\n" if retention
+    manifest << "rules:\n  - { match: #{lane}.doc, retention: #{retention} }\n" if retention
     store_from_manifest(
       root,
-      lanes: [zone],
+      lanes: [lane],
       files: {
         "workflows/test_produce.rb" => <<~RUBY,
           Textus.workflow "test_produce" do
-            match "#{zone}.doc"
-            step :fetch do |data, ctx|
+            match "#{lane}.doc"
+            step :fetch do |_data, _ctx|
               #{workflow_body}
             end
             publish
@@ -121,23 +97,24 @@ module TextusSpecHelpers
   end
 
   def build_envelope_reader(store)
-    Textus::Store::Entry::Reader.new(
-      file_store: store.file_store,
+    Textus::Store::EntryStore.new(
+      file_system: store.file_system,
       manifest: store.manifest,
+      audit_log: store.audit_log,
       layout: store.layout,
+      entry_index: store.container.entry_index,
     )
   end
 
   def build_envelope_writer(store, call, reader: nil)
-    reader ||= build_envelope_reader(store)
-    Textus::Store::Entry::Writer.new(
-      file_store: store.file_store,
+    _reader = reader || build_envelope_reader(store)
+    _call = call
+    Textus::Store::EntryStore.new(
+      file_system: store.file_system,
       manifest: store.manifest,
-      schemas: store.schemas,
       audit_log: store.audit_log,
-      call: call,
-      reader: reader,
       layout: store.layout,
+      entry_index: store.container.entry_index,
     )
   end
 
@@ -146,28 +123,53 @@ module TextusSpecHelpers
     store.container
   end
 
-  # Seed convergence jobs for the given scope and then burn the queue through
-  # Maintenance::Drain (which is queue-burn only).
-  def converge_now(store, prefix: nil, lane: nil, role: Textus::Value::Role::AUTOMATION) # rubocop:disable Lint/UnusedMethodArgument
-    queue = Textus::Store::Jobs::Queue.new(store: store.job_store)
-    queue.purge("done")
+  def converge_now(store, prefix: nil, lane: nil, role: Textus::Value::Role::AUTOMATION)
     with_missing_workflows(store)
-    Textus::Store::Jobs::Planner.seed(container: store.container, queue: queue, role: role)
-    Textus::Store::Jobs::Worker.for(container: store.container, queue: queue).drain
+    registry = Textus::Workflow::Registry.new(store.container.workflows)
+    event_store = store.container.event_store
+
+    store.container.manifest.data.entries.each do |entry|
+      next if prefix && !entry.key.start_with?(prefix)
+      next if lane && entry.lane != lane
+
+      store.container.workflows.each do |wf|
+        next unless wf.match?(entry.key) || wf.handled_events.any?
+
+        event_store.emit(
+          event_type: "convergence",
+          workflow_type: wf.type,
+          key: entry.key,
+          lane: entry.lane,
+          payload: {},
+          max_attempts: wf.max_attempts || 3,
+        )
+      end
+    end
+
+    consumer = Textus::Events::Consumer.new
+    consumer.drain(
+      event_store: event_store,
+      registry: registry,
+      container: store.container,
+      call: Textus::Value::Call.build(role: role, correlation_id: SecureRandom.uuid),
+    )
   end
 
-  # Auto-register no-op workflows for manifest entries that have publish config
-  # but no matching workflow definition. This lets legacy test manifests work
-  # with the workflow-only Planner.
   def with_missing_workflows(store)
+    registry = Textus::Workflow::Registry.new(store.container.workflows)
+
     store.container.manifest.data.entries.each do |entry|
       has_publish = entry.publish_to.any? || entry.publish_tree
-      already_has = store.container.workflows.any? { |d| d.match?(entry.key) }
+      already_has = !registry.match_for_key(entry.key).nil?
       next unless has_publish && !already_has
 
       defn = Textus::Workflow::DSL::Definition.new("auto-#{entry.key}")
+      defn.handles "entry.written"
       defn.match(entry.key)
-      defn.step(:passthrough) { |data, _ctx| data || { content: nil } }
+      defn.step :passthrough do |data, _ctx|
+        data || { content: nil }
+      end
+      defn.publish
       store.container.workflows << defn
     end
   end

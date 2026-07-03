@@ -1,40 +1,24 @@
 module Textus
   module UseCases
     module Write
-      module ProposeEntry
-        HANDLES = Dispatch::Contracts::ProposeEntry
-        NEEDS = %i[file_store manifest schemas audit_log layout event_bus].freeze
+      class ProposeEntry < Base
+        handles Dispatch::Contracts::ProposeEntry
+        needs :file_system, :manifest, :audit_log, :layout, :writer, :reader
 
-        def self.call(command, call, deps)
-          zone = deps.manifest.policy.propose_lane_for(call.role)
+        def call
+          zone = manifest.policy.propose_lane_for(call.role)
           unless zone
-            return Value::Result.failure(:propose_forbidden,
-                                         "role '#{call.role}' has no writable propose_lane",
-                                         details: { "role" => call.role })
+            return failure(:propose_forbidden,
+                           "role '#{call.role}' has no writable propose_lane",
+                           details: { "role" => call.role })
           end
 
           key = "#{zone}.#{command.key}"
-          mentry = deps.manifest.resolver.resolve(key).entry
-          reader = Store::Entry::Reader.new(file_store: deps.file_store, manifest: deps.manifest, layout: deps.layout)
-          writer = Store::Entry::Writer.new(
-            file_store: deps.file_store, manifest: deps.manifest,
-            schemas: deps.schemas, audit_log: deps.audit_log,
-            reader: reader, layout: deps.layout
-          )
-          envelope = writer.put(
-            key, mentry: mentry, call: call,
+          mentry = manifest.resolver.resolve(key).entry
+          writer.put(
+            key, mentry: mentry, call: @call,
                  payload: Textus::Value::Payload.new(meta: command.meta || {}, body: command.body, content: command.content)
-          )
-          if deps.respond_to?(:event_bus) && deps.event_bus
-            deps.event_bus.emit(Textus::Event::EntryWritten.new(
-                                  key: key,
-                                  role: call.role,
-                                  etag_before: nil,
-                                  etag_after: envelope.etag,
-                                  occurred_at: call.now,
-                                ))
-          end
-          Value::Result.success(envelope)
+          ).then { |envelope| success(envelope) }
         end
       end
     end

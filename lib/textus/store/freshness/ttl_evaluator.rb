@@ -11,7 +11,7 @@ module Textus
         end
 
         def verdict(mentry)
-          ttl = @manifest.rules.for(mentry.key).retention&.ttl_seconds
+          ttl = lane_ttl(mentry.lane)
           return fresh if ttl.nil?
 
           stale = age_stale?(file_basis(mentry), ttl)
@@ -33,11 +33,15 @@ module Textus
           @file_stat.mtime(path)
         end
 
+        def lane_ttl(lane)
+          Textus::Protocol::V4::LANES.dig(lane, :retention_ttl)
+        end
+
         def due?(mentry, prefix:, lane:)
           return false if lane && mentry.lane != lane
           return false if prefix && !mentry.key.start_with?(prefix)
 
-          ttl = @manifest.rules.for(mentry.key).retention&.ttl_seconds
+          ttl = lane_ttl(mentry.lane)
           return false if ttl.nil?
 
           path = @manifest.resolver.resolve(mentry.key).path

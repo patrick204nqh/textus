@@ -9,21 +9,21 @@ RSpec.describe "textus/4 conformance — CLI surface" do
     it "emits a textus/4 envelope for `get`" do
       out = StringIO.new
       rc = Textus::Surface::CLI.run(
-        ["get", "knowledge.network.org.jane", "--output=json"],
+        ["get", "knowledge.evidence.0001-topic", "--output=json"],
         stdin: StringIO.new, stdout: out, stderr: StringIO.new, cwd: tmp,
       )
       expect(rc).to eq(0)
       env = JSON.parse(out.string.lines.last)
       expect(env["protocol"]).to eq("textus/4")
-      expect(env["key"]).to eq("knowledge.network.org.jane")
+      expect(env["key"]).to eq("knowledge.evidence.0001-topic")
     end
 
     it "returns etag_mismatch when if_etag is stale" do
       out = StringIO.new
       rc = Textus::Surface::CLI.run(
-        ["put", "knowledge.network.org.jane", "--stdin", "--output=json"],
+        ["put", "knowledge.intent.0001-north-star", "--stdin", "--output=json"],
         stdin: StringIO.new(JSON.generate(
-                              "_meta" => { "name" => "jane", "relationship" => "peer", "org" => "acme" },
+                              "_meta" => { "name" => "0001-north-star" },
                               "body" => "updated\n",
                               "if_etag" => "sha256:deadbeef",
                             )),
@@ -39,7 +39,7 @@ RSpec.describe "textus/4 conformance — CLI surface" do
     it "deletes via CLI with --as=human" do
       out = StringIO.new
       rc = Textus::Surface::CLI.run(
-        ["key", "delete", "knowledge.network.org.jane", "--as=human", "--output=json"],
+        ["key", "delete", "knowledge.intent.0001-north-star", "--as=human", "--output=json"],
         stdin: StringIO.new, stdout: out, stderr: StringIO.new, cwd: tmp,
       )
       expect(rc).to eq(0)

@@ -5,7 +5,7 @@
   "lanes": [
     {
       "name": "knowledge",
-      "kind": "canon",
+      "kind": "knowledge",
       "purpose": "the maintained source of truth about the repo",
       "writers": [
         "human"
@@ -13,7 +13,7 @@
     },
     {
       "name": "scratchpad",
-      "kind": "workspace",
+      "kind": "scratchpad",
       "purpose": "the agent's own durable scratchpad (working memory)",
       "writers": [
         "agent"
@@ -21,7 +21,7 @@
     },
     {
       "name": "proposals",
-      "kind": "queue",
+      "kind": "proposals",
       "purpose": "changes awaiting a human accept",
       "writers": [
         "human",
@@ -30,7 +30,7 @@
     },
     {
       "name": "artifacts",
-      "kind": "machine",
+      "kind": "artifacts",
       "purpose": "machine-maintained computed outputs",
       "writers": [
         "automation"
@@ -47,29 +47,5 @@
       ]
     }
   ],
-  "roles": [
-    {
-      "name": "human",
-      "capabilities": [
-        "author",
-        "propose",
-        "ingest"
-      ]
-    },
-    {
-      "name": "agent",
-      "capabilities": [
-        "propose",
-        "keep",
-        "ingest"
-      ]
-    },
-    {
-      "name": "automation",
-      "capabilities": [
-        "converge",
-        "ingest"
-      ]
-    }
-  ]
+  "roles": []
 }

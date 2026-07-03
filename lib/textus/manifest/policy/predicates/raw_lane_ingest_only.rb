@@ -7,7 +7,7 @@ module Textus
             return { pass: true } if key.nil?
 
             mentry = manifest.resolver.resolve(key).entry
-            return { pass: true } unless manifest.policy.declared_kind(mentry.lane.to_s) == :raw
+            return { pass: true } unless mentry.lane.to_s == "raw"
             return { pass: true } if action == :ingest
 
             { pass: false, error: Textus::Error.new(

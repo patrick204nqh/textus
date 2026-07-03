@@ -1,5 +1,6 @@
 require "fileutils"
 require "pathname"
+require "yaml"
 
 module Textus
   module Init
@@ -7,44 +8,40 @@ module Textus
 
     DEFAULT_MANIFEST = <<~YAML
       version: textus/4
-      roles:
-        - { name: human,      can: [author, propose] }
-        - { name: agent,      can: [propose, keep] }
-        - { name: automation, can: [converge] }
-      lanes:
-        - { name: knowledge, kind: canon,     desc: "the maintained source of truth (identity.* lives here)" }
-        - { name: scratchpad,  kind: workspace, owner: agent, desc: "the agent's own durable working notes" }
-        - { name: proposals, kind: queue,     desc: "changes awaiting your accept" }
-        - { name: artifacts, kind: machine,   desc: "machine-maintained: external inputs (artifacts.feeds.*) + computed outputs (artifacts.derived.*)" }
-      entries:
-        - { key: knowledge.identity, path: data/knowledge/identity.md, lane: knowledge, schema: null, owner: human:self, kind: leaf }
-        - { key: knowledge.notes,    path: data/knowledge/notes,       lane: knowledge, schema: null, owner: human:self, nested: true, kind: nested }
-        - { key: scratchpad.notes,     path: data/scratchpad/notes,        lane: scratchpad,  schema: null, owner: agent:self, nested: true, kind: nested }
-        - { key: proposals.notes,    path: data/proposals/notes,       lane: proposals, schema: null, owner: agent:self, nested: true, kind: nested }
-        # A per-host snapshot, populated by a registered workflow. Nested so it
-        # grows to a fleet — add leaves over SSH without renaming. tracked:false →
-        # gitignored (machine info can be sensitive/noisy) but still protocol-readable
-        # via `textus get artifacts.feeds.machines.local`. Delete to opt out. (ADR 0043)
-        - key: artifacts.feeds.machines
-          path: data/artifacts/feeds/machines
-          lane: artifacts
-          format: yaml
-          nested: true
-          tracked: false
-          kind: nested
-      rules: []
+      data:
+        knowledge:
+          - key: knowledge.loop.execution
+            naming: sequential
+            schema: runbook
+          - key: knowledge.loop.intent
+            naming: sequential
+          - key: knowledge.loop.constraint
+          - key: knowledge.loop.judgment
+          - key: knowledge.loop.evidence
+            naming: sequential
+          - key: knowledge.loop.feedback
+        scratchpad:
+          - key: scratchpad.notes
+            tracked: false
+          - key: scratchpad.sessions
+            tracked: false
+          - key: scratchpad.scripts
+            tracked: false
+        proposals:
+          - key: proposals.notes
+        raw:
+          - key: raw
+            format: yaml
+        artifacts:
+          - key: artifacts.boot
+            format: json
     YAML
 
-    AGENT_ENTRIES = <<~YAML.gsub(/^/, "  ")
-      - { key: knowledge.project, path: data/knowledge/project.md, lane: knowledge, schema: project, owner: human:self, kind: leaf }
-      - { key: knowledge.runbooks, path: data/knowledge/runbooks, lane: knowledge, schema: runbook, owner: human:self, nested: true, kind: nested }
-      - key: artifacts.derived.orientation
-        path: data/artifacts/derived/orientation.json
-        lane: artifacts
-        publish:
-        - { to: CLAUDE.md, template: orientation.erb, inject_boot: true }
-        - { to: AGENTS.md, template: orientation.erb, inject_boot: true }
-        kind: produced
+    AGENT_ENTRIES = <<~YAML
+      data:
+        artifacts:
+          - key: artifacts.derived.orientation
+            format: json
     YAML
 
     def self.run(target_root, with_agent: false)
@@ -105,13 +102,13 @@ module Textus
       result
     end
 
-    # Composes the agent profile by inserting AGENT_ENTRIES immediately before the
-    # top-level `rules:` block of DEFAULT_MANIFEST — that block is load-bearing for
-    # this `.sub`; removing it from DEFAULT_MANIFEST would silently drop the entries.
     def self.manifest_yaml(with_agent:)
       return DEFAULT_MANIFEST unless with_agent
 
-      DEFAULT_MANIFEST.sub(/^rules:/, "#{AGENT_ENTRIES}rules:")
+      base = YAML.safe_load(DEFAULT_MANIFEST)
+      extra = YAML.safe_load(AGENT_ENTRIES)
+      base["data"].merge!(extra["data"]) { |_lane, existing, added| existing + added }
+      YAML.dump(base).sub(/\A---\n/, "")
     end
 
     # Copies the proven orientation bundle into a freshly-init'd store.

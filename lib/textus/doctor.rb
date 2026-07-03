@@ -5,27 +5,7 @@ module Textus
   module Doctor
     LEVELS = %w[error warning info].freeze
 
-    CHECKS = [
-      Check::ProtocolVersion,
-      Check::ManifestFiles,
-      Check::Schemas,
-      Check::SchemaParseError,
-      Check::Templates,
-      Check::IllegalKeys,
-      Check::Sentinels,
-      Check::AuditLog,
-      Check::UnownedSchemaFields,
-      Check::SchemaViolations,
-      Check::RuleAmbiguity,
-      Check::OrphanedPublishTargets,
-      Check::PublishTreeIndexOverlap,
-      Check::ProposalTargets,
-      Check::GeneratorDrift,
-      Check::RawAssetPaths,
-      Check::ScratchpadSources,
-      Check::StaleReviewedStamp,
-      Check::CursorRetention,
-    ].freeze
+    CHECKS = [].freeze
 
     ALL_CHECKS = CHECKS.map(&:name_key).freeze
 

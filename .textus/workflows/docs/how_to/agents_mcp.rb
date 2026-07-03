@@ -1,16 +1,13 @@
-# rubocop:disable Metrics/BlockLength
 Textus.workflow "how-to-agents-mcp" do
   match "artifacts.how-to.agents-mcp"
 
   step :build do |_, ctx|
     data   = ctx.container.manifest.data
     policy = ctx.container.manifest.policy
-    kmap   = Textus::Manifest::Schema::Vocabulary::LANES
 
     agent_lanes = lambda do
       data.declared_lane_kinds.filter_map do |name, kind|
-        cap = kmap[kind.to_s]
-        next unless cap && policy.roles_with_capability(cap).include?("agent")
+        next unless policy.writers_for(name).include?("agent")
 
         { "name" => name.to_s, "kind" => kind.to_s, "purpose" => data.lane_descs[name].to_s }
       end
@@ -19,8 +16,8 @@ Textus.workflow "how-to-agents-mcp" do
     authority = lambda do
       data.role_caps.map do |role, caps|
         writes = data.declared_lane_kinds.each_with_object({}) do |(lane, kind), h|
-          cap = kmap[kind.to_s]
-          h[lane.to_s] = cap && caps.include?(cap)
+          _ = kind
+          h[lane.to_s] = policy.writers_for(lane).include?(role.to_s)
         end
         { "role" => role.to_s, "capabilities" => caps.map(&:to_s), "lane_writes" => writes }
       end
@@ -34,4 +31,3 @@ Textus.workflow "how-to-agents-mcp" do
   end
   publish to: "docs/how-to/agents-mcp.md", template: "docs/how-to/agents-mcp.erb"
 end
-# rubocop:enable Metrics/BlockLength

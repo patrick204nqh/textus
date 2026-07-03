@@ -1,27 +1,13 @@
 module Textus
   module UseCases
     module Write
-      module DeleteKey
-        HANDLES = Dispatch::Contracts::DeleteKey
-        NEEDS = %i[file_store manifest schemas audit_log layout event_bus].freeze
+      class DeleteKey < Base
+        handles Dispatch::Contracts::DeleteKey
+        needs :file_system, :manifest, :audit_log, :layout, :writer, :reader
 
-        def self.call(command, call, deps)
-          reader = Store::Entry::Reader.new(file_store: deps.file_store, manifest: deps.manifest, layout: deps.layout)
-          writer = Store::Entry::Writer.new(
-            file_store: deps.file_store, manifest: deps.manifest,
-            schemas: deps.schemas, audit_log: deps.audit_log,
-            reader: reader, layout: deps.layout
-          )
-          writer.delete(command.key, if_etag: command.if_etag, call: call)
-          if deps.respond_to?(:event_bus) && deps.event_bus
-            deps.event_bus.emit(Textus::Event::EntryDeleted.new(
-                                  key: command.key,
-                                  role: call.role,
-                                  etag_before: nil,
-                                  occurred_at: call.now,
-                                ))
-          end
-          Value::Result.success("protocol" => Textus::PROTOCOL, "ok" => true, "key" => command.key, "deleted" => true)
+        def call
+          writer.delete(command.key, if_etag: command.if_etag, call: @call)
+          success("protocol" => Textus::PROTOCOL, "ok" => true, "key" => command.key, "deleted" => true)
         end
       end
     end

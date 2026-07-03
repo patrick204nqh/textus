@@ -8,9 +8,9 @@ Textus.workflow "how-to-configuring-lanes" do
 
     lanes = data.declared_lane_kinds.map do |name, kind|
       cap     = kmap[kind.to_s]
-      writers = cap ? policy.roles_with_capability(cap).map(&:to_s) : []
+      writers = policy.writers_for(name).map(&:to_s)
       { "name" => name.to_s, "kind" => kind.to_s,
-        "purpose" => data.lane_descs[name].to_s, "capability" => cap.to_s, "writers" => writers }
+        "purpose" => data.lane_descs[name].to_s, "capability" => cap || "n/a", "writers" => writers }
     end
 
     roles = data.role_caps.map do |role, caps|

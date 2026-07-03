@@ -7,8 +7,11 @@ module Textus
       PublishTarget = Data.define(:to, :template, :tree, :inject_boot)
 
       class Definition
+        include Textus::Workflow::Helpers
+
         attr_reader :name, :steps, :match_pattern, :publish_block, :publish_targets,
-                    :validate_steps, :depends_on_patterns, :ttl, :on_expire
+                    :validate_steps, :depends_on_patterns,
+                    :handled_events, :workflow_type
 
         def initialize(name)
           @name                = name
@@ -21,26 +24,78 @@ module Textus
           @depends_on_patterns = []
           @ttl                 = nil
           @on_expire           = nil
+          @handled_events      = []
+          @max_attempts        = 3
+          @workflow_type       = name
+        end
+
+        def handles(*event_types)
+          @handled_events.concat(event_types.map(&:to_s).freeze)
+        end
+
+        def type
+          @workflow_type
+        end
+
+        def max_attempts(n = nil)
+          return @max_attempts if n.nil?
+
+          @max_attempts = n.to_i
         end
 
         def match(pattern)
           @match_pattern = pattern
         end
 
-        def step(name, callable_or_opt = nil, timeout: nil, &block)
-          callable = if callable_or_opt.respond_to?(:call)
-                       callable_or_opt
+        def step(name, callable = nil, timeout: nil, &block)
+          if callable.is_a?(Hash)
+            raise ArgumentError.new(
+              "step :#{name} no longer accepts options hash; pass timeout: keyword instead",
+            )
+          end
+
+          resolved = if callable.respond_to?(:call)
+                       callable
                      elsif block
                        block
                      else
                        raise ArgumentError.new("step :#{name} requires a block or a callable (got neither)")
                      end
-          t = callable_or_opt.is_a?(Hash) ? callable_or_opt[:timeout] : timeout
-          @steps << Step.new(name: name, callable: callable, timeout: t)
+
+          @steps << Step.new(name: name, callable: resolved, timeout: timeout)
         end
 
         def validate(name, &block)
           @validate_steps << ValidateStep.new(name: name, callable: block)
+        end
+
+        def shape(key_pattern, naming:)
+          @steps << Step.new(
+            name: :"shape_#{key_pattern.tr(".*", "_")}",
+            callable: lambda do |data, ctx|
+              entries = ctx.container.manifest.resolver.enumerate.select do |row|
+                Pattern.match?(key_pattern, row[:key].to_s)
+              end
+
+              new_issues = check_naming(
+                entries,
+                pattern: naming,
+                code: "loop.naming",
+                fix: "rename to match #{naming.inspect}",
+              )
+              existing_issues = Array(data&.dig("content", "issues"))
+              issues = existing_issues + new_issues
+
+              {
+                "content" => {
+                  "ok" => issues.empty?,
+                  "issues" => issues,
+                  "count" => issues.size,
+                },
+              }
+            end,
+            timeout: nil,
+          )
         end
 
         def parallel(&)

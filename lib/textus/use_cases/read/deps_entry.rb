@@ -1,14 +1,14 @@
 module Textus
   module UseCases
     module Read
-      module DepsEntry
-        HANDLES = Dispatch::Contracts::DepsEntry
-        NEEDS = %i[manifest].freeze
+      class DepsEntry < Base
+        handles Dispatch::Contracts::DepsEntry
+        needs :manifest
 
-        def self.call(command, _call, deps)
-          entry = deps.manifest.data.entries.find { |e| e.key == command.key }
+        def call
+          entry = @manifest.data.entries.find { |e| e.key == @command.key }
           deps_list = entry&.external? ? Array(entry.source&.sources).compact : []
-          Value::Result.success("key" => command.key, "deps" => deps_list.uniq)
+          success("key" => @command.key, "deps" => deps_list.uniq)
         end
       end
     end

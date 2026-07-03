@@ -1,28 +1,31 @@
 require "spec_helper"
 
+# rubocop:disable RSpec/MultipleMemoizedHelpers
 RSpec.describe Textus::Dispatch::HandlerResolver do
   before do
     stub_const("FakeContract", Data.define(:key))
   end
 
-  let(:fake_manifest)  { instance_double(Textus::Manifest) }
-  let(:fake_job_store) { instance_double(Textus::Port::Store) }
+  let(:fake_manifest) { instance_double(Textus::Manifest) }
+  let(:fake_event_store) { instance_double(Textus::Port::Storage::EventStore) }
+
+  let(:storage)    { Textus::Store::Container::Storage.new(file_system: :fs, entry_store: nil, layout: :ly, entry_index: nil) }
+  let(:events)     { Textus::Store::Container::Events.new(event_store: fake_event_store, workflows: :wf) }
+  let(:governance) { Textus::Store::Container::Governance.new(manifest: fake_manifest, schemas: :sc) }
+  let(:logging)    { Textus::Store::Container::Logging.new(audit_log: :al) }
+  let(:links)      { Textus::Store::Container::Links.new(link_graph: :lg) }
 
   let(:ctx) do
-    Textus::Store::Infrastructure.new(
-      manifest: fake_manifest, file_store: :fs, schemas: :sc,
-      audit_log: :al, job_store: fake_job_store, layout: :ly,
-      link_edge_store: :les, workflows: :wf,
-      root: "/tmp", reader: nil, writer: nil,
-      event_bus: :eb, freshness_evaluator: :fe,
-      trace_buffer: :tb, pipeline: nil
+    Textus::Store::Container.new(
+      storage:, events:, governance:, logging:, links:,
+      root: "/tmp", trace_buffer: :tb, ttl_evaluator: :fe, pipeline: nil
     )
   end
 
   let(:fake_handler) do
     Module.new do
       const_set(:HANDLES, FakeContract)
-      const_set(:NEEDS, %i[manifest job_store].freeze)
+      const_set(:NEEDS, %i[manifest event_store].freeze)
 
       def self.call(_command, _call, deps)
         Textus::Value::Result.success({ "deps_manifest" => deps.manifest })
@@ -43,7 +46,7 @@ RSpec.describe Textus::Dispatch::HandlerResolver do
       expect(result.value["deps_manifest"]).to eq(fake_manifest)
     end
 
-    it "raises Boot::DepNotFound when a NEEDS field is missing from Infrastructure" do
+    it "raises Boot::DepNotFound when a NEEDS field is missing from the container" do
       bad_handler = Module.new do
         const_set(:HANDLES, FakeContract)
         const_set(:NEEDS, %i[nonexistent_field].freeze)
@@ -55,3 +58,4 @@ RSpec.describe Textus::Dispatch::HandlerResolver do
     end
   end
 end
+# rubocop:enable RSpec/MultipleMemoizedHelpers

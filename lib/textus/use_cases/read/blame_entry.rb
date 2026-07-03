@@ -1,38 +1,44 @@
 module Textus
   module UseCases
     module Read
-      module BlameEntry
-        HANDLES = Dispatch::Contracts::BlameEntry
-        NEEDS = %i[file_store manifest audit_log].freeze
+      class BlameEntry < Base
+        handles Dispatch::Contracts::BlameEntry
+        needs :file_system, :manifest, :audit_log
 
-        def self.call(command, call, deps)
-          root = deps.manifest.data.root
-          audit = UseCases::Read::AuditEntries.call(
+        def call
+          root = @manifest.data.root
+          audit = AuditEntries.call(
             Data.define(:seq_since, :key, :lane, :role, :verb, :since, :correlation_id, :limit).new(
-              seq_since: nil, key: command.key, lane: nil, role: call.role, verb: nil, since: nil, correlation_id: nil, limit: nil,
+              seq_since: nil, key: @command.key, lane: nil, role: @call.role, verb: nil, since: nil, correlation_id: nil, limit: nil,
             ),
-            call,
-            deps,
+            @call,
+            deps_for_audit,
           )
           return audit if audit.failure?
 
           audit_rows = audit.value || []
 
-          path = resolve_path(command.key, deps)
-          return Value::Result.success(audit_rows.map { |row| row.merge("git" => nil) }) unless git_tracked?(path, root: root)
+          path = resolve_path(@command.key)
+          return success(audit_rows.map { |row| row.merge("git" => nil) }) unless git_tracked?(path, root: root)
 
-          Value::Result.success(audit_rows.map { |row| row.merge("git" => git_commit_at(path, timestamp: row["ts"], root: root)) })
+          success(audit_rows.map { |row| row.merge("git" => git_commit_at(path, timestamp: row["ts"], root: root)) })
         end
 
-        def self.resolve_path(key, deps)
-          res = deps.manifest.resolver.resolve(key)
+        private
+
+        def deps_for_audit
+          @deps_for_audit ||= Data.define(:manifest, :audit_log).new(manifest: @manifest, audit_log: @audit_log)
+        end
+
+        def resolve_path(key)
+          res = @manifest.resolver.resolve(key)
           path = res.path
-          path || Textus::Key::Path.resolve(deps.manifest.data, res.entry)
+          path || Textus::Key::Path.resolve(@manifest.data, res.entry)
         rescue Textus::Error
           nil
         end
 
-        def self.git_tracked?(path, root:)
+        def git_tracked?(path, root:)
           return false if path.nil? || !File.exist?(path) || !git_repo?(root)
 
           _out, _err, status = Open3.capture3("git", "ls-files", "--error-unmatch", path, chdir: root)
@@ -41,7 +47,7 @@ module Textus
           false
         end
 
-        def self.git_repo?(root)
+        def git_repo?(root)
           dir = root
           loop do
             return true if File.directory?(File.join(dir, ".git"))
@@ -53,7 +59,7 @@ module Textus
           end
         end
 
-        def self.git_commit_at(path, timestamp:, root:)
+        def git_commit_at(path, timestamp:, root:)
           args = ["git", "log", "-1"]
           args << "--before=#{timestamp}" if timestamp
           args += ["--format=%H%x09%an%x09%aI%x09%s", "--", path]

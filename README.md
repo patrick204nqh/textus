@@ -1,4 +1,4 @@
-<!-- Generated from knowledge.readme.* fragments by the artifacts.docs.readme workflow. Edit the fragments under .textus/data/knowledge/readme/ and run `textus drain`. -->
+<!-- Generated from knowledge.intent.readme-* fragments by the artifacts.docs.readme workflow. Edit the fragments under .textus/data/knowledge/intent/ and run `textus drain`. -->
 <!-- This is a fragment of the README. Edit here; the README is composed from fragments by a workflow. -->
 <p align="center">
   <picture>
@@ -321,5 +321,4 @@ Lefthook hooks (`brew bundle install` then `lefthook install`) run rubocop on `p
 ## License
 
 [MIT](LICENSE)
-
 

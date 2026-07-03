@@ -59,7 +59,7 @@ module Textus
         # enumerated as keys (ADR 0047). Ask the resolved mode, not the path.
         # The `include_keyless:` override is used only by the projection lister
         # so that `from: project` selects can read source data from keyless
-        # nested entries (e.g. knowledge.decisions) without exposing them as
+        # nested entries (e.g. knowledge.evidence) without exposing them as
         # addressable store keys in the public `list` surface.
         return [] if entry.publish_mode.keyless? && !include_keyless
 
@@ -72,7 +72,6 @@ module Textus
 
       def nested_row_for(entry, base, path)
         rel = path.sub(%r{\A#{Regexp.escape(base)}/?}, "")
-        return nil if entry.ignored?(rel)
 
         stripped = rel.sub(/#{Regexp.escape(File.extname(rel))}\z/, "")
         segs = stripped.split("/").reject { |s| s.empty? || s == "." }

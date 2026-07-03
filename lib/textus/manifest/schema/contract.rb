@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 require "dry/schema"
 
 module Textus
@@ -7,7 +5,7 @@ module Textus
     module Schema
       # rubocop:disable Metrics/BlockLength
       Contract = Dry::Schema.JSON do
-        required(:lanes).value(:array).each do
+        optional(:lanes).value(:array).each do
           hash do
             required(:name).value(:string)
             required(:kind).value(included_in?: Vocabulary::LANE_KINDS)
@@ -34,24 +32,23 @@ module Textus
             optional(:kind).value(:string)
             optional(:nested).value(:bool)
             optional(:tracked).value(:bool)
-            optional(:ignore)
+            optional(:naming).value(:string)
             optional(:source)
             optional(:publish).value(:array)
           end
         end
 
-        optional(:rules).value(:array).each do
-          hash do
-            optional(:match).value(:string)
-            optional(:guard)
-            optional(:retention)
-            optional(:react)
-          end
-        end
+        optional(:data).value(:hash)
 
         optional(:audit).hash do
           optional(:max_size).value(:integer)
           optional(:keep).value(:integer)
+        end
+        optional(:worker).hash do
+          optional(:pool).value(:integer)
+          optional(:poll).value(:integer)
+          optional(:lease_ttl).value(:integer)
+          optional(:max_attempts).value(:integer)
         end
         optional(:version).value(:string)
       end

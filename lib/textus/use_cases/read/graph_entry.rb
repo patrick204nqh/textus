@@ -1,15 +1,17 @@
 module Textus
   module UseCases
     module Read
-      module GraphEntry
-        HANDLES = Dispatch::Contracts::GraphEntry
-        NEEDS = %i[link_edge_store].freeze
+      class GraphEntry < Base
+        handles Dispatch::Contracts::GraphEntry
+        needs :link_graph
 
-        def self.call(command, _call, deps)
-          neighbors  = deps.link_edge_store.neighbors_of(command.key)
-          reachable  = deps.link_edge_store.reachable(command.key, depth: command.depth)
-          Value::Result.success(
-            "key" => command.key,
+        def call
+          from = @link_graph.links_from(@command.key)
+          to   = @link_graph.links_to(@command.key)
+          neighbors = (from + to).uniq
+          reachable = @link_graph.reachable(from: @command.key, depth: @command.depth)
+          success(
+            "key" => @command.key,
             "neighbors" => neighbors.sort,
             "reachable" => reachable.sort,
           )

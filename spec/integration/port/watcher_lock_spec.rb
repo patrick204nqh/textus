@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Port::WatcherLock do
+RSpec.describe Textus::Port::Concurrency::WatcherLock do
   include_context "textus_store_fixture"
 
   it "reports not running when lock file does not exist" do

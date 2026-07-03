@@ -1,33 +1,17 @@
 module Textus
   module UseCases
     module Write
-      module PutEntry
-        HANDLES = Dispatch::Contracts::PutEntry
-        NEEDS = %i[file_store manifest schemas audit_log layout event_bus].freeze
+      class PutEntry < Base
+        handles Dispatch::Contracts::PutEntry
+        needs :file_system, :manifest, :audit_log, :layout, :writer, :reader
 
-        def self.call(command, call, deps)
-          reader = Store::Entry::Reader.new(file_store: deps.file_store, manifest: deps.manifest, layout: deps.layout)
-          writer = Store::Entry::Writer.new(
-            file_store: deps.file_store, manifest: deps.manifest,
-            schemas: deps.schemas, audit_log: deps.audit_log,
-            reader: reader, layout: deps.layout
-          )
-          envelope = writer.put(
+        def call
+          writer.put(
             command.key,
-            mentry: deps.manifest.resolver.resolve(command.key).entry,
+            mentry: manifest.resolver.resolve(command.key).entry,
             payload: Textus::Value::Payload.new(meta: command.meta || {}, body: command.body, content: command.content),
-            if_etag: command.if_etag, call: call
-          )
-          if deps.respond_to?(:event_bus) && deps.event_bus
-            deps.event_bus.emit(Textus::Event::EntryWritten.new(
-                                  key: command.key,
-                                  role: call.role,
-                                  etag_before: nil,
-                                  etag_after: envelope.etag,
-                                  occurred_at: call.now,
-                                ))
-          end
-          Value::Result.success(envelope)
+            if_etag: command.if_etag, call: @call
+          ).then { |envelope| success(envelope) }
         end
       end
     end

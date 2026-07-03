@@ -8,9 +8,9 @@
 
 How an AI agent reads from and writes to a textus store over MCP — setup, the session protocol, and the operational loop.
 
-For the normative wire protocol and full verb table, see the wire protocol (`textus get knowledge.specs.*`).
+For the normative wire protocol and full verb table, see the wire protocol (`textus get knowledge.constraint.protocol.*`).
 
-> New here? Start with [Concepts](../explanation/concepts.md).
+> New here? Start with [Concepts](`textus get artifacts.explanation.concepts`).
 
 ---
 
@@ -97,8 +97,8 @@ Call without arguments; returns `changed`, `pending_review`, and an updated `cur
 ### Read
 
 ```
-list(prefix: "knowledge.runbooks") → ["knowledge.runbooks.deploy", ...]
-get(key: "knowledge.runbooks.deploy") → { _meta: {...}, body: "...", sources: [...], ... }
+list(prefix: "knowledge.execution") → ["knowledge.execution.deploy", ...]
+get(key: "knowledge.execution.deploy") → { _meta: {...}, body: "...", sources: [...], ... }
 ```
 
 ### Write (direct — workspace lanes only)
@@ -108,7 +108,7 @@ schema_show(key: "scratchpad.notes.plan") → { fields: {...} }
 put(key: "scratchpad.notes.plan", _meta: { title: "Plan" }, body: "...")
 ```
 
-Writable lanes for agents: `scratchpad` (workspace) `proposals` (queue) `raw` (raw) 
+Writable lanes for agents: `scratchpad` (scratchpad) `proposals` (proposals) `raw` (raw) 
 
 ### Propose (canon changes go through the queue)
 
@@ -116,7 +116,7 @@ The agent cannot write to `knowledge/` directly. It writes a proposal to the que
 
 ```
 propose(key: "decisions.feature-x",
-        _meta: { proposal: { target_key: "knowledge.decisions.feature-x" } },
+        _meta: { proposal: { target_key: "knowledge.evidence.feature-x" } },
         body: "...")
 → writes proposals.decisions.feature-x
 ```
@@ -137,12 +137,6 @@ drain(lane: "artifacts")   # → materialize + sweep
 ---
 
 ## Role authority
-
-**`human`** — capabilities: `author`, `propose`, `ingest`
-
-**`agent`** — capabilities: `propose`, `keep`, `ingest`
-
-**`automation`** — capabilities: `converge`, `ingest`
 
 
 ---

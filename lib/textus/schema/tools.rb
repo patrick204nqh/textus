@@ -95,12 +95,12 @@ module Textus
       end
 
       def self.accept_role_for(store)
-        authority = store.manifest.policy.roles_with_capability("author").first
+        authority = store.manifest.policy.writers_for("knowledge").first
         return authority if authority
 
         raise UsageError.new(
-          "schema migrate requires a role holding the 'author' capability; " \
-          "none declared (add e.g. `- { name: owner, can: [author] }` to roles:)",
+          "schema migrate requires a role that can write knowledge; " \
+          "none found in the fixed lane table",
         )
       end
     end

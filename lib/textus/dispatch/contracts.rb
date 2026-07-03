@@ -9,15 +9,13 @@ module Textus
 
       DeleteKey = Data.define(:key, :if_etag)
 
-      MoveKey = Data.define(:old_key, :new_key, :if_etag, :dry_run)
+      MvKey = Data.define(:old_key, :new_key, :if_etag, :dry_run)
 
       ProposeEntry = Data.define(:key, :meta, :body, :content)
 
       AcceptProposal = Data.define(:pending_key, :dry_run)
 
       RejectProposal = Data.define(:pending_key, :reason)
-
-      EnqueueJob = Data.define(:type, :args)
 
       AuditEntries = Data.define(:key, :lane, :role, :verb, :since, :seq_since, :correlation_id, :limit)
 
@@ -39,25 +37,13 @@ module Textus
 
       BootStore = Data.define
 
-      DoctorStore = Data.define(:checks)
-
       PublishedEntries = Data.define
-
-      RuleExplain = Data.define(:key, :detail)
-
-      RuleList = Data.define
 
       SchemaEnvelope = Data.define(:key)
 
       DrainStore = Data.define(:prefix, :lane)
 
       IngestEntry = Data.define(:kind, :slug, :url, :path, :lane, :label)
-
-      JobsAction = Data.define(:state, :action, :job_id)
-
-      RuleLint = Data.define(:candidate_yaml)
-
-      RuleTrace = Data.define(:key)
 
       DataMv = Data.define(:from, :to, :dry_run)
 

@@ -3,18 +3,21 @@
 module Textus
   module UseCases
     module Ops
-      module BootStore
-        HANDLES = Dispatch::Contracts::BootStore
-        NEEDS = %i[manifest file_store schemas audit_log layout pipeline].freeze
+      class BootStore < Base
+        handles Dispatch::Contracts::BootStore
+        needs :manifest, :file_system, :schemas, :audit_log, :layout, :pipeline
 
-        def self.call(_command, _call, deps)
-          proxy = Store::Infrastructure.build(
-            manifest: deps.manifest, file_store: deps.file_store,
-            schemas: deps.schemas, audit_log: deps.audit_log,
-            layout: deps.layout, root: deps.layout.root,
-            pipeline: deps.pipeline
+        def call
+          storage    = Store::Container::Storage.new(file_system:, entry_store: nil, layout:, entry_index: nil)
+          events     = Store::Container::Events.new(event_store: nil, workflows: nil)
+          governance = Store::Container::Governance.new(manifest:, schemas:)
+          logging    = Store::Container::Logging.new(audit_log:)
+          links      = Store::Container::Links.new(link_graph: nil)
+          proxy = Store::Container.new(
+            storage:, events:, governance:, logging:, links:,
+            root: layout.root, pipeline:
           )
-          Value::Result.success(Textus::Boot.build(container: proxy))
+          success(Textus::Boot.build(container: proxy))
         end
       end
     end

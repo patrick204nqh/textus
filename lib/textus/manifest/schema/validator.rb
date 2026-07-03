@@ -17,7 +17,11 @@ module Textus
           result = Contract.call(raw)
           raise BadManifest.new(format_first_error(result.errors.messages)) unless result.success?
 
-          raise BadManifest.new("manifest must declare lanes:") if Array(raw["lanes"]).empty?
+          if raw.key?("data")
+            raise BadManifest.new("manifest must declare data:") if raw["data"].nil?
+          elsif Array(raw["lanes"]).empty?
+            raise BadManifest.new("manifest must declare lanes:")
+          end
 
           Semantics.check!(raw)
         end

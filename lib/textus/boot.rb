@@ -1,194 +1,32 @@
+require_relative "boot/catalog"
+require_relative "boot/protocol"
+require_relative "boot/context"
+
 module Textus
-  # Read-only "what's in this store and how do I use it" envelope.
-  # Boot is side-effect-free. Reads from pre-computed artifacts and
-  # the store catalog rather than computing inline.
   module Boot
     PROTOCOL_ID = PROTOCOL
-
-    # Human-readable name(s) for the live lane(s) of a given kind, or `fallback`
-    # when the manifest declares none. Lets write-flow guidance name the live
-    # lane by kind instead of a hardcoded instance name (ADR 0034).
-    def self.lane_label(manifest, kind, fallback)
-      lanes = manifest.policy.lanes_of_kind(kind)
-      lanes.empty? ? fallback : lanes.join(", ")
-    end
-
-    # Static, store-independent parts of the agent-facing protocol. The
-    # `recipes` and `role_resolution` blocks are derived per-manifest in
-    # agent_protocol(...) because lane and role names are user-configurable.
-    AGENT_PROTOCOL_TEMPLATE = {
-      "envelope_shape" => {
-        "summary" => "every read/write payload is a JSON envelope with _meta, body, uid, and etag",
-        "fields" => {
-          "_meta" => "hash of structured frontmatter; schema-validated per entry family",
-          "body" => "string payload (markdown/text) or nil for json/yaml formats where body lives in _meta",
-          "uid" => "stable 16-char hex identifier; preserved across writes and key renames",
-          "etag" => "content hash; pass back on writes to detect concurrent edits",
-        },
-        "ref" => "SPEC.md §8",
-      },
-    }.freeze
-
-    # Curated agent-facing verb catalog. This declares which verbs the operator
-    # CLI surfaces and in what order — the editorial presentation. The summary of
-    # each verb is a fact, not presentation: it is derived from `contract.summary`
-    # at load time (ADR 0039). A literal "summary" survives here only for grouped
-    # CLI tokens (schema/key/rule/hook) that aggregate several sub-contracts and so
-    # have no single contract to derive from. CLI_VERBS itself is assigned in
-    # textus.rb after Zeitwerk eager_load so all contract files are present.
-    CURATED_CLI_VERBS = [
-      { "name" => "boot" },
-      { "name" => "list" },
-      { "name" => "get" },
-      { "name" => "ingest" },
-      { "name" => "where" },
-      { "name" => "schema", "summary" => "schema operations: 'schema show KEY', 'schema diff', 'schema init', 'schema migrate'" },
-      { "name" => "put" },
-      { "name" => "propose" },
-      { "name" => "accept" },
-      { "name" => "enqueue" },
-      { "name" => "key", "summary" => "key operations: 'key delete', 'key mv', 'key uid'" },
-      { "name" => "drain" },
-      { "name" => "audit" },
-      { "name" => "blame" },
-      { "name" => "rule", "summary" => "inspect effective rules: 'rule list', 'rule explain KEY'" },
-      { "name" => "doctor" },
-      { "name" => "jobs" },
-      { "name" => "pulse" },
-    ].freeze
+    CURATED_CLI_VERBS = Catalog::CURATED_CLI_VERBS
 
     def self.contract_summaries
       Textus::VerbRegistry.registered.to_h { |s| [s.verb.to_s, s.summary] }
     end
 
-    # Build the CLI verb catalog: each summary is derived from its contract when
-    # one exists, falling back to the curated editorial string for grouped tokens
-    # (schema/key/rule/hook). Called once from textus.rb after eager_load.
-    def self.build_cli_verbs
-      summaries = contract_summaries
-      CURATED_CLI_VERBS.map do |entry|
-        derived = summaries[entry["name"]]
-        derived ? entry.merge("summary" => derived) : entry
-      end
+    def self.lane_label(_manifest, _kind, fallback)
+      fallback
     end
 
     def self.build(container:)
-      etag       = Textus::Value::Etag.for_contract(container.root)
-      latest_seq = container.audit_log.latest_seq
-      artifact   = read_artifact_content(container, "artifacts.boot")
-      context    = read_boot_context(container)
-
-      # Prefer pre-computed artifact (drain computes, boot reads).
-      # Fall back to inline manifest projection for stores that have not yet
-      # run drain (test fixtures, fresh inits).
-      stable = artifact || inline_boot_content(container.manifest, latest_seq)
-
-      if stable["agent_quickstart"]
-        stable = stable.merge(
-          "agent_quickstart" => stable["agent_quickstart"].merge("latest_seq" => latest_seq),
-        )
-      end
-
-      payload = {
-        "protocol" => PROTOCOL_ID,
-        "store_root" => container.root,
-        "contract_etag" => etag,
-      }.merge(stable)
-      payload["context"] = context if context
-      payload
-    end
-
-    def self.inline_boot_content(manifest, _latest_seq)
-      agent_role     = manifest.policy.proposer_role
-      writable_lanes = manifest.data.declared_lane_kinds.keys.each_with_object([]) do |ln, acc|
-        next unless agent_role
-
-        verb    = manifest.policy.verb_for_lane(ln)
-        writers = manifest.policy.roles_with_capability(verb)
-        acc << ln if writers.include?(agent_role)
-      end
-
-      {
-        "lanes" => lanes_for(manifest),
-        "agent_quickstart" => {
-          "read_verbs" => Textus::Surface::MCP::Catalog.read_verbs,
-          "write_verbs" => agent_role ? Textus::Surface::MCP::Catalog.write_verbs : [],
-          "writable_lanes" => writable_lanes,
-          "propose_lane" => manifest.policy.propose_lane_for(agent_role),
-        },
-        "agent_protocol" => agent_protocol(manifest),
-      }
-    end
-
-    def self.agent_protocol(manifest)
-      queue = manifest.policy.queue_lane
-      feeds = lane_label(manifest, :machine, "the machine lane")
-      AGENT_PROTOCOL_TEMPLATE.merge(
-        "recipes" => {
-          "read" => { "purpose" => "find and read an entry",
-                      "steps" => ["list (lane:, prefix:) — discover keys", "get KEY — returns the entry envelope"] },
-          "write" => { "purpose" => "create or update an entry",
-                       "steps" => ["schema KEY — learn field shape", "put KEY — persist it (role-gated)"] },
-          "propose" => { "purpose" => "agent suggests a change for human review",
-                         "agent_steps" => ["propose KEY — writes to #{queue} lane"],
-                         "human_steps" => ["accept #{queue}.KEY — promotes to target lane"] },
-          "drain" => { "purpose" => "keep machine lanes fresh",
-                       "steps" => ["pulse — stale list names overdue entries",
-                                   "drain (lane: #{feeds}) — re-pull stale entries"] },
-        },
-        "role_resolution" => {
-          "summary" => "write role is resolved in order: --as flag, TEXTUS_ROLE env var, .textus/role file, " \
-                       "then a transport default ('human' for CLI, 'agent' for MCP)",
-          "roles" => manifest.data.role_caps.keys,
-          "ref" => "SPEC.md §5",
-        },
+      manifest = container.governance.manifest
+      envelope = Context.build(
+        manifest:,
+        audit_log: container.logging.audit_log,
+        file_system: container.storage.file_system,
+        layout: container.storage.layout,
       )
-    end
-
-    def self.lanes_for(manifest)
-      manifest.data.declared_lane_kinds.keys.map do |name|
-        verb = manifest.policy.verb_for_lane(name)
-        row  = { "name" => name, "writers" => manifest.policy.roles_with_capability(verb) }
-        kind = manifest.policy.declared_kind(name)
-        row["kind"] = kind.to_s if kind
-        purpose = manifest.data.lane_descs[name]
-        row["purpose"] = purpose if purpose && !purpose.empty?
-        row
-      end
-    end
-
-    # Intentionally bypasses use-case layer — boot reads are internal context
-    # assembly, not user-facing reads. No auth/audit needed for loading the
-    # boot envelope during Store initialization.
-    def self.read_artifact_content(container, key)
-      res = container.manifest.resolver.resolve(key)
-      return nil unless res.path && File.exist?(res.path)
-
-      reader = Textus::Store::Entry::Reader.new(
-        file_store: container.file_store, manifest: container.manifest,
-        layout: container.layout
+      envelope.merge(
+        "catalog" => Catalog.build,
+        "agent_protocol" => Protocol.build(manifest),
       )
-      env = reader.read(key)
-      env&.content
-    rescue Textus::Error
-      nil
-    end
-
-    # Same intentional bypass as read_artifact_content — boot context reads
-    # are internal Store initialization, not user-facing reads.
-    def self.read_boot_context(container)
-      res = container.manifest.resolver.resolve("knowledge.boot")
-      return nil unless res.path && File.exist?(res.path)
-
-      reader = Textus::Store::Entry::Reader.new(
-        file_store: container.file_store, manifest: container.manifest,
-        layout: container.layout
-      )
-      env = reader.read("knowledge.boot")
-      body = env&.body&.strip
-      body.nil? || body.empty? ? nil : body
-    rescue Textus::Error
-      nil
     end
   end
 end

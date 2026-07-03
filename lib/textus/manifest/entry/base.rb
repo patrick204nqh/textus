@@ -2,24 +2,23 @@ module Textus
   class Manifest
     class Entry
       class Base < Entry
-        attr_reader :raw, :key, :path, :lane, :schema, :owner, :format, :publish_targets
+        attr_reader :raw, :key, :path, :lane, :format, :publish_targets, :schema, :naming
 
         # rubocop:disable Lint/MissingSuper
-        def initialize(raw:, key:, path:, lane:, schema:, owner:, format:, publish_targets: [])
+        def initialize(raw:, key:, path:, lane:, format:, schema: nil, naming: nil, publish_targets: [])
           @raw = raw
           @key = key
           @path = path
           @lane = lane
           @schema = schema
-          @owner = owner
+          @naming = naming
           @format = format
           @publish_targets = Array(publish_targets)
         end
         # rubocop:enable Lint/MissingSuper
 
         def lane_writers(policy)
-          verb = policy.verb_for_lane(@lane)
-          policy.roles_with_capability(verb)
+          policy.writers_for(@lane)
         rescue UsageError => e
           raise UsageError.new("entry '#{@key}': #{e.message}")
         end
@@ -31,9 +30,8 @@ module Textus
         def intake?  = false
         def leaf?    = false
 
-        # Production traits. Default false on Base (a leaf/intake entry is neither
-        # an out-of-band command nor a projection); Produced overrides both from
-        # its source. Lets publish modes call these without a `respond_to?` guard.
+        # Production traits. Default false on all non-produced entries.
+        # Lets publish modes call these without a `respond_to?` guard.
         def external?   = false
         def projection? = false
 
@@ -51,15 +49,7 @@ module Textus
         def publish_to   = @publish_targets.select(&:to_target?).map(&:to)
         def publish_tree = @publish_targets.find(&:tree_target?)&.tree
 
-        # Nil stubs for cross-cutting optional attrs. Subclasses override the
-        # ones they own. Validators and serializers can call these directly
-        # without `respond_to?` guards.
-        def events         = {}
-        def ignore         = []
-
-        # Per-entry ignore (ADR 0042). Base entries enumerate no tree, so
-        # nothing is ever ignored; Nested overrides with real patterns.
-        def ignored?(_rel_path) = false
+        def events = {}
 
         # Minimal context object passed into entry `publish_via` hooks.
         # Everything beyond the three primitives is derived.

@@ -9,11 +9,11 @@
 
 USE_CASE_GLOB = File.expand_path("../../lib/textus/use_cases/**/*.rb", __dir__)
 
-# Valid keys from Store::Infrastructure.members
+# Valid keys from Container#to_h and delegation methods
 VALID_NEEDS_KEYS = %i[
-  manifest file_store schemas audit_log job_store layout
-  link_edge_store workflows event_bus freshness_evaluator
-  trace_buffer pipeline
+  manifest file_system schemas audit_log database event_store entry_store layout
+  entry_index link_graph link_edge_store workflows event_bus ttl_evaluator
+  trace_buffer pipeline reader writer
 ].freeze
 
 RSpec.describe "Use-case module invariants (ADR-0125)" do
@@ -30,8 +30,12 @@ RSpec.describe "Use-case module invariants (ADR-0125)" do
 
   it "each module defines HANDLES (singular, not plural)" do
     use_case_modules.each do |mod|
-      expect(mod.const_defined?(:HANDLES)).to be(true),
-                                              "#{mod.name} missing HANDLES constant"
+      if mod.respond_to?(:handles_contract)
+        expect(mod.handles_contract).not_to be_nil, "#{mod.name} handles_contract is nil"
+      else
+        expect(mod.const_defined?(:HANDLES)).to be(true),
+                                                "#{mod.name} missing HANDLES constant"
+      end
       expect(mod.const_defined?(:HANDLES_ALL)).to be(false),
                                                   "#{mod.name} defines HANDLES_ALL instead of HANDLES (one contract per module)"
     end
@@ -39,9 +43,13 @@ RSpec.describe "Use-case module invariants (ADR-0125)" do
 
   it "each module defines NEEDS with valid Infrastructure keys" do
     use_case_modules.each do |mod|
-      expect(mod.const_defined?(:NEEDS)).to be(true),
-                                            "#{mod.name} missing NEEDS constant"
-      needs = mod::NEEDS
+      needs = if mod.respond_to?(:needs_fields)
+                mod.needs_fields
+              else
+                expect(mod.const_defined?(:NEEDS)).to be(true),
+                                                      "#{mod.name} missing NEEDS constant"
+                mod::NEEDS
+              end
       expect(needs).to be_an(Array)
       needs.each do |key|
         expect(VALID_NEEDS_KEYS).to include(key),

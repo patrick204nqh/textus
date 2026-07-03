@@ -5,12 +5,14 @@ Textus.workflow "manifest-files" do
 
   step :check do |_, ctx|
     manifest = ctx.container.manifest
-    file_store = ctx.container.file_store
+    file_system = ctx.container.file_system
     issues = []
     manifest.data.entries.each do |entry|
       next if entry.nested? || entry.derived? || entry.external?
+
       path = Textus::Key::Path.resolve(manifest.data, entry)
-      next if file_store.exists?(path)
+      next if file_system.exists?(path)
+
       issues << { "code" => "manifest.missing_file", "severity" => "info",
                   "subject" => entry.key,
                   "message" => "declared entry has no file on disk at #{path}",
