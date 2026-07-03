@@ -15,9 +15,10 @@ module Textus
           file_system:,
         )
         link_graph  = Store::LinkGraph.new(database)
+        entry_index = Store::EntryIndex.new(database)
         workflows   = Workflow::Loader.load_all(root)
-        workflows.push(Textus::Workflows::Materialize, Textus::Workflows::Index)
-        entry_store = Store::EntryStore.new(file_system:, manifest:, audit_log:, layout:)
+        workflows.push(Textus::Workflows::Materialize)
+        entry_store = Store::EntryStore.new(file_system:, manifest:, audit_log:, layout:, entry_index:)
 
         ttl_evaluator = Store::Freshness::TtlEvaluator.new(
           manifest:,
@@ -27,7 +28,7 @@ module Textus
 
         trace_buffer = Store::TraceBuffer.new
 
-        storage    = Container::Storage.new(file_system:, entry_store:, layout:)
+        storage    = Container::Storage.new(file_system:, entry_store:, layout:, entry_index:)
         events     = Container::Events.new(event_store:, workflows:)
         governance = Container::Governance.new(manifest:, schemas:)
         logging    = Container::Logging.new(audit_log:)

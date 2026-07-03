@@ -28,7 +28,9 @@ module Textus
         res = manifest.resolver.resolve(key)
         return nil unless res.path && file_system.exists?(res.path)
 
-        entry_store = Textus::Store::EntryStore.new(file_system:, manifest:, audit_log: nil, layout:)
+        entry_store = Textus::Store::EntryStore.new(
+          file_system:, manifest:, audit_log: nil, layout:, entry_index: NullEntryIndex.new,
+        )
         env = entry_store.read(key)
         env&.content
       rescue Textus::Error
@@ -39,7 +41,9 @@ module Textus
         res = manifest.resolver.resolve("knowledge.boot")
         return nil unless res.path && file_system.exists?(res.path)
 
-        entry_store = Textus::Store::EntryStore.new(file_system:, manifest:, audit_log: nil, layout:)
+        entry_store = Textus::Store::EntryStore.new(
+          file_system:, manifest:, audit_log: nil, layout:, entry_index: NullEntryIndex.new,
+        )
         env = entry_store.read("knowledge.boot")
         body = env&.body&.strip
         body.nil? || body.empty? ? nil : body
@@ -74,6 +78,11 @@ module Textus
           row["purpose"] = purpose if purpose && !purpose.empty?
           row
         end
+      end
+
+      class NullEntryIndex
+        def record(...) = nil
+        def remove(...) = nil
       end
     end
   end

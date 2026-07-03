@@ -100,6 +100,18 @@ module Textus
           end
         end
 
+        module ReindexEntry
+          def self.call(ctx, deps)
+            deps.entry_index.remove(key: ctx.from_key)
+            content = ctx.envelope.content ? ctx.envelope.content.to_json : ctx.envelope.body
+            deps.entry_index.record(
+              key: ctx.to_key, lane: ctx.new_mentry.lane, format: ctx.new_mentry.format,
+              schema: ctx.new_mentry.schema, content: content
+            )
+            ctx
+          end
+        end
+
         STEPS = [
           ResolvePaths,
           AssertSourceExists,
@@ -111,16 +123,20 @@ module Textus
           ReadEtagAfter,
           ReadEnvelope,
           AppendMoveAudit,
+          ReindexEntry,
         ].freeze
 
         # rubocop:disable Metrics/ParameterLists
-        def self.call(from_key:, to_key:, new_mentry:, call:, file_system:, manifest:, audit_log:, layout:, reader:, if_etag: nil)
+        def self.call(
+          from_key:, to_key:, new_mentry:, call:, file_system:, manifest:, audit_log:,
+          layout:, reader:, entry_index:, if_etag: nil
+        )
           ctx = MoveContext.new(
             from_key:, to_key:, new_mentry:, if_etag:,
             from_path: nil, to_path: nil,
             etag_before: nil, etag_after: nil, envelope: nil
           )
-          deps = WriteDeps.new(file_system:, manifest:, audit_log:, call:, reader:, layout:)
+          deps = WriteDeps.new(file_system:, manifest:, audit_log:, call:, reader:, layout:, entry_index:)
           ctx = STEPS.reduce(ctx) { |c, step| step.call(c, deps) }
           ctx.envelope
         end

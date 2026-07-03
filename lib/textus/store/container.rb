@@ -1,7 +1,7 @@
 module Textus
   class Store
     class Container
-      Storage    = Data.define(:file_system, :entry_store, :layout)
+      Storage    = Data.define(:file_system, :entry_store, :layout, :entry_index)
       Events     = Data.define(:event_store, :workflows)
       Governance = Data.define(:manifest, :schemas)
       Logging    = Data.define(:audit_log)
@@ -40,6 +40,7 @@ module Textus
           file_system: storage.file_system,
           entry_store: storage.entry_store,
           layout: storage.layout,
+          entry_index: storage.entry_index,
           event_store: events.event_store,
           workflows: events.workflows,
           manifest: governance.manifest,
@@ -55,6 +56,7 @@ module Textus
       def audit_log   = logging.audit_log
       def event_store = events.event_store
       def layout      = storage.layout
+      def entry_index = storage.entry_index
       def link_graph  = links.link_graph
       def entry_store = storage.entry_store
       def workflows   = events.workflows

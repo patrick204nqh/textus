@@ -61,6 +61,13 @@ module Textus
           end
         end
 
+        module DeindexEntry
+          def self.call(ctx, deps)
+            deps.entry_index.remove(key: ctx.key)
+            ctx
+          end
+        end
+
         STEPS = [
           ResolvePath,
           AssertExists,
@@ -68,18 +75,20 @@ module Textus
           DeleteFile,
           PruneParents,
           AppendDeleteAudit,
+          DeindexEntry,
         ].freeze
 
         # rubocop:disable Metrics/ParameterLists
-        def self.call(key, call:, file_system:, manifest:, audit_log:, layout:, mentry: nil, if_etag: nil, reader: nil)
+        def self.call(key, call:, file_system:, manifest:, audit_log:, layout:, entry_index:, mentry: nil, if_etag: nil, reader: nil)
           ctx = DeleteContext.new(
             key:, mentry:, if_etag:,
             path: nil, etag_before: nil
           )
-          deps = WriteDeps.new(file_system:, manifest:, audit_log:, call:, reader:, layout:)
+          deps = WriteDeps.new(file_system:, manifest:, audit_log:, call:, reader:, layout:, entry_index:)
           STEPS.reduce(ctx) { |c, step| step.call(c, deps) }
           nil
         end
+        # rubocop:enable Metrics/ParameterLists
       end
     end
   end

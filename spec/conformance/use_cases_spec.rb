@@ -12,7 +12,7 @@ USE_CASE_GLOB = File.expand_path("../../lib/textus/use_cases/**/*.rb", __dir__)
 # Valid keys from Container#to_h and delegation methods
 VALID_NEEDS_KEYS = %i[
   manifest file_system schemas audit_log database event_store entry_store layout
-  link_graph link_edge_store workflows event_bus ttl_evaluator
+  entry_index link_graph link_edge_store workflows event_bus ttl_evaluator
   trace_buffer pipeline reader writer
 ].freeze
 

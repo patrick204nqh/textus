@@ -100,20 +100,21 @@ module TextusSpecHelpers
     Textus::Store::EntryStore.new(
       file_system: store.file_system,
       manifest: store.manifest,
+      audit_log: store.audit_log,
       layout: store.layout,
+      entry_index: store.container.entry_index,
     )
   end
 
   def build_envelope_writer(store, call, reader: nil)
-    reader ||= build_envelope_reader(store)
+    _reader = reader || build_envelope_reader(store)
+    _call = call
     Textus::Store::EntryStore.new(
       file_system: store.file_system,
       manifest: store.manifest,
-      schemas: store.schemas,
       audit_log: store.audit_log,
-      call: call,
-      reader: reader,
       layout: store.layout,
+      entry_index: store.container.entry_index,
     )
   end
 

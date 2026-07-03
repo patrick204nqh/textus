@@ -106,21 +106,32 @@ module Textus
           end
         end
 
+        module IndexEntry
+          def self.call(ctx, deps)
+            content = ctx.eff_content ? ctx.eff_content.to_json : ctx.eff_body
+            deps.entry_index.record(
+              key: ctx.key, lane: ctx.mentry.lane, format: ctx.mentry.format,
+              schema: ctx.mentry.schema, content: content
+            )
+            ctx
+          end
+        end
+
         STEPS = [
           ResolvePath, ReadExisting, InjectMeta, Serialize,
           EnforceNameMatch, ValidateRaw,
-          CheckEtag, WriteBytes, BuildEnvelope, AppendAudit
+          CheckEtag, WriteBytes, BuildEnvelope, AppendAudit, IndexEntry
         ].freeze
 
         # rubocop:disable Metrics/ParameterLists
-        def self.call(key, mentry:, payload:, call:, file_system:, manifest:, audit_log:, layout:, reader:, if_etag: nil)
+        def self.call(key, mentry:, payload:, call:, file_system:, manifest:, audit_log:, layout:, reader:, entry_index:, if_etag: nil)
           ctx = WriteContext.new(
             key:, mentry:, payload:, if_etag:,
             path: nil, existing_env: nil, meta: nil, content: nil,
             bytes: nil, eff_meta: nil, eff_body: nil, eff_content: nil,
             etag_before: nil, envelope: nil
           )
-          deps = WriteDeps.new(file_system:, manifest:, audit_log:, call:, reader:, layout:)
+          deps = WriteDeps.new(file_system:, manifest:, audit_log:, call:, reader:, layout:, entry_index:)
           ctx = STEPS.reduce(ctx) { |c, step| step.call(c, deps) }
           ctx.envelope
         end

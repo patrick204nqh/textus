@@ -3,7 +3,7 @@ module Textus
     module Read
       class PulseEntries < Base
         handles Dispatch::Contracts::PulseEntries
-        needs :file_system, :manifest, :audit_log, :event_store
+        needs :file_system, :manifest, :audit_log, :event_store, :entry_index
 
         def call
           root  = @manifest.data.root
@@ -36,8 +36,8 @@ module Textus
         end
 
         def deps_for_list
-          @deps_for_list ||= Data.define(:manifest, :event_store, :file_system, :layout).new(
-            manifest: @manifest, event_store: @event_store, file_system: @file_system, layout: nil,
+          @deps_for_list ||= Data.define(:manifest, :entry_index, :file_system, :layout).new(
+            manifest: @manifest, entry_index: @entry_index, file_system: @file_system, layout: nil,
           )
         end
 

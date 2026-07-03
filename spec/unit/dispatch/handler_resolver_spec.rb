@@ -1,5 +1,6 @@
 require "spec_helper"
 
+# rubocop:disable RSpec/MultipleMemoizedHelpers
 RSpec.describe Textus::Dispatch::HandlerResolver do
   before do
     stub_const("FakeContract", Data.define(:key))
@@ -8,7 +9,7 @@ RSpec.describe Textus::Dispatch::HandlerResolver do
   let(:fake_manifest) { instance_double(Textus::Manifest) }
   let(:fake_event_store) { instance_double(Textus::Port::EventStore) }
 
-  let(:storage)    { Textus::Store::Container::Storage.new(file_system: :fs, entry_store: nil, layout: :ly) }
+  let(:storage)    { Textus::Store::Container::Storage.new(file_system: :fs, entry_store: nil, layout: :ly, entry_index: nil) }
   let(:events)     { Textus::Store::Container::Events.new(event_store: fake_event_store, workflows: :wf) }
   let(:governance) { Textus::Store::Container::Governance.new(manifest: fake_manifest, schemas: :sc) }
   let(:logging)    { Textus::Store::Container::Logging.new(audit_log: :al) }
@@ -57,3 +58,4 @@ RSpec.describe Textus::Dispatch::HandlerResolver do
     end
   end
 end
+# rubocop:enable RSpec/MultipleMemoizedHelpers
