@@ -23,12 +23,11 @@ module Textus
 
     handler = spec.lane ? Lane.handler_for(spec.lane) : Protocol::Handlers
 
-    result = handler.public_send(verb, **bound, ctx:, call: call_obj)
-        Value::Result.extract(Value::Result.success(result))
+    handler.public_send(verb, **bound, ctx:, call: call_obj)
       rescue Textus::WriteForbidden
         raise
       rescue Textus::Error => e
-        Value::Result.failure(e.code, e.message, details: e.details)
+        { error: { code: e.code, message: e.message, details: e.details } }
       end
 
       private
