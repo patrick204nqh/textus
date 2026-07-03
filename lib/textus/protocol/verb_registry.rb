@@ -134,35 +134,44 @@ module Textus
    
       # ── propose ──────────────────────────────────────────
       register VerbSpec.new(
-        :propose, "Write a proposal to the role's propose_lane. Auto-prefixes the key.",
-        [ArgSpec.arg(name: :key, required: true, positional: true,
-                     description: "key relative to propose_lane, e.g. 'decisions.feature-x'"),
-         ArgSpec.arg(name: :meta, type: Hash, wire_name: :_meta,
-                     description: "frontmatter. Include a 'proposal:' block naming the target_key"),
-         ArgSpec.arg(name: :body,
-                     description: "markdown/text payload for markdown-format entries"),
-         ArgSpec.arg(name: :content, type: Hash,
-                     description: "structured payload for json/yaml-format entries")],
-        %i[cli mcp], { default: ->(env, _) { env.to_h_for_wire } }, nil, :json, :write
+        verb: :propose, summary: "Write a proposal to the role's propose_lane. Auto-prefixes the key.",
+        args: [ArgSpec.arg(name: :key, required: true, positional: true,
+                           description: "key relative to propose_lane, e.g. 'decisions.feature-x'"),
+               ArgSpec.arg(name: :meta, type: Hash, wire_name: :_meta,
+                           description: "frontmatter. Include a 'proposal:' block naming the target_key"),
+               ArgSpec.arg(name: :body,
+                           description: "markdown/text payload for markdown-format entries"),
+               ArgSpec.arg(name: :content, type: Hash,
+                           description: "structured payload for json/yaml-format entries")],
+        surfaces: %i[cli mcp],
+        views: { default: ->(env, _) { env.to_h_for_wire } },
+        cli: nil, cli_stdin: :json, category: :write,
+        lane: :human
       )
    
       # ── accept ───────────────────────────────────────────
       register VerbSpec.new(
-        :accept, "Apply a queued proposal to its target zone; requires author.",
-        [ArgSpec.arg(name: :pending_key, required: true, positional: true,
-                     description: "the queued proposal's key"),
-         ArgSpec.arg(name: :dry_run, type: :boolean, default: false,
-                     description: "when true, compute diff without promoting")],
-        %i[cli mcp], { default: identity }, "accept", nil, :write
+        verb: :accept, summary: "Apply a queued proposal to its target zone; requires author.",
+        args: [ArgSpec.arg(name: :pending_key, required: true, positional: true,
+                           description: "the queued proposal's key"),
+               ArgSpec.arg(name: :dry_run, type: :boolean, default: false,
+                           description: "when true, compute diff without promoting")],
+        surfaces: %i[cli mcp],
+        views: { default: identity },
+        cli: "accept", cli_stdin: nil, category: :write,
+        lane: :human
       )
    
       # ── reject ───────────────────────────────────────────
       register VerbSpec.new(
-        :reject, "Discard a queued proposal without applying it.",
-        [ArgSpec.arg(name: :pending_key, required: true, positional: true,
-                     description: "the queued proposal's key"),
-         ArgSpec.arg(name: :reason, description: "optional explanation for the rejection")],
-        %i[cli mcp], { default: identity }, "reject", nil, :write
+        verb: :reject, summary: "Discard a queued proposal without applying it.",
+        args: [ArgSpec.arg(name: :pending_key, required: true, positional: true,
+                           description: "the queued proposal's key"),
+               ArgSpec.arg(name: :reason, description: "optional explanation for the rejection")],
+        surfaces: %i[cli mcp],
+        views: { default: identity },
+        cli: "reject", cli_stdin: nil, category: :write,
+        lane: :human
       )
    
       # ── ingest ───────────────────────────────────────────
@@ -256,10 +265,13 @@ module Textus
    
       # ── diff ─────────────────────────────────────────────
       register VerbSpec.new(
-        :diff, "Preview the diff between a proposal and its target — body, meta, and schema.",
-        [ArgSpec.arg(name: :pending_key, required: true, positional: true,
-                     description: "the queued proposal's key")],
-        %i[cli mcp], { default: identity }, nil, nil, :read
+        verb: :diff, summary: "Preview the diff between a proposal and its target — body, meta, and schema.",
+        args: [ArgSpec.arg(name: :pending_key, required: true, positional: true,
+                           description: "the queued proposal's key")],
+        surfaces: %i[cli mcp],
+        views: { default: identity },
+        cli: nil, cli_stdin: nil, category: :read,
+        lane: :human
       )
    
       # ── pulse ────────────────────────────────────────────
