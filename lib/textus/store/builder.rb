@@ -3,32 +3,32 @@ module Textus
     class Builder
       def call(root)
         manifest    = Manifest.load(root)
-        database    = Port::Storage::Database.new(root: root).setup!
+        database    = Infra::Database.new(root: root).setup!
         event_store = Store::EventStore.new(database)
         layout      = Store::Layout.new(root)
-        file_system = Store::FileSystem.new
+        file_store  = Infra::FileStore.new
         schemas     = Schema::Registry.new(layout.schemas_dir)
         audit_log   = Port::AuditLog.new(
           layout:,
           max_size: manifest.data.audit_config[:max_size],
           keep: manifest.data.audit_config[:keep],
-          file_system:,
+          file_system: file_store,
         )
         link_graph  = Store::LinkGraph.new(database)
         entry_index = Store::EntryIndex.new(database)
         workflows   = Workflow::Loader.load_all(root)
         workflows.push(Textus::Workflow::Instances::Materialize)
-        entry_store = Store::EntryStore.new(file_system:, manifest:, audit_log:, layout:, entry_index:)
+        entry_store = Store::EntryStore.new(file_system: file_store, manifest:, audit_log:, layout:, entry_index:)
 
         ttl_evaluator = Store::Freshness::TtlEvaluator.new(
           manifest:,
-          file_stat: file_system,
-          clock: Port::Clock.new,
+          file_stat: file_store,
+          clock: Infra::Clock.new,
         )
 
         trace_buffer = Store::TraceBuffer.new
 
-        storage    = Container::Storage.new(file_system:, entry_store:, layout:, entry_index:)
+        storage    = Container::Storage.new(file_system: file_store, entry_store:, layout:, entry_index:)
         events     = Container::Events.new(event_store:, workflows:)
         governance = Container::Governance.new(manifest:, schemas:)
         logging    = Container::Logging.new(audit_log:)
