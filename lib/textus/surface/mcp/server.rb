@@ -49,20 +49,18 @@ module Textus
           str_args = deep_stringify_keys(args)
 
           is_read = Catalog.read_verbs.include?(verb_name.to_s)
-          drifted = contract_etag_now != @store.contract_etag
+          previous_etag = @store.contract_etag
+          current_etag = contract_etag_now
+          drifted = current_etag != previous_etag
 
           result = Catalog.call(verb_name.to_s, store: @store, args: str_args)
+          result = DriftAnnotation.apply(
+            result, verb_name:, drifted:, is_read:,
+                    current_etag: short_etag(current_etag),
+                    previous_etag: short_etag(previous_etag)
+          )
 
-          if verb_name == :pulse
-            result["contract_drifted"] = drifted
-            @store = @store.advance_cursor(@store.audit_log.latest_seq)
-          end
-
-          if drifted && !is_read && verb_name != :boot
-            result["_warning"] = "contract drifted (was #{short_etag(@store.contract_etag)}, " \
-                                 "now #{short_etag(contract_etag_now)}); call boot() to re-arm"
-          end
-
+          @store = @store.advance_cursor(@store.audit_log.latest_seq) if verb_name == :pulse
           @store = @store.with_role(@store.role) if verb_name == :boot
           ::MCP::Tool::Response.new([{ type: "text", text: JSON.dump(result) }])
         rescue Textus::CursorExpired => e
