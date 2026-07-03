@@ -16,6 +16,43 @@ module Textus
         env.to_h_for_wire
       end
 
+      def accept(pending_key:, dry_run: false, container:, call:)
+        env = container.reader.read(pending_key)
+        proposal = env&.meta&.dig("proposal")
+        return { error: { code: "proposal_error", message: "entry has no proposal block: #{pending_key}" } } unless proposal
+
+        target = proposal["target_key"]
+        return { error: { code: "proposal_error", message: "proposal missing target_key" } } unless target
+
+        action = proposal["action"] || "put"
+
+        if dry_run
+          target_env = container.reader.read(target)
+          body_diff = Textus::Protocol::Diff.body(target_env&.body, env.body)
+          meta_diff = Textus::Protocol::Diff.meta(target_env&.meta&.dig("_meta") || {}, env.meta&.dig("_meta") || {})
+          result = { "dry_run" => true, "pending_key" => pending_key, "target_key" => target, "action" => action }
+          result["body"] = body_diff if body_diff
+          result["meta"] = meta_diff if meta_diff
+          result["summary"] = Textus::Protocol::Diff.summary(result)
+          return result
+        end
+
+        case action
+        when "put"
+          mentry = container.manifest.resolver.resolve(target).entry
+          container.writer.put(target, mentry:, call:,
+                               payload: Textus::Value::Payload.new(meta: env.meta["_meta"] || {}, body: env.body, content: nil))
+        when "delete"
+          container.writer.delete(target, call:)
+        else
+          return { error: { code: "proposal_error", message: "unknown action: #{action}" } }
+        end
+
+        container.writer.delete(pending_key, call:)
+        { "protocol" => Textus::PROTOCOL, "accepted" => pending_key,
+          "target_key" => target, "action" => action, "cascade_key" => target }
+      end
+
       def self.loop_status(manifest, active_index: 0)
         Runner.new(manifest).current_node(active_index:)
       end

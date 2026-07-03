@@ -1,4 +1,70 @@
 RSpec.describe Textus::Human::Handlers do
+  describe ".accept" do
+    it "reads proposal and writes to target, then deletes proposal" do
+      container = instance_double("Container")
+      reader = instance_double("Reader")
+      writer = instance_double("Writer")
+      manifest = instance_double("Manifest", resolver: instance_double("Resolver"))
+      allow(container).to receive_messages(reader:, writer:, manifest:)
+
+      pending_env = instance_double("Envelope",
+        meta: { "proposal" => { "target_key" => "knowledge.foo", "action" => "put" } },
+        body: "proposed content")
+      allow(reader).to receive(:read).with("proposals.test").and_return(pending_env)
+
+      entry = instance_double("Entry", entry: instance_double("Mentry"))
+      allow(manifest.resolver).to receive(:resolve).with("knowledge.foo").and_return(entry)
+      allow(writer).to receive(:put)
+      allow(writer).to receive(:delete)
+
+      call = instance_double("Call", role: "human", correlation_id: "abc")
+
+      result = described_class.accept(pending_key: "proposals.test", dry_run: false, container:, call:)
+
+      expect(writer).to have_received(:put).with("knowledge.foo", anything)
+      expect(writer).to have_received(:delete).with("proposals.test", anything)
+      expect(result["accepted"]).to eq("proposals.test")
+    end
+
+    it "returns dry_run diff without writing" do
+      container = instance_double("Container")
+      reader = instance_double("Reader")
+      allow(container).to receive(:reader).and_return(reader)
+      allow(container).to receive(:writer)
+
+      pending_env = instance_double("Envelope",
+        meta: { "proposal" => { "target_key" => "knowledge.foo", "action" => "put" } },
+        body: "new content")
+      allow(reader).to receive(:read).with("proposals.test").and_return(pending_env)
+      allow(reader).to receive(:read).with("knowledge.foo").and_return(
+        instance_double("Envelope", body: "old content", meta: { "_meta" => {} })
+      )
+      allow(Textus::Protocol::Diff).to receive(:body).and_return({ "type" => "diff" })
+      allow(Textus::Protocol::Diff).to receive(:meta).and_return({})
+      allow(Textus::Protocol::Diff).to receive(:summary).and_return({ "changes" => 1 })
+
+      call = instance_double("Call", role: "human", correlation_id: "abc")
+
+      result = described_class.accept(pending_key: "proposals.test", dry_run: true, container:, call:)
+
+      expect(result["dry_run"]).to be true
+      expect(result).to have_key("body")
+    end
+
+    it "returns error when proposal block missing" do
+      container = instance_double("Container")
+      reader = instance_double("Reader")
+      allow(container).to receive(:reader).and_return(reader)
+      env = instance_double("Envelope", meta: {})
+      allow(reader).to receive(:read).and_return(env)
+
+      call = instance_double("Call", role: "human", correlation_id: "abc")
+
+      result = described_class.accept(pending_key: "bad", container:, call:)
+      expect(result[:error][:code]).to eq("proposal_error")
+    end
+  end
+
   describe ".propose" do
     it "writes to the proposal zone with prefixed key" do
       container = instance_double("Container")
