@@ -26,6 +26,7 @@ loader.inflector.inflect(
 loader.ignore(File.expand_path("textus/errors.rb", __dir__))
 loader.ignore(File.expand_path("textus/surface/mcp/errors.rb", __dir__))
 loader.ignore(File.expand_path("textus/init/templates", __dir__))
+loader.ignore(File.expand_path("textus/protocol/init/templates", __dir__))
 loader.setup
 loader.eager_load
 

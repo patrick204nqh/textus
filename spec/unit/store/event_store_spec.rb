@@ -5,7 +5,7 @@ RSpec.describe Textus::Store::EventStore do
   subject(:event_store) { described_class.new(database) }
 
   let(:root) { Dir.mktmpdir }
-  let(:database) { Textus::Port::Storage::Database.new(root: root).setup! }
+  let(:database) { Textus::Infra::Port::Storage::Database.new(root: root).setup! }
 
   after { FileUtils.remove_entry(root) }
 

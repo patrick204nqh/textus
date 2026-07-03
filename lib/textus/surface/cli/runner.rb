@@ -146,7 +146,7 @@ module Textus
 
         def install!
           @installed ||= {}
-          Textus::VerbRegistry.registered.each do |spec|
+          Textus::Protocol::VerbRegistry.registered.each do |spec|
             next unless spec.cli?
             next if hand_authored?(spec.verb)
             next if @installed[spec.verb]

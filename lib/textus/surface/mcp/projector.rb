@@ -7,7 +7,7 @@ module Textus
         end
 
         def dispatch(verb_name, inputs:, store:, role: Textus::Value::Role::AGENT)
-          spec = VerbRegistry.for(verb_name.to_sym)
+          spec = Textus::Protocol::VerbRegistry.for(verb_name.to_sym)
           raise Textus::UsageError.new("unknown verb: #{verb_name}") unless spec
 
           bound = Textus::Dispatch::Binder.inputs_from_wire(spec, inputs)

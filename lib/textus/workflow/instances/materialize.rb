@@ -9,7 +9,7 @@ module Textus
         wf.priority 10
         wf.max_attempts 3
         wf.step :converge do |data, ctx|
-          Textus::Produce::Engine.converge(container: ctx.container, call: ctx.call, keys: [ctx.key])
+          Textus::Protocol::Produce::Engine.converge(container: ctx.container, call: ctx.call, keys: [ctx.key])
           data
         end
       end

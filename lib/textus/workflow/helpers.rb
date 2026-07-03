@@ -27,11 +27,11 @@ module Textus
         raise "template not found: #{name}" unless File.exist?(path)
 
         template = File.read(path)
-        ctx = Textus::Produce::Render::Context.new(
+        ctx = Textus::Protocol::Produce::Render::Context.new(
           container: @container, call: @call,
           key: @ctx&.key, entry: @ctx&.entry
         )
-        renderer = Textus::Produce::Render.new(template, ctx)
+        renderer = Textus::Protocol::Produce::Render.new(template, ctx)
         renderer.bytes_for(data)
       end
 

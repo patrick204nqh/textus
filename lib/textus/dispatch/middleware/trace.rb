@@ -14,7 +14,7 @@ module Textus
           raise
         ensure
           duration = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) * 1000).round(2)
-          verb = Textus::VerbRegistry.contract_to_verb(command.class).to_sym
+          verb = Textus::Protocol::VerbRegistry.contract_to_verb(command.class).to_sym
           key = extract_key(command)
           trace = Value::Trace.record(
             verb:, duration_ms: duration,

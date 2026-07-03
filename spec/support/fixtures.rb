@@ -146,7 +146,7 @@ module TextusSpecHelpers
       end
     end
 
-    consumer = Textus::Events::Consumer.new
+    consumer = Textus::Protocol::Events::Consumer.new
     consumer.drain(
       event_store: event_store,
       registry: registry,

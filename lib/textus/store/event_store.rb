@@ -1,7 +1,7 @@
 module Textus
   class Store
     class EventStore
-      include Port::Storage::EventStore::Interface
+      include Textus::Infra::Port::Storage::EventStore::Interface
 
       def initialize(database)
         @db = database.connection

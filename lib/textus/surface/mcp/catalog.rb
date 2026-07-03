@@ -8,7 +8,7 @@ module Textus
         module_function
 
         def specs
-          VerbRegistry.registered.select(&:mcp?)
+          Textus::Protocol::VerbRegistry.registered.select(&:mcp?)
         end
 
         def build_tools(mcp_server)
@@ -30,19 +30,19 @@ module Textus
         end
 
         def read_verbs
-          VerbRegistry.registered
+          Textus::Protocol::VerbRegistry.registered
                       .select { |s| s.read? && s.mcp? }
                       .map { |s| s.verb.to_s }
         end
 
         def write_verbs
-          VerbRegistry.registered
+          Textus::Protocol::VerbRegistry.registered
                       .select { |s| s.write? && s.mcp? }
                       .map { |s| s.verb.to_s }
         end
 
         def call(name, store:, args:)
-          spec = VerbRegistry.for(name.to_sym)
+          spec = Textus::Protocol::VerbRegistry.for(name.to_sym)
           raise ToolError.new("unknown tool: #{name}") unless spec&.mcp?
 
           PROJECTOR.dispatch(name, inputs: args, store:)

@@ -9,7 +9,7 @@ module Textus
       CURATED_CLI_VERBS = Catalog::CURATED_CLI_VERBS
 
       def self.contract_summaries
-        Textus::VerbRegistry.registered.to_h { |s| [s.verb.to_s, s.summary] }
+        Textus::Protocol::VerbRegistry.registered.to_h { |s| [s.verb.to_s, s.summary] }
       end
 
       def self.lane_label(_manifest, _kind, fallback)

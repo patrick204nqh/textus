@@ -1,6 +1,6 @@
 RSpec.shared_context "core domain doubles" do
   let(:frozen_now) { Time.parse("2026-01-01 12:00:00 UTC") }
-  let(:fake_clock) { instance_double(Textus::Port::Clock, now: frozen_now) }
+  let(:fake_clock) { instance_double(Textus::Infra::Port::Clock, now: frozen_now) }
   let(:file_registry) { {} }
 
   let(:fake_file_stat) do

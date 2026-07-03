@@ -3,7 +3,7 @@ module Textus
     class Entry
       module Publish
         class SubtreeMirror
-          def initialize(entry, pctx, publisher: Textus::Port::Publisher.new)
+          def initialize(entry, pctx, publisher: Textus::Infra::Port::Publisher.new)
             @entry     = entry
             @pctx      = pctx
             @publisher = publisher
@@ -31,7 +31,7 @@ module Textus
 
           def prune(target_dir, written)
             kept = written.map { |w| File.expand_path(w["target"]) }
-            store = Textus::Port::SentinelStore.new
+            store = Textus::Infra::Port::SentinelStore.new
             store.targets_under(target_dir, @pctx.root).filter_map do |managed|
               abs = File.expand_path(managed)
               next nil if kept.include?(abs)

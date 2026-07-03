@@ -1,6 +1,6 @@
 # rubocop:disable RSpec/LeakyConstantDeclaration, Lint/ConstantDefinitionInBlock
 RSpec.describe "Verb completeness — every verb has contract + handler + CLI verb" do
-  VERB_REGISTRY = Textus::VerbRegistry.registered.to_h { |s| [s.verb, s] }.freeze
+  VERB_REGISTRY = Textus::Protocol::VerbRegistry.registered.to_h { |s| [s.verb, s] }.freeze
 
   def handled_contracts
     all_handles = []
@@ -21,7 +21,7 @@ RSpec.describe "Verb completeness — every verb has contract + handler + CLI ve
   end
 
   it "every registered verb has a contract class" do
-    missing = VERB_REGISTRY.keys.reject { |v| Textus::VerbRegistry.contract_class_for(v) }
+    missing = VERB_REGISTRY.keys.reject { |v| Textus::Protocol::VerbRegistry.contract_class_for(v) }
     expect(missing).to be_empty,
                        "verbs without a contract: #{missing.map(&:inspect).join(", ")}"
   end
@@ -37,7 +37,7 @@ RSpec.describe "Verb completeness — every verb has contract + handler + CLI ve
   end
 
   it "every contract class has a use-case handler" do
-    registered_contracts = VERB_REGISTRY.keys.map { |v| Textus::VerbRegistry.contract_class_for(v) }.compact.to_set
+    registered_contracts = VERB_REGISTRY.keys.map { |v| Textus::Protocol::VerbRegistry.contract_class_for(v) }.compact.to_set
     handled = handled_contracts.to_set
     orphan_contracts = registered_contracts - handled
     expect(orphan_contracts).to be_empty,

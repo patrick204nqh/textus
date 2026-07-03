@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Produce::EventEmitter do
+RSpec.describe Textus::Protocol::Produce::EventEmitter do
   subject(:emitter) { described_class.new(event_store:, workflow_registry:) }
 
   let(:event_store) { instance_double(Textus::Store::EventStore) }

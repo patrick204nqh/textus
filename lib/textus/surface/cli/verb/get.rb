@@ -3,12 +3,12 @@ module Textus
     class CLI
       class Verb
         class Get < Runner::Base
-          self.spec = Textus::VerbRegistry.for(:get)
+          self.spec = Textus::Protocol::VerbRegistry.for(:get)
           option :as_flag, "--as=ROLE"
 
           def invoke(store)
             key = positional.shift or raise UsageError.new("get requires a key")
-            spec = Textus::VerbRegistry.for(:get)
+            spec = Textus::Protocol::VerbRegistry.for(:get)
             s = store.with_role(resolved_role(store))
             result = s.get(key: key)
             result = spec.view(:cli).call(result, { key: key }) if spec.view(:cli)

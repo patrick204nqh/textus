@@ -8,7 +8,7 @@ module Textus
       define_method(field) { @ctx.public_send(field) }
     end
 
-    DOMAIN_VERBS = (VerbRegistry::ENTRY_VERBS + VerbRegistry::OPS_VERBS).to_set.freeze
+    DOMAIN_VERBS = (Textus::Protocol::VerbRegistry::ENTRY_VERBS + Textus::Protocol::VerbRegistry::OPS_VERBS).to_set.freeze
 
     def self.discover(start_dir = Dir.pwd, root: nil)
       explicit = root || ENV.fetch("TEXTUS_ROOT", nil)

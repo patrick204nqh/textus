@@ -9,7 +9,7 @@ module Textus
         # ADR 0094: iterates publish_targets (to-targets), rendering through a
         # template when the target declares one, or copying verbatim otherwise.
         class ToPaths < Mode
-          def initialize(entry, publisher: Textus::Port::Publisher.new)
+          def initialize(entry, publisher: Textus::Infra::Port::Publisher.new)
             super(entry)
             @publisher = publisher
           end
@@ -50,7 +50,7 @@ module Textus
 
           def render_bytes(target, content, pctx)
             boot     = target.inject_boot ? Textus::Protocol::Boot.build(container: pctx.container) : nil
-            renderer = Textus::Produce::Render.new(
+            renderer = Textus::Protocol::Produce::Render.new(
               template_loader: ->(n) { pctx.read_template(n) },
               manifest: pctx.manifest,
               source_publish_path: target.to,

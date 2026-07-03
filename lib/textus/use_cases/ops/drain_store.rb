@@ -7,7 +7,7 @@ module Textus
         handles Dispatch::Contracts::DrainStore
         needs :event_store, :workflows, :manifest, :layout
 
-        CONSUMER = Textus::Events::Consumer.new
+        CONSUMER = Textus::Protocol::Events::Consumer.new
 
         def call
           workflow_registry = Textus::Workflow::Registry.new(workflows)

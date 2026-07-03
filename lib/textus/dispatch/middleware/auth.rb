@@ -5,7 +5,7 @@ module Textus
         middleware_name :auth
 
         def call(container:, command:, call:, next_handler:)
-          verb = VerbRegistry.contract_to_verb!(command.class).to_sym
+          verb = Textus::Protocol::VerbRegistry.contract_to_verb!(command.class).to_sym
           key = key_for(command)
 
           Manifest::Policy::Predicates.evaluate(

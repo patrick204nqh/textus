@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Events::RetryPolicy do
+RSpec.describe Textus::Protocol::Events::RetryPolicy do
   subject(:policy) { described_class.new }
 
   describe "#decide" do

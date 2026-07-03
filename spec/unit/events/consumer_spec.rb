@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Events::Consumer do
+RSpec.describe Textus::Protocol::Events::Consumer do
   subject(:consumer) { described_class.new }
 
   let(:event_store) { instance_double(Textus::Store::EventStore) }
