@@ -15,7 +15,7 @@ module Textus
         def drift_rows(mentry)
           return [] unless mentry.external?
 
-          path   = Textus::Key::Path.resolve(@manifest.data, mentry)
+          path   = Textus::Protocol::Key::Path.resolve(@manifest.data, mentry)
           reason = drift_reason(mentry, path)
           reason ? [drift_row(mentry, path, reason)] : []
         end
@@ -36,7 +36,7 @@ module Textus
         end
 
         def generated_at_of(mentry, path)
-          Textus::Format.for(mentry.format).parse(@file_stat.read(path), path: path)["_meta"]
+          Textus::Protocol::Format.for(mentry.format).parse(@file_stat.read(path), path: path)["_meta"]
                         .dig("generated", "at")
         end
 

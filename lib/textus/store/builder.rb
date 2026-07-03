@@ -7,7 +7,7 @@ module Textus
         event_store = Store::EventStore.new(database)
         layout      = Protocol::Layout.new(root)
         file_store  = Infra::FileStore.new
-        schemas     = Schema::Registry.new(layout.schemas_dir)
+        schemas     = Protocol::Schema::Registry.new(layout.schemas_dir)
         audit_log   = Protocol::Audit.new(
           layout:,
           max_size: manifest.data.audit_config[:max_size],

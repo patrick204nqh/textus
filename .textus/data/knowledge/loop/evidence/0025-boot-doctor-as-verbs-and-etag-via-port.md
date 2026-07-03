@@ -27,7 +27,7 @@ Two seams survived the 0.29.0 domain-purity pass:
 
 ## Decision
 
-1. **Keep `Textus::Boot` / `Textus::Doctor` as report-builder libraries** (all
+1. **Move `Textus::Boot` / `Textus::Doctor` to `Textus::Protocol::Boot` / `Textus::Protocol::Doctor`** as report-builder libraries (all
    constants, helpers, and the `Doctor::Check::*` namespace unchanged), but
    rename their entry point from `run_via(container:, role:)` to a role-free
    `build(container:, ...)`. The acting role is irrelevant to a read-only
@@ -57,8 +57,8 @@ Two seams survived the 0.29.0 domain-purity pass:
 
 ## Consequences
 
-**Breaking — Ruby API only.** `Textus::Boot.run_via` → `Textus::Boot.build`
-(drops `role:`); `Textus::Doctor.run_via` → `Textus::Doctor.build` (drops
+**Breaking — Ruby API only.** `Textus::Boot.run_via` → `Textus::Protocol::Boot.build`
+(drops `role:`); `Textus::Doctor.run_via` → `Textus::Protocol::Doctor.build` (drops
 `role:`, keeps `checks:`). `RoleScope#boot` / `#doctor` are gone but
 `store.boot` / `store.doctor` / `store.as(role).boot` are unchanged surface.
 
@@ -76,9 +76,9 @@ sites disappear.
 
 ## Alternatives considered
 
-**Move `Textus::Doctor` wholesale into `Read::Doctor`.** Rejected: the
+**Move `Textus::Protocol::Doctor` wholesale into `Read::Doctor`.** Rejected: the
 `Doctor::Check::*` namespace (~15 check classes + specs) and the `CHECKS` /
-`ALL_CHECKS` / `DOCTOR_CHECK_TIMEOUT_SECONDS` constants hang off `Textus::Doctor`.
+`ALL_CHECKS` / `DOCTOR_CHECK_TIMEOUT_SECONDS` constants hang off `Textus::Protocol::Doctor`.
 Relocating the module would force a large, mechanical namespace migration for no
 behavioural gain. Keeping the library and adding a thin use-case wrapper mirrors
 how `Read::Get` composes `Domain::Freshness::Evaluator`.

@@ -15,7 +15,7 @@ module Textus
 
     class Runner
       DEFAULT_TIMEOUT = 30
-      CONCURRENCY_ADAPTER = Textus::DependencyAdapters::ConcurrencyAdapter.new
+      CONCURRENCY_ADAPTER = Textus::Infra::Adapters::ConcurrencyAdapter.new
 
       def initialize(definition, container:, call:)
         @definition = definition

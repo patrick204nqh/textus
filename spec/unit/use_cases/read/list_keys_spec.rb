@@ -5,7 +5,7 @@ RSpec.describe Textus::UseCases::Read::ListKeys do
 
   let(:manifest) { instance_double(Textus::Manifest) }
   let(:file_system) { instance_double(Textus::Infra::FileStore) }
-  let(:layout) { instance_double(Textus::Store::Layout) }
+  let(:layout) { instance_double(Textus::Protocol::Layout) }
   let(:entry_index) { instance_double(Textus::Protocol::Index) }
   let(:command) { instance_double(Textus::Dispatch::Contracts::ListKeys, q: "hello", schema: nil, lane: nil, prefix: nil) }
 

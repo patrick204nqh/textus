@@ -13,10 +13,10 @@ RSpec.describe "Boot::CLI_VERBS — the agent-facing command catalog" do
   # its surfaced summary must equal that contract's — and the curated source must
   # not carry a second hand-typed copy that could silently drift.
   describe "summaries derive from contracts (ADR 0039)" do
-    let(:by_name) { Textus::Boot.contract_summaries }
+    let(:by_name) { Textus::Protocol::Boot.contract_summaries }
 
     it "matches the contract summary for every catalog verb that has one" do
-      drift = Textus::Boot::CLI_VERBS.filter_map do |v|
+      drift = Textus::Protocol::Boot::CLI_VERBS.filter_map do |v|
         want = by_name[v["name"]]
         next if want.nil? || want == v["summary"]
 
@@ -26,7 +26,7 @@ RSpec.describe "Boot::CLI_VERBS — the agent-facing command catalog" do
     end
 
     it "carries no literal summary in the curated source for a verb that has a contract" do
-      redundant = Textus::Boot::CURATED_CLI_VERBS.filter_map do |v|
+      redundant = Textus::Protocol::Boot::CURATED_CLI_VERBS.filter_map do |v|
         "#{v["name"]}: #{v["summary"].inspect}" if by_name.key?(v["name"]) && v.key?("summary")
       end
       expect(redundant).to be_empty,
@@ -48,7 +48,7 @@ RSpec.describe "Boot::CLI_VERBS — the agent-facing command catalog" do
     end
 
     let(:verbs) do
-      Textus::Boot::CLI_VERBS.to_h { |v| [v["name"], v["summary"]] }
+      Textus::Protocol::Boot::CLI_VERBS.to_h { |v| [v["name"], v["summary"]] }
     end
 
     it "describes accept as a queued-proposal promotion, not 'review.*'" do
@@ -72,7 +72,7 @@ RSpec.describe "Boot::CLI_VERBS — the agent-facing command catalog" do
   # omitted. Either way, drift becomes a red test, not a silent stale catalog.
   describe "reconciles with the CLI registry (ADR 0037)" do
     let(:registry_names) { Textus::Surface::CLI.verbs.keys.sort }
-    let(:catalog_names)  { Textus::Boot::CLI_VERBS.map { |v| v["name"] }.sort }
+    let(:catalog_names)  { Textus::Protocol::Boot::CLI_VERBS.map { |v| v["name"] }.sort }
 
     it "every catalog verb is a real registered command" do
       ghosts = catalog_names - registry_names

@@ -46,12 +46,12 @@ module Textus
         def self.resolve_format(key, kind, root, declared, explicit_path)
           return "markdown" if kind == :nested
 
-          return Textus::Format.infer_from_extension(File.extname(explicit_path)) || declared || "markdown" if explicit_path
+          return Textus::Protocol::Format.infer_from_extension(File.extname(explicit_path)) || declared || "markdown" if explicit_path
 
           dir = root ? File.join(root, "data", key.split(".").join("/")) : nil
           if dir
             existing = Dir.glob("#{dir}.*").find { |p| File.file?(p) }
-            return Textus::Format.infer_from_extension(File.extname(existing)) if existing
+            return Textus::Protocol::Format.infer_from_extension(File.extname(existing)) if existing
           end
 
           declared || "markdown"
@@ -61,7 +61,7 @@ module Textus
           dir_path = key.split(".").join("/")
           return dir_path if kind_sym == :nested
 
-          ext = Textus::Format.for(format).extensions.first
+          ext = Textus::Protocol::Format.for(format).extensions.first
           "#{dir_path}#{ext}"
         end
 

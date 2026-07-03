@@ -27,7 +27,7 @@ module Textus
 
         def matches?(mentry, prefix:, lane:)
           return false if lane && mentry.lane != lane
-          return false if prefix && !Textus::Key::Matching.matches_prefix?(
+          return false if prefix && !Textus::Protocol::Key::Matching.matches_prefix?(
             mentry.key, prefix, nested: mentry.is_a?(Textus::Manifest::Entry::Nested)
           )
 

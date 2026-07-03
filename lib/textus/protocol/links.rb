@@ -43,7 +43,7 @@ module Textus
       end
 
       def resolve_uri(uri)
-        Textus::Links::Resolver.resolve(uri)
+        Textus::Protocol::Links::Resolver.resolve(uri)
       end
     end
   end

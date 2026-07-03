@@ -20,7 +20,7 @@ module Textus
 
       def initialize(root = nil, layout: nil, max_size: DEFAULT_MAX_SIZE, keep: DEFAULT_KEEP,
                      file_system: Infra::FileStore.new)
-        @geometry = layout || Textus::Store::Layout.new(root)
+        @geometry = layout || Textus::Protocol::Layout.new(root)
         @path     = @geometry.audit_log_path
         @max_size = max_size
         @keep     = keep

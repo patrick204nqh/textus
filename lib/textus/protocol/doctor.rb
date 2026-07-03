@@ -1,5 +1,6 @@
 module Textus
-  # Health check for a Textus store. Returns a JSON-friendly Hash envelope
+  module Protocol
+    # Health check for a Textus store. Returns a JSON-friendly Hash envelope
   # with an `issues` array and a summary. Each issue is a Hash with
   # `code`, `level`, `subject`, `message`, and optionally `fix`.
   module Doctor
@@ -31,5 +32,6 @@ module Textus
         "summary" => summary,
       }
     end
+  end
   end
 end

@@ -17,7 +17,7 @@ domain code.
 
 ## Decision
 
-All external dependencies are gated behind a `DependencyAdapters` namespace.
+All external dependencies are gated behind adapters in `Infra::Adapters` (general) or `Surface::MCP::Adapters` (MCP-specific).
 Each adapter exposes a minimal interface consumed by the rest of the codebase
 at construction time via `Store::Builder`.
 
@@ -34,7 +34,7 @@ at construction time via `Store::Builder`.
 
 ```ruby
 class Builder
-  SEQUEL_ADAPTER = DependencyAdapters::SequelAdapter.new
+  SEQUEL_ADAPTER = Infra::Adapters::SequelAdapter.new
 
   def call(root)
     @db = SEQUEL_ADAPTER.connect(layout.store_db_path)

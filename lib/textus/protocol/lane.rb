@@ -1,5 +1,5 @@
 module Textus
-  module Domain
+  module Protocol
     module Lane
       module_function
 
@@ -20,8 +20,6 @@ module Textus
       def propose_lane_for(role)
         writers_for("proposals").include?(role) ? "proposals" : nil
       end
-
-      def lanes_of_kind(*) = raise NotImplementedError.new("kinds are removed — use writers_for(lane_name) directly")
     end
   end
 end

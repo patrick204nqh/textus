@@ -3,7 +3,7 @@ module Textus
     module MCP
       module Catalog
         PROJECTOR = Projector.new(view_key: :default).freeze
-        MCP_ADAPTER = Textus::DependencyAdapters::McpAdapter.new
+        MCP_ADAPTER = Textus::Surface::MCP::Adapters::McpAdapter.new
 
         module_function
 

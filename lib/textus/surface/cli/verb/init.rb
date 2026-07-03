@@ -11,7 +11,7 @@ module Textus
 
           def call(_store)
             target = File.join(@cwd, ".textus")
-            emit(Textus::Init.run(target, with_agent: !!with_agent))
+            emit(Textus::Protocol::Init.run(target, with_agent: !!with_agent))
           end
         end
       end

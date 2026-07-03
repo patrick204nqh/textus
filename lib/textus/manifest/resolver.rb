@@ -9,7 +9,7 @@ module Textus
 
       def resolve(key)
         @data.validate_key!(key)
-        dr = Domain::Key.resolve(key, @data.entries)
+        dr = Protocol::Key.resolve(key, @data.entries)
         raise UnknownKey.new(key, suggestions: suggestions_for(key)) unless dr
         raise UnknownKey.new(key, suggestions: suggestions_for(key)) unless dr.entry
 
@@ -20,7 +20,7 @@ module Textus
         candidates = enumerate.map { |r| r[:key] }
         candidates.concat(@data.entries.reject { |e| nested_entry?(e) }.map(&:key))
         candidates.uniq!
-        Key::Distance.suggest(key, candidates, limit: 5)
+        Protocol::Key::Distance.suggest(key, candidates, limit: 5)
       rescue StandardError
         []
       end
@@ -43,8 +43,8 @@ module Textus
         if remaining.empty?
           resolve_leaf_path(entry)
         else
-          primary_ext = Textus::Format.for(entry.format).extensions.first
-          base = Textus::Key::Path.normalize_relative_path(entry.path)
+          primary_ext = Textus::Protocol::Format.for(entry.format).extensions.first
+          base = Textus::Protocol::Key::Path.normalize_relative_path(entry.path)
           File.join(@data.root, base, *remaining) + primary_ext
         end
       end
@@ -63,7 +63,7 @@ module Textus
         # addressable store keys in the public `list` surface.
         return [] if entry.publish_mode.keyless? && !include_keyless
 
-        base = File.join(@data.root, Textus::Key::Path.normalize_relative_path(entry.path))
+        base = File.join(@data.root, Textus::Protocol::Key::Path.normalize_relative_path(entry.path))
         return [] unless File.directory?(base)
 
         Dir.glob(File.join(base, nested_glob(entry.format)))
@@ -89,17 +89,17 @@ module Textus
 
       def valid_segment?(seg)
         return false if seg.nil? || seg.empty?
-        return false if seg.length > Key::Grammar::MAX_SEGMENT_LEN
+        return false if seg.length > Protocol::Key::Grammar::MAX_SEGMENT_LEN
 
-        seg.match?(Key::Grammar::SEGMENT)
+        seg.match?(Protocol::Key::Grammar::SEGMENT)
       end
 
       def resolve_leaf_path(entry)
-        Textus::Key::Path.resolve(@data, entry)
+        Textus::Protocol::Key::Path.resolve(@data, entry)
       end
 
       def nested_glob(format)
-        Textus::Format.for(format).nested_glob
+        Textus::Protocol::Format.for(format).nested_glob
       end
     end
   end

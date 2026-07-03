@@ -33,7 +33,7 @@ module Textus
         def resolve_path(key)
           res = @manifest.resolver.resolve(key)
           path = res.path
-          path || Textus::Key::Path.resolve(@manifest.data, res.entry)
+          path || Textus::Protocol::Key::Path.resolve(@manifest.data, res.entry)
         rescue Textus::Error
           nil
         end

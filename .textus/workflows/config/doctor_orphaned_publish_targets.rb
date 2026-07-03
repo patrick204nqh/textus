@@ -5,7 +5,7 @@ Textus.workflow "doctor-orphaned-publish-targets" do
   match "artifacts.doctor.orphaned-publish-targets"
 
   step :scan do |_, ctx|
-    sdir = Textus::Store::Layout.new(ctx.container.root).sentinels_root
+    sdir = Textus::Protocol::Layout.new(ctx.container.root).sentinels_root
     issues = []
 
     if File.directory?(sdir)

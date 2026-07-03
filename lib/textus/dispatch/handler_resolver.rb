@@ -1,5 +1,5 @@
 module Textus
-  module Boot
+  module Dispatch
     class DepNotFound < Textus::Error
     end
   end
@@ -31,7 +31,7 @@ module Textus
 
           deps_hash = needs.to_h do |field|
             unless ctx.respond_to?(field)
-              raise Boot::DepNotFound.new(
+              raise DepNotFound.new(
                 "boot_dep_not_found",
                 "handler #{mod.name || mod.inspect} needs :#{field} but the container has no such field",
               )

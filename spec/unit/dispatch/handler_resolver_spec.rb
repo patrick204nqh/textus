@@ -54,7 +54,7 @@ RSpec.describe Textus::Dispatch::HandlerResolver do
       end
 
       expect { described_class.build(ctx, handlers: [bad_handler]) }
-        .to raise_error(Textus::Boot::DepNotFound, /nonexistent_field/)
+        .to raise_error(Textus::Dispatch::DepNotFound, /nonexistent_field/)
     end
   end
 end

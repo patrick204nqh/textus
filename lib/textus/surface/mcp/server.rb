@@ -11,7 +11,7 @@ module Textus
       # execution to Catalog.
       class Server
         CHECKPOINT_INTERVAL = 30
-        MCP_ADAPTER = Textus::DependencyAdapters::McpAdapter.new
+        MCP_ADAPTER = Textus::Surface::MCP::Adapters::McpAdapter.new
 
         def initialize(store:, role: Textus::Value::Role::DEFAULT, stdin: $stdin, stdout: $stdout)
           @store  = store.with_role(role)

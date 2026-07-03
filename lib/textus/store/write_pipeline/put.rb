@@ -41,7 +41,7 @@ module Textus
         module Serialize
           def self.call(ctx, _deps)
             bytes, eff_meta, eff_body, eff_content =
-              Textus::Format.for(ctx.mentry.format).serialize_for_put(
+              Textus::Protocol::Format.for(ctx.mentry.format).serialize_for_put(
                 meta: ctx.meta, body: ctx.payload.body,
                 content: ctx.content, path: ctx.path
               )
@@ -51,14 +51,14 @@ module Textus
 
         module EnforceNameMatch
           def self.call(ctx, _deps)
-            Textus::Format.for(ctx.mentry.format).enforce_name_match!(ctx.path, ctx.eff_meta)
+            Textus::Protocol::Format.for(ctx.mentry.format).enforce_name_match!(ctx.path, ctx.eff_meta)
             ctx
           end
         end
 
         module ValidateRaw
           def self.call(ctx, _deps)
-            Textus::Format.for(ctx.mentry.format).validate_raw_entry!(
+            Textus::Protocol::Format.for(ctx.mentry.format).validate_raw_entry!(
               { "_meta" => ctx.eff_meta, "content" => ctx.eff_content },
               ctx.mentry.lane,
             )

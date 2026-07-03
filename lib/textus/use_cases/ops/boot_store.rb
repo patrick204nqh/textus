@@ -17,7 +17,7 @@ module Textus
             storage:, events:, governance:, logging:, links:,
             root: layout.root, pipeline:
           )
-          success(Textus::Boot.build(container: proxy))
+          success(Textus::Protocol::Boot.build(container: proxy))
         end
       end
     end

@@ -12,10 +12,10 @@ module Textus
         end
         include Interface
 
-        SEQUEL_ADAPTER = Textus::DependencyAdapters::SequelAdapter.new
+        SEQUEL_ADAPTER = Textus::Infra::Adapters::SequelAdapter.new
 
         def initialize(root:)
-          @layout = Textus::Store::Layout.new(root)
+          @layout = Textus::Protocol::Layout.new(root)
         end
 
         def setup!

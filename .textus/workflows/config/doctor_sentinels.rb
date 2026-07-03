@@ -8,7 +8,7 @@ Textus.workflow "doctor-sentinels" do
   step :scan do |_, ctx|
     store = Textus::Port::SentinelStore.new
     file_stat = Textus::Port::Storage::FileStat.new
-    dir = Textus::Store::Layout.new(ctx.container.root).sentinels_root
+    dir = Textus::Protocol::Layout.new(ctx.container.root).sentinels_root
     issues = []
 
     if file_stat.directory?(dir)

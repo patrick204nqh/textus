@@ -16,7 +16,7 @@ module Textus
 
         mentry = res.entry
         raw = @file_system.read(path)
-        parsed = Textus::Format.for(mentry.format).parse(raw, path: path)
+        parsed = Textus::Protocol::Format.for(mentry.format).parse(raw, path: path)
         Textus::Value::Envelope.build(
           key:, mentry:, path:,
           meta: parsed["_meta"], body: parsed["body"],

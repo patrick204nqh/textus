@@ -12,8 +12,8 @@ module Textus
 
           target_env = @entry_store.read(target_key)
 
-          body_diff = Textus::Diff.body(target_env&.body, proposal_env.body)
-          meta_diff = Textus::Diff.meta(target_env&.meta&.dig("_meta") || {}, proposal_env.meta&.dig("_meta") || {})
+          body_diff = Textus::Protocol::Diff.body(target_env&.body, proposal_env.body)
+          meta_diff = Textus::Protocol::Diff.meta(target_env&.meta&.dig("_meta") || {}, proposal_env.meta&.dig("_meta") || {})
 
           target_schema = target_schema_ref(target_key)
           proposal_schema = proposal_env&.meta&.dig("_meta", "schema")
@@ -23,7 +23,7 @@ module Textus
           result["body"] = body_diff if body_diff
           result["meta"] = meta_diff if meta_diff
           result["schema"] = schema_diff if schema_diff
-          result["summary"] = Textus::Diff.summary(result)
+          result["summary"] = Textus::Protocol::Diff.summary(result)
 
           success(result)
         end
@@ -43,7 +43,7 @@ module Textus
         def diff_schema(target_schema, proposal_schema)
           return nil unless proposal_schema && target_schema != proposal_schema
 
-          Textus::Diff.schema({ "schema" => target_schema }, { "schema" => proposal_schema })
+          Textus::Protocol::Diff.schema({ "schema" => target_schema }, { "schema" => proposal_schema })
         end
 
         def target_schema_ref(key)

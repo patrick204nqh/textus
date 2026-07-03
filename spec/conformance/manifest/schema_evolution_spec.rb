@@ -30,14 +30,14 @@ RSpec.describe "Schema evolution" do
     end
 
     it "exposes maintained_by per field" do
-      s = Textus::Schema.load(File.join(root, "schemas/person.yaml"))
+      s = Textus::Protocol::Schema.load(File.join(root, "schemas/person.yaml"))
       expect(s.maintained_by("full_name")).to eq("human")
       expect(s.maintained_by("embedding")).to eq("ai")
       expect(s.maintained_by("missing")).to be_nil
     end
 
     it "exposes evolution metadata" do
-      s = Textus::Schema.load(File.join(root, "schemas/person.yaml"))
+      s = Textus::Protocol::Schema.load(File.join(root, "schemas/person.yaml"))
       expect(s.evolution["added_in"]).to eq("2026-05-19")
       expect(s.evolution["migrate_from"]).to eq({ "name" => "full_name" })
     end
@@ -60,7 +60,7 @@ RSpec.describe "Schema evolution" do
                                    meta: { "name" => "note", "headline" => "My Headline" },
                                    body: "body text")
 
-      res = Textus::Schema::Tools.migrate(store, name: "note", rename: nil)
+      res = Textus::Protocol::Schema::Tools.migrate(store, name: "note", rename: nil)
 
       expect(res["migrated"]).to include("knowledge.note")
 
@@ -82,7 +82,7 @@ RSpec.describe "Schema evolution" do
               schema: note
       YAML
 
-      authority = Textus::Schema::Tools.accept_role_for(store)
+      authority = Textus::Protocol::Schema::Tools.accept_role_for(store)
       expect(authority).to eq("human")
     end
   end

@@ -26,7 +26,7 @@ Textus.workflow "doctor-illegal-keys" do
       next unless entry.nested?
       next if entry.publish_mode.keyless?
 
-      base = File.join(root, Textus::Key::Path.normalize_relative_path(entry.path))
+      base = File.join(root, Textus::Protocol::Key::Path.normalize_relative_path(entry.path))
       next unless File.directory?(base)
 
       walk_nested.call(base) do |abs_path, is_dir|
@@ -35,7 +35,7 @@ Textus.workflow "doctor-illegal-keys" do
 
         basename = File.basename(abs_path)
         stem = is_dir ? basename : basename.sub(/#{Regexp.escape(File.extname(basename))}\z/, "")
-        next if stem.match?(Textus::Key::Grammar::SEGMENT)
+        next if stem.match?(Textus::Protocol::Key::Grammar::SEGMENT)
 
         issues << {
           "code" => "key.illegal",

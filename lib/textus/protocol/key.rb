@@ -19,7 +19,7 @@ module Textus
 
       def suggestions_for(key, entries, limit: 5)
         candidates = entries.map(&:key)
-        distances = candidates.map { |ck| [ck, Textus::Key::Distance.call(ck, key)] }
+        distances = candidates.map { |ck| [ck, Distance.call(ck, key)] }
         distances.sort_by(&:last)
                  .reject { |_k, d| d > 3 }
                  .first(limit)
@@ -27,7 +27,7 @@ module Textus
       end
 
       def match?(pattern, key)
-        Textus::Key::Matching.match?(pattern, key)
+        Matching.match?(pattern, key)
       end
     end
   end

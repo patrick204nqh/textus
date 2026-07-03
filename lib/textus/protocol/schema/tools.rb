@@ -1,0 +1,104 @@
+require "yaml"
+require "fileutils"
+
+module Textus
+  module Protocol
+    class Schema
+      module Tools
+        def self.init(store, name:, from:)
+          env = pure_get(store, Textus::Value::Role::DEFAULT, from)
+          meta = env.meta
+          schema = {
+            "name" => name,
+            "required" => meta.keys,
+            "optional" => [],
+            "fields" => meta.each_with_object({}) { |(k, v), h| h[k] = { "type" => infer_type(v) } },
+          }
+          geom = Textus::Protocol::Layout.new(store.root)
+          FileUtils.mkdir_p(geom.schemas_dir)
+          target = geom.schema_path(name)
+          File.write(target, YAML.dump(schema))
+          { "protocol" => PROTOCOL, "schema_name" => name, "path" => target }
+        end
+
+        def self.diff(store, name:)
+          schema = load_schema(store, name)
+          drift = []
+          store.manifest.resolver.enumerate.each do |row|
+            env = pure_get(store, Textus::Value::Role::DEFAULT, row[:key])
+            begin
+              schema.validate!(env.meta)
+            rescue SchemaViolation => e
+              drift << { "key" => row[:key], "details" => e.details }
+            end
+          end
+          { "protocol" => PROTOCOL, "schema_name" => name, "drift" => drift }
+        end
+
+        def self.migrate(store, name:, rename: nil)
+          renames =
+            if rename
+              old_field, new_field = rename.split(":", 2)
+              raise UsageError.new("--rename=OLD:NEW") unless old_field && new_field && !new_field.empty?
+
+              { old_field => new_field }
+            else
+              load_schema(store, name).evolution["migrate_from"] || {}
+            end
+          raise UsageError.new("schema migrate needs --rename=OLD:NEW or schema.evolution.migrate_from") if renames.empty?
+
+          authority = accept_role_for(store)
+          ops = store.with_role(authority)
+          touched = []
+          store.manifest.resolver.enumerate.each do |row|
+            env = pure_get(store, authority, row[:key])
+            meta = env.meta.dup
+            changed = false
+            renames.each do |old, new|
+              if meta.key?(old)
+                meta[new] = meta.delete(old)
+                changed = true
+              end
+            end
+            next unless changed
+
+            ops.put(key: row[:key], meta: meta, body: env.body)
+            touched << row[:key]
+          end
+          { "protocol" => PROTOCOL, "migrated" => touched, "renames" => renames }
+        end
+
+        def self.infer_type(value)
+          case value
+          when String  then "string"
+          when Numeric then "number"
+          when true, false then "boolean"
+          when Array   then "array"
+          when Hash    then "object"
+          else "string"
+          end
+        end
+
+        def self.pure_get(store, role, key)
+          store.with_role(role).get(key: key)
+        end
+
+        def self.load_schema(store, name)
+          store.schemas.fetch(name)
+        rescue IoError
+          raise UsageError.new("schema not found: #{name}")
+        end
+
+        def self.accept_role_for(store)
+          authority = store.manifest.policy.writers_for("knowledge").first
+          return authority if authority
+
+          raise UsageError.new(
+            "schema migrate requires a role that can write knowledge; " \
+            "none found in the fixed lane table",
+          )
+        end
+      end
+    end
+  end
+end

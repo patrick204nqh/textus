@@ -31,12 +31,12 @@ module Textus
 
         def dry_run_preview(target, env, action)
           target_env = reader.read(target)
-          body_diff = Textus::Diff.body(target_env&.body, env.body)
-          meta_diff = Textus::Diff.meta(target_env&.meta&.dig("_meta") || {}, env.meta&.dig("_meta") || {})
+          body_diff = Textus::Protocol::Diff.body(target_env&.body, env.body)
+          meta_diff = Textus::Protocol::Diff.meta(target_env&.meta&.dig("_meta") || {}, env.meta&.dig("_meta") || {})
           result = { "dry_run" => true, "pending_key" => command.pending_key, "target_key" => target, "action" => action }
           result["body"] = body_diff if body_diff
           result["meta"] = meta_diff if meta_diff
-          result["summary"] = Textus::Diff.summary(result)
+          result["summary"] = Textus::Protocol::Diff.summary(result)
           success(result)
         end
 

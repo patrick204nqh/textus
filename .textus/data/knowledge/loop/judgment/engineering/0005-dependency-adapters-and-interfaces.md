@@ -21,7 +21,7 @@ Without an adapter boundary:
 
 For each external runtime dependency used by core code:
 
-1. Create a dedicated adapter in `Textus::DependencyAdapters`.
+1. Create a dedicated adapter in `Textus::Infra::Adapters` (general) or `Textus::Surface::MCP::Adapters` (MCP-specific).
 2. Expose only the tiny published interface needed by current call sites.
 3. Inject or reference that adapter at seam modules (ports, surfaces, runners).
 4. Keep domain logic dependent on the adapter contract, not the vendor API.

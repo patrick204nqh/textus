@@ -22,7 +22,7 @@ module Textus
       private
 
       def write_and_publish(key, data, ctx, targets, _definition)
-        normalized = Textus::Format.data_to_payload(data, ctx.entry.format)
+        normalized = Textus::Protocol::Format.data_to_payload(data, ctx.entry.format)
         @container.writer.put(key, mentry: ctx.entry,
                                    payload: Textus::Value::Payload.new(**normalized), call: @call)
 
@@ -41,7 +41,7 @@ module Textus
       end
 
       def built_in_publish(key, data, ctx, _definition)
-        normalized = Textus::Format.data_to_payload(data, ctx.entry.format)
+        normalized = Textus::Protocol::Format.data_to_payload(data, ctx.entry.format)
         @container.writer.put(key, mentry: ctx.entry,
                                    payload: Textus::Value::Payload.new(**normalized), call: @call)
 

@@ -30,7 +30,7 @@ module Textus
               resolved = resolver.resolve(key: key, from_path: from_path)
               edge_store&.record(from_key: from_key, to_key: key)
               resolved
-            rescue Textus::Links::Resolver::UnknownKeyError
+            rescue Textus::Protocol::Links::Resolver::UnknownKeyError
               "`textus get #{key}`"
             end
           end

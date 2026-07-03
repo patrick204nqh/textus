@@ -10,7 +10,7 @@ Textus.workflow "manifest-files" do
     manifest.data.entries.each do |entry|
       next if entry.nested? || entry.derived? || entry.external?
 
-      path = Textus::Key::Path.resolve(manifest.data, entry)
+      path = Textus::Protocol::Key::Path.resolve(manifest.data, entry)
       next if file_system.exists?(path)
 
       issues << { "code" => "manifest.missing_file", "severity" => "info",

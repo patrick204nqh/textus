@@ -51,14 +51,14 @@ module Textus
       def sentinel_path(target, store_root)
         repo_root = File.dirname(store_root)
         rel = relative_to(target, repo_root) || File.basename(target)
-        File.join(Textus::Store::Layout.new(store_root).sentinels_root, rel + SUFFIX)
+        File.join(Textus::Protocol::Layout.new(store_root).sentinels_root, rel + SUFFIX)
       end
 
       # Absolute target paths of every sentinel recorded under `target_dir`.
       def targets_under(target_dir, store_root)
         repo_root = File.dirname(store_root)
         rel = relative_to(target_dir, repo_root) or return []
-        root = Textus::Store::Layout.new(store_root).sentinels_root
+        root = Textus::Protocol::Layout.new(store_root).sentinels_root
         sdir = File.join(root, rel)
         return [] unless @file_system.directory?(sdir)
 

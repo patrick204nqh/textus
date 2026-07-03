@@ -8,7 +8,7 @@ This reference captures engineering conventions for evolving textus safely.
 
 All new runtime dependencies MUST pass the Dependency Adoption Gate before adoption.
 
-- New dependencies MUST sit behind a `Textus::DependencyAdapters::*` module.
+- New dependencies MUST sit behind an adapter in `Textus::Infra::Adapters` (general) or `Textus::Surface::MCP::Adapters` (MCP-specific).
 - Adapter APIs MUST be minimal and owned by textus (no full-gem pass-through wrappers).
 - Call sites MUST depend on adapter interfaces at seams (ports, surfaces, runners), not on gem classes deep in domain modules.
 - Tests MUST target the adapter interface and seam behavior, not vendor internals.

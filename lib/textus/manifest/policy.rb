@@ -9,15 +9,15 @@ module Textus
       attr_writer :entries
 
       def writers_for(lane_name)
-        Domain::Lane.writers_for(lane_name)
+        Protocol::Lane.writers_for(lane_name)
       end
 
       def proposer_role
-        Domain::Lane.proposer_role
+        Protocol::Lane.proposer_role
       end
 
       def actor_for(lane_name)
-        Domain::Lane.actor_for(lane_name)
+        Protocol::Lane.actor_for(lane_name)
       end
 
       def derived_entry?(key)
@@ -38,7 +38,7 @@ module Textus
       end
 
       def propose_lane_for(role)
-        Domain::Lane.propose_lane_for(role)
+        Protocol::Lane.propose_lane_for(role)
       end
     end
   end

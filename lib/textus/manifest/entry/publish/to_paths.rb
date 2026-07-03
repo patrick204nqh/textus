@@ -25,11 +25,11 @@ module Textus
 
             targets.each do |t|
               if t.renders?
-                content ||= Textus::Format.for(entry.format).parse(File.read(data_path), path: data_path)["content"]
+                content ||= Textus::Protocol::Format.for(entry.format).parse(File.read(data_path), path: data_path)["content"]
                 publish_bytes(render_bytes(t, content, pctx), entry.key, t, pctx, data_path, envelope)
               elsif strip_meta?(entry)
-                content ||= Textus::Format.for(entry.format).parse(File.read(data_path), path: data_path)["content"]
-                bytes = Textus::Format.for(entry.format).serialize(meta: {}, body: "", content: content)
+                content ||= Textus::Protocol::Format.for(entry.format).parse(File.read(data_path), path: data_path)["content"]
+                bytes = Textus::Protocol::Format.for(entry.format).serialize(meta: {}, body: "", content: content)
                 publish_bytes(bytes, entry.key, t, pctx, data_path, envelope)
               else
                 # opaque / command / non-structured — publish the stored file as-is
@@ -49,7 +49,7 @@ module Textus
           end
 
           def render_bytes(target, content, pctx)
-            boot     = target.inject_boot ? Textus::Boot.build(container: pctx.container) : nil
+            boot     = target.inject_boot ? Textus::Protocol::Boot.build(container: pctx.container) : nil
             renderer = Textus::Produce::Render.new(
               template_loader: ->(n) { pctx.read_template(n) },
               manifest: pctx.manifest,

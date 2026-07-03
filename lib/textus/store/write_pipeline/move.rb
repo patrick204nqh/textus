@@ -64,7 +64,7 @@ module Textus
         module RewriteBasename
           def self.call(ctx, _deps)
             basename = ctx.to_key.split(".").last
-            Textus::Format.for(ctx.new_mentry.format).rewrite_name(ctx.to_path, basename)
+            Textus::Protocol::Format.for(ctx.new_mentry.format).rewrite_name(ctx.to_path, basename)
             ctx
           end
         end

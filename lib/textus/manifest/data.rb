@@ -13,7 +13,7 @@ module Textus
       def self.validate_key!(key)
         raise UsageError.new("empty key") if key.nil? || key.empty?
 
-        Key::Grammar.validate!(key)
+        Protocol::Key::Grammar.validate!(key)
       end
 
       def validate_key!(key) = self.class.validate_key!(key)
@@ -80,7 +80,7 @@ module Textus
         @entries.each do |e|
           raise UsageError.new("empty key") if e.key.nil? || e.key.empty?
 
-          Key::Grammar.validate!(e.key)
+          Protocol::Key::Grammar.validate!(e.key)
         end
       end
     end

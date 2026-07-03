@@ -10,7 +10,7 @@ Textus.workflow "naming-check" do
 
       pattern = Textus::Protocol::V4::NAMING_PATTERNS.fetch(entry.naming)
       root = ctx.container.root
-      resolved = File.join(root, Textus::Key::Path.normalize_relative_path(entry.path))
+      resolved = File.join(root, Textus::Protocol::Key::Path.normalize_relative_path(entry.path))
       next unless File.directory?(resolved)
 
       Dir.children(resolved).each do |filename|

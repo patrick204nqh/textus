@@ -18,7 +18,7 @@ module Textus
         raise ArgumentError.new("Produce::Render called for a verbatim target #{target.to.inspect}") unless target.renders?
 
         locals   = target.inject_boot ? data.merge("boot" => boot) : data
-        resolver = @manifest ? Textus::Links::Resolver.new(manifest: @manifest) : nil
+        resolver = @manifest ? Textus::Protocol::Links::Resolver.new(manifest: @manifest) : nil
         ctx      = Render::Context.for(
           locals: locals,
           resolver: resolver,
@@ -35,7 +35,7 @@ module Textus
       def rewrite(bytes, from_path, resolver)
         return bytes unless resolver && bytes.include?("textus:")
 
-        Textus::Links::UriRewriter.new(
+        Textus::Protocol::Links::UriRewriter.new(
           resolver: resolver,
           from_path: from_path,
           from_key: @entry_key,
