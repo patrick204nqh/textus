@@ -16,8 +16,9 @@ module Textus
     end
 
     def self.build(container:)
+      manifest = container.governance.manifest
       envelope = Context.build(
-        manifest: container.governance.manifest,
+        manifest:,
         audit_log: container.logging.audit_log,
         file_system: container.storage.file_system,
         layout: container.storage.layout,

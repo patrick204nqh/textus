@@ -12,7 +12,7 @@ module Textus
         def call
           workflow_registry = Textus::Workflow::Registry.new(workflows)
           result = CONSUMER.drain(
-            db: event_store.db,
+            database: event_store.db,
             registry: workflow_registry,
             container: self,
             call: @call,

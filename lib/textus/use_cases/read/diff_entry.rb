@@ -3,15 +3,14 @@ module Textus
     module Read
       class DiffEntry < Base
         handles Dispatch::Contracts::DiffEntry
-        needs :file_system, :manifest, :layout
+        needs :entry_store, :manifest, :layout
 
         def call
-          reader = Store::Entry::Reader.new(file_system: @file_system, manifest: @manifest, layout: @layout)
-          proposal_env = reader.read(@command.pending_key)
+          proposal_env = @entry_store.read(@command.pending_key)
           target_key = proposal_target_key(proposal_env, @command.pending_key)
           return target_key if target_key.is_a?(Value::Result)
 
-          target_env = reader.read(target_key)
+          target_env = @entry_store.read(target_key)
 
           body_diff = Textus::Diff.body(target_env&.body, proposal_env.body)
           meta_diff = Textus::Diff.meta(target_env&.meta&.dig("_meta") || {}, proposal_env.meta&.dig("_meta") || {})
