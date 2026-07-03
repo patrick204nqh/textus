@@ -341,6 +341,8 @@ module Textus
          ArgSpec.arg(name: :lane, description: "restrict to entries in this lane")],
         %i[cli mcp], { default: identity }, nil, nil, :maintenance
       )
+    require_relative "../lanes/knowledge/verbs"
+    require_relative "../lanes/scratchpad/verbs"
     end
   end
 end
