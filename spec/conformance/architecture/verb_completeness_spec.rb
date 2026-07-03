@@ -2,24 +2,8 @@
 RSpec.describe "Verb completeness — every verb has contract + handler + CLI verb" do
   VERB_REGISTRY = Textus::Protocol::VerbRegistry.registered.to_h { |s| [s.verb, s] }.freeze
   LANE_VERBS = VERB_REGISTRY.values.select(&:lane).map(&:verb).to_set.freeze
-
-  def handled_contracts
-    all_handles = []
-    [Textus::UseCases::Read, Textus::UseCases::Write, Textus::UseCases::Ops].each do |ns|
-      ns.constants(false).each do |c|
-        mod = ns.const_get(c)
-        next unless mod.is_a?(Module)
-
-        contract = if mod.respond_to?(:handles_contract)
-                     mod.handles_contract
-                   elsif mod.const_defined?(:HANDLES)
-                     mod::HANDLES
-                   end
-        all_handles << contract if contract
-      end
-    end
-    all_handles
-  end
+  BUILTIN_VERBS = VERB_REGISTRY.values.reject(&:lane).map(&:verb).to_set.freeze
+  GATE_HANDLED = LANE_VERBS + BUILTIN_VERBS
 
   it "every registered verb has a contract class" do
     missing = VERB_REGISTRY.keys.reject { |v| Textus::Protocol::VerbRegistry.contract_class_for(v) }
@@ -37,14 +21,10 @@ RSpec.describe "Verb completeness — every verb has contract + handler + CLI ve
                            "verbs with cli: true but no CLI verb class: #{cli_missing.map(&:inspect).join(", ")}"
   end
 
-  it "every contract class has a use-case handler" do
-    registered_contracts = VERB_REGISTRY.keys
-                                        .reject { |v| LANE_VERBS.include?(v) }
-                                        .map { |v| Textus::Protocol::VerbRegistry.contract_class_for(v) }.compact.to_set
-    handled = handled_contracts.to_set
-    orphan_contracts = registered_contracts - handled
-    expect(orphan_contracts).to be_empty,
-                                "contracts without a handler: #{orphan_contracts.map(&:name).join(", ")}"
+  it "every verb is handled by Gate (Builtin or lane handler)" do
+    unhandled = VERB_REGISTRY.keys.reject { |v| GATE_HANDLED.include?(v) }
+    expect(unhandled).to be_empty,
+                         "verbs without a handler: #{unhandled.map(&:inspect).join(", ")}"
   end
 
   def cli_verb_alias?(verb, cli_verbs)

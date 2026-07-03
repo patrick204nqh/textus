@@ -1,3 +1,5 @@
+require "ostruct"
+
 module Textus
   module Infra
   class Store
@@ -40,36 +42,19 @@ module Textus
           root:, trace_buffer:, ttl_evaluator:
         )
 
-        middleware = [
-          Dispatch::Middleware::Binder.new,
-          Dispatch::Middleware::Trace.new,
-          Dispatch::Middleware::Auth.new,
-          Dispatch::Middleware::Events.new,
-        ]
-
-        Dispatch::HandlerResolver.eager_load!
-        interim = container.with_pipeline(
-          Dispatch::Pipeline.new(
-            registry: Dispatch::HandlerResolver.build(container),
-            container:, middleware:
-          ),
-        )
-        registry = Dispatch::HandlerResolver.build(interim)
-        finalized = container.with_pipeline(
-          Dispatch::Pipeline.new(registry:, container: interim, middleware:),
-        )
         gate = Protocol::Gate.new(
           manifest:,
           resolver: manifest.resolver,
-          pipeline: finalized.pipeline,
+          pipeline: OpenStruct.new(container:),
         )
-        finalized.class.new(
-          storage: finalized.storage, events: finalized.events,
-          governance: finalized.governance, logging: finalized.logging,
-          links: finalized.links, root: finalized.root,
-          pipeline: finalized.pipeline, gate:,
-          trace_buffer: finalized.trace_buffer,
-          ttl_evaluator: finalized.ttl_evaluator,
+
+        container.class.new(
+          storage: container.storage, events: container.events,
+          governance: container.governance, logging: container.logging,
+          links: container.links, root: container.root,
+          pipeline: OpenStruct.new(container:), gate:,
+          trace_buffer: container.trace_buffer,
+          ttl_evaluator: container.ttl_evaluator,
         )
       end
     end
