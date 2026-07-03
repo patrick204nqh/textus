@@ -148,7 +148,7 @@ module TextusSpecHelpers
 
     consumer = Textus::Events::Consumer.new
     consumer.drain(
-      db: db,
+      database: db,
       registry: registry,
       container: store.container,
       call: Textus::Value::Call.build(role: role, correlation_id: SecureRandom.uuid),
