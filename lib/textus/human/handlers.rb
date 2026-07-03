@@ -70,6 +70,35 @@ module Textus
         result
       end
 
+      def diff(pending_key:, container:, call:)
+        env = container.reader.read(pending_key)
+        proposal = env&.meta&.dig("proposal")
+        return { error: { code: "proposal_error", message: "entry has no proposal block: #{pending_key}" } } unless proposal
+
+        target_key = proposal["target_key"]
+        return { error: { code: "proposal_error", message: "proposal missing target_key" } } unless target_key
+
+        target_env = container.reader.read(target_key)
+
+        body_diff = Textus::Protocol::Diff.body(target_env&.body, env.body)
+        meta_diff = Textus::Protocol::Diff.meta(target_env&.meta&.dig("_meta") || {}, env.meta&.dig("_meta") || {})
+
+        entry = container.manifest.data.entries.find { |e| e.key == target_key }
+        target_schema = entry&.schema_ref
+        proposal_schema = env&.meta&.dig("_meta", "schema")
+        schema_diff = nil
+        if proposal_schema && target_schema != proposal_schema
+          schema_diff = Textus::Protocol::Diff.schema({ "schema" => target_schema }, { "schema" => proposal_schema })
+        end
+
+        result = { "pending_key" => pending_key, "target_key" => target_key }
+        result["body"] = body_diff if body_diff
+        result["meta"] = meta_diff if meta_diff
+        result["schema"] = schema_diff if schema_diff
+        result["summary"] = Textus::Protocol::Diff.summary(result)
+        result
+      end
+
       def self.loop_status(manifest, active_index: 0)
         Runner.new(manifest).current_node(active_index:)
       end

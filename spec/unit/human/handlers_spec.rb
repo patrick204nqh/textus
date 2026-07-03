@@ -108,6 +108,56 @@ RSpec.describe Textus::Human::Handlers do
     end
   end
 
+  describe ".diff" do
+    it "returns diff between proposal and target" do
+      container = instance_double("Container")
+      reader = instance_double("Reader")
+      manifest = instance_double("Manifest")
+      manifest_data = double("ManifestData")
+      allow(manifest).to receive(:data).and_return(manifest_data)
+      allow(container).to receive_messages(reader:, manifest:)
+
+      env = instance_double("Envelope",
+        meta: { "proposal" => { "target_key" => "knowledge.foo" }, "_meta" => { "schema" => "v2" } },
+        body: "new body")
+      allow(reader).to receive(:read).with("proposals.test").and_return(env)
+
+      target_env = instance_double("Envelope", body: "old body", meta: { "_meta" => {} })
+      allow(reader).to receive(:read).with("knowledge.foo").and_return(target_env)
+
+      entry = instance_double("Entry", key: "knowledge.foo", schema_ref: "v1")
+      allow(manifest_data).to receive(:entries).and_return([entry])
+
+      allow(Textus::Protocol::Diff).to receive(:body).and_return({ "type" => "diff" })
+      allow(Textus::Protocol::Diff).to receive(:meta).and_return({})
+      allow(Textus::Protocol::Diff).to receive(:schema).and_return({ "schema" => { "from" => "v1", "to" => "v2" } })
+      allow(Textus::Protocol::Diff).to receive(:summary).and_return({ "changes" => 2 })
+
+      call = instance_double("Call", role: "human", correlation_id: "abc")
+
+      result = described_class.diff(pending_key: "proposals.test", container:, call:)
+
+      expect(result["pending_key"]).to eq("proposals.test")
+      expect(result["target_key"]).to eq("knowledge.foo")
+      expect(result).to have_key("body")
+      expect(result).to have_key("schema")
+      expect(result).to have_key("summary")
+    end
+
+    it "returns error when proposal block missing" do
+      container = instance_double("Container")
+      reader = instance_double("Reader")
+      allow(container).to receive(:reader).and_return(reader)
+      env = instance_double("Envelope", meta: {})
+      allow(reader).to receive(:read).and_return(env)
+
+      call = instance_double("Call", role: "human", correlation_id: "abc")
+
+      result = described_class.diff(pending_key: "bad", container:, call:)
+      expect(result[:error][:code]).to eq("proposal_error")
+    end
+  end
+
   describe ".propose" do
     it "writes to the proposal zone with prefixed key" do
       container = instance_double("Container")
