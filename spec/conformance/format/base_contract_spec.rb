@@ -1,5 +1,5 @@
-RSpec.describe "Format::Base contract" do
-  classes = Textus::Format::STRATEGIES.values.map(&:call)
+RSpec.describe "Protocol::Format::Base contract" do
+  classes = Textus::Protocol::Format::STRATEGIES.values.map(&:call)
 
   classes.each do |klass|
     context klass.name do
@@ -10,7 +10,7 @@ RSpec.describe "Format::Base contract" do
       end
 
       it "does not inherit data_to_payload from Base" do
-        expect(Textus::Format::Base).not_to respond_to(:data_to_payload)
+        expect(Textus::Protocol::Format::Base).not_to respond_to(:data_to_payload)
       end
     end
   end
