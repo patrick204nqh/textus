@@ -1,6 +1,13 @@
 module Textus
   module Protocol
     module Lane
+      def self.handler_for(lane_name)
+        ns = lane_name.to_s.split("_").map(&:capitalize).join
+        Textus.const_get(ns)::Handlers
+      rescue NameError
+        raise ArgumentError, "no handler for lane: #{lane_name}"
+      end
+
       module_function
 
       def writers_for(lane_name)
