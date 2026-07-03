@@ -16,39 +16,10 @@ module Textus
       def self.positional_for(verb) = POSITIONAL[verb] || []
       def self.summary_for(verb) = VERBS[verb]&.summary
       def self.registered = VERBS.values
-      def self.contract_class_for(verb) = VERB_TO_CONTRACT[verb]
+      def self.contract_class_for(verb) = nil
 
-      VERB_TO_CONTRACT = {
-        get: Protocol::Contracts::GetEntry,
-        put: Protocol::Contracts::PutEntry,
-        list: Protocol::Contracts::ListKeys,
-        key_delete: Protocol::Contracts::DeleteKey,
-        key_mv: Protocol::Contracts::MvKey,
-        propose: Protocol::Contracts::ProposeEntry,
-        accept: Protocol::Contracts::AcceptProposal,
-        reject: Protocol::Contracts::RejectProposal,
-        audit: Protocol::Contracts::AuditEntries,
-        pulse: Protocol::Contracts::PulseEntries,
-        blame: Protocol::Contracts::BlameEntry,
-        where: Protocol::Contracts::WhereEntry,
-        uid: Protocol::Contracts::UidEntry,
-        deps: Protocol::Contracts::DepsEntry,
-        rdeps: Protocol::Contracts::RdepsEntry,
-        graph: Protocol::Contracts::GraphEntry,
-        diff: Protocol::Contracts::DiffEntry,
-        boot: Protocol::Contracts::BootStore,
-        published: Protocol::Contracts::PublishedEntries,
-        schema_show: Protocol::Contracts::SchemaEnvelope,
-        drain: Protocol::Contracts::DrainStore,
-        ingest: Protocol::Contracts::IngestEntry,
-        data_mv: Protocol::Contracts::DataMv,
-        key_mv_prefix: Protocol::Contracts::KeyMvPrefix,
-        key_delete_prefix: Protocol::Contracts::KeyDeletePrefix,
-      }.freeze
-
-      CONTRACT_TO_VERB = VERB_TO_CONTRACT.invert.freeze
-
-      private_constant :VERB_TO_CONTRACT, :CONTRACT_TO_VERB
+      VERB_TO_CONTRACT = {}.freeze
+      CONTRACT_TO_VERB = {}.freeze
 
       ENTRY_VERBS = %i[
         get put list key_delete key_mv propose accept reject
@@ -63,13 +34,8 @@ module Textus
       VERB_DOMAIN = ENTRY_VERBS.to_h { |v| [v, :entry] }
                                .merge(OPS_VERBS.to_h { |v| [v, :ops] }).freeze
 
-      def self.contract_to_verb(klass)
-        CONTRACT_TO_VERB[klass] || klass.name.split("::").last.gsub(/([a-z])([A-Z])/, '\1_\2').downcase
-      end
-
-      def self.contract_to_verb!(klass)
-        CONTRACT_TO_VERB.fetch(klass) { raise "unknown contract class: #{klass}" }
-      end
+      def self.contract_to_verb(klass) = nil
+      def self.contract_to_verb!(klass) = raise "contract lookup removed: #{klass}"
 
       identity = ->(v, _) { v }
 
