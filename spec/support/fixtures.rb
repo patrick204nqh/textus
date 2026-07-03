@@ -125,7 +125,7 @@ module TextusSpecHelpers
   def converge_now(store, prefix: nil, lane: nil, role: Textus::Value::Role::AUTOMATION)
     with_missing_workflows(store)
     registry = Textus::Workflow::Registry.new(store.container.workflows)
-    db = store.event_store.db
+    event_store = store.container.event_store
 
     store.container.manifest.data.entries.each do |entry|
       next if prefix && !entry.key.start_with?(prefix)
@@ -134,13 +134,12 @@ module TextusSpecHelpers
       store.container.workflows.each do |wf|
         next unless wf.match?(entry.key) || wf.handled_events.any?
 
-        db[:events].insert(
+        event_store.emit(
           event_type: "convergence",
           workflow_type: wf.type,
           key: entry.key,
           lane: entry.lane,
-          state: "pending",
-          retry_count: 0,
+          payload: {},
           max_attempts: wf.max_attempts || 3,
         )
       end
@@ -148,7 +147,7 @@ module TextusSpecHelpers
 
     consumer = Textus::Events::Consumer.new
     consumer.drain(
-      database: db,
+      event_store: event_store,
       registry: registry,
       container: store.container,
       call: Textus::Value::Call.build(role: role, correlation_id: SecureRandom.uuid),

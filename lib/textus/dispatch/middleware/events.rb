@@ -21,7 +21,7 @@ module Textus
           key = key_for(command)
           registry  = Workflow::Registry.new(container.events.workflows)
           emitter   = Produce::EventEmitter.new(
-            database: container.events.event_store.connection,
+            event_store: container.events.event_store,
             workflow_registry: registry,
           )
           emitter.emit(event_type:, key:)
