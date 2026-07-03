@@ -10,9 +10,15 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
       expect(FileUtils).to receive(:mkdir_p).with("/tmp/textus/data/scratchpad/sessions/test-uuid-123/notes")
       expect(FileUtils).to receive(:mkdir_p).with("/tmp/textus/data/scratchpad/sessions/test-uuid-123/output")
 
-      allow(ctx).to receive(:mentry_for).and_return(double("Mentry"))
+      manifest = double("Manifest")
+      data = double("ManifestData")
+      mentry = double("Mentry")
+      allow(manifest).to receive(:data).and_return(data)
+      allow(data).to receive(:entries).and_return([mentry])
+      allow(mentry).to receive(:key).and_return("scratchpad.sessions")
+      allow(ctx).to receive(:manifest).and_return(manifest)
       allow(ctx).to receive(:write)
-      allow(ctx).to receive(:payload).with(content: hash_including("status" => "active"))
+      allow(ctx).to receive(:payload).with(body: /"status":"active"/)
         .and_return(double("Payload"))
       allow(SecureRandom).to receive(:uuid).and_return("test-uuid-123")
 
@@ -25,9 +31,15 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
   describe ".session_close" do
     it "seals an active session" do
       ctx = instance_double("HandlerContext")
-      env = instance_double("Envelope", content: { "session_id" => "abc", "status" => "active" })
+      manifest = double("Manifest")
+      data = double("ManifestData")
+      mentry = double("Mentry")
+      allow(manifest).to receive(:data).and_return(data)
+      allow(data).to receive(:entries).and_return([mentry])
+      allow(mentry).to receive(:key).and_return("scratchpad.sessions")
+      allow(ctx).to receive(:manifest).and_return(manifest)
+      env = instance_double("Envelope", body: JSON.generate("session_id" => "abc", "status" => "active"))
       allow(ctx).to receive(:read).with("scratchpad.sessions.abc.session").and_return(env)
-      allow(ctx).to receive(:mentry_for).and_return(double("Mentry"))
       allow(ctx).to receive(:write)
       allow(ctx).to receive(:payload)
 
