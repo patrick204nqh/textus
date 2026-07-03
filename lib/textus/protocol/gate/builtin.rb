@@ -167,7 +167,7 @@ module Textus
 
         def builtin_pulse(since: nil, call:)
           root = manifest.data.root
-          cursor_val = since || Textus::Infra::Store::Cursor.new(root:, role: call.role).read
+          cursor_val = since || Textus::Protocol::Cursor.new(root:, role: call.role).read
           audit_result = builtin_audit(seq_since: cursor_val, call:)
           changed = audit_result["rows"] || []
           queue = manifest.policy.queue_lane
@@ -179,7 +179,7 @@ module Textus
             "contract_etag" => Textus::Value::Etag.for_contract(root),
             "index_etag" => pulse_index_etag,
           }
-          Textus::Infra::Store::Cursor.new(root:, role: call.role).write(result["cursor"])
+          Textus::Protocol::Cursor.new(root:, role: call.role).write(result["cursor"])
           result
         end
 

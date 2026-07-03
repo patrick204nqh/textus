@@ -1,6 +1,5 @@
 module Textus
-  module Infra
-  class Store
+  module Protocol
     class TraceBuffer
       DEFAULT_SIZE = 100
 
@@ -36,6 +35,5 @@ module Textus
         end
       end
     end
-  end
   end
 end

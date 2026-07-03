@@ -1,8 +1,7 @@
 # frozen_string_literal: true
 
 module Textus
-  module Infra
-  class Store
+  module Protocol
     module Freshness
       class TtlEvaluator
         def initialize(manifest:, file_stat:, clock:)
@@ -58,6 +57,5 @@ module Textus
         end
       end
     end
-  end
   end
 end

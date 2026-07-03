@@ -7,7 +7,7 @@ module Textus
       def call(root)
         manifest    = Manifest.load(root)
         database    = Infra::Database.new(root: root).setup!
-        event_store = Store::EventStore.new(database)
+        event_store = Protocol::Events::EventStore.new(database)
         layout      = Protocol::Layout.new(root)
         file_store  = Infra::FileStore.new
         schemas     = Protocol::Schema::Registry.new(layout.schemas_dir)
@@ -21,15 +21,15 @@ module Textus
         entry_index = Protocol::Index.new(database)
         workflows   = Workflow::Loader.load_all(root)
         workflows.push(Textus::Workflow::Instances::Materialize)
-        entry_store = Store::EntryStore.new(file_system: file_store, manifest:, audit_log:, layout:, entry_index:)
+        entry_store = Protocol::EntryStore.new(file_system: file_store, manifest:, audit_log:, layout:, entry_index:)
 
-        ttl_evaluator = Store::Freshness::TtlEvaluator.new(
+        ttl_evaluator = Protocol::Freshness::TtlEvaluator.new(
           manifest:,
           file_stat: file_store,
           clock: Infra::Clock.new,
         )
 
-        trace_buffer = Store::TraceBuffer.new
+        trace_buffer = Protocol::TraceBuffer.new
 
         storage    = Container::Storage.new(file_system: file_store, entry_store:, layout:, entry_index:)
         events     = Container::Events.new(event_store:, workflows:)

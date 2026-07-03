@@ -97,7 +97,7 @@ module TextusSpecHelpers
   end
 
   def build_envelope_reader(store)
-    Textus::Infra::Store::EntryStore.new(
+    Textus::Protocol::EntryStore.new(
       file_system: store.file_system,
       manifest: store.manifest,
       audit_log: store.audit_log,
@@ -109,7 +109,7 @@ module TextusSpecHelpers
   def build_envelope_writer(store, call, reader: nil)
     _reader = reader || build_envelope_reader(store)
     _call = call
-    Textus::Infra::Store::EntryStore.new(
+    Textus::Protocol::EntryStore.new(
       file_system: store.file_system,
       manifest: store.manifest,
       audit_log: store.audit_log,
