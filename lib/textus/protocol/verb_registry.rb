@@ -167,18 +167,21 @@ module Textus
    
       # ── ingest ───────────────────────────────────────────
       register VerbSpec.new(
-        :ingest, "Capture external source material into the raw lane. Write-once.",
-        [ArgSpec.arg(name: :kind, required: true, positional: true,
-                     description: "source kind: url | file | asset"),
-         ArgSpec.arg(name: :slug, required: true,
-                     description: "human slug for the key suffix (kebab-case)"),
-         ArgSpec.arg(name: :url, description: "remote URL (required when kind=url)"),
-         ArgSpec.arg(name: :path,
-                     description: "local file path (required when kind=file or kind=asset)"),
-         ArgSpec.arg(name: :lane,
-                     description: "asset group subdirectory (required when kind=asset)"),
-         ArgSpec.arg(name: :label, description: "human label stored in source.label")],
-        %i[cli mcp], { default: ->(env, _) { { "key" => env.key, "uid" => env.uid, "etag" => env.etag } } }, nil, nil, :write
+        verb: :ingest, summary: "Capture external source material into the raw lane. Write-once.",
+        args: [ArgSpec.arg(name: :kind, required: true, positional: true,
+                           description: "source kind: url | file | asset"),
+               ArgSpec.arg(name: :slug, required: true,
+                           description: "human slug for the key suffix (kebab-case)"),
+               ArgSpec.arg(name: :url, description: "remote URL (required when kind=url)"),
+               ArgSpec.arg(name: :path,
+                           description: "local file path (required when kind=file or kind=asset)"),
+               ArgSpec.arg(name: :lane,
+                           description: "asset group subdirectory (required when kind=asset)"),
+               ArgSpec.arg(name: :label, description: "human label stored in source.label")],
+        surfaces: %i[cli mcp],
+        views: { default: ->(env, _) { { "key" => env.key, "uid" => env.uid, "etag" => env.etag } } },
+        cli: nil, cli_stdin: nil, category: :write,
+        lane: :ingest
       )
    
       # ── where ────────────────────────────────────────────
