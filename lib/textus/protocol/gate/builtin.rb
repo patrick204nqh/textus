@@ -26,8 +26,7 @@ module Textus
           env = reader.read(key)
           return CONTAINER_ERROR.call("no entry at #{key}") unless env
 
-          expanded = expand_sources(env, depth: 0)
-          expanded.to_h_for_wire
+          expand_sources(env, depth: 0)
         end
 
         def builtin_put(key:, meta: nil, body: nil, content: nil, if_etag: nil, call:)
@@ -53,6 +52,7 @@ module Textus
           writer.delete(key, if_etag:, call:)
           { "protocol" => Textus::PROTOCOL, "ok" => true, "key" => key, "deleted" => true }
         end
+        alias builtin_key_delete builtin_delete
 
         def builtin_where(key:, call:)
           res = manifest.resolver.resolve(key)

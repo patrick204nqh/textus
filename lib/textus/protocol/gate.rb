@@ -1,6 +1,8 @@
 module Textus
   module Protocol
     class Gate
+      include Builtin
+
       def initialize(manifest:, resolver:, pipeline:, async: nil)
         @manifest = manifest
         @resolver = resolver
@@ -15,31 +17,24 @@ module Textus
         key = params[:key]
         authorize!(role, verb, key)
 
-        if spec.lane
-          dispatch_to_lane(role, verb, spec, params, call)
-        else
-          dispatch_via_pipeline(role, verb, spec, params, call)
-        end
-      end
-
-      private
-
-      def dispatch_to_lane(role, verb, spec, params, call)
-        bound = Dispatch::Binder.inputs_from_wire(spec, params)
-        handler = Lane.handler_for(spec.lane)
         call_obj = call || Value::Call.build(role:, correlation_id: SecureRandom.uuid)
-        result = handler.public_send(verb, **bound, container: @pipeline.container, call: call_obj)
-        Value::Result.extract(Value::Result.success(result))
+        bound = Dispatch::Binder.bind(spec, params)
+
+        if spec.lane
+          handler = Lane.handler_for(spec.lane)
+          result = handler.public_send(verb, **bound, container: @pipeline.container, call: call_obj)
+          Value::Result.extract(Value::Result.success(result))
+        else
+          result = send(:"builtin_#{verb}", **bound, call: call_obj)
+          Value::Result.extract(Value::Result.success(result))
+        end
+      rescue Textus::WriteForbidden
+        raise
       rescue Textus::Error => e
         Value::Result.failure(e.code, e.message, details: e.details)
       end
 
-      def dispatch_via_pipeline(role, verb, spec, params, call)
-        pending = Dispatch::Binder.command(spec, params)
-        call_obj = call || Value::Call.build(role:, correlation_id: SecureRandom.uuid)
-        result = @pipeline.dispatch(pending, call: call_obj)
-        Value::Result.extract(result)
-      end
+      private
 
       def authorize!(role, verb, key)
         spec = VerbRegistry.for(verb)

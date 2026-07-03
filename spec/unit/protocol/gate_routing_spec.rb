@@ -2,7 +2,8 @@ RSpec.describe Textus::Protocol::Gate do
   let(:manifest) { instance_double("Manifest") }
   let(:resolver) { instance_double("Resolver") }
   let(:pipeline) { instance_double("Dispatch::Pipeline", container: container) }
-  let(:container) { instance_double("Container") }
+  let(:reader) { instance_double("Reader") }
+  let(:container) { instance_double("Container", reader:) }
   let(:gate) { described_class.new(manifest:, resolver:, pipeline:) }
 
   def lane_spec(lane:)
@@ -24,16 +25,18 @@ RSpec.describe Textus::Protocol::Gate do
       gate.dispatch(:agent, :ingest, {kind: "url", slug: "test"})
     end
 
-    it "falls through to pipeline when spec has no lane" do
-      read_spec = Textus::Protocol::VerbRegistry::VerbSpec.new(
-        verb: :get, summary: "desc", args: [],
+    it "falls through to builtin dispatch when spec has no lane" do
+      get_spec = Textus::Protocol::VerbRegistry::VerbSpec.new(
+        verb: :get, summary: "desc",
+        args: [Textus::Protocol::VerbRegistry::ArgSpec.arg(name: :key, required: true, positional: true)],
         surfaces: [:cli, :mcp], views: {default: nil},
         cli: nil, cli_stdin: nil, category: :read
       )
-      allow(Textus::Protocol::VerbRegistry).to receive(:for).with(:get).and_return(read_spec)
+      allow(Textus::Protocol::VerbRegistry).to receive(:for).with(:get).and_return(get_spec)
+      allow(reader).to receive(:read).with("test").and_return(nil)
 
-      expect(pipeline).to receive(:dispatch)
-      gate.dispatch(:human, :get, {key: "test"})
+      result = gate.dispatch(:human, :get, {key: "test"})
+      expect(result).to be_a(Hash)
     end
   end
 end
