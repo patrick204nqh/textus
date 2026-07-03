@@ -124,6 +124,7 @@ module Textus
           ctx = STEPS.reduce(ctx) { |c, step| step.call(c, deps) }
           ctx.envelope
         end
+        # rubocop:enable Metrics/ParameterLists
       end
     end
   end

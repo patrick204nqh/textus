@@ -10,6 +10,7 @@ module Textus
       def connection = @db
       alias db connection
 
+      # rubocop:disable Metrics/ParameterLists
       def emit(event_type:, workflow_type:, key:, lane:, payload:,
                created_at: Time.now.utc, scheduled_at: nil,
                state: "pending", retry_count: 0, max_attempts: 3)
@@ -19,6 +20,7 @@ module Textus
           state:, retry_count:, max_attempts:
         )
       end
+      # rubocop:enable Metrics/ParameterLists
 
       def consume_pending
         @db[:events]
