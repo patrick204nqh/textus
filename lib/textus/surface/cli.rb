@@ -134,8 +134,6 @@ module Textus
             textus doctor
             textus drain [PREFIX] --as=ROLE
             textus watch
-            textus jobs {list,retry,purge}
-
             textus key {delete,mv,mv-prefix,delete-prefix,uid}
             textus rule {explain,lint,list}
             textus schema {diff,init,migrate,show}
