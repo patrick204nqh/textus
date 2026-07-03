@@ -18,7 +18,7 @@ module Textus
         authorize!(role, verb, key)
 
         call_obj = call || Value::Call.build(role:, correlation_id: SecureRandom.uuid)
-        bound = Dispatch::Binder.bind(spec, params)
+        bound = Protocol::Binder.bind(spec, params)
 
         if spec.lane
           handler = Lane.handler_for(spec.lane)

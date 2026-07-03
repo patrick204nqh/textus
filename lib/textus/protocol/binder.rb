@@ -1,5 +1,5 @@
 module Textus
-  module Dispatch
+  module Protocol
     class MissingArgs < Textus::Error
       attr_reader :spec, :missing
 

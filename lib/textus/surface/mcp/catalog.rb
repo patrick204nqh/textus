@@ -46,7 +46,7 @@ module Textus
           raise ToolError.new("unknown tool: #{name}") unless spec&.mcp?
 
           PROJECTOR.dispatch(name, inputs: args, store:)
-        rescue Textus::Dispatch::MissingArgs => e
+        rescue Textus::Protocol::MissingArgs => e
           raise ToolError.new("#{name}: missing #{e.missing.map { |a| a.wire.to_s }.join(", ")}")
         rescue Textus::ContractDrift, Textus::CursorExpired
           raise

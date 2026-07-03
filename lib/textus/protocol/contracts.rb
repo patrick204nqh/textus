@@ -1,5 +1,5 @@
 module Textus
-  module Dispatch
+  module Protocol
     module Contracts
       GetEntry = Data.define(:key)
 
