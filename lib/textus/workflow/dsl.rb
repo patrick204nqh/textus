@@ -11,7 +11,7 @@ module Textus
 
         attr_reader :name, :steps, :match_pattern, :publish_block, :publish_targets,
                     :validate_steps, :depends_on_patterns,
-                    :handled_events, :max_attempts, :workflow_type
+                    :handled_events, :workflow_type
 
         def initialize(name)
           @name                = name

@@ -21,7 +21,6 @@ module Textus
             end
 
             result = SubtreeMirror.new(entry, pctx).mirror(
-              base: store_base(pctx),
               walk_root: store_base(pctx),
               target_dir: target_dir,
               key: entry.key,

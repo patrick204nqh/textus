@@ -9,16 +9,16 @@ module Textus
             @publisher = publisher
           end
 
-          def mirror(base:, walk_root:, target_dir:, key:, envelope:)
+          def mirror(walk_root:, target_dir:, key:, envelope:)
             return { written: [], pruned: [] } unless File.directory?(walk_root)
 
-            written = publish_files(base: base, walk_root: walk_root, target_dir: target_dir, key: key, envelope: envelope)
+            written = publish_files(walk_root: walk_root, target_dir: target_dir, key: key, envelope: envelope)
             { written: written, pruned: prune(target_dir, written) }
           end
 
           private
 
-          def publish_files(base:, walk_root:, target_dir:, key:, envelope:)
+          def publish_files(walk_root:, target_dir:, key:, envelope:)
             Dir.glob(File.join(walk_root, "**", "*"), File::FNM_DOTMATCH).sort.filter_map do |src|
               next nil unless File.file?(src)
 

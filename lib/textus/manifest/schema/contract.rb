@@ -3,6 +3,7 @@ require "dry/schema"
 module Textus
   class Manifest
     module Schema
+      # rubocop:disable Metrics/BlockLength
       Contract = Dry::Schema.JSON do
         optional(:lanes).value(:array).each do
           hash do
@@ -51,6 +52,7 @@ module Textus
         end
         optional(:version).value(:string)
       end
+      # rubocop:enable Metrics/BlockLength
     end
   end
 end

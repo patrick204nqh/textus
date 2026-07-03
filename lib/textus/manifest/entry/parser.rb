@@ -8,7 +8,10 @@ module Textus
 
           naming = raw["naming"]
           if naming && !Textus::Protocol::V4::NAMING_PATTERNS.key?(naming)
-            raise BadManifest.new("entry '#{key}': unknown naming alias '#{naming}' (known: #{Textus::Protocol::V4::NAMING_PATTERNS.keys.join(", ")})")
+            known_aliases = Textus::Protocol::V4::NAMING_PATTERNS.keys.join(", ")
+            raise BadManifest.new(
+              "entry '#{key}': unknown naming alias '#{naming}' (known: #{known_aliases})",
+            )
           end
 
           kind = infer_kind(key, raw, root:)
