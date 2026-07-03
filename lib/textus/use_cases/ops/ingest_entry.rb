@@ -94,7 +94,7 @@ module Textus
         end
 
         def write_entry(key, structured, mentry)
-          writer.put(key, mentry: mentry, call: call,
+          writer.put(key, mentry: mentry, call: @call,
                           payload: Textus::Value::Payload.new(meta: nil, body: nil, content: structured))
         end
 
@@ -116,7 +116,7 @@ module Textus
           tombstone["source"] = { "kind" => source_kind } if source_kind
           tombstone["superseded_by"] = new_key
 
-          writer.put(old_key, mentry: old_mentry, call: call,
+          writer.put(old_key, mentry: old_mentry, call: @call,
                               payload: Textus::Value::Payload.new(meta: nil, body: nil, content: tombstone))
 
           structured["supersedes"] = old_key

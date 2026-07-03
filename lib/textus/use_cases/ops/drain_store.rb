@@ -15,7 +15,7 @@ module Textus
             db: event_store.db,
             registry: workflow_registry,
             container: self,
-            call: call,
+            call: @call,
           )
           success(
             "protocol" => Textus::PROTOCOL,

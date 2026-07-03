@@ -17,7 +17,7 @@ module Textus
             return failure(:proposal_error, "entry has no proposal block: #{command.pending_key}")
           target_key = proposal["target_key"]
 
-          writer.delete(command.pending_key, mentry: mentry, call: call)
+          writer.delete(command.pending_key, mentry: mentry, call: @call)
           result = { "protocol" => Textus::PROTOCOL, "rejected" => command.pending_key, "target_key" => target_key }
           result["reason"] = command.reason if command.reason
           success(result)

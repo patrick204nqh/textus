@@ -29,7 +29,7 @@ module Textus
           pre_env = reader.read(command.old_key)
           unless pre_env.uid
             writer.put(
-              command.old_key, mentry: old_res.entry, call: call,
+              command.old_key, mentry: old_res.entry, call: @call,
                                payload: Textus::Value::Payload.new(meta: pre_env.meta, body: pre_env.body, content: pre_env.content)
             )
           end
@@ -45,7 +45,7 @@ module Textus
 
           envelope = writer.move(
             from_key: command.old_key, to_key: command.new_key,
-            new_mentry: new_res.entry, call: call
+            new_mentry: new_res.entry, call: @call
           )
 
           success({

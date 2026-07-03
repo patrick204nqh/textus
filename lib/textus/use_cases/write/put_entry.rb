@@ -10,7 +10,7 @@ module Textus
             command.key,
             mentry: manifest.resolver.resolve(command.key).entry,
             payload: Textus::Value::Payload.new(meta: command.meta || {}, body: command.body, content: command.content),
-            if_etag: command.if_etag, call: call
+            if_etag: command.if_etag, call: @call
           ).then { |envelope| success(envelope) }
         end
       end

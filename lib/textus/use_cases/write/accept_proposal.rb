@@ -45,16 +45,16 @@ module Textus
           when "put"
             mentry = manifest.resolver.resolve(target).entry
             writer.put(
-              target, mentry: mentry, call: call,
+              target, mentry: mentry, call: @call,
                       payload: Textus::Value::Payload.new(meta: env.meta["_meta"] || {}, body: env.body, content: nil)
             )
           when "delete"
-            writer.delete(target, call: call)
+            writer.delete(target, call: @call)
           else
             return failure(:proposal_error, "unknown action: #{action}")
           end
 
-          writer.delete(command.pending_key, call: call)
+          writer.delete(command.pending_key, call: @call)
           success("protocol" => Textus::PROTOCOL, "accepted" => command.pending_key,
                   "target_key" => target, "action" => action, "cascade_key" => target)
         end

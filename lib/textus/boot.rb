@@ -5,6 +5,11 @@ require_relative "boot/context"
 module Textus
   module Boot
     PROTOCOL_ID = PROTOCOL
+    CURATED_CLI_VERBS = Catalog::CURATED_CLI_VERBS
+
+    def self.contract_summaries
+      Textus::VerbRegistry.registered.to_h { |s| [s.verb.to_s, s.summary] }
+    end
 
     def self.lane_label(_manifest, _kind, fallback)
       fallback
@@ -19,7 +24,7 @@ module Textus
       )
       envelope.merge(
         "catalog" => Catalog.build,
-        "protocol" => Protocol.build(container.governance.manifest),
+        "agent_protocol" => Protocol.build(manifest),
       )
     end
   end

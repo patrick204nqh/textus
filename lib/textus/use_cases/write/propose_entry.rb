@@ -16,7 +16,7 @@ module Textus
           key = "#{zone}.#{command.key}"
           mentry = manifest.resolver.resolve(key).entry
           writer.put(
-            key, mentry: mentry, call: call,
+            key, mentry: mentry, call: @call,
                  payload: Textus::Value::Payload.new(meta: command.meta || {}, body: command.body, content: command.content)
           ).then { |envelope| success(envelope) }
         end
