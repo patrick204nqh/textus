@@ -43,15 +43,6 @@ module Textus
           scheduled_at: Sequel.lit("datetime('now', '+#{delay.to_i} seconds')")
         )
       end
-
-      def search_entries(query:, schema:, lane:, prefix:)
-        dataset = @db[:entries]
-        dataset = dataset.where(Sequel.lit("entries MATCH ?", query)) if query
-        dataset = dataset.where(schema:) if schema
-        dataset = dataset.where(lane:) if lane
-        dataset = dataset.where(Sequel.like(:key, "#{prefix}%")) if prefix
-        dataset.all
-      end
     end
   end
 end

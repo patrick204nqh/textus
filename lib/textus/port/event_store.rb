@@ -7,7 +7,6 @@ module Textus
         def mark_done(event_id:) = raise NotImplementedError
         def mark_failed(event_id:, retry_count:, error:) = raise NotImplementedError
         def reschedule(event_id:, retry_count:, delay:, error:) = raise NotImplementedError
-        def search_entries(query:, schema:, lane:, prefix:) = raise NotImplementedError
       end
       include Interface
     end
