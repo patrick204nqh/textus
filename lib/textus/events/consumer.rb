@@ -34,7 +34,7 @@ module Textus
 
         workflow = registry.for(row[:workflow_type])
         Textus::Workflow::Runner.new(workflow, container: container, call: call).run(row[:key])
-        db[:events].where(id: row[:id]).update(state: "done")
+        database[:events].where(id: row[:id]).update(state: "done")
         row.merge(state: "done")
       rescue StandardError => e
         retry_count = (row[:retry_count] || 0) + 1

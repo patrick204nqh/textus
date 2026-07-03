@@ -1,3 +1,6 @@
+---
+uid: e67bd7152f771003
+---
 # ADR 0127: Interface Consolidation — Port Split, Container Groups, Use Case Classes
 
 **Status:** Accepted
