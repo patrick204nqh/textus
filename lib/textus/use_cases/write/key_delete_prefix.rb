@@ -19,7 +19,7 @@ module Textus
           warnings = leaves.empty? ? ["no keys under #{command.prefix}"] : []
           steps = leaves.map { |row| { "op" => "delete", "key" => row["key"] } }
 
-          plan = Textus::Store::Jobs::Plan.new(steps: steps, warnings: warnings)
+          plan = Textus::Store::Retention::Plan.new(steps: steps, warnings: warnings)
           return success(plan) if command.dry_run
 
           steps.each do |step|

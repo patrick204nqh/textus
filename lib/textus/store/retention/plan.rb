@@ -1,6 +1,6 @@
 module Textus
   class Store
-    module Jobs
+    module Retention
       Plan = Data.define(:steps, :warnings) do
         def to_h
           { "steps" => steps, "warnings" => warnings }

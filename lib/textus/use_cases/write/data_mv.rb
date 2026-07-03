@@ -24,7 +24,7 @@ module Textus
             { "op" => "mv", "from" => key, "to" => "#{command.to}#{key[command.from.length..]}" }
           end
 
-          plan = Textus::Store::Jobs::Plan.new(steps: steps, warnings: [])
+          plan = Textus::Store::Retention::Plan.new(steps: steps, warnings: [])
           return success(plan) if command.dry_run
 
           rewrite_manifest!(from: command.from, to: command.to)

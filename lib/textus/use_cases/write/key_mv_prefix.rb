@@ -32,7 +32,7 @@ module Textus
             { "op" => "mv", "from" => old_key, "to" => new_key }
           end
 
-          plan = Textus::Store::Jobs::Plan.new(steps: steps, warnings: warnings)
+          plan = Textus::Store::Retention::Plan.new(steps: steps, warnings: warnings)
           return success(plan) if command.dry_run
 
           steps.each do |step|

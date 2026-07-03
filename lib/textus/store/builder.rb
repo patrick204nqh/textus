@@ -17,7 +17,7 @@ module Textus
         link_graph  = Store::LinkGraph.new(database)
         entry_index = Store::EntryIndex.new(database)
         workflows   = Workflow::Loader.load_all(root)
-        workflows.push(Textus::Workflows::Materialize)
+        workflows.push(Textus::Workflow::Instances::Materialize)
         entry_store = Store::EntryStore.new(file_system:, manifest:, audit_log:, layout:, entry_index:)
 
         ttl_evaluator = Store::Freshness::TtlEvaluator.new(
