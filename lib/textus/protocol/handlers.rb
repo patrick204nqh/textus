@@ -103,14 +103,14 @@ module Textus
       end
 
       def boot(ctx:, call:)
-        storage    = Textus::Infra::Store::Container::Storage.new(
+        storage    = Textus::Protocol::Container::Storage.new(
           file_system: ctx.file_system, entry_store: nil, layout: ctx.layout, entry_index: nil,
         )
-        events     = Textus::Infra::Store::Container::Events.new(event_store: nil, workflows: nil)
-        governance = Textus::Infra::Store::Container::Governance.new(manifest: ctx.manifest, schemas: ctx.schemas)
-        logging    = Textus::Infra::Store::Container::Logging.new(audit_log: ctx.audit)
-        links      = Textus::Infra::Store::Container::Links.new(link_graph: nil)
-        proxy = Textus::Infra::Store::Container.new(
+        events     = Textus::Protocol::Container::Events.new(event_store: nil, workflows: nil)
+        governance = Textus::Protocol::Container::Governance.new(manifest: ctx.manifest, schemas: ctx.schemas)
+        logging    = Textus::Protocol::Container::Logging.new(audit_log: ctx.audit)
+        links      = Textus::Protocol::Container::Links.new(link_graph: nil)
+        proxy = Textus::Protocol::Container.new(
           storage:, events:, governance:, logging:, links:,
           root: ctx.layout.root, pipeline: nil
         )
@@ -193,7 +193,7 @@ module Textus
           tail = row["key"].delete_prefix("#{from_prefix}.")
           { "op" => "mv", "from" => row["key"], "to" => "#{to_prefix}.#{tail}" }
         end
-        plan = Textus::Infra::Store::Retention::Plan.new(steps:, warnings:)
+        plan = Textus::Protocol::Retention::Plan.new(steps:, warnings:)
         return plan.to_h if dry_run
 
         steps.each { |s| move(old_key: s["from"], new_key: s["to"], ctx:, call:) }
@@ -208,7 +208,7 @@ module Textus
 
         warnings = leaves.empty? ? ["no keys under #{prefix}"] : []
         steps = leaves.map { |row| { "op" => "delete", "key" => row["key"] } }
-        plan = Textus::Infra::Store::Retention::Plan.new(steps:, warnings:)
+        plan = Textus::Protocol::Retention::Plan.new(steps:, warnings:)
         return plan.to_h if dry_run
 
         steps.each { |s| delete(key: s["key"], ctx:, call:) }
@@ -225,7 +225,7 @@ module Textus
         affected_keys = ctx.manifest.data.entries.select { |e| e.lane == from }.map(&:key)
         steps = [{ "op" => "rename_zone", "from" => from, "to" => to }]
         steps += affected_keys.map { |k| { "op" => "mv", "from" => k, "to" => "#{to}#{k[from.length..]}" } }
-        plan = Textus::Infra::Store::Retention::Plan.new(steps:, warnings: [])
+        plan = Textus::Protocol::Retention::Plan.new(steps:, warnings: [])
         return plan.to_h if dry_run
 
         rewrite_data_mv_manifest!(from:, to:, ctx:)

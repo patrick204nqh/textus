@@ -15,7 +15,7 @@ module Textus
         return error(:unknown_verb, "Unknown verb: #{verb}") unless spec
 
         key = params[:key]
-        authorize!(role, verb, key)
+        authorize!(role, verb, key, spec)
 
     call_obj = call || Value::Call.build(role:, correlation_id: SecureRandom.uuid)
     bound = Protocol::Binder.bind(spec, params)
@@ -32,13 +32,10 @@ module Textus
 
       private
 
-      def authorize!(role, verb, key)
-        spec = VerbRegistry.for(verb)
+      def authorize!(role, verb, key, spec)
         return true unless spec&.write?
 
-        return true if role == :automation && verb == :drain
-
-        lane = key&.split(".")&.first
+        lane = key&.split(".")&.first || spec.lane&.to_s
         return true unless lane
 
         writers = Textus::Protocol::V4::LANES.dig(lane, :writers) || []

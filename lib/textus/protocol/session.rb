@@ -7,7 +7,7 @@ module Textus
 
       def initialize(root, role: Value::Role::DEFAULT, correlation_id: nil, dry_run: false)
         @root = File.expand_path(root)
-        @container = Infra::Store::Builder.new.call(@root)
+        @container = Protocol::Builder.new.call(@root)
         @role = role.to_s
         @correlation_id = correlation_id || SecureRandom.uuid
         @dry_run = dry_run

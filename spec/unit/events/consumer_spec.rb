@@ -6,7 +6,7 @@ RSpec.describe Textus::Protocol::Events::Consumer do
   let(:event_store) { instance_double(Textus::Protocol::Events::EventStore) }
   let(:registry) { instance_double(Textus::Workflow::Registry) }
   let(:workflow) { instance_double(Textus::Workflow::DSL::Definition, type: "materialize") }
-  let(:container) { instance_double(Textus::Infra::Store::Container) }
+  let(:container) { instance_double(Textus::Protocol::Container) }
   let(:call) { instance_double(Textus::Value::Call) }
   let(:pending_row) { { id: 1, key: "knowledge.a", workflow_type: "materialize", retry_count: 0, max_attempts: 3, state: "pending" } }
 

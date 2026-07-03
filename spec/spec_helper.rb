@@ -29,7 +29,7 @@ Envelope  = Textus::Value::Envelope    unless defined?(Envelope)
 Call      = Textus::Value::Call        unless defined?(Call)
 Entry     = Textus::Protocol::Manifest::Entry unless defined?(Entry)
 Mentry    = Textus::Protocol::Manifest::Entry::Base unless defined?(Mentry)
-Container = Textus::Infra::Store::Container          unless defined?(Container)
+Container = Textus::Protocol::Container          unless defined?(Container)
 
 Dir[File.expand_path("support/**/*.rb", __dir__)].each { |f| require f }
 
