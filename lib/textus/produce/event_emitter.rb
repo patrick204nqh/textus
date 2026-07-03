@@ -3,8 +3,8 @@
 module Textus
   module Produce
     class EventEmitter
-      def initialize(database:, workflow_registry:)
-        @db = database
+      def initialize(event_store:, workflow_registry:)
+        @event_store = event_store
         @registry = workflow_registry
       end
 
@@ -12,23 +12,14 @@ module Textus
         workflows = @registry.workflows_for(event_type)
         return 0 if workflows.empty?
 
-        now = Time.now.utc
-        rows = workflows.map do |wf|
-          {
-            event_type: event_type.to_s,
-            workflow_type: wf.type,
-            key: key,
-            lane: lane,
-            payload: payload.to_json,
-            created_at: now,
-            state: "pending",
-            retry_count: 0,
-            max_attempts: wf.max_attempts,
-          }
+        workflows.each do |wf|
+          @event_store.emit(
+            event_type: event_type.to_s, workflow_type: wf.type,
+            key: key, lane: lane, payload: payload,
+            max_attempts: wf.max_attempts
+          )
         end
-
-        @db[:events].multi_insert(rows)
-        rows.size
+        workflows.size
       end
     end
   end
