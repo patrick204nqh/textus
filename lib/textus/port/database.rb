@@ -53,6 +53,7 @@ module Textus
           String :key, primary_key: true
           String :lane, null: false
           String :format, null: false
+          String :schema
           String :content, text: true
           DateTime :indexed_at, null: false
         end
@@ -76,12 +77,39 @@ module Textus
           index :seq
         end
 
+        create_entries_fts_objects
+      end
+
+      def create_entries_fts_objects
         begin
           @db.run(<<~SQL)
             CREATE VIRTUAL TABLE IF NOT EXISTS entries_fts USING fts5(
-              key, lane, content,
+              key, lane, schema, content,
               content=entries, content_rowid=rowid
             )
+          SQL
+
+          @db.run(<<~SQL)
+            CREATE TRIGGER IF NOT EXISTS entries_ai AFTER INSERT ON entries BEGIN
+              INSERT INTO entries_fts(rowid, key, lane, schema, content)
+              VALUES (new.rowid, new.key, new.lane, new.schema, new.content);
+            END
+          SQL
+
+          @db.run(<<~SQL)
+            CREATE TRIGGER IF NOT EXISTS entries_ad AFTER DELETE ON entries BEGIN
+              INSERT INTO entries_fts(entries_fts, rowid, key, lane, schema, content)
+              VALUES ('delete', old.rowid, old.key, old.lane, old.schema, old.content);
+            END
+          SQL
+
+          @db.run(<<~SQL)
+            CREATE TRIGGER IF NOT EXISTS entries_au AFTER UPDATE ON entries BEGIN
+              INSERT INTO entries_fts(entries_fts, rowid, key, lane, schema, content)
+              VALUES ('delete', old.rowid, old.key, old.lane, old.schema, old.content);
+              INSERT INTO entries_fts(rowid, key, lane, schema, content)
+              VALUES (new.rowid, new.key, new.lane, new.schema, new.content);
+            END
           SQL
         rescue StandardError
           nil
