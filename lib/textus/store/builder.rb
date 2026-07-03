@@ -28,6 +28,22 @@ module Textus
 
         trace_buffer = Store::TraceBuffer.new
 
+        # Protocol layer components
+        protocol_manifest = Protocol::Manifest.load(root)
+        protocol_layout   = Protocol::Layout.new(root)
+        protocol_index    = Protocol::Index.new(database)
+        protocol_links    = Protocol::Links.new(database)
+        protocol_audit    = Protocol::Audit.new(
+          layout: protocol_layout,
+          max_size: protocol_manifest.data.audit_config[:max_size],
+          keep: protocol_manifest.data.audit_config[:keep],
+          file_system: file_store,
+        )
+        protocol_gate     = Protocol::Gate.new(
+          manifest: protocol_manifest,
+          resolver: protocol_manifest.resolver,
+        )
+
         storage    = Container::Storage.new(file_system: file_store, entry_store:, layout:, entry_index:)
         events     = Container::Events.new(event_store:, workflows:)
         governance = Container::Governance.new(manifest:, schemas:)
