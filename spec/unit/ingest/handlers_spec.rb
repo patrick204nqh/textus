@@ -8,6 +8,7 @@ RSpec.describe Textus::Ingest::Handlers do
       layout = instance_double("Layout")
       allow(container).to receive_messages(manifest:, writer:, event_store:, layout:)
       allow(event_store).to receive(:db)
+      ctx = Textus::Protocol::HandlerContext.new(container)
       call = instance_double(Call, role: "agent", correlation_id: "abc")
 
       entry = double("entry", entry: instance_double(Mentry, format: "yaml", lane: "raw"))
@@ -23,12 +24,13 @@ RSpec.describe Textus::Ingest::Handlers do
 
       described_class.ingest(
         kind: "url", slug: "test-link", url: "https://example.com",
-        container:, call:
+        ctx:, call:
       )
 
       expect(writer).to have_received(:put).with(
         "raw.2026.07.03.url-test",
         mentry: entry.entry,
+        if_etag: nil,
         call:,
         payload: instance_of(Textus::Value::Payload),
       )
@@ -43,6 +45,7 @@ RSpec.describe Textus::Ingest::Handlers do
       layout = instance_double("Layout")
       allow(container).to receive_messages(manifest:, writer:, event_store:, layout:)
       allow(event_store).to receive(:db)
+      ctx = Textus::Protocol::HandlerContext.new(container)
       call = instance_double(Call, role: "agent", correlation_id: "abc")
 
       entry = double("entry", entry: instance_double(Mentry, format: "yaml", lane: "raw"))
@@ -60,20 +63,21 @@ RSpec.describe Textus::Ingest::Handlers do
 
       described_class.ingest(
         kind: "url", slug: "test-link", url: "https://example.com",
-        container:, call:
+        ctx:, call:
       )
 
       expect(Textus::Ingest::Resolver).to have_received(:supersede).with(
-        "raw.2026.06.01.old", "raw.2026.07.03.url-test", container, call:
+        "raw.2026.06.01.old", "raw.2026.07.03.url-test", ctx, call:
       )
     end
 
     it "returns failure for invalid kind" do
       container = instance_double(Container)
+      ctx = Textus::Protocol::HandlerContext.new(container)
       call = instance_double(Call)
 
       result = described_class.ingest(
-        kind: "invalid", slug: "test", container:, call:,
+        kind: "invalid", slug: "test", ctx:, call:,
       )
 
       expect(result).to be_a(Hash)

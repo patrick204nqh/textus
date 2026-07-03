@@ -1,7 +1,7 @@
 module Textus
   module Protocol
     class Gate
-      include Builtin
+
 
       def initialize(manifest:, resolver:, pipeline:, async: nil)
         @manifest = manifest
@@ -17,15 +17,13 @@ module Textus
         key = params[:key]
         authorize!(role, verb, key)
 
-        call_obj = call || Value::Call.build(role:, correlation_id: SecureRandom.uuid)
-        bound = Protocol::Binder.bind(spec, params)
+    call_obj = call || Value::Call.build(role:, correlation_id: SecureRandom.uuid)
+    bound = Protocol::Binder.bind(spec, params)
+    ctx = HandlerContext.new(@pipeline.container)
 
-        if spec.lane
-          handler = Lane.handler_for(spec.lane)
-          result = handler.public_send(verb, **bound, container: @pipeline.container, call: call_obj)
-        else
-          result = send(:"builtin_#{verb}", **bound, call: call_obj)
-        end
+    handler = spec.lane ? Lane.handler_for(spec.lane) : Protocol::Handlers
+
+    result = handler.public_send(verb, **bound, ctx:, call: call_obj)
         Value::Result.extract(Value::Result.success(result))
       rescue Textus::WriteForbidden
         raise

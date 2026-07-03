@@ -5,7 +5,7 @@ module Textus
 
       module_function
 
-      def ingest(kind:, slug:, container:, call:, url: nil, path: nil, lane: nil, label: nil)
+      def ingest(kind:, slug:, ctx:, call:, url: nil, path: nil, lane: nil, label: nil)
         unless SOURCE_KINDS.include?(kind)
           return { error: { code: "usage_error", message: "kind must be one of #{SOURCE_KINDS.join("|")}" } }
         end
@@ -21,30 +21,30 @@ module Textus
         now = Time.now.utc
         key = KeyBuilder.derive_key(now, kind, slug)
         content_hash = KeyBuilder.compute_hash(kind:, url:, path:)
-        mentry = container.manifest.resolver.resolve(key).entry
+        mentry = ctx.mentry_for(key)
 
         entry_type = EntryTypes.for(kind)
         time = now
-        structured = entry_type.build(url:, path:, lane:, label:, time:, layout: container.layout)
+        structured = entry_type.build(url:, path:, lane:, label:, time:, layout: ctx.layout)
 
-        lookup = Textus::Infra::Store::Index::Lookup.new(store: container.event_store)
+        lookup = Textus::Infra::Store::Index::Lookup.new(store: ctx.event_store)
         duplicate_key = Dedup.find(lookup, content_hash, url:)
 
         if duplicate_key && duplicate_key != key
-          Resolver.supersede(duplicate_key, key, container, call:)
+          Resolver.supersede(duplicate_key, key, ctx, call:)
 
           if kind == "asset"
-            old_content = container.reader.read(duplicate_key)&.content || {}
-            EntryTypes::Asset.move(old_content["asset"], lane, container.layout) if old_content["asset"]
+            old_content = ctx.read(duplicate_key)&.content || {}
+            EntryTypes::Asset.move(old_content["asset"], lane, ctx.layout) if old_content["asset"]
           end
         end
 
         structured["supersedes"] = duplicate_key if duplicate_key && duplicate_key != key
 
-        env = container.writer.put(key, mentry:, call:,
-                                        payload: Textus::Value::Payload.new(meta: nil, body: nil, content: structured))
+        env = ctx.write(key, mentry:, call:,
+                                        payload: ctx.payload(meta: nil, body: nil, content: structured))
 
-        IndexRebuilder.rebuild!(container.event_store, container.manifest.resolver)
+        IndexRebuilder.rebuild!(ctx.event_store, ctx.manifest.resolver)
 
         { "key" => key, "uid" => env.uid, "etag" => env.etag }
       end

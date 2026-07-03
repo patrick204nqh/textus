@@ -13,14 +13,16 @@ RSpec.describe Textus::Ingest::Resolver do
       )
       allow(container).to receive_messages(manifest:, reader:, writer:)
       allow(writer).to receive(:put)
+      ctx = Textus::Protocol::HandlerContext.new(container)
 
       call = instance_double(Call, role: "automation", correlation_id: "abc")
 
-      described_class.supersede("raw.2026.06.01.old", "raw.2026.07.03.new", container, call:)
+      described_class.supersede("raw.2026.06.01.old", "raw.2026.07.03.new", ctx, call:)
 
       expect(writer).to have_received(:put).with(
         "raw.2026.06.01.old",
         mentry: entry.entry,
+        if_etag: nil,
         call:,
         payload: instance_of(Textus::Value::Payload),
       )
@@ -37,10 +39,11 @@ RSpec.describe Textus::Ingest::Resolver do
       allow(reader).to receive(:read).with("raw.2026.06.01.old").and_return(nil)
       allow(container).to receive_messages(manifest:, reader:, writer:)
       allow(writer).to receive(:put)
+      ctx = Textus::Protocol::HandlerContext.new(container)
 
       call = instance_double(Call, role: "automation", correlation_id: "abc")
 
-      described_class.supersede("raw.2026.06.01.old", "raw.2026.07.03.new", container, call:)
+      described_class.supersede("raw.2026.06.01.old", "raw.2026.07.03.new", ctx, call:)
 
       expect(writer).to have_received(:put)
     end

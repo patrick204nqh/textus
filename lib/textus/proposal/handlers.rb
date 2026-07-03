@@ -3,21 +3,21 @@ module Textus
     module Handlers
       module_function
 
-      def propose(key:, container:, call:, meta: nil, body: nil, content: nil)
-        zone = container.manifest.policy.propose_lane_for(call.role)
+      def propose(key:, ctx:, call:, meta: nil, body: nil, content: nil)
+        zone = ctx.manifest.policy.propose_lane_for(call.role)
         return { error: { code: "propose_forbidden", message: "role '#{call.role}' has no writable propose_lane" } } unless zone
 
         full_key = "#{zone}.#{key}"
-        mentry = container.manifest.resolver.resolve(full_key).entry
-        env = container.writer.put(
+        mentry = ctx.mentry_for(full_key)
+        env = ctx.write(
           full_key, mentry:, call:,
-                    payload: Textus::Value::Payload.new(meta: meta || {}, body:, content:)
+                    payload: ctx.payload(meta: meta || {}, body:, content:)
         )
         env.to_h_for_wire
       end
 
-      def accept(pending_key:, container:, call:, dry_run: false)
-        env = container.reader.read(pending_key)
+      def accept(pending_key:, ctx:, call:, dry_run: false)
+        env = ctx.read(pending_key)
         proposal = env&.meta&.dig("proposal")
         return { error: { code: "proposal_error", message: "entry has no proposal block: #{pending_key}" } } unless proposal
 
@@ -27,7 +27,7 @@ module Textus
         action = proposal["action"] || "put"
 
         if dry_run
-          target_env = container.reader.read(target)
+          target_env = ctx.read(target)
           body_diff = Textus::Protocol::Diff.body(target_env&.body, env.body)
           meta_diff = Textus::Protocol::Diff.meta(target_env&.meta&.dig("_meta") || {}, env.meta&.dig("_meta") || {})
           result = { "dry_run" => true, "pending_key" => pending_key, "target_key" => target, "action" => action }
@@ -39,51 +39,51 @@ module Textus
 
         case action
         when "put"
-          mentry = container.manifest.resolver.resolve(target).entry
-          container.writer.put(target, mentry:, call:,
-                                       payload: Textus::Value::Payload.new(meta: env.meta["_meta"] || {}, body: env.body, content: nil))
+          mentry = ctx.mentry_for(target)
+          ctx.write(target, mentry:, call:,
+                               payload: ctx.payload(meta: env.meta["_meta"] || {}, body: env.body, content: nil))
         when "delete"
-          container.writer.delete(target, call:)
+          ctx.delete(target, call:)
         else
           return { error: { code: "proposal_error", message: "unknown action: #{action}" } }
         end
 
-        container.writer.delete(pending_key, call:)
+        ctx.delete(pending_key, call:)
         { "protocol" => Textus::PROTOCOL, "accepted" => pending_key,
           "target_key" => target, "action" => action, "cascade_key" => target }
       end
 
-      def reject(pending_key:, container:, call:, reason: nil)
-        mentry = container.manifest.resolver.resolve(pending_key).entry
-        unless mentry.in_proposal_lane?(container.manifest.policy)
+      def reject(pending_key:, ctx:, call:, reason: nil)
+        mentry = ctx.mentry_for(pending_key)
+        unless mentry.in_proposal_lane?(ctx.manifest.policy)
           return { error: { code: "proposal_error", message: "reject: '#{pending_key}' is not in a proposal zone (zone=#{mentry.lane})" } }
         end
 
-        env = container.reader.read(pending_key)
+        env = ctx.read(pending_key)
         proposal = env&.meta&.dig("proposal")
         return { error: { code: "proposal_error", message: "entry has no proposal block: #{pending_key}" } } unless proposal
 
         target_key = proposal["target_key"]
-        container.writer.delete(pending_key, mentry:, call:)
+        ctx.delete(pending_key, mentry:, call:)
         result = { "protocol" => Textus::PROTOCOL, "rejected" => pending_key, "target_key" => target_key }
         result["reason"] = reason if reason
         result
       end
 
-      def diff(pending_key:, container:, call:)
-        env = container.reader.read(pending_key)
+      def diff(pending_key:, ctx:, call:)
+        env = ctx.read(pending_key)
         proposal = env&.meta&.dig("proposal")
         return { error: { code: "proposal_error", message: "entry has no proposal block: #{pending_key}" } } unless proposal
 
         target_key = proposal["target_key"]
         return { error: { code: "proposal_error", message: "proposal missing target_key" } } unless target_key
 
-        target_env = container.reader.read(target_key)
+        target_env = ctx.read(target_key)
 
         body_diff = Textus::Protocol::Diff.body(target_env&.body, env.body)
         meta_diff = Textus::Protocol::Diff.meta(target_env&.meta&.dig("_meta") || {}, env.meta&.dig("_meta") || {})
 
-        entry = container.manifest.data.entries.find { |e| e.key == target_key }
+        entry = ctx.manifest.data.entries.find { |e| e.key == target_key }
         target_schema = entry&.schema_ref
         proposal_schema = env&.meta&.dig("_meta", "schema")
         schema_diff = nil

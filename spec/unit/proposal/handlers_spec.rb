@@ -5,6 +5,7 @@ RSpec.describe Textus::Proposal::Handlers do
       manifest = instance_double(Manifest, policy: instance_double("Policy"), resolver: instance_double("Resolver"))
       writer = instance_double("Writer")
       allow(container).to receive_messages(manifest:, writer:)
+      ctx = Textus::Protocol::HandlerContext.new(container)
       allow(manifest.policy).to receive(:propose_lane_for).with("human").and_return("proposals")
       entry = double("entry", entry: instance_double(Mentry))
       allow(manifest.resolver).to receive(:resolve).with("proposals.decisions.feature-x").and_return(entry)
@@ -16,12 +17,13 @@ RSpec.describe Textus::Proposal::Handlers do
 
       result = described_class.propose(
         key: "decisions.feature-x", meta: { "proposal" => { "target_key" => "knowledge.foo" } },
-        body: "some body", content: nil, container:, call:
+        body: "some body", content: nil, ctx:, call:
       )
 
       expect(writer).to have_received(:put).with(
         "proposals.decisions.feature-x",
         mentry: entry.entry,
+        if_etag: nil,
         call:,
         payload: instance_of(Textus::Value::Payload),
       )
@@ -32,12 +34,13 @@ RSpec.describe Textus::Proposal::Handlers do
       container = instance_double(Container)
       manifest = instance_double(Manifest, policy: instance_double("Policy"))
       allow(container).to receive(:manifest).and_return(manifest)
+      ctx = Textus::Protocol::HandlerContext.new(container)
       allow(manifest.policy).to receive(:propose_lane_for).with("viewer").and_return(nil)
 
       call = instance_double(Call, role: "viewer", correlation_id: "abc")
 
       result = described_class.propose(
-        key: "test", container:, call:,
+        key: "test", ctx:, call:,
       )
 
       expect(result).to have_key(:error)
@@ -52,6 +55,7 @@ RSpec.describe Textus::Proposal::Handlers do
       writer = instance_double("Writer")
       manifest = instance_double(Manifest, resolver: instance_double("Resolver"))
       allow(container).to receive_messages(reader:, writer:, manifest:)
+      ctx = Textus::Protocol::HandlerContext.new(container)
 
       pending_env = instance_double(Envelope,
                                     meta: { "proposal" => { "target_key" => "knowledge.foo", "action" => "put" } },
@@ -65,7 +69,7 @@ RSpec.describe Textus::Proposal::Handlers do
 
       call = instance_double(Call, role: "human", correlation_id: "abc")
 
-      result = described_class.accept(pending_key: "proposals.test", dry_run: false, container:, call:)
+      result = described_class.accept(pending_key: "proposals.test", dry_run: false, ctx:, call:)
 
       expect(writer).to have_received(:put).with("knowledge.foo", anything)
       expect(writer).to have_received(:delete).with("proposals.test", anything)
@@ -77,6 +81,7 @@ RSpec.describe Textus::Proposal::Handlers do
       reader = instance_double("Reader")
       allow(container).to receive(:reader).and_return(reader)
       allow(container).to receive(:writer)
+      ctx = Textus::Protocol::HandlerContext.new(container)
 
       pending_env = instance_double(Envelope,
                                     meta: { "proposal" => { "target_key" => "knowledge.foo", "action" => "put" } },
@@ -89,7 +94,7 @@ RSpec.describe Textus::Proposal::Handlers do
 
       call = instance_double(Call, role: "human", correlation_id: "abc")
 
-      result = described_class.accept(pending_key: "proposals.test", dry_run: true, container:, call:)
+      result = described_class.accept(pending_key: "proposals.test", dry_run: true, ctx:, call:)
 
       expect(result["dry_run"]).to be true
       expect(result).to have_key("body")
@@ -99,12 +104,13 @@ RSpec.describe Textus::Proposal::Handlers do
       container = instance_double(Container)
       reader = instance_double("Reader")
       allow(container).to receive(:reader).and_return(reader)
+      ctx = Textus::Protocol::HandlerContext.new(container)
       env = instance_double(Envelope, meta: {})
       allow(reader).to receive(:read).and_return(env)
 
       call = instance_double(Call, role: "human", correlation_id: "abc")
 
-      result = described_class.accept(pending_key: "bad", container:, call:)
+      result = described_class.accept(pending_key: "bad", ctx:, call:)
       expect(result[:error][:code]).to eq("proposal_error")
     end
   end
@@ -116,6 +122,7 @@ RSpec.describe Textus::Proposal::Handlers do
       writer = instance_double("Writer")
       manifest = instance_double(Manifest, policy: instance_double("Policy"), resolver: instance_double("Resolver"))
       allow(container).to receive_messages(reader:, writer:, manifest:)
+      ctx = Textus::Protocol::HandlerContext.new(container)
 
       mentry = instance_double(Mentry)
       allow(mentry).to receive(:in_proposal_lane?).and_return(true)
@@ -128,9 +135,9 @@ RSpec.describe Textus::Proposal::Handlers do
 
       call = instance_double(Call, role: "human", correlation_id: "abc")
 
-      result = described_class.reject(pending_key: "proposals.test", reason: "not needed", container:, call:)
+      result = described_class.reject(pending_key: "proposals.test", reason: "not needed", ctx:, call:)
 
-      expect(writer).to have_received(:delete).with("proposals.test", mentry:, call:)
+      expect(writer).to have_received(:delete).with("proposals.test", if_etag: nil, mentry:, call:)
       expect(result["rejected"]).to eq("proposals.test")
       expect(result["reason"]).to eq("not needed")
     end
@@ -139,6 +146,7 @@ RSpec.describe Textus::Proposal::Handlers do
       container = instance_double(Container)
       manifest = instance_double(Manifest, resolver: instance_double("Resolver"), policy: instance_double("Policy"))
       allow(container).to receive(:manifest).and_return(manifest)
+      ctx = Textus::Protocol::HandlerContext.new(container)
       mentry = instance_double(Mentry)
       allow(mentry).to receive_messages(in_proposal_lane?: false, lane: "knowledge")
       entry = double("entry", entry: mentry)
@@ -146,7 +154,7 @@ RSpec.describe Textus::Proposal::Handlers do
 
       call = instance_double(Call, role: "human", correlation_id: "abc")
 
-      result = described_class.reject(pending_key: "knowledge.foo", container:, call:)
+      result = described_class.reject(pending_key: "knowledge.foo", ctx:, call:)
       expect(result[:error][:code]).to eq("proposal_error")
     end
   end
@@ -159,6 +167,7 @@ RSpec.describe Textus::Proposal::Handlers do
       manifest_data = double("ManifestData")
       allow(manifest).to receive(:data).and_return(manifest_data)
       allow(container).to receive_messages(reader:, manifest:)
+      ctx = Textus::Protocol::HandlerContext.new(container)
 
       env = instance_double(Envelope,
                             meta: { "proposal" => { "target_key" => "knowledge.foo" }, "_meta" => { "schema" => "v2" } },
@@ -176,7 +185,7 @@ RSpec.describe Textus::Proposal::Handlers do
 
       call = instance_double(Call, role: "human", correlation_id: "abc")
 
-      result = described_class.diff(pending_key: "proposals.test", container:, call:)
+      result = described_class.diff(pending_key: "proposals.test", ctx:, call:)
 
       expect(result["pending_key"]).to eq("proposals.test")
       expect(result["target_key"]).to eq("knowledge.foo")
@@ -189,12 +198,13 @@ RSpec.describe Textus::Proposal::Handlers do
       container = instance_double(Container)
       reader = instance_double("Reader")
       allow(container).to receive(:reader).and_return(reader)
+      ctx = Textus::Protocol::HandlerContext.new(container)
       env = instance_double(Envelope, meta: {})
       allow(reader).to receive(:read).and_return(env)
 
       call = instance_double(Call, role: "human", correlation_id: "abc")
 
-      result = described_class.diff(pending_key: "bad", container:, call:)
+      result = described_class.diff(pending_key: "bad", ctx:, call:)
       expect(result[:error][:code]).to eq("proposal_error")
     end
   end

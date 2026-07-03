@@ -94,7 +94,7 @@ module Textus
                      description: "structured payload for json/yaml-format entries; omit (use `body`) for markdown entries"),
          ArgSpec.arg(name: :if_etag,
                      description: "optimistic-concurrency guard; write rejected if entry changed since")],
-        %i[cli mcp], { default: ->(env, _) { { "uid" => env.uid, "etag" => env.etag } } }, nil, nil, :write
+        %i[cli mcp], { default: ->(env, _) { { "uid" => env["uid"], "etag" => env["etag"] } } }, nil, nil, :write
       )
 
       # ── list ─────────────────────────────────────────────

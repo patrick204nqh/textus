@@ -1,9 +1,8 @@
 RSpec.describe Textus::Protocol::Gate do
   let(:manifest) { instance_double("Manifest") }
   let(:resolver) { instance_double("Resolver") }
-  let(:pipeline) { double("pipeline", container: container) }
+  let(:pipeline) { double("pipeline", container: double("Container", reader:)) }
   let(:reader) { instance_double("Reader") }
-  let(:container) { double("Container", reader:) }
   let(:gate) { described_class.new(manifest:, resolver:, pipeline:) }
 
   def lane_spec(lane:)
@@ -21,7 +20,7 @@ RSpec.describe Textus::Protocol::Gate do
       allow(Textus::Protocol::Lane).to receive(:handler_for).with(:ingest).and_return(handler)
       allow(Textus::Protocol::VerbRegistry).to receive(:for).with(:ingest).and_return(lane_spec(lane: :ingest))
 
-      expect(handler).to receive(:ingest).with(hash_including(container:, call: anything))
+      expect(handler).to receive(:ingest).with(hash_including(ctx: instance_of(Textus::Protocol::HandlerContext), call: anything))
       gate.dispatch(:agent, :ingest, { kind: "url", slug: "test" })
     end
 
