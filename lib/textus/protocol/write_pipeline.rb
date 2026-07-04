@@ -10,7 +10,7 @@ module Textus
         def with(**attrs) = self.class.new(**to_h, **attrs)
       end
 
-      WriteDeps = Data.define(:file_system, :manifest, :store, :call, :reader, :layout) do
+      WriteDeps = Data.define(:file_system, :manifest, :store, :call, :reader, :layout, :workflow_registry) do
         def audit_log   = store.event_store
         def entry_index = store.entry_store
       end

@@ -117,21 +117,36 @@ module Textus
           end
         end
 
+        module EmitWorkflowEvent
+          def self.call(ctx, deps)
+            return ctx unless deps.workflow_registry
+
+            emitter = Textus::Protocol::Events::Emitter.new(
+              event_store: deps.audit_log,
+              workflow_registry: deps.workflow_registry,
+            )
+            emitter.emit(event_type: "entry.written", key: ctx.key, lane: ctx.mentry.lane)
+            ctx
+          rescue StandardError
+            ctx
+          end
+        end
+
         STEPS = [
           ResolvePath, ReadExisting, InjectMeta, Serialize,
           EnforceNameMatch, ValidateRaw,
-          CheckEtag, WriteBytes, BuildEnvelope, AppendAudit, IndexEntry
+          CheckEtag, WriteBytes, BuildEnvelope, AppendAudit, EmitWorkflowEvent, IndexEntry
         ].freeze
 
         # rubocop:disable Metrics/ParameterLists
-        def self.call(key, mentry:, payload:, call:, file_system:, manifest:, store:, layout:, reader:, if_etag: nil)
+        def self.call(key, mentry:, payload:, call:, file_system:, manifest:, store:, layout:, reader:, if_etag: nil, workflow_registry: nil)
           ctx = WriteContext.new(
             key:, mentry:, payload:, if_etag:,
             path: nil, existing_env: nil, meta: nil, content: nil,
             bytes: nil, eff_meta: nil, eff_body: nil, eff_content: nil,
             etag_before: nil, envelope: nil
           )
-          deps = WriteDeps.new(file_system:, manifest:, store:, call:, reader:, layout:)
+          deps = WriteDeps.new(file_system:, manifest:, store:, call:, reader:, layout:, workflow_registry:)
           ctx = STEPS.reduce(ctx) { |c, step| step.call(c, deps) }
           ctx.envelope
         end

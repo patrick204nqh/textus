@@ -123,12 +123,6 @@ module Textus
           "schema_ref" => mentry.schema, "schema" => schema&.to_h }
       end
 
-      def published(ctx:, call:)
-        ctx.manifest.data.entries.reject { |entry| entry.publish_to.empty? }.map do |entry|
-          { "key" => entry.key, "publish_to" => entry.publish_to }
-        end
-      end
-
       def audit(ctx:, call:, key: nil, lane: nil, role: nil, verb: nil, since: nil, seq_since: nil, correlation_id: nil, limit: nil)
         if seq_since
           min = ctx.audit.min_available_seq
@@ -172,8 +166,30 @@ module Textus
           result
         end
 
+      def workflow_spec(name:, ctx:, call:)
+        registry = ctx.workflow_registry || Textus::Workflow::Registry.new(ctx.workflows)
+        wf = registry.for(name)
+        {
+          "name" => wf.name, "type" => wf.workflow_type,
+          "match_patterns" => wf.match_pattern ? [wf.match_pattern] : [],
+          "handles_events" => wf.handled_events,
+          "steps" => wf.steps.map { |s| { "name" => s.name.to_s, "type" => step_type(s) } },
+          "publish_targets" => wf.publish_targets.map { |t|
+            h = {}
+            h["to"] = t.to if t.to
+            h["template"] = t.template if t.template
+            h
+          },
+          "priority" => wf.priority,
+          "max_attempts" => wf.max_attempts,
+          "depends_on" => wf.depends_on_patterns,
+          "ttl" => wf.ttl ? wf.ttl.to_s : nil,
+          "on_expire" => wf.on_expire,
+        }
+      end
+
       def drain(ctx:, call:)
-        registry = Textus::Workflow::Registry.new(ctx.workflows)
+        registry = ctx.workflow_registry || Textus::Workflow::Registry.new(ctx.workflows)
         result = Textus::Protocol::Events::Consumer.new.drain(
           event_store: ctx.event_store, registry:, container: ctx.container, call:,
         )
@@ -229,6 +245,14 @@ module Textus
         rewrite_data_mv_manifest!(from:, to:, ctx:)
         FileUtils.mv(ctx.layout.lane_path(from), dest_dir)
         plan.to_h
+      end
+
+      def step_type(step)
+        case step
+        when Textus::Workflow::DSL::ValidateStep then "validate"
+        when Textus::Workflow::DSL::Parallel then "parallel"
+        else "step"
+        end
       end
 
       private

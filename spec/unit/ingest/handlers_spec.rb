@@ -1,13 +1,13 @@
 RSpec.describe Textus::Lanes::Ingest::Handlers do
   def mock_container(manifest:, store:, layout: nil)
     c = double("Container")
-    allow(c).to receive_messages(manifest:, store:, layout:)
+    allow(c).to receive_messages(manifest:, store:, layout:, workflow_registry: nil)
     c
   end
 
   def mock_entry_store(store, entry_store)
     allow(Textus::Protocol::EntryStore).to receive(:new)
-      .with(file_system: store.file_system, manifest: anything, layout: anything, store: store)
+      .with(file_system: store.file_system, manifest: anything, layout: anything, store: store, workflow_registry: nil)
       .and_return(entry_store)
   end
 
@@ -86,7 +86,7 @@ RSpec.describe Textus::Lanes::Ingest::Handlers do
     end
 
     it "returns failure for invalid kind" do
-      container = double("Container")
+      container = double("Container", workflow_registry: nil)
       ctx = Textus::Protocol::HandlerContext.new(container)
       call = instance_double(Call)
 

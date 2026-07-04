@@ -2,13 +2,13 @@ RSpec.describe Textus::Lanes::Ingest::Resolver do
   describe ".supersede" do
     def mock_container(manifest:, store:)
       c = double("Container")
-      allow(c).to receive_messages(manifest:, store:, layout: nil)
+      allow(c).to receive_messages(manifest:, store:, layout: nil, workflow_registry: nil)
       c
     end
 
     def with_entry_store(store, entry_store)
       allow(Textus::Protocol::EntryStore).to receive(:new)
-        .with(file_system: store.file_system, manifest: anything, layout: anything, store: store)
+        .with(file_system: store.file_system, manifest: anything, layout: anything, store: store, workflow_registry: nil)
         .and_return(entry_store)
     end
 

@@ -3,7 +3,7 @@ RSpec.describe Textus::Protocol::Gate do
   let(:resolver) { instance_double("Resolver") }
   let(:entry_store) { instance_double(Textus::Protocol::EntryStore) }
   let(:store) { instance_double(Textus::Infra::Store, file_system: nil) }
-  let(:container) { double("Container", manifest:, store:, layout: nil) }
+  let(:container) { double("Container", manifest:, store:, layout: nil, workflow_registry: nil) }
   let(:gate) { described_class.new(manifest:, resolver:, container:) }
 
   before do

@@ -67,6 +67,21 @@ module Textus
           end
         end
 
+        module EmitWorkflowEvent
+          def self.call(ctx, deps)
+            return ctx unless deps.workflow_registry
+
+            emitter = Textus::Protocol::Events::Emitter.new(
+              event_store: deps.audit_log,
+              workflow_registry: deps.workflow_registry,
+            )
+            emitter.emit(event_type: "entry.deleted", key: ctx.key)
+            ctx
+          rescue StandardError
+            ctx
+          end
+        end
+
         STEPS = [
           ResolvePath,
           AssertExists,
@@ -74,16 +89,17 @@ module Textus
           DeleteFile,
           PruneParents,
           AppendDeleteAudit,
+          EmitWorkflowEvent,
           DeindexEntry,
         ].freeze
 
         # rubocop:disable Metrics/ParameterLists
-        def self.call(key, call:, file_system:, manifest:, store:, layout:, mentry: nil, if_etag: nil, reader: nil)
+        def self.call(key, call:, file_system:, manifest:, store:, layout:, mentry: nil, if_etag: nil, reader: nil, workflow_registry: nil)
           ctx = DeleteContext.new(
             key:, mentry:, if_etag:,
             path: nil, etag_before: nil
           )
-          deps = WriteDeps.new(file_system:, manifest:, store:, call:, reader:, layout:)
+          deps = WriteDeps.new(file_system:, manifest:, store:, call:, reader:, layout:, workflow_registry:)
           STEPS.reduce(ctx) { |c, step| step.call(c, deps) }
           nil
         end

@@ -11,6 +11,7 @@ module Textus
         store       = Infra::Store.new(database:, file_system:)
         workflows   = Workflow::Loader.load_all(root)
         workflows.push(Textus::Workflow::Instances::Materialize)
+        workflow_registry = Workflow::Registry.new(workflows)
 
         ttl_evaluator = Protocol::Freshness::TtlEvaluator.new(
           manifest:,
@@ -21,7 +22,7 @@ module Textus
         container = Container.new(
           store:, layout:,
           manifest:, schemas:,
-          workflows:,
+          workflows:, workflow_registry:,
           root:, ttl_evaluator:
         )
 

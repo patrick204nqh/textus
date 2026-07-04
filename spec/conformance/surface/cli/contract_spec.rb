@@ -52,7 +52,6 @@ RSpec.describe "Textus::Surface::CLI verb return-value contract" do
       "list" => Textus::Surface::CLI::Verb::GenList,
       "loop" => Textus::Surface::CLI::Verb::GenLoop,
       "mcp" => Textus::Surface::CLI::Group::MCP,
-      "published" => Textus::Surface::CLI::Verb::GenPublished,
       "pulse" => Textus::Surface::CLI::Verb::GenPulse,
       "propose" => Textus::Surface::CLI::Verb::GenPropose,
       "put" => Textus::Surface::CLI::Verb::Put,
@@ -62,6 +61,7 @@ RSpec.describe "Textus::Surface::CLI verb return-value contract" do
       "session" => Textus::Surface::CLI::Group::Session,
       "drain" => Textus::Surface::CLI::Verb::GenDrain,
       "watch" => Textus::Surface::CLI::Verb::Watch,
+      "workflow" => Textus::Surface::CLI::Group::Workflow,
       "where" => Textus::Surface::CLI::Verb::GenWhere,
     }
     expect(actual).to eq(expected)
@@ -88,9 +88,6 @@ RSpec.describe "Textus::Surface::CLI verb return-value contract" do
       "open" => Textus::Surface::CLI::Verb::GenSessionOpen,
     )
     expect(Textus::Surface::CLI::Group::Schema.subcommands).to eq(
-      "diff" => Textus::Surface::CLI::Verb::SchemaDiff,
-      "init" => Textus::Surface::CLI::Verb::SchemaInit,
-      "migrate" => Textus::Surface::CLI::Verb::SchemaMigrate,
       "show" => Textus::Surface::CLI::Verb::GenSchemaShow,
     )
   end

@@ -28,7 +28,7 @@ module Textus
 
       OPS_VERBS = %i[
         boot drain pulse data_mv
-        key_mv_prefix key_delete_prefix published
+        key_mv_prefix key_delete_prefix
       ].freeze
 
       VERB_DOMAIN = ENTRY_VERBS.to_h { |v| [v, :entry] }
@@ -234,12 +234,6 @@ module Textus
         %i[cli mcp], :$1
       )
 
-      # ── published ────────────────────────────────────────
-      register VerbSpec.new(
-        :published, "List all entries that declare a publish target.",
-        [], %i[cli mcp], :read
-      )
-
       # ── schema_show ──────────────────────────────────────
       register VerbSpec.new(
         :schema_show, "Return the schema (field shape) for an entry's family.",
@@ -293,6 +287,7 @@ module Textus
       )
       require_relative "../lanes/knowledge/verbs"
       require_relative "../lanes/scratchpad/verbs"
+      require_relative "../lanes/artifact/verbs"
     end
   end
 end

@@ -1,7 +1,7 @@
 module Textus
   module Protocol
-    module Produce
-      class EventEmitter
+    module Events
+      class Emitter
         def initialize(event_store:, workflow_registry:)
           @event_store = event_store
           @registry = workflow_registry

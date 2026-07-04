@@ -29,6 +29,7 @@ module Textus
           manifest: @container.manifest,
           layout: @container.layout,
           store: @container.store,
+          workflow_registry: @container.workflow_registry,
         )
         es.put(key, mentry: ctx.entry, payload:, call: @call)
         Textus::Protocol::Manifest::Entry::Base::PublishContext.new(

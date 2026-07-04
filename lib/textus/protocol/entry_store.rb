@@ -1,11 +1,12 @@
 module Textus
   module Protocol
     class EntryStore
-      def initialize(file_system:, manifest:, layout:, audit_log: nil, entry_index: nil, store: nil)
+      def initialize(file_system:, manifest:, layout:, audit_log: nil, entry_index: nil, store: nil, workflow_registry: nil)
         @file_system = file_system
         @manifest = manifest
         @store = store
         @layout = layout
+        @workflow_registry = workflow_registry
         # Allow backward compat construction without store
         @audit_log = audit_log || store&.event_store
         @entry_index = entry_index || store&.entry_store
@@ -33,19 +34,19 @@ module Textus
       def put(key, if_etag: nil, mentry: nil, payload: nil, call: nil, **)
         Textus::Protocol::WritePipeline.put(key, mentry:, payload:, call:, if_etag:,
                                                  file_system: @file_system, manifest: @manifest, store: @store,
-                                                 layout: @layout, reader: self)
+                                                 layout: @layout, reader: self, workflow_registry: @workflow_registry)
       end
 
       def delete(key, if_etag: nil, call: nil, mentry: nil, **)
         Textus::Protocol::WritePipeline.delete(key, call:, mentry:, if_etag:,
                                                     file_system: @file_system, manifest: @manifest, store: @store,
-                                                    layout: @layout, reader: self)
+                                                    layout: @layout, reader: self, workflow_registry: @workflow_registry)
       end
 
       def move(from_key: nil, to_key: nil, new_mentry: nil, call: nil, if_etag: nil, **)
         Textus::Protocol::WritePipeline.move(from_key:, to_key:, new_mentry:, call:, if_etag:,
                                              file_system: @file_system, manifest: @manifest, store: @store,
-                                             layout: @layout, reader: self)
+                                             layout: @layout, reader: self, workflow_registry: @workflow_registry)
       end
     end
   end

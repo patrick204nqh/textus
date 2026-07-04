@@ -39,10 +39,11 @@ module Textus
       end
 
       # Query
-      def manifest   = @container.manifest
-      def layout     = @container.layout
-      def schemas    = @container.schemas
-      def workflows  = @container.workflows
+      def manifest          = @container.manifest
+      def layout            = @container.layout
+      def schemas           = @container.schemas
+      def workflows         = @container.workflows
+      def workflow_registry = @container.workflow_registry
       attr_reader :container
 
       def file_system = store.file_system
@@ -68,6 +69,7 @@ module Textus
           manifest:,
           layout:,
           store:,
+          workflow_registry:,
         )
       end
     end

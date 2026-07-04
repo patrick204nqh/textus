@@ -106,6 +106,21 @@ module Textus
           end
         end
 
+        module EmitWorkflowEvent
+          def self.call(ctx, deps)
+            return ctx unless deps.workflow_registry
+
+            emitter = Textus::Protocol::Events::Emitter.new(
+              event_store: deps.audit_log,
+              workflow_registry: deps.workflow_registry,
+            )
+            emitter.emit(event_type: "entry.moved", key: ctx.to_key, lane: ctx.new_mentry.lane)
+            ctx
+          rescue StandardError
+            ctx
+          end
+        end
+
         STEPS = [
           ResolvePaths,
           AssertSourceExists,
@@ -117,20 +132,21 @@ module Textus
           ReadEtagAfter,
           ReadEnvelope,
           AppendMoveAudit,
+          EmitWorkflowEvent,
           ReindexEntry,
         ].freeze
 
         # rubocop:disable Metrics/ParameterLists
         def self.call(
           from_key:, to_key:, new_mentry:, call:, file_system:, manifest:, store:,
-          layout:, reader:, if_etag: nil
+          layout:, reader:, if_etag: nil, workflow_registry: nil
         )
           ctx = MoveContext.new(
             from_key:, to_key:, new_mentry:, if_etag:,
             from_path: nil, to_path: nil,
             etag_before: nil, etag_after: nil, envelope: nil
           )
-          deps = WriteDeps.new(file_system:, manifest:, store:, call:, reader:, layout:)
+          deps = WriteDeps.new(file_system:, manifest:, store:, call:, reader:, layout:, workflow_registry:)
           ctx = STEPS.reduce(ctx) { |c, step| step.call(c, deps) }
           ctx.envelope
         end

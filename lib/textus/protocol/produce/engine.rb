@@ -9,7 +9,7 @@ module Textus
         def initialize(container:, call:)
           @container = container
           @call      = call
-          @workflow_registry = Textus::Workflow::Registry.new(container.workflows)
+          @workflow_registry = container.workflow_registry || Textus::Workflow::Registry.new(container.workflows)
         end
 
         def run(keys)
