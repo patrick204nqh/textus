@@ -17,6 +17,31 @@ module Textus
       DEFAULT_TIMEOUT = 30
       CONCURRENCY_ADAPTER = Textus::Infra::Adapters::ConcurrencyAdapter.new
 
+      Context = Data.define(:key, :entry, :config, :lane, :container, :call) do
+        def manifest    = container.manifest
+        def layout      = container.layout
+        def schemas     = container.schemas
+        def file_system = container.store.file_system
+        def read(key)   = Textus::Protocol::EntryStore.new(file_system:, manifest:, layout:, store: container.store).read(key)
+        def repo_root   = File.dirname(container.root)
+        def store_root  = container.root
+      end
+
+      class StepScope
+        include Textus::Workflow::Helpers
+
+        def initialize(data, ctx, _runner)
+          @data = data
+          @ctx  = ctx
+          @container = ctx.container
+          @call = ctx.call
+        end
+
+        def call(callable)
+          instance_exec(@data, @ctx, &callable)
+        end
+      end
+
       def initialize(definition, container:, call:)
         @definition = definition
         @container  = container
