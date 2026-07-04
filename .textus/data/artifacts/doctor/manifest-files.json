@@ -7,73 +7,122 @@
     {
       "code": "manifest.missing_file",
       "severity": "info",
+      "subject": "scratchpad.sessions",
+      "message": "declared entry has no file on disk at /Users/patrick/Development/sandbox/textus/.textus/data/scratchpad/sessions.md",
+      "fix": "create the entry with 'textus put scratchpad.sessions --stdin --as=<role>'"
+    },
+    {
+      "code": "manifest.missing_file",
+      "severity": "info",
+      "subject": "scratchpad.scripts",
+      "message": "declared entry has no file on disk at /Users/patrick/Development/sandbox/textus/.textus/data/scratchpad/scripts.md",
+      "fix": "create the entry with 'textus put scratchpad.scripts --stdin --as=<role>'"
+    },
+    {
+      "code": "manifest.missing_file",
+      "severity": "info",
       "subject": "proposals.notes",
-      "message": "declared entry has no file on disk at /Users/nqhuy25/Development/projects/oss/textus/.textus/data/proposals/notes.md",
+      "message": "declared entry has no file on disk at /Users/patrick/Development/sandbox/textus/.textus/data/proposals/notes.md",
       "fix": "create the entry with 'textus put proposals.notes --stdin --as=<role>'"
     },
     {
       "code": "manifest.missing_file",
       "severity": "info",
+      "subject": "artifacts.render.conventions",
+      "message": "declared entry has no file on disk at /Users/patrick/Development/sandbox/textus/.textus/data/artifacts/render/conventions.json",
+      "fix": "create the entry with 'textus put artifacts.render.conventions --stdin --as=<role>'"
+    },
+    {
+      "code": "manifest.missing_file",
+      "severity": "info",
+      "subject": "artifacts.render.testing",
+      "message": "declared entry has no file on disk at /Users/patrick/Development/sandbox/textus/.textus/data/artifacts/render/testing.json",
+      "fix": "create the entry with 'textus put artifacts.render.testing --stdin --as=<role>'"
+    },
+    {
+      "code": "manifest.missing_file",
+      "severity": "info",
+      "subject": "artifacts.render.engineering-skills",
+      "message": "declared entry has no file on disk at /Users/patrick/Development/sandbox/textus/.textus/data/artifacts/render/engineering-skills.json",
+      "fix": "create the entry with 'textus put artifacts.render.engineering-skills --stdin --as=<role>'"
+    },
+    {
+      "code": "manifest.missing_file",
+      "severity": "info",
+      "subject": "artifacts.render.contributor-conventions",
+      "message": "declared entry has no file on disk at /Users/patrick/Development/sandbox/textus/.textus/data/artifacts/render/contributor-conventions.json",
+      "fix": "create the entry with 'textus put artifacts.render.contributor-conventions --stdin --as=<role>'"
+    },
+    {
+      "code": "manifest.missing_file",
+      "severity": "info",
+      "subject": "artifacts.render.drain-scheduling",
+      "message": "declared entry has no file on disk at /Users/patrick/Development/sandbox/textus/.textus/data/artifacts/render/drain-scheduling.json",
+      "fix": "create the entry with 'textus put artifacts.render.drain-scheduling --stdin --as=<role>'"
+    },
+    {
+      "code": "manifest.missing_file",
+      "severity": "info",
+      "subject": "artifacts.render.migrations",
+      "message": "declared entry has no file on disk at /Users/patrick/Development/sandbox/textus/.textus/data/artifacts/render/migrations.json",
+      "fix": "create the entry with 'textus put artifacts.render.migrations --stdin --as=<role>'"
+    },
+    {
+      "code": "manifest.missing_file",
+      "severity": "info",
+      "subject": "artifacts.render.code-of-conduct",
+      "message": "declared entry has no file on disk at /Users/patrick/Development/sandbox/textus/.textus/data/artifacts/render/code-of-conduct.json",
+      "fix": "create the entry with 'textus put artifacts.render.code-of-conduct --stdin --as=<role>'"
+    },
+    {
+      "code": "manifest.missing_file",
+      "severity": "info",
+      "subject": "artifacts.render.security",
+      "message": "declared entry has no file on disk at /Users/patrick/Development/sandbox/textus/.textus/data/artifacts/render/security.json",
+      "fix": "create the entry with 'textus put artifacts.render.security --stdin --as=<role>'"
+    },
+    {
+      "code": "manifest.missing_file",
+      "severity": "info",
+      "subject": "artifacts.doctor.rule-ambiguity",
+      "message": "declared entry has no file on disk at /Users/patrick/Development/sandbox/textus/.textus/data/artifacts/doctor/rule-ambiguity.json",
+      "fix": "create the entry with 'textus put artifacts.doctor.rule-ambiguity --stdin --as=<role>'"
+    },
+    {
+      "code": "manifest.missing_file",
+      "severity": "info",
       "subject": "artifacts.doctor.sentinels",
-      "message": "declared entry has no file on disk at /Users/nqhuy25/Development/projects/oss/textus/.textus/data/artifacts/doctor/sentinels.json",
+      "message": "declared entry has no file on disk at /Users/patrick/Development/sandbox/textus/.textus/data/artifacts/doctor/sentinels.json",
       "fix": "create the entry with 'textus put artifacts.doctor.sentinels --stdin --as=<role>'"
     },
     {
       "code": "manifest.missing_file",
       "severity": "info",
-      "subject": "artifacts.doctor.orphaned-publish-targets",
-      "message": "declared entry has no file on disk at /Users/nqhuy25/Development/projects/oss/textus/.textus/data/artifacts/doctor/orphaned-publish-targets.json",
-      "fix": "create the entry with 'textus put artifacts.doctor.orphaned-publish-targets --stdin --as=<role>'"
-    },
-    {
-      "code": "manifest.missing_file",
-      "severity": "info",
-      "subject": "artifacts.doctor.generator-drift",
-      "message": "declared entry has no file on disk at /Users/nqhuy25/Development/projects/oss/textus/.textus/data/artifacts/doctor/generator-drift.json",
-      "fix": "create the entry with 'textus put artifacts.doctor.generator-drift --stdin --as=<role>'"
+      "subject": "artifacts.doctor.audit-log",
+      "message": "declared entry has no file on disk at /Users/patrick/Development/sandbox/textus/.textus/data/artifacts/doctor/audit-log.json",
+      "fix": "create the entry with 'textus put artifacts.doctor.audit-log --stdin --as=<role>'"
     },
     {
       "code": "manifest.missing_file",
       "severity": "info",
       "subject": "artifacts.doctor.raw-asset-paths",
-      "message": "declared entry has no file on disk at /Users/nqhuy25/Development/projects/oss/textus/.textus/data/artifacts/doctor/raw-asset-paths.json",
+      "message": "declared entry has no file on disk at /Users/patrick/Development/sandbox/textus/.textus/data/artifacts/doctor/raw-asset-paths.json",
       "fix": "create the entry with 'textus put artifacts.doctor.raw-asset-paths --stdin --as=<role>'"
     },
     {
       "code": "manifest.missing_file",
       "severity": "info",
-      "subject": "artifacts.doctor.scratchpad-sources",
-      "message": "declared entry has no file on disk at /Users/nqhuy25/Development/projects/oss/textus/.textus/data/artifacts/doctor/scratchpad-sources.json",
-      "fix": "create the entry with 'textus put artifacts.doctor.scratchpad-sources --stdin --as=<role>'"
-    },
-    {
-      "code": "manifest.missing_file",
-      "severity": "info",
-      "subject": "artifacts.doctor.stale-reviewed-stamp",
-      "message": "declared entry has no file on disk at /Users/nqhuy25/Development/projects/oss/textus/.textus/data/artifacts/doctor/stale-reviewed-stamp.json",
-      "fix": "create the entry with 'textus put artifacts.doctor.stale-reviewed-stamp --stdin --as=<role>'"
-    },
-    {
-      "code": "manifest.missing_file",
-      "severity": "info",
       "subject": "artifacts.doctor.cursor-retention",
-      "message": "declared entry has no file on disk at /Users/nqhuy25/Development/projects/oss/textus/.textus/data/artifacts/doctor/cursor-retention.json",
+      "message": "declared entry has no file on disk at /Users/patrick/Development/sandbox/textus/.textus/data/artifacts/doctor/cursor-retention.json",
       "fix": "create the entry with 'textus put artifacts.doctor.cursor-retention --stdin --as=<role>'"
     },
     {
       "code": "manifest.missing_file",
       "severity": "info",
-      "subject": "artifacts.doctor.naming-check",
-      "message": "declared entry has no file on disk at /Users/nqhuy25/Development/projects/oss/textus/.textus/data/artifacts/doctor/naming-check.json",
-      "fix": "create the entry with 'textus put artifacts.doctor.naming-check --stdin --as=<role>'"
-    },
-    {
-      "code": "manifest.missing_file",
-      "severity": "info",
       "subject": "artifacts.system.index",
-      "message": "declared entry has no file on disk at /Users/nqhuy25/Development/projects/oss/textus/.textus/data/artifacts/system/index.json",
+      "message": "declared entry has no file on disk at /Users/patrick/Development/sandbox/textus/.textus/data/artifacts/system/index.json",
       "fix": "create the entry with 'textus put artifacts.system.index --stdin --as=<role>'"
     }
   ],
-  "count": 10
+  "count": 17
 }

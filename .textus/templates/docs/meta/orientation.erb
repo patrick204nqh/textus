@@ -43,6 +43,12 @@ not edit by hand — edit the source under `.textus/data/` and run
 - **<%= rb["name"] %>** — <%= rb["description"] %>
 <% end -%>
 
+## Session Lifecycle
+
+- **begin** — `session_open` creates a workspace directory under `scratchpad.sessions.*` with `notes/`, `scripts/`, `output/`
+- **end** — `session_close <id>` seals the session and auto-writes a feedback entry to `scratchpad.sessions.<id>.feedback`
+- **feedback → canon** — propose the feedback entry to `knowledge.loop.feedback` to close the loop: `textus propose scratchpad.sessions.<id>.feedback --target=knowledge.loop.feedback.<slug>`
+
 ## Docs
 
 Full documentation is canon — authored under `.textus/data/knowledge/` and published to `docs/`. Read the map with `textus get artifacts.docs.index`; the decision log index is `textus get artifacts.decisions.log`. Sections: how-to · reference · explanation · cookbook · decisions.

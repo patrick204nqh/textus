@@ -34,7 +34,18 @@ module Textus
           content = current.merge("status" => "sealed", "closed_at" => Time.now.utc.iso8601)
           ctx.write(key, mentry:, payload: ctx.payload(body: JSON.generate(content)), call:)
 
-          { "session_id" => session_id, "status" => "sealed" }
+          feedback_key = "scratchpad.sessions.#{session_id}.feedback"
+          duration = current["created_at"] ? "#{((Time.now.utc - Time.parse(current["created_at"])) / 60).round}m" : "unknown"
+          feedback = {
+            "node" => "feedback",
+            "confidence" => "medium",
+            "signal" => "session_closed",
+            "summary" => "Session #{session_id[0..8]} sealed after #{duration}. " \
+                         "Created at #{current["created_at"]}, closed at #{Time.now.utc.iso8601}.",
+          }
+          ctx.write(feedback_key, mentry:, payload: ctx.payload(body: JSON.generate(feedback)), call:)
+
+          { "session_id" => session_id, "status" => "sealed", "feedback_key" => feedback_key }
         end
       end
     end

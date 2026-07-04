@@ -3,10 +3,10 @@
     "uid": "e64946ac4be8f8f1"
   },
   "project": {
-    "name": null,
-    "description": null,
-    "commands": "",
-    "has_commands": false
+    "name": "textus",
+    "description": "A coordination space for humans, AI, and automation — durable, multi-writer repo memory that survives the session, the model, and the vendor.",
+    "commands": "- **test**: `bundle exec rspec`\n- **lint**: `bundle exec rubocop`\n- **lint-fix**: `bundle exec rubocop -A`\n- **setup**: `bundle install`\n- **help**: `bundle exec exe/textus --help`\n- **drain**: `bundle exec exe/textus drain --as=automation`",
+    "has_commands": true
   },
   "runbooks": [
     {
@@ -18,8 +18,8 @@
       "description": "Add an Architecture Decision Record for a load-bearing decision."
     },
     {
-      "name": null,
-      "description": null
+      "name": "quickstart",
+      "description": "Four-command demo of the role-gated propose→accept flow, plus full store walkthrough and protocol reference."
     }
   ],
   "loop": {
@@ -33,7 +33,7 @@
       "execution",
       "feedback"
     ],
-    "excerpt": ""
+    "excerpt": "# Operating inside the Loop\n\nThis repo's `knowledge.*` zones are the Loop model, exhaustively: `intent`\n(why), `constraint.repo`/`constraint.protocol` (hard limits — engineering\nprinciples vs. wire contract), `judgment.engineering`/`judgment.agent-behavior`\n"
   },
   "lanes": [
     {
@@ -88,14 +88,11 @@
       "uid",
       "blame",
       "audit",
-      "deps",
-      "rdeps",
-      "graph",
       "diff",
-      "pulse",
-      "published",
       "schema_show",
-      "boot"
+      "boot",
+      "loop",
+      "workflow_spec"
     ],
     "write_verbs": [
       "put",
@@ -107,7 +104,9 @@
       "ingest",
       "data_mv",
       "key_mv_prefix",
-      "key_delete_prefix"
+      "key_delete_prefix",
+      "session_open",
+      "session_close"
     ],
     "writable_lanes": [
       "scratchpad",

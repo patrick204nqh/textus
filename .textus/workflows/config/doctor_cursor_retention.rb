@@ -1,28 +1,21 @@
-# Warns/errors when persisted cursors are behind the retained audit sequence bounds.
-
-# rubocop:disable Metrics/BlockLength
 Textus.workflow "doctor-cursor-retention" do
   match "artifacts.doctor.cursor-retention"
 
   step :scan do |_, ctx|
-    store = ctx.store
+    store = ctx.container.store
     issues = []
     roles = %w[automation human agent]
-    min_available = store.event_store.min_available_seq
 
     roles.each do |role|
-      cursor_seq = store.cursor_store.read(role)
-      next if cursor_seq <= 0
+      cursor = store.cursor_store.get(role)[:seq]
+      next if cursor.nil? || cursor <= 0
 
-      if min_available && cursor_seq < min_available
-        issues << {
-          "code" => "cursor.expired",
-          "level" => "error",
-          "subject" => "cursor:#{role}",
-          "message" => "cursor for role '#{role}' (seq #{cursor_seq}) is no longer in the " \
-                       "audit log (min available: #{min_available})",
-          "fix" => "call pulse to get a fresh cursor",
-        }
+      min_seq = store.audit_log.min_available
+      if min_seq && cursor < min_seq
+        issues << { "code" => "cursor.expired", "level" => "warning",
+                    "subject" => "cursor:#{role}",
+                    "message" => "cursor for role '#{role}' (seq #{cursor}) is no longer available",
+                    "fix" => "call pulse to get a fresh cursor" }
       end
     end
 
@@ -31,4 +24,3 @@ Textus.workflow "doctor-cursor-retention" do
 
   publish
 end
-# rubocop:enable Metrics/BlockLength

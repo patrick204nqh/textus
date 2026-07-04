@@ -15,14 +15,14 @@ Textus.workflow "boot" do
     fetch = ->(key) { ctx.read(key) }
 
     # Project context (was artifacts.config.orientation)
-    identity_env = fetch.call("knowledge.intent.0003-identity")
+    identity_env = fetch.call("knowledge.loop.intent.0003-identity")
     identity = identity_env&.meta || {}
 
     runbooks = read_family.call("knowledge.loop.execution").filter_map(&:meta)
 
     loop_nodes = %w[intent constraint.repo constraint.protocol judgment.engineering
                     judgment.agent-behavior evidence execution feedback]
-    agent_behavior_excerpt = fetch.call("knowledge.judgment.agent-behavior.0001-loop-behavior")&.body.to_s
+    agent_behavior_excerpt = fetch.call("knowledge.loop.judgment.agent-behavior.0001-loop-behavior")&.body.to_s
     loop_summary = {
       "nodes" => loop_nodes,
       "excerpt" => agent_behavior_excerpt.lines.first(5).join,
@@ -47,9 +47,9 @@ Textus.workflow "boot" do
       acc << lane_name if writers.include?(agent_role)
     end
     propose_lane = manifest.policy.propose_lane_for(agent_role)
-    read_verbs = Textus::VerbRegistry.registered.select { |s| s.read? && s.mcp? }.map { |s| s.verb.to_s }
+    read_verbs = Textus::Protocol::VerbRegistry.registered.select { |s| s.read? && s.mcp? }.map { |s| s.verb.to_s }
     write_verbs = if agent_role
-                    Textus::VerbRegistry.registered.select { |s| s.write? && s.mcp? }.map { |s| s.verb.to_s }
+                    Textus::Protocol::VerbRegistry.registered.select { |s| s.write? && s.mcp? }.map { |s| s.verb.to_s }
                   else
                     []
                   end

@@ -1,3 +1,8 @@
+---
+name: quickstart
+description: Four-command demo of the role-gated propose→accept flow, plus full store walkthrough and protocol reference.
+---
+
 ## See it in four commands
 
 Pattern: `knowledge.loop.judgment.engineering.0007-bounded-use-cases` — quickstart composes role-gated actions into a single runnable flow.

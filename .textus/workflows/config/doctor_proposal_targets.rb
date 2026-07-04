@@ -11,7 +11,7 @@ Textus.workflow "doctor-proposal-targets" do
     issues = []
 
     unless queue.nil?
-      rows = ctx.list(lane: queue)
+      rows = ctx.manifest.resolver.enumerate.select { |r| r[:key].start_with?("#{queue}.") }
 
       rows.each do |row|
         key = row["key"]

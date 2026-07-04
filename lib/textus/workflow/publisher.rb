@@ -33,7 +33,7 @@ module Textus
         )
         es.put(key, mentry: ctx.entry, payload:, call: @call)
         Textus::Protocol::Manifest::Entry::Base::PublishContext.new(
-          container: @container, call: @call,
+          container: @container,
           reader: es.method(:read)
         )
       end

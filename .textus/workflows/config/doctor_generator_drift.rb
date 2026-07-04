@@ -1,24 +1,33 @@
-# Replaces Doctor::Check::GeneratorDrift. Reports produced/external entries
-# whose sources changed after generated.at.
-
 Textus.workflow "doctor-generator-drift" do
   match "artifacts.doctor.generator-drift"
 
   step :scan do |_, ctx|
-    detector = Textus::Store::Freshness::DriftDetector.new(
-      manifest: ctx.manifest,
-      file_stat: Textus::Port::Storage::FileStat.new,
-      clock: Textus::Port::Clock.new,
-    )
+    issues = []
+    root = ctx.layout.root
 
-    issues = ctx.manifest.data.entries.flat_map { |entry| detector.drift_rows(entry) }.map do |row|
-      {
-        "code" => "generator_drift",
-        "level" => "warning",
-        "subject" => row["key"],
-        "message" => row["reason"],
-        "fix" => "rematerialize the entry: `textus drain`",
-      }
+    ctx.manifest.data.entries.each do |entry|
+      next unless entry.derived? || entry.external?
+      next unless entry.sources && !entry.sources.empty?
+
+      entry_path = entry.path ? File.join(root, entry.path) : nil
+      next unless entry_path && File.exist?(entry_path)
+
+      entry_mtime = File.mtime(entry_path)
+
+      entry.sources.each do |src|
+        src_path = File.join(root, src)
+        next unless File.exist?(src_path)
+
+        if File.mtime(src_path) > entry_mtime
+          issues << {
+            "code" => "generator_drift",
+            "level" => "warning",
+            "subject" => entry.key,
+            "message" => "source '#{src}' is newer than produced entry '#{entry.key}'",
+            "fix" => "rematerialize the entry: `textus drain`",
+          }
+        end
+      end
     end
 
     { "content" => { "ok" => issues.empty?, "issues" => issues, "count" => issues.size } }

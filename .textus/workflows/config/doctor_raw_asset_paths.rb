@@ -6,7 +6,7 @@ Textus.workflow "doctor-raw-asset-paths" do
   match "artifacts.doctor.raw-asset-paths"
 
   step :scan do |_, ctx|
-    raw_lane = ctx.manifest.policy.lanes_of_kind(:raw).first
+    raw_lane = ctx.manifest.data.declared_lane_kinds.find { |_, k| k == :raw }&.first
     issues = []
 
     unless raw_lane.nil?

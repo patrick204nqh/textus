@@ -31,7 +31,7 @@ Textus.workflow "doctor-illegal-keys" do
 
       walk_nested.call(base) do |abs_path, is_dir|
         rel = abs_path.sub(%r{\A#{Regexp.escape(base)}/?}, "")
-        next if entry.ignored?(rel)
+        next if entry.respond_to?(:ignored?) && entry.ignored?(rel)
 
         basename = File.basename(abs_path)
         stem = is_dir ? basename : basename.sub(/#{Regexp.escape(File.extname(basename))}\z/, "")
