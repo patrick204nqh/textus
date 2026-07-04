@@ -6,7 +6,7 @@ module Textus
                   :manifest, :schemas,
                   :audit_log,
                   :link_graph,
-                  :gate, :root, :trace_buffer, :ttl_evaluator
+                  :gate, :root, :ttl_evaluator
 
       # rubocop:disable Metrics/ParameterLists
       def initialize(file_system:, entry_store:, layout:, entry_index:,
@@ -14,7 +14,7 @@ module Textus
                      manifest:, schemas:,
                      audit_log:,
                      link_graph:,
-                     root: nil, gate: nil, trace_buffer: nil, ttl_evaluator: nil)
+                      root: nil, gate: nil, ttl_evaluator: nil)
         @file_system = file_system
         @entry_store = entry_store
         @layout = layout
@@ -27,7 +27,6 @@ module Textus
         @link_graph = link_graph
         @root = root
         @gate = gate
-        @trace_buffer = trace_buffer
         @ttl_evaluator = ttl_evaluator
       end
 

@@ -5,7 +5,7 @@ RSpec.describe Textus::Protocol::Index do
   subject(:index) { described_class.new(database) }
 
   let(:root) { Dir.mktmpdir }
-  let(:database) { Textus::Infra::Port::Storage::Database.new(root: root).setup! }
+  let(:database) { Textus::Infra::Database.new(root: root).setup! }
 
   after { FileUtils.remove_entry(root) }
 

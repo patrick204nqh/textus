@@ -26,18 +26,15 @@ module Textus
 
           def in_proposal_lane?(policy) = policy.queue_lane?(@lane)
 
-          def nested?  = false
           def derived? = false
-          def intake?  = false
+          def nested?  = false
           def leaf?    = false
 
           # Production traits. Default false on all non-produced entries.
           # Lets publish modes call these without a `respond_to?` guard.
           def external?   = false
-          def projection? = false
 
-          alias zone lane
-          alias in_proposal_zone? in_proposal_lane?
+
 
           # Whether git should track this entry's file. Default true; an entry
           # marked `tracked: false` in the manifest stays protocol-readable but is

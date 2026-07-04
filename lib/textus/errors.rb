@@ -131,18 +131,6 @@ module Textus
     def initialize(m) = super("io_error", m, exit_code: 64)
   end
 
-  class BuildInProgress < Error
-    def initialize(holder)
-      super(
-        "build_in_progress",
-        "a textus maintenance pass is already running (#{holder})",
-        details: { "holder" => holder },
-        exit_code: 75,
-        hint: "wait for the running maintenance pass to finish, or check for a recursive hook trigger"
-      )
-    end
-  end
-
   class UsageError < Error
     def initialize(m, hint: nil) = super("usage", m, exit_code: 2, hint: hint)
   end
@@ -166,18 +154,6 @@ module Textus
     end
   end
 
-  class BadRender < Error
-    def initialize(m, format: nil)
-      hint =
-        if format
-          "the template rendered invalid #{format}; try rendering with mock data and parsing the output before re-running drain"
-        else
-          "the template rendered invalid content; try rendering with mock data and parsing the output before re-running drain"
-        end
-      super("bad_render", m, hint: hint)
-    end
-  end
-
   class PublishError < Error
     def initialize(m, target: nil)
       hint =
@@ -188,21 +164,6 @@ module Textus
 
   class ProposalError < Error
     def initialize(m) = super("proposal_error", m)
-  end
-
-  class GuardFailed < Error
-    def initialize(failed)
-      # failed: [[predicate_name, reason], ...]
-      rows = failed.map { |name, reason| { "predicate" => name, "reason" => reason } }
-      names = failed.map(&:first)
-      super(
-        "guard_failed",
-        "guard refused crossing: #{failed.map { |n, r| "#{n} (#{r})" }.join("; ")}",
-        details: { "failed" => rows },
-        hint: "run 'textus policy explain <key> --output=json' to see the full guard; " \
-              "unmet: #{names.join(", ")}",
-      )
-    end
   end
 
   class ContractDrift < Error

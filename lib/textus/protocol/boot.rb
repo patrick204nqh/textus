@@ -12,10 +12,6 @@ module Textus
         Textus::Protocol::VerbRegistry.registered.to_h { |s| [s.verb.to_s, s.summary] }
       end
 
-      def self.lane_label(_manifest, _kind, fallback)
-        fallback
-      end
-
       def self.build(container:)
         manifest = container.manifest
         envelope = Context.build(

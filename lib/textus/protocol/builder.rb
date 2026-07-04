@@ -26,15 +26,13 @@ module Textus
           clock: Infra::Clock.new,
         )
 
-        trace_buffer = Protocol::TraceBuffer.new
-
         container = Container.new(
           file_system: file_store, entry_store:, layout:, entry_index:,
           event_store:, workflows:,
           manifest:, schemas:,
           audit_log:,
           link_graph:,
-          root:, trace_buffer:, ttl_evaluator:
+          root:, ttl_evaluator:
         )
 
         gate = Protocol::Gate.new(

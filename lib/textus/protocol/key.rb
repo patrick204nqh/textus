@@ -17,15 +17,6 @@ module Textus
         Resolution.new(entry: best, remaining: tail.split("."))
       end
 
-      def suggestions_for(key, entries, limit: 5)
-        candidates = entries.map(&:key)
-        distances = candidates.map { |ck| [ck, Distance.call(ck, key)] }
-        distances.sort_by(&:last)
-                 .reject { |_k, d| d > 3 }
-                 .first(limit)
-                 .map(&:first)
-      end
-
       def match?(pattern, key)
         Matching.match?(pattern, key)
       end
