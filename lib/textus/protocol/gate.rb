@@ -3,10 +3,10 @@ module Textus
     class Gate
 
 
-      def initialize(manifest:, resolver:, pipeline:, async: nil)
+      def initialize(manifest:, resolver:, container:, async: nil)
         @manifest = manifest
         @resolver = resolver
-        @pipeline = pipeline
+        @container = container
         @async = async
       end
 
@@ -19,7 +19,7 @@ module Textus
 
     call_obj = call || Value::Call.build(role:, correlation_id: SecureRandom.uuid)
     bound = Protocol::Binder.bind(spec, params)
-    ctx = HandlerContext.new(@pipeline.container)
+    ctx = HandlerContext.new(@container)
 
     handler = spec.lane ? Lane.handler_for(spec.lane) : Protocol::Handlers
 

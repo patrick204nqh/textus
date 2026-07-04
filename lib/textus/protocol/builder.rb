@@ -1,5 +1,3 @@
-require "ostruct"
-
 module Textus
   module Protocol
     class Builder
@@ -30,31 +28,23 @@ module Textus
 
         trace_buffer = Protocol::TraceBuffer.new
 
-        storage    = Container::Storage.new(file_system: file_store, entry_store:, layout:, entry_index:)
-        events     = Container::Events.new(event_store:, workflows:)
-        governance = Container::Governance.new(manifest:, schemas:)
-        logging    = Container::Logging.new(audit_log:)
-        links      = Container::Links.new(link_graph:)
-
         container = Container.new(
-          storage:, events:, governance:, logging:, links:,
+          file_system: file_store, entry_store:, layout:, entry_index:,
+          event_store:, workflows:,
+          manifest:, schemas:,
+          audit_log:,
+          link_graph:,
           root:, trace_buffer:, ttl_evaluator:
         )
 
         gate = Protocol::Gate.new(
           manifest:,
           resolver: manifest.resolver,
-          pipeline: OpenStruct.new(container:),
+          container:,
         )
 
-        container.class.new(
-          storage: container.storage, events: container.events,
-          governance: container.governance, logging: container.logging,
-          links: container.links, root: container.root,
-          pipeline: OpenStruct.new(container:), gate:,
-          trace_buffer: container.trace_buffer,
-          ttl_evaluator: container.ttl_evaluator
-        )
+        container.gate = gate
+        container
       end
     end
   end

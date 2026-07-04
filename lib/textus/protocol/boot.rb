@@ -17,12 +17,12 @@ module Textus
       end
 
       def self.build(container:)
-        manifest = container.governance.manifest
+        manifest = container.manifest
         envelope = Context.build(
           manifest:,
-          audit_log: container.logging.audit_log,
-          file_system: container.storage.file_system,
-          layout: container.storage.layout,
+          audit_log: container.audit_log,
+          file_system: container.file_system,
+          layout: container.layout,
         )
         envelope.merge(
           "catalog" => Catalog.build,

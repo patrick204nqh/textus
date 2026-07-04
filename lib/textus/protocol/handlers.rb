@@ -106,16 +106,13 @@ module Textus
       end
 
       def boot(ctx:, call:)
-        storage    = Textus::Protocol::Container::Storage.new(
-          file_system: ctx.file_system, entry_store: nil, layout: ctx.layout, entry_index: nil,
-        )
-        events     = Textus::Protocol::Container::Events.new(event_store: nil, workflows: nil)
-        governance = Textus::Protocol::Container::Governance.new(manifest: ctx.manifest, schemas: ctx.schemas)
-        logging    = Textus::Protocol::Container::Logging.new(audit_log: ctx.audit)
-        links      = Textus::Protocol::Container::Links.new(link_graph: nil)
         proxy = Textus::Protocol::Container.new(
-          storage:, events:, governance:, logging:, links:,
-          root: ctx.layout.root, pipeline: nil
+          file_system: ctx.file_system, entry_store: nil, layout: ctx.layout, entry_index: nil,
+          event_store: nil, workflows: nil,
+          manifest: ctx.manifest, schemas: ctx.schemas,
+          audit_log: ctx.audit,
+          link_graph: nil,
+          root: ctx.layout.root
         )
         Textus::Protocol::Boot.build(container: proxy)
       end

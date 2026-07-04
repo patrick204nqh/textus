@@ -3,8 +3,7 @@ RSpec.describe Textus::Protocol::Gate do
   let(:resolver) { instance_double("Resolver") }
   let(:reader) { instance_double("Reader") }
   let(:container) { double("Container", reader:, manifest:) }
-  let(:pipeline) { double("pipeline", container:) }
-  let(:gate) { described_class.new(manifest:, resolver:, pipeline:) }
+  let(:gate) { described_class.new(manifest:, resolver:, container:) }
 
   def lane_spec(lane:)
     Textus::Protocol::VerbRegistry::VerbSpec.new(
