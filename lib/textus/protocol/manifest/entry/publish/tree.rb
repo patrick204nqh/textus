@@ -34,7 +34,7 @@ module Textus
               publish_tree = entry.publish_tree
               raise UsageError.new("entry '#{entry.key}': publish.tree must be a string") unless publish_tree.is_a?(String)
 
-              used_vars = publish_tree.scan(Template::VAR_RE).flatten
+              used_vars = publish_tree.scan(/\{([a-z]+)\}/).flatten
               return if used_vars.empty?
 
               raise UsageError.new(
