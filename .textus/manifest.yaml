@@ -13,9 +13,15 @@ data:
       naming: sequential
     - key: knowledge.loop.evidence
       naming: sequential
-    - key: knowledge.loop.execution
+    - key: knowledge.loop.execution.runbook
       naming: sequential
-      schema: runbook
+      schema: execution/runbook
+    - key: knowledge.loop.execution.checklist
+      naming: sequential
+      schema: execution/checklist
+    - key: knowledge.loop.execution.procedure
+      naming: sequential
+      schema: execution/procedure
     - key: knowledge.loop.feedback
       naming: sequential
     - key: knowledge.reference

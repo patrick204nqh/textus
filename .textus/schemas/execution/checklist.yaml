@@ -1,0 +1,22 @@
+name: execution/checklist
+fields:
+  name:
+    type: string
+    required: true
+    maintained_by: human
+  description:
+    type: string
+    required: true
+    maintained_by: human
+  items:
+    type: array
+    items:
+      type: object
+      fields:
+        check:
+          type: boolean
+          maintained_by: human
+        description:
+          type: string
+          maintained_by: human
+    maintained_by: human

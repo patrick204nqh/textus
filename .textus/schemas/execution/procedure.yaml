@@ -1,0 +1,25 @@
+name: execution/procedure
+fields:
+  name:
+    type: string
+    required: true
+    maintained_by: human
+  description:
+    type: string
+    required: true
+    maintained_by: human
+  inputs:
+    type: array
+    items:
+      type: string
+    maintained_by: human
+  outputs:
+    type: array
+    items:
+      type: string
+    maintained_by: human
+  steps:
+    type: array
+    items:
+      type: string
+    maintained_by: human
