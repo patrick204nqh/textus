@@ -1,9 +1,6 @@
 version: textus/4
 data:
   knowledge:
-    - key: knowledge.loop.execution
-      naming: sequential
-      schema: runbook
     - key: knowledge.loop.intent
       naming: sequential
     - key: knowledge.loop.constraint.repo
@@ -16,8 +13,12 @@ data:
       naming: sequential
     - key: knowledge.loop.evidence
       naming: sequential
+    - key: knowledge.loop.execution
+      naming: sequential
+      schema: runbook
     - key: knowledge.loop.feedback
       naming: sequential
+    - key: knowledge.reference
   scratchpad:
     - key: scratchpad.notes
       tracked: false
