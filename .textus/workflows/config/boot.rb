@@ -18,7 +18,11 @@ Textus.workflow "boot" do
     identity_env = fetch.call("knowledge.loop.intent.0003-identity")
     identity = identity_env&.meta || {}
 
-    runbooks = read_family.call("knowledge.loop.execution").filter_map(&:meta)
+    runbooks = read_family.call("knowledge.loop.execution").filter_map do |env|
+      m = env.meta
+      next unless m
+      m.merge("schema" => env.schema_ref)
+    end
 
     loop_nodes = %w[intent constraint.repo constraint.protocol judgment.engineering
                     judgment.agent-behavior evidence execution feedback]
@@ -95,7 +99,7 @@ Textus.workflow "boot" do
           "commands" => (identity["commands"] || {}).map { |k, v| "- **#{k}**: `#{v}`" }.join("\n"),
           "has_commands" => !(identity["commands"] || {}).empty?,
         },
-        "runbooks" => runbooks.map { |r| { "name" => r["name"], "description" => r["description"] } },
+        "runbooks" => runbooks.map { |r| { "name" => r["name"], "description" => r["description"], "schema" => r["schema"] } },
         "loop" => loop_summary,
         "lanes" => lanes,
         "agent_quickstart" => agent_quickstart,

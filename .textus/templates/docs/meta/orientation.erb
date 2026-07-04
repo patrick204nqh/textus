@@ -40,6 +40,17 @@ not edit by hand — edit the source under `.textus/data/` and run
 - **<%= rb["name"] %>** — <%= rb["description"] %>
 <% end -%>
 
+## Procedures
+<% runbooks.select { |rb| rb["schema"] == "execution/procedure" }.each do |rb| -%>
+- **<%= rb["name"] %>** — <%= rb["description"] %>
+<% end -%>
+
+## Feedback Criteria
+
+The feedback node (`knowledge.loop.feedback.*`) defines when the agent should
+generate feedback or propose upstream changes. Review criteria before proposing:
+- `textus list --lane=knowledge --prefix=knowledge.loop.feedback`
+
 ## Session Lifecycle
 
 - **begin** — `session_open` creates a workspace directory under `scratchpad.sessions.*` with `notes/`, `scripts/`, `output/`
