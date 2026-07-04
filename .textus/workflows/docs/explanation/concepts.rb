@@ -11,31 +11,13 @@ Textus.workflow "explanation-concepts" do
   match "artifacts.explanation.concepts"
 
   step :build do |_, ctx|
-    data   = ctx.manifest.data
-    policy = ctx.manifest.policy
-    kmap   = Textus::Manifest::Schema::Vocabulary::LANES
+    kmap  = Textus::Manifest::Schema::Vocabulary::LANES
+    lanes = build_lanes(ctx).map { |l| l.merge("capability" => kmap[l["kind"]].to_s) }
+    roles = build_roles(ctx)
+    propose_lane = ctx.manifest.policy.propose_lane_for("agent").to_s
 
-    lanes = data.declared_lane_kinds.map do |name, kind|
-      cap     = kmap[kind.to_s]
-      writers = policy.writers_for(name).map(&:to_s)
-      { "name" => name.to_s, "kind" => kind.to_s,
-        "purpose" => data.lane_descs[name].to_s, "capability" => cap.to_s, "writers" => writers }
-    end
-
-    roles = data.role_caps.map do |role, caps|
-      { "name" => role.to_s, "capabilities" => caps.map(&:to_s) }
-    end
-
-    propose_lane = policy.propose_lane_for("agent").to_s
-
-    {
-      "content" => {
-        "lanes" => lanes,
-        "roles" => roles,
-        "loop_nodes" => LOOP_NODES,
-        "propose_lane" => propose_lane,
-      },
-    }
+    { "content" => { "lanes" => lanes, "roles" => roles,
+                     "loop_nodes" => LOOP_NODES, "propose_lane" => propose_lane } }
   end
   publish to: "docs/explanation/concepts.md", template: "docs/explanation/concepts.erb"
 end

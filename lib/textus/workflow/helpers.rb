@@ -79,6 +79,22 @@ module Textus
           end
         end
       end
+
+      def build_lanes(ctx)
+        data   = ctx.manifest.data
+        policy = ctx.manifest.policy
+        data.declared_lane_kinds.map do |name, kind|
+          writers = policy.writers_for(name).map(&:to_s)
+          { "name" => name.to_s, "kind" => kind.to_s,
+            "purpose" => data.lane_descs[name].to_s, "writers" => writers }
+        end
+      end
+
+      def build_roles(ctx)
+        ctx.manifest.data.role_caps.map do |role, caps|
+          { "name" => role.to_s, "capabilities" => caps.map(&:to_s) }
+        end
+      end
     end
   end
 end
