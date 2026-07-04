@@ -37,8 +37,8 @@ module Textus
                                                  layout: @layout, reader: self, workflow_registry: @workflow_registry)
       end
 
-      def delete(key, if_etag: nil, call: nil, mentry: nil, **)
-        Textus::Protocol::WritePipeline.delete(key, call:, mentry:, if_etag:,
+      def delete(key, if_etag: nil, call: nil, **)
+        Textus::Protocol::WritePipeline.delete(key, call:, if_etag:,
                                                     file_system: @file_system, manifest: @manifest, store: @store,
                                                     layout: @layout, reader: self, workflow_registry: @workflow_registry)
       end

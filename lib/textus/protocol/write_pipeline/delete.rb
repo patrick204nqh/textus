@@ -70,7 +70,7 @@ module Textus
         module EmitWorkflowEvent
           def self.call(ctx, deps)
             return ctx unless deps.workflow_registry
-            return ctx if deps.call.role == "automation"
+            return ctx if Textus::Protocol::Produce::Engine.converging?(ctx.key)
 
             emitter = Textus::Protocol::Events::Emitter.new(
               event_store: deps.audit_log,
@@ -95,9 +95,9 @@ module Textus
         ].freeze
 
         # rubocop:disable Metrics/ParameterLists
-        def self.call(key, call:, file_system:, manifest:, store:, layout:, mentry: nil, if_etag: nil, reader: nil, workflow_registry: nil)
+        def self.call(key, call:, file_system:, manifest:, store:, layout:, if_etag: nil, reader: nil, workflow_registry: nil)
           ctx = DeleteContext.new(
-            key:, mentry:, if_etag:,
+            key:, if_etag:,
             path: nil, etag_before: nil
           )
           deps = WriteDeps.new(file_system:, manifest:, store:, call:, reader:, layout:, workflow_registry:)

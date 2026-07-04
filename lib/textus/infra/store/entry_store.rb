@@ -7,7 +7,7 @@ module Textus
           @fs = file_system
         end
 
-        def read(key, manifest:, layout:)
+        def read(key, manifest:)
           res = manifest.resolver.resolve(key)
           path = res.path
           return nil unless @fs.exists?(path)

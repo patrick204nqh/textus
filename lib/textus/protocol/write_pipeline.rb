@@ -15,7 +15,7 @@ module Textus
         def entry_index = store.entry_store
       end
 
-      DeleteContext = Data.define(:key, :mentry, :if_etag, :path, :etag_before) do
+      DeleteContext = Data.define(:key, :if_etag, :path, :etag_before) do
         def with(**attrs) = self.class.new(**to_h, **attrs)
       end
       MoveContext = Data.define(:from_key, :to_key, :new_mentry, :if_etag,

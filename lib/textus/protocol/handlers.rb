@@ -137,7 +137,7 @@ module Textus
         { "verb" => "audit", "rows" => rows }
       end
 
-      def blame(key:, ctx:, call:, limit: nil)
+      def blame(key:, ctx:, call:)
         audit_result = audit(key:, ctx:, call:)
         audit_rows = audit_result["rows"] || []
         root = ctx.manifest.data.root

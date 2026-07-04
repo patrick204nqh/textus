@@ -22,7 +22,7 @@ RSpec.describe Textus::Protocol::WritePipeline do
   describe "DeleteContext" do
     it "supports immutable update via #with" do
       ctx = described_class::DeleteContext.new(
-        key: "knowledge.demo", mentry: nil, if_etag: nil,
+        key: "knowledge.demo", if_etag: nil,
         path: nil, etag_before: nil
       )
       expect(ctx.with(path: "/tmp/demo.md").path).to eq("/tmp/demo.md")

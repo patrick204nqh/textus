@@ -1,7 +1,14 @@
+require "set"
+
 module Textus
   module Protocol
     module Produce
       class Engine
+        IN_FLIGHT = Set.new
+        IN_FLIGHT_MUTEX = Mutex.new
+
+        def self.converging?(key) = IN_FLIGHT.include?(key)
+
         def self.converge(container:, call:, keys:)
           new(container:, call:).run(keys)
         end
@@ -14,7 +21,11 @@ module Textus
 
         def run(keys)
           results = { completed: [], failed: [] }
-          Array(keys).each { |key| record_outcome(produce_one(key), results) }
+          Array(keys).each do |key|
+            IN_FLIGHT_MUTEX.synchronize { IN_FLIGHT.add(key) }
+            record_outcome(produce_one(key), results)
+            IN_FLIGHT_MUTEX.synchronize { IN_FLIGHT.delete(key) }
+          end
           results
         end
 

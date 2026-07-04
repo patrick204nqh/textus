@@ -109,7 +109,7 @@ module Textus
         module EmitWorkflowEvent
           def self.call(ctx, deps)
             return ctx unless deps.workflow_registry
-            return ctx if deps.call.role == "automation"
+            return ctx if Textus::Protocol::Produce::Engine.converging?(ctx.key) || Textus::Protocol::Produce::Engine.converging?(ctx.to_key)
 
             emitter = Textus::Protocol::Events::Emitter.new(
               event_store: deps.audit_log,
