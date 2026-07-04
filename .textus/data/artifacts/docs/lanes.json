@@ -1,0 +1,103 @@
+{
+  "_meta": {
+    "uid": "4b68aafd7ef192d1"
+  },
+  "lanes": [
+    {
+      "name": "knowledge",
+      "kind": "knowledge",
+      "purpose": "the maintained source of truth about the repo",
+      "writers": [
+        "human"
+      ],
+      "capability": "n/a"
+    },
+    {
+      "name": "scratchpad",
+      "kind": "scratchpad",
+      "purpose": "the agent's own durable scratchpad (working memory)",
+      "writers": [
+        "human",
+        "agent"
+      ],
+      "capability": "n/a"
+    },
+    {
+      "name": "artifacts",
+      "kind": "artifacts",
+      "purpose": "machine-maintained computed outputs",
+      "writers": [
+        "automation"
+      ],
+      "capability": "n/a"
+    },
+    {
+      "name": "raw",
+      "kind": "raw",
+      "purpose": "ingested external source material (write-once)",
+      "writers": [
+        "human",
+        "agent",
+        "automation"
+      ],
+      "capability": "ingest"
+    }
+  ],
+  "roles": [],
+  "kind_capability_map": {
+    "canon": "author",
+    "workspace": "keep",
+    "machine": "converge",
+    "queue": "propose",
+    "raw": "ingest"
+  },
+  "loop_nodes": [
+    {
+      "node": "Intent",
+      "key": "knowledge.loop.intent"
+    },
+    {
+      "node": "Constraint",
+      "key": "knowledge.loop.constraint.repo / knowledge.loop.constraint.protocol"
+    },
+    {
+      "node": "Judgment",
+      "key": "knowledge.loop.judgment.engineering / knowledge.loop.judgment.agent-behavior"
+    },
+    {
+      "node": "Evidence",
+      "key": "knowledge.loop.evidence"
+    },
+    {
+      "node": "Execution",
+      "key": "knowledge.loop.execution"
+    },
+    {
+      "node": "Feedback",
+      "key": "knowledge.loop.feedback"
+    }
+  ],
+  "propose_lane": "scratchpad.proposals",
+  "writable_agent_lanes": [
+    {
+      "name": "scratchpad",
+      "kind": "scratchpad",
+      "purpose": "the agent's own durable scratchpad (working memory)",
+      "writers": [
+        "human",
+        "agent"
+      ]
+    },
+    {
+      "name": "raw",
+      "kind": "raw",
+      "purpose": "ingested external source material (write-once)",
+      "writers": [
+        "human",
+        "agent",
+        "automation"
+      ]
+    }
+  ],
+  "role_authority": []
+}

@@ -151,7 +151,7 @@ Textus.workflow "doctor" do
     if File.directory?(dir)
       Dir.glob(File.join(dir, "**", "*.yaml")).each do |path|
         schema = begin
-          Textus::Schema.load(path)
+          Textus::Protocol::Schema.load(path)
         rescue StandardError => e
           issues << {
             "code" => "schema.parse_error",
