@@ -22,7 +22,7 @@ module Textus
       end
 
       def list(ctx:, call:, prefix: nil, lane: nil, q: nil, schema: nil)
-        if ctx.entry_index && (q || schema)
+        if ctx.store.entry_index && (q || schema)
           rows = ctx.list(prefix:, lane:, q:, schema:)
           (rows || []).map { |r| { "key" => r["key"], "lane" => r["lane"] } }
         else
@@ -94,15 +94,15 @@ module Textus
           sources = Array(entry.source&.sources).compact
           acc << entry.key if sources.any? { |s| s == key || key.start_with?("#{s}.") }
         end
-        link_rdeps = ctx.links.links_to(key)
+        link_rdeps = ctx.store.link_store.links_to(key)
         { "key" => key, "rdeps" => (source_rdeps + link_rdeps).uniq.sort }
       end
 
       def graph(key:, ctx:, call:, depth: nil)
-        from = ctx.links.links_from(key)
-        to   = ctx.links.links_to(key)
+        from = ctx.store.link_store.links_from(key)
+        to   = ctx.store.link_store.links_to(key)
         { "key" => key, "neighbors" => (from + to).uniq.sort,
-          "reachable" => ctx.links.reachable(from: key, depth:).sort }
+          "reachable" => ctx.store.link_store.reachable(from: key, depth:).sort }
       end
 
       def boot(ctx:, call:)
@@ -125,10 +125,10 @@ module Textus
 
       def audit(ctx:, call:, key: nil, lane: nil, role: nil, verb: nil, since: nil, seq_since: nil, correlation_id: nil, limit: nil)
         if seq_since
-          min = ctx.audit.min_available
+          min = ctx.store.audit_log.min_available
           raise Textus::CursorExpired.new(requested: seq_since, min_available: min) if min && seq_since < min - 1
         end
-        rows = ctx.audit.list(seq_since:, key:, role:, verb:, correlation_id:, limit:).select do |row|
+        rows = ctx.store.audit_log.list(seq_since:, key:, role:, verb:, correlation_id:, limit:).select do |row|
           next false if lane && !key_in_lane?(row["key"], lane, ctx)
           next false if since && row["ts"] && Time.parse(row["ts"]) < since
 
@@ -155,7 +155,7 @@ module Textus
         pending = queue ? list(lane: queue, ctx:, call:) : []
         runner = Lanes::Knowledge::Runner.new(ctx.manifest, cursor_store: ctx.store.cursor_store)
         result = {
-          "cursor" => ctx.audit.latest[:seq],
+          "cursor" => ctx.store.audit_log.latest[:seq],
           "changed" => changed,
           "pending_review" => pending.is_a?(Array) ? pending.map { |r| r["key"] } : [],
           "contract_etag" => Textus::Value::Etag.for_contract(ctx.layout),
@@ -274,7 +274,7 @@ module Textus
         key = src["key"]
         stored_etag = src["etag"]
         path = ctx.resolve(key).path
-        current_etag = ctx.file_system.exists?(path) ? ctx.file_system.etag(path) : nil
+        current_etag = ctx.store.file_system.exists?(path) ? ctx.store.file_system.etag(path) : nil
         suspended = stored_etag && current_etag ? stored_etag != current_etag : false
         result = src.merge("suspended" => suspended)
         child_env = ctx.read(key)
@@ -338,7 +338,7 @@ module Textus
 
       def pulse_index_etag(ctx)
         path = ctx.resolve("artifacts.system.index").path
-        File.exist?(path) ? ctx.file_system.etag(path) : nil
+        File.exist?(path) ? ctx.store.file_system.etag(path) : nil
       rescue Textus::Error
         nil
       end

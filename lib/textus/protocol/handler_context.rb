@@ -1,14 +1,6 @@
 module Textus
   module Protocol
-    class HandlerContext
-      def initialize(container)
-        @container = container
-        @entry_store = nil
-      end
-
-      def store = @container.store
-
-      # Reading
+    module HandlerContextReadOps
       def read(key)
         entry_store.read(key)
       end
@@ -25,7 +17,12 @@ module Textus
         @container.manifest.resolver.resolve(key)
       end
 
-      # Writing
+      def mentry_for(key)
+        manifest.resolver.resolve(key).entry
+      end
+    end
+
+    module HandlerContextWriteOps
       def write(key, mentry:, payload:, if_etag: nil, call: nil)
         entry_store.put(key, mentry:, payload:, if_etag:, call:)
       end
@@ -37,24 +34,26 @@ module Textus
       def move(from_key:, to_key:, new_mentry:, call: nil)
         entry_store.move(from_key:, to_key:, new_mentry:, call:)
       end
+    end
 
-      # Query
+    module HandlerContextSystem
       def manifest          = @container.manifest
       def layout            = @container.layout
       def schemas           = @container.schemas
       def workflows         = @container.workflows
       def workflow_registry = @container.workflow_registry
+      def store             = @container.store
       attr_reader :container
+    end
 
-      def file_system    = store.file_system
-      def audit          = store.audit_log
-      def links          = store.link_store
-      def entry_index    = store.entry_index
-      def file_store     = store.file_store
+    class HandlerContext
+      include HandlerContextReadOps
+      include HandlerContextWriteOps
+      include HandlerContextSystem
 
-      # Convenience
-      def mentry_for(key)
-        manifest.resolver.resolve(key).entry
+      def initialize(container)
+        @container = container
+        @entry_store = nil
       end
 
       def payload(meta: nil, body: nil, content: nil)
