@@ -3,22 +3,21 @@ module Textus
     class Store
       module Index
         class Builder
-          def initialize(store:)
-            @store = store
-            @db = store.db
+          def initialize(db)
+            @db = db
           end
 
           def rebuild!(resolver:)
-            entry_index = Protocol::Index.new(@store.db)
             @db[:entries].each do |row|
               key = row[:key]
               mentry = resolver.resolve(key)
               next unless mentry
 
               entry = mentry.entry
-              entry_index.record(
+              @db[:entries].insert_conflict(:replace).insert(
                 key:, lane: entry.lane, format: entry.format,
-                schema: entry.schema, content: row[:content]
+                schema: entry.schema, content: row[:content],
+                indexed_at: Time.now.utc
               )
             end
           end

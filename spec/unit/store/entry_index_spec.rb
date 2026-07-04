@@ -1,11 +1,13 @@
 require "spec_helper"
 require "tmpdir"
 
-RSpec.describe Textus::Protocol::Index do
-  subject(:index) { described_class.new(database) }
+RSpec.describe Textus::Infra::Store::EntryStore do
+  subject(:index) { described_class.new(database.connection, file_system) }
 
   let(:root) { Dir.mktmpdir }
-  let(:database) { Textus::Infra::Database.new(root: root).setup! }
+  let(:layout) { Textus::Protocol::Layout.new(root) }
+  let(:database) { Textus::Infra::Database.new(layout:).setup! }
+  let(:file_system) { instance_double(Textus::Infra::FileSystem) }
 
   after { FileUtils.remove_entry(root) }
 

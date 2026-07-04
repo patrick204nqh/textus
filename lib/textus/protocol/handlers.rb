@@ -107,11 +107,10 @@ module Textus
 
       def boot(ctx:, call:)
         proxy = Textus::Protocol::Container.new(
-          file_system: ctx.file_system, entry_store: nil, layout: ctx.layout, entry_index: nil,
-          event_store: nil, workflows: nil,
+          store: ctx.store,
+          layout: ctx.layout,
           manifest: ctx.manifest, schemas: ctx.schemas,
-          audit_log: ctx.audit,
-          link_graph: nil,
+          workflows: nil,
           root: ctx.layout.root
         )
         Textus::Protocol::Boot.build(container: proxy)
@@ -155,8 +154,7 @@ module Textus
       end
 
       def pulse(ctx:, call:, since: nil)
-        root = ctx.manifest.data.root
-        cursor_val = since || Textus::Protocol::Cursor.new(root:, role: call.role).read
+        cursor_val = since || ctx.store.cursor_store.read(call.role)
         audit_result = audit(seq_since: cursor_val, ctx:, call:)
         changed = audit_result["rows"] || []
         queue = ctx.manifest.policy.queue_lane
@@ -165,10 +163,10 @@ module Textus
           "cursor" => ctx.audit.latest_seq,
           "changed" => changed,
           "pending_review" => pending.is_a?(Array) ? pending.map { |r| r["key"] } : [],
-          "contract_etag" => Textus::Value::Etag.for_contract(root),
+          "contract_etag" => Textus::Value::Etag.for_contract(ctx.manifest.data.root),
           "index_etag" => pulse_index_etag(ctx),
         }
-        Textus::Protocol::Cursor.new(root:, role: call.role).write(result["cursor"])
+        ctx.store.cursor_store.write(call.role, result["cursor"])
         result
       end
 

@@ -39,3 +39,23 @@ _Avoid_: Gem trial, convenience install
 **Dependency Adapter Module**:
 An adapter module that exposes the published interface textus depends on while hiding dependency-specific implementation details.
 _Avoid_: Direct gem call, vendor lock-in seam
+
+**Runtime Store**:
+The runtime data directory under `.textus/` that holds transient and persistent operational state. Subdirectories: `db/` (SQLite database — backup target), `log/` (append-only logs — logrotate target), `run/` (ephemeral scratch — safe to delete), `track/` (sentinel metadata — durable but derivable).
+_Avoid_: State dir, run dir, .state
+
+**Audit Table**:
+The `audit_events` SQLite table recording every write operation (seq, ts, role, verb, key, etag_before, etag_after). Serves as the system's unified change log for `pulse`, `audit`, and cursor advancement.
+_Avoid_: Audit log, audit file, journal
+
+**Workflow Table**:
+The `workflow_events` SQLite table recording workflow-scheduled events (id, event_type, workflow_type, key, payload, state, scheduled_at, retry_count, error). Consumed by `Events::Consumer` during `drain`.
+_Avoid_: Job queue, event store
+
+**Runtime Cursor**:
+The `cursors` SQLite table storing per-role position in the audit stream (role, seq, updated_at). Written atomically by `pulse`. Read at session start to resume from last position.
+_Avoid_: Cursor file, checkpoint file, seq file
+
+**Loop State**:
+The current knowledge pipeline phase (intent, constraint, judgment, evidence, execution, feedback) returned in `pulse` output as an advisory label. Not a state machine — agents read it to decide what to work on.
+_Avoid_: Loop driver, pipeline state, workflow phase

@@ -1,7 +1,6 @@
 module Textus
   module Protocol
     class Layout
-      RUN    = ".state"
       DATA   = "data"
       ASSETS = "assets"
 
@@ -25,16 +24,13 @@ module Textus
         end
       end
 
-      def run_root           = File.join(@root, RUN)
-      def cursor_path(role)  = File.join(run_root, "ephemeral", "cursors", role.to_s)
-      def lock_path(name)    = File.join(run_root, "ephemeral", "locks", "#{name}.lock")
-      def audit_dir_path     = File.join(run_root, "audit")
-      def audit_log_path     = File.join(audit_dir_path, "audit.log")
-      def audit_rotated_log_path(n) = File.join(audit_dir_path, "audit.log.#{n}")
-      def audit_rotated_meta_path(n) = File.join(audit_dir_path, "audit.log.#{n}.meta.json")
-      def audit_log_glob = File.join(audit_dir_path, "audit.log.*")
-      def sentinels_root = File.join(run_root, "tracking", "sentinels")
-      def store_db_path = File.join(run_root, "store.db")
+      def db_root  = File.join(@root, "db")
+      def db_path  = File.join(db_root, "store.db")
+      def log_root = File.join(@root, "log")
+      def run_root = File.join(@root, "run")
+      def lock_path(name) = File.join(run_root, "locks", "#{name}.lock")
+      def track_root    = File.join(@root, "track")
+      def sentinels_root = File.join(track_root, "sentinels")
 
       def asset_raw_dir(date_path, zone)
         File.join(@root, ASSETS, "raw", date_path, zone.to_s)
@@ -62,8 +58,7 @@ module Textus
       def schemas_glob     = File.join(schemas_dir, "**", "*")
 
       def gitignore_body(untracked_entries: [])
-        lines = ["# textus runtime artifacts — safe to delete, never commit",
-                 "#{RUN}/"]
+        lines = ["# textus runtime artifacts — safe to delete, never commit", *runtime_ignore_dirs]
         unless untracked_entries.empty?
           lines << "# tracked:false entries — protocol-readable, not committed"
           lines.concat(untracked_entries)
@@ -80,6 +75,10 @@ module Textus
       end
 
       private
+
+      def runtime_ignore_dirs
+        ["db/", "log/", "run/", "track/"]
+      end
 
       def normalize_relative_path(path)
         return path if path.start_with?("data/")

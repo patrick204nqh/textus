@@ -1,11 +1,12 @@
 require "spec_helper"
 require "tmpdir"
 
-RSpec.describe Textus::Protocol::Events::EventStore do
-  subject(:event_store) { described_class.new(database) }
+RSpec.describe Textus::Infra::Store::EventStore do
+  subject(:event_store) { described_class.new(database.connection) }
 
   let(:root) { Dir.mktmpdir }
-  let(:database) { Textus::Infra::Database.new(root: root).setup! }
+  let(:layout) { Textus::Protocol::Layout.new(root) }
+  let(:database) { Textus::Infra::Database.new(layout:).setup! }
 
   after { FileUtils.remove_entry(root) }
 

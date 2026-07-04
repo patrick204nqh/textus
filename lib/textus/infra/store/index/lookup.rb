@@ -3,8 +3,8 @@ module Textus
     class Store
       module Index
         class Lookup
-          def initialize(store:)
-            @db = store.db
+          def initialize(db)
+            @db = db
           end
 
           def find_by_hash(hash)

@@ -97,10 +97,10 @@ module Textus
         module AppendAudit
           def self.call(ctx, deps)
             extras = deps.call.correlation_id ? { "correlation_id" => deps.call.correlation_id } : nil
-            deps.audit_log.append(
+            deps.audit_log.append_audit(
               role: deps.call.role, verb: "put", key: ctx.key,
               etag_before: ctx.etag_before, etag_after: ctx.envelope.etag,
-              extras:
+              correlation_id: deps.call.correlation_id,
             )
             ctx
           end
@@ -124,14 +124,14 @@ module Textus
         ].freeze
 
         # rubocop:disable Metrics/ParameterLists
-        def self.call(key, mentry:, payload:, call:, file_system:, manifest:, audit_log:, layout:, reader:, entry_index:, if_etag: nil)
+        def self.call(key, mentry:, payload:, call:, file_system:, manifest:, store:, layout:, reader:, if_etag: nil)
           ctx = WriteContext.new(
             key:, mentry:, payload:, if_etag:,
             path: nil, existing_env: nil, meta: nil, content: nil,
             bytes: nil, eff_meta: nil, eff_body: nil, eff_content: nil,
             etag_before: nil, envelope: nil
           )
-          deps = WriteDeps.new(file_system:, manifest:, audit_log:, call:, reader:, layout:, entry_index:)
+          deps = WriteDeps.new(file_system:, manifest:, store:, call:, reader:, layout:)
           ctx = STEPS.reduce(ctx) { |c, step| step.call(c, deps) }
           ctx.envelope
         end

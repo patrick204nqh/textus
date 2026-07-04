@@ -85,16 +85,10 @@ module Textus
 
         module AppendMoveAudit
           def self.call(ctx, deps)
-            extras = {
-              "from_key" => ctx.from_key, "to_key" => ctx.to_key,
-              "from_path" => ctx.from_path, "to_path" => ctx.to_path,
-              "uid" => ctx.envelope.uid
-            }
-            extras["correlation_id"] = deps.call.correlation_id if deps.call.correlation_id
-            deps.audit_log.append(
+            deps.audit_log.append_audit(
               role: deps.call.role, verb: "key_mv", key: ctx.to_key,
               etag_before: ctx.etag_before, etag_after: ctx.etag_after,
-              extras:
+              correlation_id: deps.call.correlation_id,
             )
             ctx
           end
@@ -128,15 +122,15 @@ module Textus
 
         # rubocop:disable Metrics/ParameterLists
         def self.call(
-          from_key:, to_key:, new_mentry:, call:, file_system:, manifest:, audit_log:,
-          layout:, reader:, entry_index:, if_etag: nil
+          from_key:, to_key:, new_mentry:, call:, file_system:, manifest:, store:,
+          layout:, reader:, if_etag: nil
         )
           ctx = MoveContext.new(
             from_key:, to_key:, new_mentry:, if_etag:,
             from_path: nil, to_path: nil,
             etag_before: nil, etag_after: nil, envelope: nil
           )
-          deps = WriteDeps.new(file_system:, manifest:, audit_log:, call:, reader:, layout:, entry_index:)
+          deps = WriteDeps.new(file_system:, manifest:, store:, call:, reader:, layout:)
           ctx = STEPS.reduce(ctx) { |c, step| step.call(c, deps) }
           ctx.envelope
         end

@@ -3,35 +3,25 @@ module Textus
     class Builder
       def call(root)
         manifest    = Manifest.load(root)
-        database    = Infra::Database.new(root: root).setup!
-        event_store = Protocol::Events::EventStore.new(database)
         layout      = Protocol::Layout.new(root)
-        file_store  = Infra::FileStore.new
+        database    = Infra::Database.new(layout:).setup!
+        file_system = Infra::FileSystem.new
         schemas     = Protocol::Schema::Registry.new(layout.schemas_dir)
-        audit_log   = Protocol::Audit.new(
-          layout:,
-          max_size: manifest.data.audit_config[:max_size],
-          keep: manifest.data.audit_config[:keep],
-          file_system: file_store,
-        )
-        link_graph  = Protocol::Links.new(database)
-        entry_index = Protocol::Index.new(database)
+
+        store       = Infra::Store.new(database:, file_system:)
         workflows   = Workflow::Loader.load_all(root)
         workflows.push(Textus::Workflow::Instances::Materialize)
-        entry_store = Protocol::EntryStore.new(file_system: file_store, manifest:, audit_log:, layout:, entry_index:)
 
         ttl_evaluator = Protocol::Freshness::TtlEvaluator.new(
           manifest:,
-          file_stat: file_store,
+          file_stat: file_system,
           clock: Infra::Clock.new,
         )
 
         container = Container.new(
-          file_system: file_store, entry_store:, layout:, entry_index:,
-          event_store:, workflows:,
+          store:, layout:,
           manifest:, schemas:,
-          audit_log:,
-          link_graph:,
+          workflows:,
           root:, ttl_evaluator:
         )
 

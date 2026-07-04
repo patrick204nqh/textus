@@ -51,11 +51,10 @@ module Textus
 
         module AppendDeleteAudit
           def self.call(ctx, deps)
-            extras = deps.call.correlation_id ? { "correlation_id" => deps.call.correlation_id } : nil
-            deps.audit_log.append(
+            deps.audit_log.append_audit(
               role: deps.call.role, verb: "key_delete", key: ctx.key,
               etag_before: ctx.etag_before, etag_after: nil,
-              extras:
+              correlation_id: deps.call.correlation_id,
             )
             ctx
           end
@@ -79,12 +78,12 @@ module Textus
         ].freeze
 
         # rubocop:disable Metrics/ParameterLists
-        def self.call(key, call:, file_system:, manifest:, audit_log:, layout:, entry_index:, mentry: nil, if_etag: nil, reader: nil)
+        def self.call(key, call:, file_system:, manifest:, store:, layout:, mentry: nil, if_etag: nil, reader: nil)
           ctx = DeleteContext.new(
             key:, mentry:, if_etag:,
             path: nil, etag_before: nil
           )
-          deps = WriteDeps.new(file_system:, manifest:, audit_log:, call:, reader:, layout:, entry_index:)
+          deps = WriteDeps.new(file_system:, manifest:, store:, call:, reader:, layout:)
           STEPS.reduce(ctx) { |c, step| step.call(c, deps) }
           nil
         end

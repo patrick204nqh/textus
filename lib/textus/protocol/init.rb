@@ -51,7 +51,6 @@ module Textus
         create_directories(target_root)
         write_manifest(target_root, with_agent:)
         mcp_status = scaffold_agent(target_root, scaffold_dir, with_agent:)
-        setup_state_dirs(target_root)
         write_gitignore(target_root)
         build_result(target_root, with_agent:, mcp_status:)
       end
@@ -87,10 +86,6 @@ module Textus
 
         scaffold_agent_profile(target_root, scaffold_dir)
         write_mcp_config(target_root, scaffold_dir)
-      end
-
-      def self.setup_state_dirs(target_root)
-        FileUtils.mkdir_p(Textus::Protocol::Layout.new(target_root).audit_dir_path)
       end
 
       def self.write_gitignore(target_root)

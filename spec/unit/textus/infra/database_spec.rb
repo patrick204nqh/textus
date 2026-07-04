@@ -2,9 +2,10 @@ require "spec_helper"
 require "tmpdir"
 
 RSpec.describe Textus::Infra::Database do
-  subject(:db) { described_class.new(root: tmpdir) }
+  subject(:db) { described_class.new(layout:) }
 
   let(:tmpdir) { Dir.mktmpdir }
+  let(:layout) { Textus::Protocol::Layout.new(tmpdir) }
 
   after do
     begin
@@ -18,12 +19,12 @@ RSpec.describe Textus::Infra::Database do
   describe "#setup!" do
     it "creates the database file" do
       db.setup!
-      expect(File).to exist(File.join(tmpdir, ".state", "store.db"))
+      expect(File).to exist(layout.db_path)
     end
 
-    it "creates events table" do
+    it "creates workflow_events table" do
       db.setup!
-      expect(db.connection.table_exists?(:events)).to be true
+      expect(db.connection.table_exists?(:workflow_events)).to be true
     end
 
     it "creates entries table" do
@@ -58,26 +59,26 @@ RSpec.describe Textus::Infra::Database do
     it "commits changes" do
       db.setup!
       db.transaction do
-        db.connection[:events].insert(
+        db.connection[:workflow_events].insert(
           event_type: "test", workflow_type: "test",
           key: "test.key", lane: "raw"
         )
       end
-      expect(db.connection[:events].count).to eq(1)
+      expect(db.connection[:workflow_events].count).to eq(1)
     end
 
     it "rolls back on error" do
       db.setup!
       expect do
         db.transaction do
-          db.connection[:events].insert(
+          db.connection[:workflow_events].insert(
             event_type: "test", workflow_type: "test",
             key: "test.key", lane: "raw"
           )
           raise "rollback"
         end
       end.to raise_error("rollback")
-      expect(db.connection[:events].count).to eq(0)
+      expect(db.connection[:workflow_events].count).to eq(0)
     end
   end
 

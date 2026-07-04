@@ -5,7 +5,7 @@ module Textus
     class Watcher
       def initialize(container:)
         @container = container
-        @async = Protocol::Async::Queue.new(container.event_store)
+        @async = Protocol::Async::Queue.new(container.store.event_store)
       end
 
       def tick

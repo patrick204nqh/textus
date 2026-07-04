@@ -24,10 +24,16 @@ module Textus
       def write_and_pctx(key, data, ctx)
         normalized = Textus::Protocol::Format.data_to_payload(data, ctx.entry.format)
         payload = Textus::Value::Payload.new(**normalized)
-        @container.writer.put(key, mentry: ctx.entry, payload:, call: @call)
+        es = Protocol::EntryStore.new(
+          file_system: @container.store.file_system,
+          manifest: @container.manifest,
+          layout: @container.layout,
+          store: @container.store,
+        )
+        es.put(key, mentry: ctx.entry, payload:, call: @call)
         Textus::Protocol::Manifest::Entry::Base::PublishContext.new(
           container: @container, call: @call,
-          reader: @container.reader.method(:read)
+          reader: es.method(:read)
         )
       end
 

@@ -3,7 +3,7 @@ require "spec_helper"
 RSpec.describe "tracked:false entries drive a derived .gitignore" do
   it "includes an untracked entry's path and the run subtree" do
     body = Textus::Protocol::Layout.new("test").gitignore_body(untracked_entries: ["data/feeds/machine.md"])
-    expect(body).to include("#{Textus::Protocol::Layout::RUN}/")
+    expect(body).to include("run/")
     expect(body).to include("data/feeds/machine.md")
   end
 

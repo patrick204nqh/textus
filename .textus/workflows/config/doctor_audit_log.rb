@@ -1,26 +1,29 @@
-# Replaces Doctor::Check::AuditLog. Validates active audit log integrity.
+# Validates audit event store health.
 
 Textus.workflow "doctor-audit-log" do
   match "artifacts.doctor.audit-log"
 
   step :scan do |_, ctx|
-    path = Textus::Protocol::Layout.new(ctx.container.root).audit_log_path
-    issues = Textus::Protocol::Audit.new(ctx.container.root).verify_integrity.map do |v|
-      detail = case v["reason"]
-               when "invalid_json"
-                 "audit log line #{v["lineno"]} is invalid JSON: #{v["detail"]}"
-               when "short_tsv"
-                 "audit log line #{v["lineno"]} #{v["detail"]} (consider migrating to NDJSON)"
-               else
-                 v["detail"]
-               end
+    store = ctx.store
+    issues = []
+    latest = store.event_store.latest_seq
+    first = store.event_store.min_available_seq
 
-      {
-        "code" => "audit.parse_error",
-        "level" => "warning",
-        "subject" => "#{path}:#{v["lineno"]}",
-        "message" => detail,
-        "fix" => "inspect #{path} at line #{v["lineno"]} and remove the corrupted row",
+    if latest == 0
+      issues << {
+        "code" => "audit.empty",
+        "level" => "info",
+        "subject" => "audit",
+        "message" => "audit log is empty",
+        "fix" => nil,
+      }
+    elsif first.nil?
+      issues << {
+        "code" => "audit.unavailable",
+        "level" => "error",
+        "subject" => "audit",
+        "message" => "no events available despite latest_seq=#{latest}",
+        "fix" => "check database integrity",
       }
     end
 

@@ -1,15 +1,14 @@
-# Parses and returns the last row of the store's audit.log as a Hash.
-# Raises if the log is missing/empty — that's a real test failure, not a nil.
+# Queries the audit event store. Raises if no events found.
 module TextusAuditHelpers
   def last_audit_row(store)
-    log = Textus::Protocol::Layout.new(store.root).audit_log_path
-    JSON.parse(File.readlines(log).last)
+    store.container.store.event_store.scan_audit.last ||
+      (raise "no audit events found")
   end
 end
 RSpec.configure { |c| c.include TextusAuditHelpers }
 
 # Asserts the last audit row records the given verb, optionally with a
-# correlation_id (matched against extras.correlation_id):
+# correlation_id:
 #
 #   expect(store).to have_audit_verb("put")
 #   expect(store).to have_audit_verb("delete").with_correlation("corr-1")
@@ -17,13 +16,13 @@ RSpec::Matchers.define :have_audit_verb do |verb|
   chain(:with_correlation) { |cid| @cid = cid }
 
   match do |store|
-    log = Textus::Protocol::Layout.new(store.root).audit_log_path
-    next false unless File.exist?(log) && !File.empty?(log)
+    events = store.container.store.event_store.scan_audit
+    next false if events.empty?
 
-    @row = JSON.parse(File.readlines(log).last)
+    @row = events.last
     next false unless @row["verb"] == verb
 
-    @cid.nil? || @row.dig("extras", "correlation_id") == @cid
+    @cid.nil? || @row["correlation_id"] == @cid
   end
 
   failure_message do

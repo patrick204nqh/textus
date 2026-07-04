@@ -20,7 +20,7 @@ RSpec.describe "Port contract conformance" do
   def build_instance(klass)
     case klass.name
     when /FileStore/ then klass.new
-    when /AuditLog|Protocol::Audit/ then klass.new(Dir.tmpdir)
+    when /AuditLog/ then klass.new(Dir.tmpdir)
     when /Publisher/ then klass.new
     when /Clock/ then klass.new
     else klass.new

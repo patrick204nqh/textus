@@ -3,7 +3,7 @@ require "spec_helper"
 RSpec.describe Textus::Protocol::Events::Consumer do
   subject(:consumer) { described_class.new }
 
-  let(:event_store) { instance_double(Textus::Protocol::Events::EventStore) }
+  let(:event_store) { instance_double(Textus::Infra::Store::EventStore) }
   let(:registry) { instance_double(Textus::Workflow::Registry) }
   let(:workflow) { instance_double(Textus::Workflow::DSL::Definition, type: "materialize") }
   let(:container) { instance_double(Textus::Protocol::Container) }

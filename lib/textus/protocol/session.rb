@@ -11,7 +11,7 @@ module Textus
         @role = role.to_s
         @correlation_id = correlation_id || SecureRandom.uuid
         @dry_run = dry_run
-        @cursor = container.audit_log.latest_seq
+        @cursor = container.store.event_store.latest_seq
         @contract_etag = Value::Etag.for_contract(@root)
         @propose_lane = container.manifest.policy.propose_lane_for(@role)
       end
@@ -77,7 +77,7 @@ module Textus
       private
 
       def build_cursor
-        container.audit_log.latest_seq
+        container.store.event_store.latest_seq
       end
 
       def build_contract_etag

@@ -6,17 +6,17 @@ module Textus
   module Infra
     module Locks
       class WatcherLock
-        def initialize(root, file_store: Infra::FileStore.new)
+        def initialize(root, file_system: Infra::FileSystem.new)
           @root = File.expand_path(root)
-          @file_store = file_store
-          @path = File.join(@root, ".state", "ephemeral", "locks", "watcher.lock")
+          @file_system = file_system
+          @path = Textus::Protocol::Layout.new(@root).lock_path("watcher")
           @file = nil
-          @file_store.mkdir_p(File.dirname(@path))
+          @file_system.mkdir_p(File.dirname(@path))
         end
 
-        def self.running?(root, file_store: Infra::FileStore.new)
-          path = File.join(root, ".state", "ephemeral", "locks", "watcher.lock")
-          return false unless file_store.exists?(path)
+        def self.running?(root, file_system: Infra::FileSystem.new)
+          path = Textus::Protocol::Layout.new(root).lock_path("watcher")
+          return false unless file_system.exists?(path)
 
           File.open(path, "r+") do |file|
             got = file.flock(File::LOCK_EX | File::LOCK_NB)
@@ -41,7 +41,7 @@ module Textus
 
           @file.flock(File::LOCK_UN)
           @file.close
-          @file_store.delete(@path) if @file_store.exists?(@path)
+          @file_system.delete(@path) if @file_system.exists?(@path)
           @file = nil
         end
       end

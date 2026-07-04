@@ -49,13 +49,19 @@ module Textus
         def publish_only(key)
           entry = @container.manifest.resolver.resolve(key).entry
           return unless entry.publish_tree || !Array(entry.publish_to).empty?
-          return unless entry.publish_tree || @container.file_system.exists?(
+          return unless entry.publish_tree || @container.store.file_system.exists?(
             @container.manifest.resolver.resolve(key).path,
           )
 
+          es = Protocol::EntryStore.new(
+            file_system: @container.store.file_system,
+            manifest: @container.manifest,
+            layout: @container.layout,
+            store: @container.store,
+          )
           pctx = Textus::Protocol::Manifest::Entry::Base::PublishContext.new(
             container: @container, call: @call,
-            reader: @container.entry_store.method(:read)
+            reader: es.method(:read)
           )
           entry.publish_via(pctx)
         end

@@ -126,7 +126,7 @@ module TextusSpecHelpers
   def converge_now(store, prefix: nil, lane: nil, role: Textus::Value::Role::AUTOMATION)
     with_missing_workflows(store)
     registry = Textus::Workflow::Registry.new(store.container.workflows)
-    event_store = store.container.event_store
+    event_store = store.container.store.event_store
 
     store.container.manifest.data.entries.each do |entry|
       next if prefix && !entry.key.start_with?(prefix)

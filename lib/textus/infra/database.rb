@@ -4,15 +4,15 @@ require "fileutils"
 module Textus
   module Infra
     class Database
-      def initialize(root:)
-        @root = File.expand_path(root)
+      def initialize(layout:)
+        @layout = layout
         @db = nil
       end
 
       def connection = @db
 
       def setup!
-        path = File.join(@root, ".state", "store.db")
+        path = @layout.db_path
         FileUtils.mkdir_p(File.dirname(path))
         @db = Sequel.sqlite(path)
         @db.run("PRAGMA journal_mode=WAL")
@@ -27,7 +27,7 @@ module Textus
       private
 
       def create_tables
-        @db.create_table?(:events) do
+        @db.create_table?(:workflow_events) do
           primary_key :id
           String :event_type, null: false
           String :workflow_type, null: false
@@ -58,6 +58,26 @@ module Textus
           primary_key %i[from_key to_key]
           index :to_key
           index :from_key
+        end
+
+        @db.create_table?(:audit_events) do
+          primary_key :seq
+          String :ts, null: false
+          String :role, null: false
+          String :verb, null: false
+          String :key, null: false
+          String :etag_before
+          String :etag_after
+          String :correlation_id
+          index :key
+          index %i[role verb]
+          index :correlation_id
+        end
+
+        @db.create_table?(:cursors) do
+          String :role, primary_key: true
+          Integer :seq, null: false, default: 0
+          DateTime :updated_at, null: false, default: Sequel::CURRENT_TIMESTAMP
         end
 
         create_entries_fts

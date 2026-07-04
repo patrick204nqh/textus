@@ -4,14 +4,15 @@ require "spec_helper"
 
 RSpec.describe Textus::Infra::Database do
   let(:root) { File.join(Dir.mktmpdir, ".textus") }
+  let(:layout) { Textus::Protocol::Layout.new(root) }
 
   after { FileUtils.rm_rf(File.dirname(root)) }
 
   it "opens a SQLite connection and creates the schema" do
-    db = described_class.new(root: root)
+    db = described_class.new(layout:)
     db.setup!
 
-    expect(db.connection.table_exists?(:events)).to be true
+    expect(db.connection.table_exists?(:workflow_events)).to be true
     expect(db.connection.table_exists?(:entries)).to be true
     expect(db.connection.table_exists?(:entries_fts)).to be true
     expect(db.connection.table_exists?(:link_edges)).to be true
@@ -20,7 +21,7 @@ RSpec.describe Textus::Infra::Database do
   end
 
   it "enables WAL mode" do
-    db = described_class.new(root: root)
+    db = described_class.new(layout:)
     db.setup!
 
     mode = db.connection.fetch("PRAGMA journal_mode").first[:journal_mode]
@@ -30,7 +31,7 @@ RSpec.describe Textus::Infra::Database do
   end
 
   it "closes the database connection" do
-    db = described_class.new(root: root)
+    db = described_class.new(layout:)
     db.setup!
     db.close
 

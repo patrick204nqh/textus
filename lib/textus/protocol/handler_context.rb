@@ -3,19 +3,22 @@ module Textus
     class HandlerContext
       def initialize(container)
         @container = container
+        @entry_store = nil
       end
+
+      def store = @container.store
 
       # Reading
       def read(key)
-        @container.reader.read(key)
+        entry_store.read(key)
       end
 
       def list(prefix: nil, lane: nil, q: nil, schema: nil)
-        @container.entry_index.search(query: q, schema:, lane:, prefix:)
+        store.entry_store.search(query: q, schema:, lane:, prefix:)
       end
 
       def exists?(key)
-        @container.reader.exists?(key)
+        entry_store.exists?(key)
       end
 
       def resolve(key)
@@ -24,28 +27,29 @@ module Textus
 
       # Writing
       def write(key, mentry:, payload:, if_etag: nil, call: nil)
-        @container.writer.put(key, mentry:, payload:, if_etag:, call:)
+        entry_store.put(key, mentry:, payload:, if_etag:, call:)
       end
 
       def delete(key, if_etag: nil, mentry: nil, call: nil)
-        @container.writer.delete(key, if_etag:, mentry:, call:)
+        entry_store.delete(key, if_etag:, mentry:, call:)
       end
 
       def move(from_key:, to_key:, new_mentry:, call: nil)
-        @container.writer.move(from_key:, to_key:, new_mentry:, call:)
+        entry_store.move(from_key:, to_key:, new_mentry:, call:)
       end
 
       # Query
-      def manifest  = @container.manifest
-      def layout    = @container.layout
-      def audit     = @container.audit_log
-      def links     = @container.link_graph
-      def schemas   = @container.schemas
-      def file_system = @container.file_system
-      def event_store = @container.event_store
-      def workflows   = @container.workflows
-      def entry_index = @container.entry_index
-      def container   = @container
+      def manifest   = @container.manifest
+      def layout     = @container.layout
+      def schemas    = @container.schemas
+      def workflows  = @container.workflows
+      def container  = @container
+
+      def file_system = store.file_system
+      def audit       = store.event_store
+      def links       = store.link_store
+      def event_store = store.event_store
+      def entry_index = store.entry_store
 
       # Convenience
       def mentry_for(key)
@@ -54,6 +58,17 @@ module Textus
 
       def payload(meta: nil, body: nil, content: nil)
         Textus::Value::Payload.new(meta: meta || {}, body:, content:)
+      end
+
+      private
+
+      def entry_store
+        @entry_store ||= Protocol::EntryStore.new(
+          file_system: store.file_system,
+          manifest:,
+          layout:,
+          store:,
+        )
       end
     end
   end

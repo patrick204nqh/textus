@@ -2,9 +2,9 @@ module Textus
   module Protocol
     module Boot
       module Context
-        def self.build(manifest:, audit_log:, file_system:, layout:)
+        def self.build(manifest:, event_store:, file_system:, layout:)
           etag       = Textus::Value::Etag.for_contract(layout.root)
-          latest_seq = audit_log.latest_seq
+          latest_seq = event_store.latest_seq
           artifact   = read_artifact_content(manifest, file_system, layout)
           context    = read_boot_context(manifest, file_system, layout)
 
@@ -30,7 +30,7 @@ module Textus
           return nil unless res.path && file_system.exists?(res.path)
 
           entry_store = Textus::Protocol::EntryStore.new(
-            file_system:, manifest:, audit_log: nil, layout:, entry_index: NullEntryIndex.new,
+            file_system:, manifest:, layout:, store: nil,
           )
           env = entry_store.read(key)
           env&.content
@@ -43,7 +43,7 @@ module Textus
           return nil unless res.path && file_system.exists?(res.path)
 
           entry_store = Textus::Protocol::EntryStore.new(
-            file_system:, manifest:, audit_log: nil, layout:, entry_index: NullEntryIndex.new,
+            file_system:, manifest:, layout:, store: nil,
           )
           env = entry_store.read("knowledge.boot")
           body = env&.body&.strip

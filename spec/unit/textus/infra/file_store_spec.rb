@@ -1,7 +1,7 @@
 require "spec_helper"
 require "tmpdir"
 
-RSpec.describe Textus::Infra::FileStore do
+RSpec.describe Textus::Infra::FileSystem do
   subject(:store) { described_class.new }
 
   let(:tmpdir) { Dir.mktmpdir }

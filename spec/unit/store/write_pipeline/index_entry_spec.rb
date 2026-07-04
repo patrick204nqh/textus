@@ -2,7 +2,7 @@ require "spec_helper"
 
 # rubocop:disable RSpec/VerifiedDoubles
 RSpec.describe "WritePipeline indexing" do
-  let(:entry_index) { instance_double(Textus::Protocol::Index) }
+  let(:entry_index) { instance_double(Textus::Infra::Store::EntryStore) }
 
   describe Textus::Protocol::WritePipeline::Put::IndexEntry do
     it "records the written entry in the index" do

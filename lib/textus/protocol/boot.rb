@@ -16,8 +16,8 @@ module Textus
         manifest = container.manifest
         envelope = Context.build(
           manifest:,
-          audit_log: container.audit_log,
-          file_system: container.file_system,
+          event_store: container.store.event_store,
+          file_system: container.store.file_system,
           layout: container.layout,
         )
         envelope.merge(

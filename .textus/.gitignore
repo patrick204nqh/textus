@@ -1,2 +1,5 @@
 # textus runtime artifacts — safe to delete, never commit
-.state/
+db/
+log/
+run/
+track/

@@ -2,7 +2,7 @@ require "fileutils"
 
 module Textus
   module Infra
-    class FileStore
+    class FileSystem
       def read(path) = File.binread(path)
 
       def write(path, bytes)

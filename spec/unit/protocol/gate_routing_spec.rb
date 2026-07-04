@@ -1,9 +1,14 @@
 RSpec.describe Textus::Protocol::Gate do
   let(:manifest) { instance_double("Manifest", resolver:) }
   let(:resolver) { instance_double("Resolver") }
-  let(:reader) { instance_double("Reader") }
-  let(:container) { double("Container", reader:, manifest:) }
+  let(:entry_store) { instance_double(Textus::Protocol::EntryStore) }
+  let(:store) { instance_double(Textus::Infra::Store, file_system: nil) }
+  let(:container) { double("Container", manifest:, store:, layout: nil) }
   let(:gate) { described_class.new(manifest:, resolver:, container:) }
+
+  before do
+    allow(Textus::Protocol::EntryStore).to receive(:new).and_return(entry_store)
+  end
 
   def lane_spec(lane:)
     Textus::Protocol::VerbRegistry::VerbSpec.new(
@@ -30,7 +35,7 @@ RSpec.describe Textus::Protocol::Gate do
         surfaces: %i[cli mcp], category: :read
       )
       allow(Textus::Protocol::VerbRegistry).to receive(:for).with(:get).and_return(get_spec)
-      allow(reader).to receive(:read).with("test").and_return(nil)
+      allow(entry_store).to receive(:read).with("test").and_return(nil)
       allow(resolver).to receive(:suggestions_for).with("test").and_return([])
 
       expect { gate.dispatch(:human, :get, { key: "test" }) }

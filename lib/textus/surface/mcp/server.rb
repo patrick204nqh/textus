@@ -5,10 +5,6 @@ require "mcp"
 module Textus
   module Surface
     module MCP
-      # MCP stdio server backed by the official mcp gem. The SDK owns protocol
-      # negotiation, tool dispatch, and JSON-RPC framing. This class owns the
-      # textus Session lifecycle (built lazily on first tool call) and delegates
-      # execution to Catalog.
       class Server
         CHECKPOINT_INTERVAL = 30
         MCP_ADAPTER = Textus::Surface::MCP::Adapters::McpAdapter.new
@@ -19,7 +15,7 @@ module Textus
           @stdout = stdout
           @shutdown = false
 
-          resume_from_cursor_file!
+          resume_from_cursor!
           start_cursor_checkpoint_thread!
 
           @sdk = MCP_ADAPTER.server(
@@ -60,7 +56,7 @@ module Textus
                     previous_etag: short_etag(previous_etag)
           )
 
-          @store = @store.advance_cursor(@store.container.audit_log.latest_seq) if verb_name == :pulse
+          @store = @store.advance_cursor(@store.container.store.event_store.latest_seq) if verb_name == :pulse
           @store = @store.with_role(@store.role) if verb_name == :boot
           ::MCP::Tool::Response.new([{ type: "text", text: JSON.dump(result) }])
         rescue Textus::CursorExpired => e
@@ -73,9 +69,9 @@ module Textus
 
         private
 
-        def resume_from_cursor_file!
-          saved = Textus::Protocol::Cursor.new(root: @store.root, role: @store.role).read
-          latest = @store.container.audit_log.latest_seq
+        def resume_from_cursor!
+          saved = @store.container.store.cursor_store.read(@store.role)
+          latest = @store.container.store.event_store.latest_seq
           @store = @store.advance_cursor(saved) if saved.positive? && saved <= latest
         end
 
@@ -85,14 +81,11 @@ module Textus
               sleep(self.class::CHECKPOINT_INTERVAL)
               break if @shutdown
 
-              Textus::Protocol::Cursor.new(root: @store.root, role: @store.role).write(@store.cursor)
+              @store.container.store.cursor_store.write(@store.role, @store.cursor)
             end
           end
         end
 
-        # Snapshot at server init against the boot-time manifest. New produced entries
-        # added by a later reconcile are invisible until the server restarts — this is
-        # intentional: a ContractDrift will gate writes on any mid-session manifest change.
         def build_resources
           machine_lane = @store.respond_to?(:container) ? @store.container.manifest.policy.machine_lane : nil
           return [] unless machine_lane
@@ -118,8 +111,6 @@ module Textus
 
         def short_etag(etag) = etag.to_s.delete_prefix("sha256:")[0, 8]
 
-        # The SDK parses JSON with symbolize_names:true, making all nested hash keys symbols.
-        # Recursively stringify so Catalog.call receives string-keyed hashes throughout.
         def deep_stringify_keys(obj)
           case obj
           when Hash  then obj.transform_keys(&:to_s).transform_values { |v| deep_stringify_keys(v) }
