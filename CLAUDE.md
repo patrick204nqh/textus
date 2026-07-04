@@ -9,8 +9,7 @@ not edit by hand — edit the source under `.textus/data/` and run
 → Run `textus boot` for the catalog + write flows; `textus get artifacts.docs.index` for the docs map.
 → Write authority by zone:
     - **knowledge** (human) — the maintained source of truth about the repo
-    - **scratchpad** (agent) — the agent's own durable scratchpad (working memory)
-    - **proposals** (human agent) — changes awaiting a human accept
+    - **scratchpad** (human agent) — the agent's own durable scratchpad (working memory)
     - **artifacts** (automation) — machine-maintained computed outputs
     - **raw** (human agent automation) — ingested external source material (write-once)
 → Agent protocol (from `textus boot`):
@@ -47,6 +46,17 @@ not edit by hand — edit the source under `.textus/data/` and run
 - **release** — Cut a textus release — bump the version, regenerate Gemfile.lock, then tag via PR.
 - **adr** — Add an Architecture Decision Record for a load-bearing decision.
 - **quickstart** — Four-command demo of the role-gated propose→accept flow, plus full store walkthrough and protocol reference.
+
+## Procedures
+- **doctor** — Read and act on doctor workflow reports to keep the store healthy.
+- **session** — Begin and end agent sessions, review feedback, propose changes to canon.
+- **deploy** — Cut a textus release — bump version, update lockfile, tag, publish.
+
+## Feedback Criteria
+
+The feedback node (`knowledge.loop.feedback.*`) defines when the agent should
+generate feedback or propose upstream changes. Review criteria before proposing:
+- `textus list --lane=knowledge --prefix=knowledge.loop.feedback`
 
 ## Session Lifecycle
 
