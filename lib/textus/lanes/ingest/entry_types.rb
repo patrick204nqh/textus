@@ -5,13 +5,13 @@ module Textus
         require_relative "entry_types/link"
         require_relative "entry_types/asset"
         require_relative "entry_types/text"
-  
+
         module_function
-  
+
         def for(kind)
           registry[kind] or raise(ArgumentError.new("unknown ingest kind: #{kind}"))
         end
-  
+
         def registry
           @registry ||= {
             "link" => Link,
@@ -23,4 +23,3 @@ module Textus
     end
   end
 end
-  

@@ -67,7 +67,7 @@ module Textus
         pre_env = ctx.read(old_key)
         unless pre_env.uid
           ctx.write(old_key, mentry: old_res.entry, call:,
-                            payload: ctx.payload(meta: pre_env.meta, body: pre_env.body, content: pre_env.content))
+                             payload: ctx.payload(meta: pre_env.meta, body: pre_env.body, content: pre_env.content))
         end
 
         if dry_run

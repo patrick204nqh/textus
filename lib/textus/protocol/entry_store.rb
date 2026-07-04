@@ -1,7 +1,7 @@
 module Textus
   module Protocol
     class EntryStore
-      def initialize(file_system:, manifest:, audit_log: nil, layout:, entry_index: nil, store: nil)
+      def initialize(file_system:, manifest:, layout:, audit_log: nil, entry_index: nil, store: nil)
         @file_system = file_system
         @manifest = manifest
         @store = store
@@ -32,20 +32,20 @@ module Textus
 
       def put(key, if_etag: nil, mentry: nil, payload: nil, call: nil, **)
         Textus::Protocol::WritePipeline.put(key, mentry:, payload:, call:, if_etag:,
-          file_system: @file_system, manifest: @manifest, store: @store,
-          layout: @layout, reader: self)
+                                                 file_system: @file_system, manifest: @manifest, store: @store,
+                                                 layout: @layout, reader: self)
       end
 
       def delete(key, if_etag: nil, call: nil, mentry: nil, **)
         Textus::Protocol::WritePipeline.delete(key, call:, mentry:, if_etag:,
-          file_system: @file_system, manifest: @manifest, store: @store,
-          layout: @layout, reader: self)
+                                                    file_system: @file_system, manifest: @manifest, store: @store,
+                                                    layout: @layout, reader: self)
       end
 
       def move(from_key: nil, to_key: nil, new_mentry: nil, call: nil, if_etag: nil, **)
         Textus::Protocol::WritePipeline.move(from_key:, to_key:, new_mentry:, call:, if_etag:,
-          file_system: @file_system, manifest: @manifest, store: @store,
-          layout: @layout, reader: self)
+                                             file_system: @file_system, manifest: @manifest, store: @store,
+                                             layout: @layout, reader: self)
       end
     end
   end

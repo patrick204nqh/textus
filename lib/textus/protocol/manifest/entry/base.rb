@@ -32,9 +32,7 @@ module Textus
 
           # Production traits. Default false on all non-produced entries.
           # Lets publish modes call these without a `respond_to?` guard.
-          def external?   = false
-
-
+          def external? = false
 
           # Whether git should track this entry's file. Default true; an entry
           # marked `tracked: false` in the manifest stays protocol-readable but is

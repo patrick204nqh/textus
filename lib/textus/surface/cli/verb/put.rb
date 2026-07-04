@@ -12,7 +12,7 @@ module Textus
             raise UsageError.new("put requires --stdin in v1") unless use_stdin
 
             payload = JSON.parse(@stdin.read)
-            spec = Textus::Protocol::VerbRegistry.for(:put)
+            Textus::Protocol::VerbRegistry.for(:put)
             inputs = { key: key, meta: payload["_meta"] || {}, body: payload["body"] || "",
                        content: nil, if_etag: payload["if_etag"] }
             s = store.with_role(resolved_role(store))

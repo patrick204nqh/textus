@@ -29,7 +29,7 @@ module Textus
       def log_root = File.join(@root, "log")
       def run_root = File.join(@root, "run")
       def lock_path(name) = File.join(run_root, "locks", "#{name}.lock")
-      def track_root    = File.join(@root, "track")
+      def track_root = File.join(@root, "track")
       def sentinels_root = File.join(track_root, "sentinels")
 
       def asset_raw_dir(date_path, zone)

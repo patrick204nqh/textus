@@ -1,8 +1,8 @@
 module Textus
   module Protocol
     class Container
-      attr_reader :store, :layout, :manifest, :schemas,
-                  :workflows, :gate, :root, :ttl_evaluator
+      attr_accessor :gate
+      attr_reader :store, :layout, :manifest, :schemas, :workflows, :root, :ttl_evaluator
 
       def initialize(store:, layout:, manifest:, schemas:,
                      workflows:,
@@ -15,10 +15,6 @@ module Textus
         @root = root
         @gate = gate
         @ttl_evaluator = ttl_evaluator
-      end
-
-      def gate=(g)
-        @gate = g
       end
     end
   end

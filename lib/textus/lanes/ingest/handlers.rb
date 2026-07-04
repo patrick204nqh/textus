@@ -7,9 +7,7 @@ module Textus
         module_function
 
         def ingest(kind:, slug:, ctx:, call:, url: nil, path: nil, lane: nil, label: nil)
-          unless SOURCE_KINDS.include?(kind)
-            raise Textus::UsageError.new("kind must be one of #{SOURCE_KINDS.join("|")}")
-          end
+          raise Textus::UsageError.new("kind must be one of #{SOURCE_KINDS.join("|")}") unless SOURCE_KINDS.include?(kind)
 
           case kind
           when "url"   then raise Textus::UsageError.new("url required") unless url

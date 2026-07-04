@@ -13,7 +13,7 @@ module Textus
 
         def write(role, seq)
           @db[:cursors].insert_conflict(
-            update: { seq:, updated_at: Time.now.utc }
+            update: { seq:, updated_at: Time.now.utc },
           ).insert(role:, seq:, updated_at: Time.now.utc)
         end
       end

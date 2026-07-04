@@ -1,8 +1,6 @@
 module Textus
   module Protocol
     class Gate
-
-
       def initialize(manifest:, resolver:, container:, async: nil)
         @manifest = manifest
         @resolver = resolver
@@ -17,18 +15,18 @@ module Textus
         key = params[:key]
         authorize!(role, verb, key, spec)
 
-    call_obj = call || Value::Call.build(role:, correlation_id: SecureRandom.uuid)
-    bound = Protocol::Binder.bind(spec, params)
-    ctx = HandlerContext.new(@container)
+        call_obj = call || Value::Call.build(role:, correlation_id: SecureRandom.uuid)
+        bound = Protocol::Binder.bind(spec, params)
+        ctx = HandlerContext.new(@container)
 
-    handler = spec.lane ? Lane.handler_for(spec.lane) : Protocol::Handlers
+        handler = spec.lane ? Lane.handler_for(spec.lane) : Protocol::Handlers
 
-    handler.public_send(verb, **bound, ctx:, call: call_obj)
-    end
+        handler.public_send(verb, **bound, ctx:, call: call_obj)
+      end
 
       private
 
-      def authorize!(role, verb, key, spec)
+      def authorize!(role, _verb, key, spec)
         return true unless spec&.write?
 
         lane = key&.split(".")&.first || spec.lane&.to_s

@@ -96,11 +96,11 @@ module Textus
 
         module AppendAudit
           def self.call(ctx, deps)
-            extras = deps.call.correlation_id ? { "correlation_id" => deps.call.correlation_id } : nil
+            deps.call.correlation_id ? { "correlation_id" => deps.call.correlation_id } : nil
             deps.audit_log.append_audit(
               role: deps.call.role, verb: "put", key: ctx.key,
               etag_before: ctx.etag_before, etag_after: ctx.envelope.etag,
-              correlation_id: deps.call.correlation_id,
+              correlation_id: deps.call.correlation_id
             )
             ctx
           end

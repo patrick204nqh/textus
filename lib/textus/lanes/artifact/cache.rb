@@ -6,7 +6,7 @@ module Textus
           @store = store
           @ttl_default = ttl_default
         end
-  
+
         def ttl(key)
           entry = @store.get(key:)
           return @ttl_default unless entry
@@ -25,7 +25,7 @@ module Textus
           age = Time.now - Time.parse(generated_at)
           age > ttl(key)
         end
-  
+
         def expire(key)
           @store.put(key:, meta: { "stale" => true })
         end
@@ -33,4 +33,3 @@ module Textus
     end
   end
 end
-  

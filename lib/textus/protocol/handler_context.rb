@@ -43,7 +43,7 @@ module Textus
       def layout     = @container.layout
       def schemas    = @container.schemas
       def workflows  = @container.workflows
-      def container  = @container
+      attr_reader :container
 
       def file_system = store.file_system
       def audit       = store.event_store

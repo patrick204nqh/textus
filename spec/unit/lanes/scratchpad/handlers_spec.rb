@@ -19,7 +19,7 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
       allow(ctx).to receive(:manifest).and_return(manifest)
       allow(ctx).to receive(:write)
       allow(ctx).to receive(:payload).with(body: /"status":"active"/)
-        .and_return(double("Payload"))
+                                     .and_return(double("Payload"))
       allow(SecureRandom).to receive(:uuid).and_return("test-uuid-123")
 
       result = described_class.session_open(ctx:, call: nil)
