@@ -31,8 +31,8 @@ module Textus
         def load_all
           return unless File.directory?(@dir)
 
-          Dir.glob(File.join(@dir, "*.yaml")).each do |path|
-            name = File.basename(path, ".yaml")
+          Dir.glob(File.join(@dir, "**", "*.yaml")).each do |path|
+            name = path.delete_prefix("#{@dir}/").sub(/\.yaml\z/, "")
             @schemas[name] = Textus::Protocol::Schema.load(path)
           rescue StandardError => e
             warn "textus: failed to load schema '#{name}' at #{path}: #{e.message}"

@@ -149,7 +149,7 @@ Textus.workflow "doctor" do
     issues = []
 
     if File.directory?(dir)
-      Dir.glob(File.join(dir, "*.yaml")).each do |path|
+      Dir.glob(File.join(dir, "**", "*.yaml")).each do |path|
         schema = begin
           Textus::Schema.load(path)
         rescue StandardError => e

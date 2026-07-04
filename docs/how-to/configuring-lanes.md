@@ -7,7 +7,7 @@
 
 How to shape your context: declare your own lanes, wire external data through workflows, wire derived data out through projections and publishing, and a full worked example.
 
-For the exact lane, role, and entry semantics this guide builds on, see [lanes reference](`textus get artifacts.reference.lanes`). For the wire protocol, see the wire protocol (`textus get knowledge.constraint.protocol.*`).
+For the exact lane, role, and entry semantics this guide builds on, see [lanes reference](`textus get artifacts.docs.lanes`). For the wire protocol, see the wire protocol (`textus get knowledge.constraint.protocol.*`).
 
 ## Table of contents
 
@@ -33,10 +33,9 @@ The kind→capability bijection (ADR 0091/0116):
 
 | Kind | Capability | Writers in this store |
 |---|---|---|
-| `knowledge` | `` | `human` |
-| `scratchpad` | `` | `agent` |
-| `proposals` | `` | `human`, `agent` |
-| `artifacts` | `` | `automation` |
+| `knowledge` | `n/a` | `human` |
+| `scratchpad` | `n/a` | `human`, `agent` |
+| `artifacts` | `n/a` | `automation` |
 | `raw` | `ingest` | `human`, `agent`, `automation` |
 
 `kind:` is required — a manifest with a kind-less lane is rejected at load. The kind fixes the capability a writer must hold. This is a **bijection**: one kind maps to exactly one capability.
@@ -49,7 +48,6 @@ Rules: at most one `queue` lane, at most one `machine` lane, and at most one rol
 lanes:
   - { name: knowledge, kind: knowledge, desc: "the maintained source of truth about the repo" }
   - { name: scratchpad, kind: scratchpad, desc: "the agent's own durable scratchpad (working memory)" }
-  - { name: proposals, kind: proposals, desc: "changes awaiting a human accept" }
   - { name: artifacts, kind: artifacts, desc: "machine-maintained computed outputs" }
   - { name: raw, kind: raw, desc: "ingested external source material (write-once)" }
 ```
@@ -86,7 +84,7 @@ roles:
 
 ## Wiring produced entries — the workflow DSL
 
-Produced entries acquire their data via `Textus.workflow` blocks in `.textus/workflows/**/*.rb`. Each workflow matches a produced entry by key glob, then runs one or more named steps to acquire its data.
+Produced entries acquire their data via `Textus.workflow` blocks in `.textus/workflows/**/*.rb`. Each workflow declares a trigger with `on`, runs ordered steps, and saves/publishes results.
 
 ### Declaring a produced entry
 
@@ -104,14 +102,14 @@ entries:
 
 ```ruby
 Textus.workflow "agentskills" do
-  match "artifacts.feeds.skills"
+  on "artifacts.feeds.skills"
 
   step :fetch do |_, _ctx|
     skills = [{ "name" => "brainstorming", "description" => "..." }]
     { "content" => { "skills" => skills, "count" => skills.size } }
   end
 
-  publish
+  save to: "artifacts.feeds.skills"  # persists data, triggers publish targets
 end
 ```
 
@@ -155,4 +153,4 @@ publish:
 
 ## Where to go from here
 
-- [lanes reference](`textus get artifacts.reference.lanes`) — the exact lane, role, and entry semantics
+- [lanes reference](`textus get artifacts.docs.lanes`) — the exact lane, role, and entry semantics

@@ -42,11 +42,8 @@ data:
     - { key: artifacts.config.plugin, path: artifacts/config/claude-plugin.json }
     - { key: artifacts.decisions.log, format: json }
     - { key: artifacts.docs.readme, format: json }
-    - { key: artifacts.architecture.index, format: json }
+    - { key: artifacts.docs.lanes, format: json }
     - { key: artifacts.design.invariants, format: json }
-    - { key: artifacts.how-to.agents-mcp, format: json }
-    - { key: artifacts.how-to.configuring-lanes, format: json }
-    - { key: artifacts.reference.lanes, format: json }
     - { key: artifacts.render.conventions, format: json }
     - { key: artifacts.render.testing, format: json }
     - { key: artifacts.render.engineering-skills, format: json }
@@ -55,7 +52,6 @@ data:
     - { key: artifacts.render.migrations, format: json }
     - { key: artifacts.render.code-of-conduct, format: json }
     - { key: artifacts.render.security, format: json }
-    - { key: artifacts.explanation.concepts, format: json }
     - { key: artifacts.doctor, format: json }
     - { key: artifacts.system.index, format: json }
     - { key: artifacts.feeds.skills, format: json }

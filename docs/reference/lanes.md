@@ -153,6 +153,6 @@ raw.2026.07.04.url-example-post   → content:   { ingested_at: "2026-07-04T…"
 
 ## Where to go from here
 
-- [configuring-lanes](`textus get artifacts.how-to.configuring-lanes`) — lane-setup procedures
-- [architecture overview](`textus get artifacts.architecture.index`) — Ruby implementation layout
+- [configuring-lanes](`textus get artifacts.docs.lanes`) — lane-setup procedures
+- [architecture overview](`textus get artifacts.docs.lanes`) — Ruby implementation layout
 - [`conventions.md`](conventions.md) — store patterns and idiomatic choices

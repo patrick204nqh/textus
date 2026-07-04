@@ -10,7 +10,7 @@ How an AI agent reads from and writes to a textus store over MCP — setup, the 
 
 For the normative wire protocol and full verb table, see the wire protocol (`textus get knowledge.constraint.protocol.*`).
 
-> New here? Start with [Concepts](`textus get artifacts.explanation.concepts`).
+> New here? Start with [Concepts](`textus get artifacts.docs.lanes`).
 
 ---
 
@@ -77,8 +77,8 @@ The first call every agent makes. Returns the full orientation contract includin
 
 Key fields from `agent_quickstart`:
 
-- `writable_lanes` — lanes the agent can write directly: `scratchpad, proposals, raw`
-- `propose_lane` — where proposals go: `proposals`
+- `writable_lanes` — lanes the agent can write directly: `scratchpad, raw`
+- `propose_lane` — where proposals go: `scratchpad.proposals`
 - `latest_seq` — starting cursor for `pulse`
 - `contract_etag` — hash of manifest + schemas; checked on every write
 
@@ -108,7 +108,7 @@ schema_show(key: "scratchpad.notes.plan") → { fields: {...} }
 put(key: "scratchpad.notes.plan", _meta: { title: "Plan" }, body: "...")
 ```
 
-Writable lanes for agents: `scratchpad` (scratchpad) `proposals` (proposals) `raw` (raw) 
+Writable lanes for agents: `scratchpad` (scratchpad) `raw` (raw) 
 
 ### Propose (canon changes go through the queue)
 
@@ -118,13 +118,13 @@ The agent cannot write to `knowledge/` directly. It writes a proposal to the que
 propose(key: "decisions.feature-x",
         _meta: { proposal: { target_key: "knowledge.evidence.feature-x" } },
         body: "...")
-→ writes proposals.decisions.feature-x
+→ writes scratchpad.proposals.decisions.feature-x
 ```
 
 A human then promotes it:
 
 ```sh
-textus accept proposals.decisions.feature-x
+textus accept scratchpad.proposals.decisions.feature-x
 ```
 
 ### Drain (keep machine lanes fresh)
@@ -145,8 +145,8 @@ drain(lane: "artifacts")   # → materialize + sweep
 
 ```
 ── boot() ──────────────────────────────────────────────────────────────
-← { contract_etag, writable_lanes: [scratchpad, proposals, raw],
-    propose_lane: "proposals", latest_seq: N }
+← { contract_etag, writable_lanes: [scratchpad, raw],
+    propose_lane: "scratchpad.proposals", latest_seq: N }
 
 ── [per turn] ──────────────────────────────────────────────────────────
 ── pulse() → { cursor, changed: [...], pending_review: [...] }

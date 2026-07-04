@@ -10,8 +10,9 @@ The shape of your context in textus is a small set of ideas that everything else
 ## Table of contents
 
 1. [The lane mental model](#the-lane-mental-model)
-2. [The proposal trust path](#the-proposal-trust-path)
-3. [Two channels: boot & pulse](#two-channels-boot--pulse)
+2. [The Loop node model](#the-loop-node-model)
+3. [The proposal trust path](#the-proposal-trust-path)
+4. [Two channels: boot & pulse](#two-channels-boot--pulse)
 
 ---
 
@@ -42,19 +43,26 @@ Two ideas do all the work:
 
 | Lane | Kind | Capability required | Writers |
 |---|---|---|---|
-| `knowledge` | `canon` | `author` | `human` |
-| `scratchpad` | `workspace` | `keep` | `agent` |
-| `proposals` | `queue` | `propose` | `human`, `agent` |
-| `artifacts` | `machine` | `converge` | `automation` |
+| `knowledge` | `knowledge` | `n/a` | `human` |
+| `scratchpad` | `scratchpad` | `n/a` | `human`, `agent` |
+| `artifacts` | `artifacts` | `n/a` | `automation` |
 | `raw` | `raw` | `ingest` | `human`, `agent`, `automation` |
 
 ### Current role capabilities
 
 | Role | Capabilities |
 |---|---|
-| `human` | `author`, `propose`, `ingest` |
-| `agent` | `propose`, `keep`, `ingest` |
-| `automation` | `converge`, `ingest` |
+
+## The Loop node model
+
+| Node | Zone |
+|---|---|
+| `Intent` | `knowledge.loop.intent` |
+| `Constraint` | `knowledge.loop.constraint.repo / knowledge.loop.constraint.protocol` |
+| `Judgment` | `knowledge.loop.judgment.engineering / knowledge.loop.judgment.agent-behavior` |
+| `Evidence` | `knowledge.loop.evidence` |
+| `Execution` | `knowledge.loop.execution` |
+| `Feedback` | `knowledge.loop.feedback` |
 
 Everything else — workflows, publishing, schemas — is layered on top of those two ideas.
 
@@ -62,7 +70,7 @@ Everything else — workflows, publishing, schemas — is layered on top of thos
 
 ## The proposal trust path
 
-The single edge from `proposals` to `knowledge` is where the human-in-the-loop lives. It is the only way bytes reach a `canon` lane without already holding `author` — a two-capability path: an agent can *queue* a change, but only a human can *land* it.
+The single edge from `scratchpad.proposals` to `knowledge` is where the human-in-the-loop lives. It is the only way bytes reach a `canon` lane without already holding `author` — a two-capability path: an agent can *queue* a change, but only a human can *land* it.
 
 Three ideas make this a *trust* path, not just a copy:
 
@@ -103,5 +111,5 @@ Returns `changed`, `pending_review`, `contract_etag`, and an updated `cursor`. A
 
 ## Where to go from here
 
-- [lanes reference](../reference/lanes.md) — exact lane, role, and entry semantics
-- [agents-mcp guide](../how-to/agents-mcp.md) — Claude Code quickstart and the operational agent loop
+- [lanes reference](`textus get artifacts.docs.lanes`) — exact lane, role, and entry semantics
+- [agents-mcp guide](`textus get artifacts.docs.lanes`) — Claude Code quickstart and the operational agent loop

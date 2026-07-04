@@ -12,8 +12,7 @@
 | Name | Kind | Writers | Purpose |
 |---|---|---|---|
 | `knowledge` | `knowledge` | `human` | the maintained source of truth about the repo |
-| `scratchpad` | `scratchpad` | `agent` | the agent's own durable scratchpad (working memory) |
-| `proposals` | `proposals` | `human`, `agent` | changes awaiting a human accept |
+| `scratchpad` | `scratchpad` | `human`, `agent` | the agent's own durable scratchpad (working memory) |
 | `artifacts` | `artifacts` | `automation` | machine-maintained computed outputs |
 | `raw` | `raw` | `human`, `agent`, `automation` | ingested external source material (write-once) |
 
@@ -125,7 +124,7 @@ produce/render.rb         ERB template expansion for publish targets
 ```
 workflow/runner.rb    Runs a Definition: build_context → execute_steps → publish
 workflow/loader.rb    Loads .textus/workflows/*.rb files via thread-local registry
-workflow/dsl.rb       Textus.workflow "name" { match "...", step :fetch { ... }, publish to: }
+workflow/dsl.rb       Textus.workflow "name" { on "...", step :fetch { ... }, save to: / publish to: }
 workflow/helpers.rb   Reusable step helpers: fetch_json, render_template, merge_hashes
 workflow/context.rb   Context passed to each step (key, entry, config, container, call)
 workflow/pattern.rb   Key-matching pattern (glob via File.fnmatch?)
