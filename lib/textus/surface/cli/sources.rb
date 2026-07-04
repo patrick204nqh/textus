@@ -25,10 +25,8 @@ module Textus
         # Parse a cli_stdin :json envelope into a by-name inputs hash, mapping
         # envelope keys (wire-names) to arg names.
         def from_stdin(spec, stream)
-          return {} unless spec.cli_stdin == :json
-
           raw = stream.read.to_s
-          return {} if raw.strip.empty? # no envelope piped -> required args surface as missing
+          return {} if raw.strip.empty?
 
           envelope = JSON.parse(raw)
           spec.args.each_with_object({}) do |a, h|

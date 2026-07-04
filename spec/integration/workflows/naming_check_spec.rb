@@ -26,7 +26,7 @@ RSpec.describe "naming-check workflow" do
     converge_now(store)
 
     result = store.get(key: "artifacts.doctor.naming-check")
-    issues = result.content["issues"]
+    issues = result["content"]["issues"]
     expect(issues).not_to be_empty
     expect(issues.first).to include("code", "level", "subject", "message", "fix")
   end
@@ -38,7 +38,7 @@ RSpec.describe "naming-check workflow" do
     converge_now(store)
 
     result = store.get(key: "artifacts.doctor.naming-check")
-    issues = result.content["issues"]
+    issues = result["content"]["issues"]
     expect(issues).to be_empty
   end
 end

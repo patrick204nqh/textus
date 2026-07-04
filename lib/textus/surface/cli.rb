@@ -113,7 +113,9 @@ module Textus
       def discovered_root
         dir = File.expand_path(@cwd)
         loop do
-          return dir if File.directory?(File.join(dir, ".textus")) && File.exist?(File.join(dir, ".textus", "manifest.yaml"))
+          if File.directory?(File.join(dir, ".textus")) && File.exist?(File.join(dir, ".textus", "manifest.yaml"))
+            return File.join(dir, ".textus")
+          end
 
           parent = File.dirname(dir)
           raise Textus::IoError.new("no .textus directory found from #{@cwd}") if parent == dir

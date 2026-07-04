@@ -43,6 +43,7 @@ module Textus
       def schemas   = @container.schemas
       def file_system = @container.file_system
       def event_store = @container.event_store
+      def workflows   = @container.workflows
       def entry_index = @container.entry_index
 
       # Convenience

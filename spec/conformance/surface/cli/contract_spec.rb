@@ -59,8 +59,7 @@ RSpec.describe "Textus::Surface::CLI verb return-value contract" do
       "rdeps" => Textus::Surface::CLI::Verb::GenRdeps,
       "reject" => Textus::Surface::CLI::Verb::GenReject,
       "schema" => Textus::Surface::CLI::Group::Schema,
-      "session_close" => Textus::Surface::CLI::Verb::GenSessionClose,
-      "session_open" => Textus::Surface::CLI::Verb::GenSessionOpen,
+      "session" => Textus::Surface::CLI::Group::Session,
       "drain" => Textus::Surface::CLI::Verb::GenDrain,
       "watch" => Textus::Surface::CLI::Verb::Watch,
       "where" => Textus::Surface::CLI::Verb::GenWhere,
@@ -83,6 +82,10 @@ RSpec.describe "Textus::Surface::CLI verb return-value contract" do
     )
     expect(Textus::Surface::CLI::Group::Data.subcommands).to eq(
       "mv" => Textus::Surface::CLI::Verb::GenDataMv,
+    )
+    expect(Textus::Surface::CLI::Group::Session.subcommands).to eq(
+      "close" => Textus::Surface::CLI::Verb::GenSessionClose,
+      "open" => Textus::Surface::CLI::Verb::GenSessionOpen,
     )
     expect(Textus::Surface::CLI::Group::Schema.subcommands).to eq(
       "diff" => Textus::Surface::CLI::Verb::SchemaDiff,

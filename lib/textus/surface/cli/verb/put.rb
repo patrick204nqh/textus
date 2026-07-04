@@ -16,9 +16,7 @@ module Textus
             inputs = { key: key, meta: payload["_meta"] || {}, body: payload["body"] || "",
                        content: nil, if_etag: payload["if_etag"] }
             s = store.with_role(resolved_role(store))
-            result = s.put(**inputs)
-            result = spec.view(:cli).call(result, inputs) if spec.view(:cli)
-            emit(result)
+            emit(s.put(**inputs))
           end
         end
       end

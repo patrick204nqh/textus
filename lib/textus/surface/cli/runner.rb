@@ -13,7 +13,7 @@ module Textus
         # verb name — `spec.verb` remains the single source of dispatch.
         class Base < Verb
           class << self
-            attr_accessor :spec
+            attr_accessor :spec, :stdin_json
 
             # ADR 0064: derive the CLI command name from the contract's cli_leaf
             # when not set explicitly, so an escape-hatch class never restates its
@@ -53,14 +53,13 @@ module Textus
           inputs = Textus::Protocol::Binder.inputs_from_ordered(
             spec, verb_instance.positional, verb_instance.flag_values(spec)
           )
-          inputs = inputs.merge(Surface::CLI::Sources.from_stdin(spec, verb_instance.stdin)) if spec.cli_stdin
+          inputs = inputs.merge(Surface::CLI::Sources.from_stdin(spec, verb_instance.stdin)) if verb_instance.class.stdin_json
           inputs = Surface::CLI::Sources.acquire(spec, inputs)
           inputs = apply_cli_defaults(spec, inputs)
           role = verb_instance.resolved_role(store)
 
           s = store.with_role(role)
           result = s.public_send(spec.verb, **inputs)
-          result = spec.view(:cli).call(result, inputs) if spec.view(:cli)
           verb_instance.emit(result)
         rescue Textus::Protocol::MissingArgs => e
           raise UsageError.new("#{spec.cli_path} requires #{e.missing.first.wire}")
@@ -156,17 +155,28 @@ module Textus
           end
         end
 
+        STDIN_VERBS = %i[propose].freeze
+        CLI_PATHS = {
+          uid: "key uid",
+          key_mv_prefix: "key mv-prefix",
+          key_delete_prefix: "key delete-prefix",
+        }.freeze
+
         def install_for(spec)
-          group = spec.cli_group ? ensure_group(spec.cli_group) : nil
-          leaf  = spec.cli_leaf
+          cli_path = CLI_PATHS[spec.verb] || spec.cli_path
+          cli_words = cli_path.split
+          group_name = cli_words.size > 1 ? cli_words.first : nil
+          group = group_name ? ensure_group(group_name) : nil
+          leaf = cli_words.last
           non_positional = spec.args.reject(&:positional)
 
           klass = Class.new(Base)
           klass.spec = spec
+          klass.stdin_json = STDIN_VERBS.include?(spec.verb)
           klass.command_name leaf
           klass.parent_group group if group
           klass.option :as_flag, "--as=ROLE"
-          klass.option :use_stdin, "--stdin" if spec.cli_stdin
+          klass.option :use_stdin, "--stdin" if klass.stdin_json
           non_positional.each { |a| klass.option a.name, Runner.flagspec_for(a) }
 
           # Anchor the anonymous class to a constant so descendants discovery is

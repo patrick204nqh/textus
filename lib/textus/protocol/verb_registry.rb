@@ -23,7 +23,7 @@ module Textus
 
       ENTRY_VERBS = %i[
         get put list key_delete key_mv propose accept reject
-        audit blame where uid deps rdeps graph diff ingest
+        audit blame where uid deps rdeps graph diff ingest loop
       ].freeze
 
       OPS_VERBS = %i[
@@ -37,14 +37,12 @@ module Textus
       def self.contract_to_verb(klass) = nil
       def self.contract_to_verb!(klass) = raise "contract lookup removed: #{klass}"
 
-      identity = ->(v, _) { v }
-
       # ── get ──────────────────────────────────────────────
       register VerbSpec.new(
         :get, "Read one entry — on-disk read with freshness verdict.",
         [ArgSpec.arg(name: :key, required: true, positional: true,
                      description: "dotted entry key to read, e.g. 'knowledge.project'")],
-        %i[cli mcp], { default: ->(v, _i) { v&.to_h_for_wire } }, nil, nil, :read
+        %i[cli mcp], :read
       )
 
       # ── put ──────────────────────────────────────────────
@@ -60,7 +58,7 @@ module Textus
                      description: "structured payload for json/yaml-format entries; omit (use `body`) for markdown entries"),
          ArgSpec.arg(name: :if_etag,
                      description: "optimistic-concurrency guard; write rejected if entry changed since")],
-        %i[cli mcp], { default: ->(env, _) { { "uid" => env["uid"], "etag" => env["etag"] } } }, nil, nil, :write
+        %i[cli mcp], :write
       )
 
       # ── list ─────────────────────────────────────────────
@@ -74,7 +72,7 @@ module Textus
                      description: "full-text search query over entry content (FTS5)"),
          ArgSpec.arg(name: :schema,
                      description: "filter to entries whose schema matches this name")],
-        %i[cli mcp], { cli: ->(rows, _) { { "entries" => rows } }, default: identity }, nil, nil, :read
+        %i[cli mcp], :read
       )
 
       # ── delete ───────────────────────────────────────────
@@ -84,7 +82,7 @@ module Textus
                      description: "dotted entry key to delete"),
          ArgSpec.arg(name: :if_etag,
                      description: "optimistic-concurrency guard: etag you last read")],
-        %i[cli mcp], { default: identity }, "key delete", nil, :write
+        %i[cli mcp], :write
       )
 
       # ── move ─────────────────────────────────────────────
@@ -95,7 +93,7 @@ module Textus
                      description: "new dotted key (same zone and format)"),
          ArgSpec.arg(name: :dry_run, type: :boolean,
                      description: "when true, returns planned move without applying")],
-        %i[cli mcp], { default: identity }, "key mv", nil, :write
+        %i[cli mcp], :write
       )
 
       # ── propose ──────────────────────────────────────────
@@ -109,9 +107,7 @@ module Textus
                            description: "markdown/text payload for markdown-format entries"),
                ArgSpec.arg(name: :content, type: Hash,
                            description: "structured payload for json/yaml-format entries")],
-        surfaces: %i[cli mcp],
-        views: { default: ->(env, _) { env.to_h_for_wire } },
-        cli: nil, cli_stdin: :json, category: :write,
+        surfaces: %i[cli mcp], category: :write,
         lane: :proposal
       )
 
@@ -122,9 +118,7 @@ module Textus
                            description: "the queued proposal's key"),
                ArgSpec.arg(name: :dry_run, type: :boolean, default: false,
                            description: "when true, compute diff without promoting")],
-        surfaces: %i[cli mcp],
-        views: { default: identity },
-        cli: "accept", cli_stdin: nil, category: :write,
+        surfaces: %i[cli mcp], category: :write,
         lane: :proposal
       )
 
@@ -134,9 +128,7 @@ module Textus
         args: [ArgSpec.arg(name: :pending_key, required: true, positional: true,
                            description: "the queued proposal's key"),
                ArgSpec.arg(name: :reason, description: "optional explanation for the rejection")],
-        surfaces: %i[cli mcp],
-        views: { default: identity },
-        cli: "reject", cli_stdin: nil, category: :write,
+        surfaces: %i[cli mcp], category: :write,
         lane: :proposal
       )
 
@@ -153,9 +145,7 @@ module Textus
                ArgSpec.arg(name: :lane,
                            description: "asset group subdirectory (required when kind=asset)"),
                ArgSpec.arg(name: :label, description: "human label stored in source.label")],
-        surfaces: %i[cli mcp],
-        views: { default: identity },
-        cli: nil, cli_stdin: nil, category: :write,
+        surfaces: %i[cli mcp], category: :write,
         lane: :ingest
       )
 
@@ -163,14 +153,14 @@ module Textus
       register VerbSpec.new(
         :where, "Resolve a key to its zone, owner, and path without reading the body.",
         [ArgSpec.arg(name: :key, required: true, positional: true, description: "dotted key to locate")],
-        %i[cli mcp], { default: identity }, nil, nil, :read
+        %i[cli mcp], :read
       )
 
       # ── uid ──────────────────────────────────────────────
       register VerbSpec.new(
         :uid, "Return the stable UID of an entry without reading its body.",
         [ArgSpec.arg(name: :key, required: true, positional: true, description: "entry key")],
-        %i[cli mcp], { cli: ->(uid, inputs) { { "key" => inputs[:key], "uid" => uid } }, default: identity }, "key uid", nil, :read
+        %i[cli mcp], :read
       )
 
       # ── blame ────────────────────────────────────────────
@@ -179,10 +169,7 @@ module Textus
         [ArgSpec.arg(name: :key, required: true, positional: true, description: "entry key to blame"),
          ArgSpec.arg(name: :limit, type: Integer,
                      description: "maximum number of audit rows to return")],
-        %i[cli mcp], {
-          cli: ->(rows, inputs) { { "verb" => "blame", "key" => inputs[:key], "rows" => rows } },
-          default: identity,
-        }, "blame", nil, :read
+        %i[cli mcp], :read
       )
 
       # ── audit ────────────────────────────────────────────
@@ -200,7 +187,7 @@ module Textus
                      description: "filter to rows with this correlation_id"),
          ArgSpec.arg(name: :limit, type: Integer,
                      description: "maximum number of rows to return")],
-        %i[cli mcp], { cli: ->(rows, _) { { "verb" => "audit", "rows" => rows } }, default: identity }, "audit", nil, :read
+        %i[cli mcp], :read
       )
 
       # ── deps ─────────────────────────────────────────────
@@ -208,7 +195,7 @@ module Textus
         :deps, "List the keys a derived entry depends on.",
         [ArgSpec.arg(name: :key, required: true, positional: true,
                      description: "dotted key of the derived entry whose source keys you want")],
-        %i[cli mcp], { default: identity }, nil, nil, :read
+        %i[cli mcp], :$1
       )
 
       # ── rdeps ────────────────────────────────────────────
@@ -216,7 +203,7 @@ module Textus
         :rdeps, "List the derived entries that depend on a key (reverse deps).",
         [ArgSpec.arg(name: :key, required: true, positional: true,
                      description: "dotted key whose dependents you want")],
-        %i[cli mcp], { default: identity }, nil, nil, :read
+        %i[cli mcp], :$1
       )
 
       # ── graph ────────────────────────────────────────────
@@ -226,7 +213,7 @@ module Textus
                      description: "entry key to query"),
          ArgSpec.arg(name: :depth, type: Integer,
                      description: "max traversal depth for reachable query (unlimited when omitted)")],
-        %i[cli mcp], { default: identity }, nil, nil, :read
+        %i[cli mcp], :$1
       )
 
       # ── diff ─────────────────────────────────────────────
@@ -235,8 +222,7 @@ module Textus
         args: [ArgSpec.arg(name: :pending_key, required: true, positional: true,
                            description: "the queued proposal's key")],
         surfaces: %i[cli mcp],
-        views: { default: identity },
-        cli: nil, cli_stdin: nil, category: :read,
+        category: :read,
         lane: :proposal
       )
 
@@ -245,13 +231,13 @@ module Textus
         :pulse, "Delta since cursor — changed entries, pending proposals, index freshness.",
         [ArgSpec.arg(name: :since, type: Integer, session_default: :cursor,
                      description: "audit seq to diff from; defaults to the session cursor")],
-        %i[cli mcp], { default: identity }, nil, nil, :read
+        %i[cli mcp], :$1
       )
 
       # ── published ────────────────────────────────────────
       register VerbSpec.new(
         :published, "List all entries that declare a publish target.",
-        [], %i[cli mcp], { default: identity }, "published", nil, :read
+        [], %i[cli mcp], :read
       )
 
       # ── schema_show ──────────────────────────────────────
@@ -259,13 +245,13 @@ module Textus
         :schema_show, "Return the schema (field shape) for an entry's family.",
         [ArgSpec.arg(name: :key, required: true, positional: true,
                      description: "any key in the family whose schema you want")],
-        %i[cli mcp], { default: identity }, "schema show", nil, :read
+        %i[cli mcp], :read
       )
 
       # ── boot ─────────────────────────────────────────────
       register VerbSpec.new(
         :boot, "Return the orientation contract: lanes, agent_quickstart, agent_protocol.",
-        [], %i[cli mcp], { default: identity }, nil, nil, :read
+        [], %i[cli mcp], :read
       )
 
       # ── data_mv ──────────────────────────────────────────
@@ -275,7 +261,7 @@ module Textus
          ArgSpec.arg(name: :to, required: true, positional: true, description: "new data lane name"),
          ArgSpec.arg(name: :dry_run, type: :boolean, default: false,
                      description: "when true, returns planned zone move without applying")],
-        %i[cli mcp], { default: ->(v, _) { v.to_h } }, "data mv", nil, :write
+        %i[cli mcp], :write
       )
 
       # ── key_mv_prefix ────────────────────────────────────
@@ -287,7 +273,7 @@ module Textus
                      description: "dotted prefix the keys are renamed to"),
          ArgSpec.arg(name: :dry_run, type: :boolean, default: false,
                      description: "when true, returns planned moves without applying")],
-        %i[cli mcp], { default: ->(v, _) { v.to_h } }, "key mv-prefix", nil, :write
+        %i[cli mcp], :write
       )
 
       # ── key_delete_prefix ────────────────────────────────
@@ -297,7 +283,7 @@ module Textus
                      description: "every leaf key under this dotted prefix is deleted"),
          ArgSpec.arg(name: :dry_run, type: :boolean, default: false,
                      description: "when true, returns keys that would be deleted without deleting")],
-        %i[cli mcp], { default: ->(v, _) { v.to_h } }, "key delete-prefix", nil, :write
+        %i[cli mcp], :write
       )
 
       # ── drain ────────────────────────────────────────────
@@ -305,7 +291,7 @@ module Textus
         :drain, "Seed materialize + sweep jobs then drain the queue to empty.",
         [ArgSpec.arg(name: :prefix, description: "restrict to keys under this dotted prefix"),
          ArgSpec.arg(name: :lane, description: "restrict to entries in this lane")],
-        %i[cli mcp], { default: identity }, nil, nil, :maintenance
+        %i[cli mcp], :maintenance
       )
     require_relative "../lanes/knowledge/verbs"
     require_relative "../lanes/scratchpad/verbs"

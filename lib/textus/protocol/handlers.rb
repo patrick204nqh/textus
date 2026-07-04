@@ -5,9 +5,12 @@ module Textus
 
       def get(key:, ctx:, call:)
         env = ctx.read(key)
-        raise Textus::UnknownKey.new(key) unless env
+        unless env
+          suggestions = ctx.manifest.resolver.suggestions_for(key)
+          raise Textus::UnknownKey.new(key, suggestions:)
+        end
 
-        expand_sources(env, ctx, depth: 0)
+        expand_sources(env, ctx, depth: 0).to_h_for_wire
       end
 
       def put(key:, ctx:, call:, meta: nil, body: nil, content: nil, if_etag: nil)
@@ -173,7 +176,7 @@ module Textus
       end
 
       def drain(ctx:, call:, prefix: nil, lane: nil)
-        registry = Textus::Workflow::Registry.new(ctx.event_store.workflows)
+        registry = Textus::Workflow::Registry.new(ctx.workflows)
         result = Textus::Protocol::Events::Consumer.new.drain(
           event_store: ctx.event_store, registry:, container: nil, call:,
         )

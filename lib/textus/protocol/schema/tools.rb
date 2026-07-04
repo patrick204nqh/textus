@@ -7,7 +7,7 @@ module Textus
       module Tools
         def self.init(store, name:, from:)
           env = pure_get(store, Textus::Value::Role::DEFAULT, from)
-          meta = env.meta
+          meta = env["_meta"]
           schema = {
             "name" => name,
             "required" => meta.keys,
@@ -27,7 +27,7 @@ module Textus
           store.manifest.resolver.enumerate.each do |row|
             env = pure_get(store, Textus::Value::Role::DEFAULT, row[:key])
             begin
-              schema.validate!(env.meta)
+              schema.validate!(env["_meta"])
             rescue SchemaViolation => e
               drift << { "key" => row[:key], "details" => e.details }
             end
@@ -52,7 +52,7 @@ module Textus
           touched = []
           store.manifest.resolver.enumerate.each do |row|
             env = pure_get(store, authority, row[:key])
-            meta = env.meta.dup
+            meta = (env["_meta"] || {}).dup
             changed = false
             renames.each do |old, new|
               if meta.key?(old)
@@ -62,7 +62,7 @@ module Textus
             end
             next unless changed
 
-            ops.put(key: row[:key], meta: meta, body: env.body)
+            ops.put(key: row[:key], meta: meta, body: env["body"])
             touched << row[:key]
           end
           { "protocol" => PROTOCOL, "migrated" => touched, "renames" => renames }

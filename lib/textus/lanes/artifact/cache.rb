@@ -9,19 +9,21 @@ module Textus
   
         def ttl(key)
           entry = @store.get(key:)
-          return @ttl_default unless entry&.freshness
-  
-          entry.freshness["ttl"] || @ttl_default
+          return @ttl_default unless entry
+
+          entry["ttl"] || @ttl_default
         end
-  
+
         def stale?(key)
           entry = @store.get(key:)
           return true unless entry
-  
-          age = Time.now - (entry.freshness&.dig("generated_at")&.then { |t| Time.parse(t) } || Time.at(0))
+          return true if entry["stale"] || entry["fetching"]
+
+          generated_at = entry["generated_at"]
+          return true unless generated_at
+
+          age = Time.now - Time.parse(generated_at)
           age > ttl(key)
-        rescue StandardError
-          true
         end
   
         def expire(key)

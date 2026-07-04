@@ -18,8 +18,6 @@ module Textus
           { "name" => "audit" },
           { "name" => "blame" },
           { "name" => "pulse" },
-          { "name" => "session_open" },
-          { "name" => "session_close" },
         ].freeze
 
         def self.build

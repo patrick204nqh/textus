@@ -6,17 +6,16 @@ module Textus
         Array => "array", :boolean => "boolean"
       }.freeze
 
-      VerbSpec = Data.define(:verb, :summary, :args, :surfaces, :views, :cli, :cli_stdin, :category) do
-        def initialize(verb:, summary:, args:, surfaces:, views:, cli:, cli_stdin:, category:, lane: nil)
+      VerbSpec = Data.define(:verb, :summary, :args, :surfaces, :category) do
+        def initialize(verb:, summary:, args:, surfaces:, category:, lane: nil)
           @lane = lane
-          super(verb:, summary:, args:, surfaces:, views:, cli:, cli_stdin:, category:)
+          super(verb:, summary:, args:, surfaces:, category:)
         end
 
         def lane = @lane
         def mcp? = surfaces.include?(:mcp)
         def cli? = surfaces.include?(:cli)
-        def view(surface = :default) = views[surface] || views.fetch(:default)
-        def cli_path = cli || verb.to_s
+        def cli_path = verb.to_s.tr("_", " ")
         def cli_words = cli_path.split
         def cli_group = cli_words.size > 1 ? cli_words.first : nil
         def cli_leaf  = cli_words.last

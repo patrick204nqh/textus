@@ -1,15 +1,15 @@
 RSpec.describe Textus::Protocol::Gate do
-  let(:manifest) { instance_double("Manifest") }
+  let(:manifest) { instance_double("Manifest", resolver:) }
   let(:resolver) { instance_double("Resolver") }
-  let(:pipeline) { double("pipeline", container: double("Container", reader:)) }
   let(:reader) { instance_double("Reader") }
+  let(:container) { double("Container", reader:, manifest:) }
+  let(:pipeline) { double("pipeline", container:) }
   let(:gate) { described_class.new(manifest:, resolver:, pipeline:) }
 
   def lane_spec(lane:)
     Textus::Protocol::VerbRegistry::VerbSpec.new(
       verb: :ingest, summary: "desc", args: [],
-      surfaces: %i[cli mcp], views: { default: nil },
-      cli: nil, cli_stdin: nil, category: :write,
+      surfaces: %i[cli mcp], category: :write,
       lane:
     )
   end
@@ -28,11 +28,11 @@ RSpec.describe Textus::Protocol::Gate do
       get_spec = Textus::Protocol::VerbRegistry::VerbSpec.new(
         verb: :get, summary: "desc",
         args: [Textus::Protocol::VerbRegistry::ArgSpec.arg(name: :key, required: true, positional: true)],
-        surfaces: %i[cli mcp], views: { default: nil },
-        cli: nil, cli_stdin: nil, category: :read
+        surfaces: %i[cli mcp], category: :read
       )
       allow(Textus::Protocol::VerbRegistry).to receive(:for).with(:get).and_return(get_spec)
       allow(reader).to receive(:read).with("test").and_return(nil)
+      allow(resolver).to receive(:suggestions_for).with("test").and_return([])
 
       expect { gate.dispatch(:human, :get, { key: "test" }) }
         .to raise_error(Textus::UnknownKey)

@@ -21,11 +21,14 @@ RSpec.describe "Verb completeness — every verb has contract + handler + CLI ve
                          "verbs without a handler: #{unhandled.map(&:inspect).join(", ")}"
   end
 
+  CLI_PATHS = Textus::Surface::CLI::Runner::CLI_PATHS if defined?(Textus::Surface::CLI::Runner)
+
   def cli_verb_alias?(verb, cli_verbs)
     spec = VERB_REGISTRY[verb]
-    return false unless spec&.cli_path
+    return false unless spec
 
-    group_name = spec.cli_path.split.first&.to_sym
+    cli_path = CLI_PATHS&.[](verb) || spec.cli_path
+    group_name = cli_path.split.first&.to_sym
     cli_verbs.include?(group_name)
   end
 end
