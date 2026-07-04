@@ -30,8 +30,8 @@ module Textus
         entry_store.put(key, mentry:, payload:, if_etag:, call:)
       end
 
-      def delete(key, if_etag: nil, mentry: nil, call: nil)
-        entry_store.delete(key, if_etag:, mentry:, call:)
+      def delete(key, if_etag: nil, call: nil)
+        entry_store.delete(key, if_etag:, call:)
       end
 
       def move(from_key:, to_key:, new_mentry:, call: nil)

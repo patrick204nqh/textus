@@ -83,6 +83,8 @@ Lint/EmptyBlock:
 Lint/UnusedMethodArgument:
   Exclude:
     - "lib/textus/manifest/policy/predicates/*.rb"   # polymorphic self.call interface
+    - "lib/textus/protocol/handlers.rb"              # call: is part of the protocol contract (Gate always passes it)
+    - "lib/textus/lanes/proposal/handlers.rb"        # same protocol contract
 Lint/DuplicateBranch:
   Enabled: false   # CLI verb dispatch has near-duplicate envelope wrappers by design
 

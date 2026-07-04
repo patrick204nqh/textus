@@ -65,7 +65,7 @@ module Textus
           raise Textus::ProposalError.new("entry has no proposal block: #{pending_key}") unless proposal
 
           target_key = proposal["target_key"]
-          ctx.delete(pending_key, mentry:, call:)
+          ctx.delete(pending_key, call:)
           result = { "protocol" => Textus::PROTOCOL, "rejected" => pending_key, "target_key" => target_key }
           result["reason"] = reason if reason
           result

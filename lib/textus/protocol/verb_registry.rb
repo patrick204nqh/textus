@@ -229,7 +229,7 @@ module Textus
       # ── pulse ────────────────────────────────────────────
       register VerbSpec.new(
         :pulse, "Delta since cursor — changed entries, pending proposals, index freshness.",
-        [ArgSpec.arg(name: :since, type: Integer, session_default: :cursor,
+        [ArgSpec.arg(name: :since, type: Integer,
                      description: "audit seq to diff from; defaults to the session cursor")],
         %i[cli mcp], :$1
       )

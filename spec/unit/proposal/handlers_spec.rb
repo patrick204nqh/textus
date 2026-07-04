@@ -149,7 +149,7 @@ RSpec.describe Textus::Lanes::Proposal::Handlers do
 
       result = described_class.reject(pending_key: "proposals.test", reason: "not needed", ctx:, call:)
 
-      expect(entry_store).to have_received(:delete).with("proposals.test", if_etag: nil, mentry:, call:)
+      expect(entry_store).to have_received(:delete).with("proposals.test", if_etag: nil, call:)
       expect(result["rejected"]).to eq("proposals.test")
       expect(result["reason"]).to eq("not needed")
     end
