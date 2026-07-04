@@ -86,7 +86,7 @@ module Textus
               name: :"check_#{name}",
               callable: lambda do |data, ctx|
                 entries = ctx.container.manifest.resolver.enumerate.select do |row|
-                  Pattern.match?(scope, row[:key].to_s)
+                  match_pattern?(scope, row[:key].to_s)
                 end
 
                 new_issues = check_naming(
@@ -182,11 +182,26 @@ module Textus
         def match?(key)
           return false unless @on_patterns&.any?
 
-          @on_patterns.any? { |p| Pattern.match?(p, key) }
+          @on_patterns.any? { |p| match_pattern?(p, key) }
         end
 
         def multi_match?
           @on_patterns&.any? { |p| p.end_with?("**") }
+        end
+
+        private
+
+        def match_pattern?(pattern, key)
+          if pattern.end_with?(".**")
+            prefix = pattern.delete_suffix(".**")
+            key.start_with?("#{prefix}.")
+          elsif pattern.end_with?(".*")
+            prefix = pattern.delete_suffix(".*")
+            suffix = key.delete_prefix("#{prefix}.")
+            key != suffix && !suffix.include?(".")
+          else
+            key == pattern
+          end
         end
       end
     end

@@ -24,6 +24,9 @@ Textus.workflow "boot" do
       m.merge("schema" => env.schema_ref)
     end
 
+    # Derived from knowledge.loop.* manifest entries — matches the actual
+    # entry families under .textus/data/knowledge/loop/. If a new loop node
+    # is added to the manifest it must appear here too.
     loop_nodes = %w[intent constraint.repo constraint.protocol judgment.engineering
                     judgment.agent-behavior evidence execution feedback]
     agent_behavior_excerpt = fetch.call("knowledge.loop.judgment.agent-behavior.0001-loop-behavior")&.body.to_s

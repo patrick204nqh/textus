@@ -5,24 +5,10 @@ Textus.workflow "doctor" do
   on "knowledge.loop.**"
   priority 20
 
-  # ── Naming conventions (was loop_shape.rb) ──────────────────────
-  node_pattern = /\A\d{4}-[a-z0-9-]+\.md\z/
-  session_pattern = /\A\d{4}-\d{2}-\d{2}-[a-z0-9-]+\.md\z/
-
-  check "loop-intent",             scope: "knowledge.loop.intent.*",             naming: node_pattern
-  check "loop-constraint-repo",    scope: "knowledge.loop.constraint.repo.*",   naming: node_pattern
-  check "loop-constraint-protocol", scope: "knowledge.loop.constraint.protocol.*", naming: node_pattern
-  check "loop-judgment-eng",       scope: "knowledge.loop.judgment.engineering.*", naming: node_pattern
-  check "loop-judgment-agent",     scope: "knowledge.loop.judgment.agent-behavior.*", naming: node_pattern
-  check "loop-evidence",           scope: "knowledge.loop.evidence.*",           naming: node_pattern
-  check "loop-execution-runbook",  scope: "knowledge.loop.execution.runbook.*",  naming: node_pattern
-  check "loop-execution-checklist", scope: "knowledge.loop.execution.checklist.*", naming: node_pattern
-  check "loop-execution-procedure", scope: "knowledge.loop.execution.procedure.*", naming: node_pattern
-  check "loop-feedback",           scope: "knowledge.loop.feedback.*",           naming: node_pattern
-  check "proposals",               scope: "scratchpad.proposals.*",              naming: node_pattern
-  check "sessions",                scope: "scratchpad.sessions.*",               naming: session_pattern
-
-  # ── Naming convention (was naming_check.rb) ─────────────────────
+  # ── Naming convention (was naming_check.rb, loop_shape.rb) ──────
+  # Validates ALL manifest entries with naming: — single check covers
+  # the old per-scope checks (loop-intent, loop-evidence, etc.) plus
+  # any entry family added to the manifest.
   check "naming-convention" do |ctx|
     manifest = ctx.manifest
     issues = []
@@ -514,7 +500,7 @@ Textus.workflow "doctor" do
   check "cursors" do |ctx|
     store = ctx.container.store
     issues = []
-    roles = %w[automation human agent]
+    roles = ctx.manifest.data.role_caps.keys.map(&:to_s)
 
     roles.each do |role|
       cursor = store.cursor_store.get(role)[:seq]
