@@ -15,9 +15,6 @@ not edit by hand — edit the source under `.textus/data/` and run
 <% Array(r["steps"]).each do |s| -%>     `<%= s %>`
 <% end -%><% end -%><% if (r = boot.dig("agent_protocol", "recipes", "write")) -%>   • **write** — <%= r["purpose"] %>
 <% Array(r["steps"]).each do |s| -%>     `<%= s %>`
-<% end -%><% end -%><% if (r = boot.dig("agent_protocol", "recipes", "propose")) -%>   • **propose** — <%= r["purpose"] %>
-<% Array(r["agent_steps"]).each do |s| -%>     agent: `<%= s %>`
-<% end -%><% Array(r["human_steps"]).each do |s| -%>     human: `<%= s %>`
 <% end -%><% end -%>
 → Knowledge pipeline:
    • INPUT → LOOP → OUTPUT
