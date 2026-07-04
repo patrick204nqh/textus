@@ -127,16 +127,7 @@ module Textus
 
         # Contract verbs whose CLI is a plain `< Verb` command, not a projection at
         # all — composite reports assembled outside the contract.
-        # (boot removed: its contract carries surfaces :cli + the :lean arg, so the
-        # generic projection now generates it; the hand-authored CLI::Verb::Boot is
-        # deleted in ADR 0101.)
-        # (doctor retained: hand-authored to preserve --check=NAME flag spelling and
-        # the exit_code: res["ok"] ? 0 : 1 behavior — two things the generic
-        # projection cannot yet express; kept in ADR 0101 pending a future pass.)
-        # (fetch/fetch_all were removed in ADR 0079: Produce::Acquire::Intake is now internal,
-        # driven by the converge sweep (drain/serve) and hook run — ADR 0089 removed the
-        # read-through that once also drove it.)
-        NON_PROJECTED_CLI = %i[doctor].freeze
+        NON_PROJECTED_CLI = %i[].freeze
 
         # The installer skips generation for either category.
         HAND_AUTHORED_VERBS = (BEHAVIORAL_HATCHES + NON_PROJECTED_CLI).freeze
