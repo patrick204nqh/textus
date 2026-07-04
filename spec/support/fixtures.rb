@@ -97,24 +97,22 @@ module TextusSpecHelpers
   end
 
   def build_envelope_reader(store)
-    Textus::Protocol::EntryStore.new(
+    Textus::Protocol::StoreEngine.new(
       file_system: store.file_system,
       manifest: store.manifest,
-      audit_log: store.audit_log,
       layout: store.layout,
-      entry_index: store.container.entry_index,
+      store: store.container,
     )
   end
 
   def build_envelope_writer(store, call, reader: nil)
     _reader = reader || build_envelope_reader(store)
     _call = call
-    Textus::Protocol::EntryStore.new(
+    Textus::Protocol::StoreEngine.new(
       file_system: store.file_system,
       manifest: store.manifest,
-      audit_log: store.audit_log,
       layout: store.layout,
-      entry_index: store.container.entry_index,
+      store: store.container,
     )
   end
 

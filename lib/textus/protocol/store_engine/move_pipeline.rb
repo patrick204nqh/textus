@@ -1,7 +1,7 @@
 module Textus
   module Protocol
-    module WritePipeline
-      module Move
+    class StoreEngine
+      module MovePipeline
         module ResolvePaths
           def self.call(ctx, deps)
             from_path = deps.manifest.resolver.resolve(ctx.from_key).path
@@ -137,21 +137,19 @@ module Textus
           ReindexEntry,
         ].freeze
 
-        # rubocop:disable Metrics/ParameterLists
         def self.call(
           from_key:, to_key:, new_mentry:, call:, file_system:, manifest:, store:,
           layout:, reader:, if_etag: nil, workflow_registry: nil
         )
-          ctx = MoveContext.new(
+          ctx = Pipeline::MoveContext.new(
             from_key:, to_key:, new_mentry:, if_etag:,
             from_path: nil, to_path: nil,
             etag_before: nil, etag_after: nil, envelope: nil
           )
-          deps = WriteDeps.new(file_system:, manifest:, store:, call:, reader:, layout:, workflow_registry:)
+          deps = Pipeline::WriteDeps.new(file_system:, manifest:, store:, call:, reader:, layout:, workflow_registry:)
           ctx = STEPS.reduce(ctx) { |c, step| step.call(c, deps) }
           ctx.envelope
         end
-        # rubocop:enable Metrics/ParameterLists
       end
     end
   end

@@ -6,58 +6,48 @@ RSpec.describe Textus::Lanes::Ingest::Resolver do
       c
     end
 
-    def with_entry_store(store, entry_store)
-      allow(Textus::Protocol::EntryStore).to receive(:new)
-        .with(file_system: store.file_system, manifest: anything, layout: anything, store: store, workflow_registry: nil)
-        .and_return(entry_store)
-    end
-
     it "writes tombstone to old key and returns" do
       manifest = instance_double(Manifest, resolver: instance_double("Resolver"))
-      entry_store = instance_double(Textus::Protocol::EntryStore)
+      store_engine = instance_double(Textus::Protocol::StoreEngine)
       store = instance_double(Textus::Infra::Store, file_system: nil)
       container = mock_container(manifest:, store:)
       entry = double("entry", entry: instance_double(Mentry))
 
-      with_entry_store(store, entry_store)
-
       allow(manifest.resolver).to receive(:resolve).with("raw.2026.06.01.old").and_return(entry)
-      allow(entry_store).to receive(:read).with("raw.2026.06.01.old").and_return(
+      allow(store_engine).to receive(:read).with("raw.2026.06.01.old").and_return(
         instance_double(Envelope, content: { "ingested_at" => "2026-06-01T00:00:00Z", "ingest_count" => 3, "source" => { "kind" => "url" } }),
       )
       payloads = []
-      allow(entry_store).to receive(:put) { |*, **kwargs| payloads << kwargs[:payload]; nil }
-      ctx = Textus::Protocol::HandlerContext.new(container)
+      allow(store_engine).to receive(:put) { |*args| payloads << args[1]; nil }
 
       call = instance_double(Call, role: "automation", correlation_id: "abc")
+      ctx = Textus::Protocol::Handlers::Context.new(container, call:)
 
-      described_class.supersede("raw.2026.06.01.old", "raw.2026.07.03.new", ctx, call:)
+      described_class.supersede("raw.2026.06.01.old", "raw.2026.07.03.new", store: store_engine, ctx:, call:)
 
-      expect(payloads.last.content["ingested_at"]).to eq("2026-06-01T00:00:00Z")
-      expect(payloads.last.content["ingest_count"]).to eq(3)
-      expect(payloads.last.content["superseded_by"]).to eq("raw.2026.07.03.new")
-      expect(payloads.last.content["source"]).to eq({ "kind" => "url" })
+      expect(payloads.last[:content]["ingested_at"]).to eq("2026-06-01T00:00:00Z")
+      expect(payloads.last[:content]["ingest_count"]).to eq(3)
+      expect(payloads.last[:content]["superseded_by"]).to eq("raw.2026.07.03.new")
+      expect(payloads.last[:content]["source"]).to eq({ "kind" => "url" })
     end
 
     it "handles missing old content gracefully" do
       manifest = instance_double(Manifest, resolver: instance_double("Resolver"))
-      entry_store = instance_double(Textus::Protocol::EntryStore)
+      store_engine = instance_double(Textus::Protocol::StoreEngine)
       store = instance_double(Textus::Infra::Store, file_system: nil)
       container = mock_container(manifest:, store:)
       entry = double("entry", entry: instance_double(Mentry))
 
-      with_entry_store(store, entry_store)
-
       allow(manifest.resolver).to receive(:resolve).with("raw.2026.06.01.old").and_return(entry)
-      allow(entry_store).to receive(:read).with("raw.2026.06.01.old").and_return(nil)
-      allow(entry_store).to receive(:put)
-      ctx = Textus::Protocol::HandlerContext.new(container)
+      allow(store_engine).to receive(:read).with("raw.2026.06.01.old").and_return(nil)
+      allow(store_engine).to receive(:put)
 
       call = instance_double(Call, role: "automation", correlation_id: "abc")
+      ctx = Textus::Protocol::Handlers::Context.new(container, call:)
 
-      described_class.supersede("raw.2026.06.01.old", "raw.2026.07.03.new", ctx, call:)
+      described_class.supersede("raw.2026.06.01.old", "raw.2026.07.03.new", store: store_engine, ctx:, call:)
 
-      expect(entry_store).to have_received(:put)
+      expect(store_engine).to have_received(:put)
     end
   end
 end

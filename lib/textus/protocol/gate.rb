@@ -1,10 +1,26 @@
 module Textus
   module Protocol
     class Gate
-      def initialize(manifest:, resolver:, container:, async: nil)
+      HANDLER_GROUPS = {
+        read: Handlers::Read,
+        write: Handlers::Write,
+        maintenance: Handlers::System,
+      }.freeze
+
+      VERB_HANDLERS = {
+        boot: Handlers::System,
+        audit: Handlers::System,
+        blame: Handlers::System,
+        pulse: Handlers::System,
+        drain: Handlers::System,
+        workflow_spec: Handlers::System,
+      }.freeze
+
+      def initialize(manifest:, resolver:, container:, store_engine:, async: nil)
         @manifest = manifest
         @resolver = resolver
         @container = container
+        @store_engine = store_engine
         @async = async
       end
 
@@ -17,14 +33,17 @@ module Textus
 
         call_obj = call || Value::Call.build(role:, correlation_id: SecureRandom.uuid)
         bound = Protocol::Binder.bind(spec, params)
-        ctx = HandlerContext.new(@container)
+        ctx = Handlers::Context.new(@container, call: call_obj)
 
-        handler = spec.lane ? Lane.handler_for(spec.lane) : Protocol::Handlers
-
-        handler.public_send(verb, **bound, ctx:, call: call_obj)
+        handler = spec.lane ? Lane.handler_for(spec.lane) : handler_group(spec)
+        handler.public_send(verb, **bound, store: @store_engine, ctx:, call: call_obj)
       end
 
       private
+
+      def handler_group(spec)
+        VERB_HANDLERS[spec.verb] || HANDLER_GROUPS[spec.category] || Handlers::System
+      end
 
       def authorize!(role, _verb, key, spec)
         return true unless spec&.write?

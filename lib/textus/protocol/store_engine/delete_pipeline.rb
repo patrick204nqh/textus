@@ -1,7 +1,7 @@
 module Textus
   module Protocol
-    module WritePipeline
-      module Delete
+    class StoreEngine
+      module DeletePipeline
         module ResolvePath
           def self.call(ctx, deps)
             path = deps.manifest.resolver.resolve(ctx.key).path
@@ -95,17 +95,15 @@ module Textus
           DeindexEntry,
         ].freeze
 
-        # rubocop:disable Metrics/ParameterLists
         def self.call(key, call:, file_system:, manifest:, store:, layout:, if_etag: nil, reader: nil, workflow_registry: nil)
-          ctx = DeleteContext.new(
+          ctx = Pipeline::DeleteContext.new(
             key:, if_etag:,
             path: nil, etag_before: nil
           )
-          deps = WriteDeps.new(file_system:, manifest:, store:, call:, reader:, layout:, workflow_registry:)
+          deps = Pipeline::WriteDeps.new(file_system:, manifest:, store:, call:, reader:, layout:, workflow_registry:)
           STEPS.reduce(ctx) { |c, step| step.call(c, deps) }
           nil
         end
-        # rubocop:enable Metrics/ParameterLists
       end
     end
   end

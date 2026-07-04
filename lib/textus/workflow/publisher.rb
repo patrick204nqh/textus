@@ -4,14 +4,19 @@ module Textus
       def initialize(container:, call:)
         @container = container
         @call      = call
+        @store_engine = Protocol::StoreEngine.new(
+          file_system: container.store.file_system,
+          manifest: container.manifest,
+          layout: container.layout,
+          store: container.store,
+          workflow_registry: container.workflow_registry,
+        )
       end
 
       def publish(key, data, ctx, definition)
         definition.publish_targets.each { |t| publish_one(key, data, ctx, target: t) }
 
-        if definition.save_key
-          write_to_key(definition.save_key, data, ctx)
-        end
+        write_to_key(definition.save_key, data, ctx) if definition.save_key
 
         definition.notify_keys.each { |nk| notify_key(nk, ctx) }
 
@@ -20,47 +25,22 @@ module Textus
 
       private
 
-      def write_to_key(target_key, data, ctx)
+      def write_to_key(target_key, data, ctx) # rubocop:disable Lint/UnusedMethodArgument
         res = @container.manifest.resolver.resolve(target_key)
-        es = Protocol::EntryStore.new(
-          file_system: @container.store.file_system,
-          manifest: @container.manifest,
-          layout: @container.layout,
-          store: @container.store,
-          workflow_registry: @container.workflow_registry,
-        )
         normalized = Textus::Protocol::Format.data_to_payload(data, res.entry.format)
-        payload = Textus::Value::Payload.new(**normalized)
-        es.put(target_key, mentry: res.entry, payload:, call: @call)
+        @store_engine.put(target_key, meta: normalized[:meta], body: normalized[:body], content: normalized[:content], call: @call)
       end
 
-      def notify_key(target_key, ctx)
-        res = @container.manifest.resolver.resolve(target_key)
-        es = Protocol::EntryStore.new(
-          file_system: @container.store.file_system,
-          manifest: @container.manifest,
-          layout: @container.layout,
-          store: @container.store,
-          workflow_registry: @container.workflow_registry,
-        )
-        payload = Textus::Value::Payload.new(meta: {}, body: nil, content: {})
-        es.put(target_key, mentry: res.entry, payload:, call: @call)
+      def notify_key(target_key, ctx) # rubocop:disable Lint/UnusedMethodArgument
+        @store_engine.put(target_key, meta: {}, body: nil, content: {}, call: @call)
       end
 
       def write_and_pctx(key, data, ctx)
         normalized = Textus::Protocol::Format.data_to_payload(data, ctx.entry.format)
-        payload = Textus::Value::Payload.new(**normalized)
-        es = Protocol::EntryStore.new(
-          file_system: @container.store.file_system,
-          manifest: @container.manifest,
-          layout: @container.layout,
-          store: @container.store,
-          workflow_registry: @container.workflow_registry,
-        )
-        es.put(key, mentry: ctx.entry, payload:, call: @call)
+        @store_engine.put(key, meta: normalized[:meta], body: normalized[:body], content: normalized[:content], call: @call)
         Textus::Protocol::Manifest::Entry::Base::PublishContext.new(
           container: @container,
-          reader: es.method(:read)
+          reader: @store_engine.method(:read),
         )
       end
 

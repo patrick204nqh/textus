@@ -24,29 +24,27 @@ module Textus
           payload
         end
 
-        def self.read_artifact_content(manifest, file_system, layout)
+        def self.read_artifact_content(manifest, file_system, _layout)
           key = "artifacts.boot"
           res = manifest.resolver.resolve(key)
           return nil unless res.path && file_system.exists?(res.path)
 
-          entry_store = Textus::Protocol::EntryStore.new(
-            file_system:, manifest:, layout:, store: nil,
-          )
-          env = entry_store.read(key)
-          env&.content
+          mentry = res.entry
+          raw = file_system.read(res.path)
+          parsed = Textus::Protocol::Format.for(mentry.format).parse(raw, path: res.path)
+          parsed["content"]
         rescue Textus::Error
           nil
         end
 
-        def self.read_boot_context(manifest, file_system, layout)
+        def self.read_boot_context(manifest, file_system, _layout)
           res = manifest.resolver.resolve("knowledge.boot")
           return nil unless res.path && file_system.exists?(res.path)
 
-          entry_store = Textus::Protocol::EntryStore.new(
-            file_system:, manifest:, layout:, store: nil,
-          )
-          env = entry_store.read("knowledge.boot")
-          body = env&.body&.strip
+          mentry = res.entry
+          raw = file_system.read(res.path)
+          parsed = Textus::Protocol::Format.for(mentry.format).parse(raw, path: res.path)
+          body = parsed["body"]&.strip
           body.nil? || body.empty? ? nil : body
         rescue Textus::Error
           nil

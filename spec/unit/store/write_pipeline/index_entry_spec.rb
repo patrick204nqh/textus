@@ -4,7 +4,7 @@ require "spec_helper"
 RSpec.describe "WritePipeline indexing" do
   let(:entry_index) { instance_double(Textus::Infra::Store::EntryIndex) }
 
-  describe Textus::Protocol::WritePipeline::Put::IndexEntry do
+  describe Textus::Protocol::StoreEngine::PutPipeline::IndexEntry do
     it "records the written entry in the index" do
       ctx = double("ctx", key: "knowledge.a", mentry: double(schema: "runbook", lane: "knowledge", format: "markdown"), eff_content: nil,
                           eff_body: "hello")
@@ -34,7 +34,7 @@ RSpec.describe "WritePipeline indexing" do
     end
   end
 
-  describe Textus::Protocol::WritePipeline::Delete::DeindexEntry do
+  describe Textus::Protocol::StoreEngine::DeletePipeline::DeindexEntry do
     it "removes the entry from the index" do
       ctx = double("ctx", key: "knowledge.a")
       deps = double("deps", entry_index:)
@@ -46,7 +46,7 @@ RSpec.describe "WritePipeline indexing" do
     end
   end
 
-  describe Textus::Protocol::WritePipeline::Move::ReindexEntry do
+  describe Textus::Protocol::StoreEngine::MovePipeline::ReindexEntry do
     it "removes the old key and records the new key" do
       ctx = double("ctx", from_key: "knowledge.a", to_key: "knowledge.b", envelope: double(meta: nil, body: "hello", content: nil),
                           new_mentry: double(schema: nil, lane: "knowledge", format: "markdown"))

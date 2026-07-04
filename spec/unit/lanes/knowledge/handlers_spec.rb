@@ -11,7 +11,7 @@ RSpec.describe Textus::Lanes::Knowledge::Handlers do
       allow(manifest.data).to receive(:entries).and_return(entries)
       allow(ctx).to receive(:manifest).and_return(manifest)
 
-      result = described_class.loop(ctx:, call: nil)
+      result = described_class.loop(ctx:, store:, call: nil)
       expect(result["count"]).to eq(3)
       expect(result["loop"].map { |n| n["name"] }).to eq(%w[intent constraint judgment])
     end
@@ -27,7 +27,7 @@ RSpec.describe Textus::Lanes::Knowledge::Handlers do
       allow(manifest.data).to receive(:entries).and_return(entries)
       allow(ctx).to receive(:manifest).and_return(manifest)
 
-      result = described_class.loop(ctx:, call: nil)
+      result = described_class.loop(ctx:, store:, call: nil)
       expect(result["count"]).to eq(1)
       expect(result["loop"].first["name"]).to eq("intent")
     end
@@ -36,7 +36,7 @@ RSpec.describe Textus::Lanes::Knowledge::Handlers do
       cursor_store = double("cursor_store", get_loop: { role: "agent", index: 0 })
       entry_index = double("entry_index", search: [])
       store = double("store", cursor_store:, entry_index:)
-      ctx = double("HandlerContext", store:)
+      ctx = double("Textus::Protocol::Handlers::Context", store:)
       [ctx, store]
     end
   end

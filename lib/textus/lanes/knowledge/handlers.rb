@@ -4,13 +4,13 @@ module Textus
       module Handlers
         module_function
 
-        def loop(ctx:, call:)
+        def loop(store:, ctx:, call:)
           nodes = ctx.manifest.data.entries
                      .select { |e| e.key.start_with?("knowledge.loop.") && e.key.count(".") == 2 }
                      .map { |e| { "name" => e.key.split(".").last, "key" => e.key } }
           role = call&.role || "agent"
-          runner = Runner.new(ctx.manifest, cursor_store: ctx.store.cursor_store)
-          feedback = recent_feedback(ctx)
+          runner = Runner.new(ctx.manifest, cursor_store: store.cursor_store)
+          feedback = recent_feedback(store)
           {
             "loop" => nodes,
             "count" => nodes.size,
@@ -20,12 +20,12 @@ module Textus
           }
         end
 
-        def recent_feedback(ctx)
-          rows = ctx.store.entry_index&.search(schema: "loop-feedback", lane: "knowledge", query: nil, prefix: nil)
+        def recent_feedback(store)
+          rows = store.entry_index&.search(schema: "loop-feedback", lane: "knowledge", query: nil, prefix: nil)
           return [] unless rows&.any?
 
           rows.map do |row|
-            env = ctx.read(row["key"])
+            env = store.read(row["key"])
             meta = env&.meta || {}
             {
               "key" => row["key"],

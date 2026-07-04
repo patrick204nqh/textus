@@ -13,6 +13,10 @@ module Textus
         workflows.push(Textus::Workflow::Instances::Materialize)
         workflow_registry = Workflow::Registry.new(workflows)
 
+        store_engine = StoreEngine.new(
+          file_system:, manifest:, layout:, store:, workflow_registry:,
+        )
+
         ttl_evaluator = Protocol::Freshness::TtlEvaluator.new(
           manifest:,
           file_stat: file_system,
@@ -30,6 +34,7 @@ module Textus
           manifest:,
           resolver: manifest.resolver,
           container:,
+          store_engine:,
         )
 
         container.gate = gate

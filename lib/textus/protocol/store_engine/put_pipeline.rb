@@ -1,7 +1,7 @@
 module Textus
   module Protocol
-    module WritePipeline
-      module Put
+    class StoreEngine
+      module PutPipeline
         module ResolvePath
           def self.call(ctx, deps)
             path = deps.manifest.resolver.resolve(ctx.key).path
@@ -140,19 +140,17 @@ module Textus
           CheckEtag, WriteBytes, BuildEnvelope, AppendAudit, EmitWorkflowEvent, IndexEntry
         ].freeze
 
-        # rubocop:disable Metrics/ParameterLists
         def self.call(key, mentry:, payload:, call:, file_system:, manifest:, store:, layout:, reader:, if_etag: nil, workflow_registry: nil)
-          ctx = WriteContext.new(
+          ctx = Pipeline::WriteContext.new(
             key:, mentry:, payload:, if_etag:,
             path: nil, existing_env: nil, meta: nil, content: nil,
             bytes: nil, eff_meta: nil, eff_body: nil, eff_content: nil,
             etag_before: nil, envelope: nil
           )
-          deps = WriteDeps.new(file_system:, manifest:, store:, call:, reader:, layout:, workflow_registry:)
+          deps = Pipeline::WriteDeps.new(file_system:, manifest:, store:, call:, reader:, layout:, workflow_registry:)
           ctx = STEPS.reduce(ctx) { |c, step| step.call(c, deps) }
           ctx.envelope
         end
-        # rubocop:enable Metrics/ParameterLists
       end
     end
   end
