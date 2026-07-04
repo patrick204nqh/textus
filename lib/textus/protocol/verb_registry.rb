@@ -96,42 +96,6 @@ module Textus
         %i[cli mcp], :write
       )
 
-      # ── propose ──────────────────────────────────────────
-      register VerbSpec.new(
-        verb: :propose, summary: "Write a proposal to the role's propose_lane. Auto-prefixes the key.",
-        args: [ArgSpec.arg(name: :key, required: true, positional: true,
-                           description: "key relative to propose_lane, e.g. 'decisions.feature-x'"),
-               ArgSpec.arg(name: :meta, type: Hash, wire_name: :_meta,
-                           description: "frontmatter. Include a 'proposal:' block naming the target_key"),
-               ArgSpec.arg(name: :body,
-                           description: "markdown/text payload for markdown-format entries"),
-               ArgSpec.arg(name: :content, type: Hash,
-                           description: "structured payload for json/yaml-format entries")],
-        surfaces: %i[cli mcp], category: :write,
-        lane: :proposal
-      )
-
-      # ── accept ───────────────────────────────────────────
-      register VerbSpec.new(
-        verb: :accept, summary: "Apply a queued proposal to its target zone; requires author.",
-        args: [ArgSpec.arg(name: :pending_key, required: true, positional: true,
-                           description: "the queued proposal's key"),
-               ArgSpec.arg(name: :dry_run, type: :boolean, default: false,
-                           description: "when true, compute diff without promoting")],
-        surfaces: %i[cli mcp], category: :write,
-        lane: :proposal
-      )
-
-      # ── reject ───────────────────────────────────────────
-      register VerbSpec.new(
-        verb: :reject, summary: "Discard a queued proposal without applying it.",
-        args: [ArgSpec.arg(name: :pending_key, required: true, positional: true,
-                           description: "the queued proposal's key"),
-               ArgSpec.arg(name: :reason, description: "optional explanation for the rejection")],
-        surfaces: %i[cli mcp], category: :write,
-        lane: :proposal
-      )
-
       # ── ingest ───────────────────────────────────────────
       register VerbSpec.new(
         verb: :ingest, summary: "Capture external source material into the raw lane. Write-once.",
@@ -214,16 +178,6 @@ module Textus
          ArgSpec.arg(name: :depth, type: Integer,
                      description: "max traversal depth for reachable query (unlimited when omitted)")],
         %i[cli mcp], :$1
-      )
-
-      # ── diff ─────────────────────────────────────────────
-      register VerbSpec.new(
-        verb: :diff, summary: "Preview the diff between a proposal and its target — body, meta, and schema.",
-        args: [ArgSpec.arg(name: :pending_key, required: true, positional: true,
-                           description: "the queued proposal's key")],
-        surfaces: %i[cli mcp],
-        category: :read,
-        lane: :proposal
       )
 
       # ── pulse ────────────────────────────────────────────

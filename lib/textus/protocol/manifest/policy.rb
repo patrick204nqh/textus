@@ -27,7 +27,7 @@ module Textus
         end
 
         def queue_lane
-          "proposals"
+          "scratchpad.proposals"
         end
 
         def machine_lane
@@ -35,7 +35,7 @@ module Textus
         end
 
         def queue_lane?(lane_name)
-          lane_name == "proposals"
+          lane_name == "scratchpad"
         end
 
         def propose_lane_for(role)

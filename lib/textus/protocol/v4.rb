@@ -5,7 +5,7 @@ module Textus
         "knowledge" => { writers: %w[human],
                          desc: "the maintained source of truth about the repo",
                          retention_ttl: nil },
-        "scratchpad" => { writers: %w[agent],
+        "scratchpad" => { writers: %w[human agent],
                           desc: "the agent's own durable scratchpad (working memory)",
                           retention_ttl: nil },
         "artifacts" => { writers: %w[automation],

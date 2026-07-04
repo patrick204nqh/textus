@@ -29,7 +29,7 @@ module Textus
       end
 
       def propose_lane_for(role)
-        writers_for("proposals").include?(role) ? "proposals" : nil
+        writers_for("proposals").include?(role) ? "scratchpad.proposals" : nil
       end
     end
   end
