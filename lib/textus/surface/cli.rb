@@ -99,7 +99,7 @@ module Textus
       end
 
       def store
-        @store ||= Textus::Protocol::Session.new(store_root)
+        @store ||= Textus::Protocol::Session.open(store_root)
       end
 
       def store_root

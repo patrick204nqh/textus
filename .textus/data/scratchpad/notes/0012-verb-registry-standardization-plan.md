@@ -7,7 +7,7 @@ uid: '08b43cb02e8331f5'
 
 **Goal:** Close four concrete standardization gaps found in an API/interface audit of `Textus::VerbRegistry` / `Dispatch::Contracts` / `Value::Result`: an MCP/CLI surface-parity gap on six verbs, an internal contract-naming inconsistency, a mixed-intent `jobs` verb, and a `Result.extract` path that silently downgrades typed errors (including a currently-unreachable `Textus::CursorExpired`) to a generic `ActionError`.
 
-**Architecture:** No new layers. Every change is a projection-level or contract-level edit inside the existing `VerbRegistry` → `Dispatch::Contracts` → `HandlerResolver`/`Pipeline` → `Value::Result` pipeline described in ADR 0117 and ADR 0125. Task 3 (jobs split) follows the exact `key_*` / `rule_*` precedent already in the registry (multi-word verb → auto-derived CLI group).
+**Architecture:** No new layers. Every change is a projection-level or contract-level edit inside the existing `VerbRegistry` → `Dispatch::Contracts` → `HandlerResolver`/`Pipeline` → `Value::Result` pipeline described in ADR 0131 and ADR 0125. Task 3 (jobs split) follows the exact `key_*` / `rule_*` precedent already in the registry (multi-word verb → auto-derived CLI group).
 
 **Tech Stack:** Ruby 3.x, RSpec, the existing `Textus::Dispatch` pipeline (no new gems).
 

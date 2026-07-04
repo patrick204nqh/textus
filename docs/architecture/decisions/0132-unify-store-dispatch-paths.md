@@ -1,9 +1,9 @@
 ---
-name: '0120-unify-store-dispatch-paths'
+name: '0132-unify-store-dispatch-paths'
 uid: 73D74CA486A29351
 ---
 
-# ADR-0120: Unify dispatch paths — Store as the single dispatch module
+# ADR-0132: Unify dispatch paths — Store as the single dispatch module
 
 ## Status
 

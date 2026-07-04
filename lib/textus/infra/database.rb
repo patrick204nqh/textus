@@ -80,6 +80,12 @@ module Textus
           DateTime :updated_at, null: false, default: Sequel::CURRENT_TIMESTAMP
         end
 
+        @db.create_table?(:loop_positions) do
+          String :role, primary_key: true
+          Integer :index, null: false, default: 0
+          DateTime :updated_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+        end
+
         create_entries_fts
       end
 

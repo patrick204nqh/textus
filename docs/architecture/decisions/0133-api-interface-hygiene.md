@@ -1,9 +1,9 @@
 ---
-name: '0121-api-interface-hygiene'
+name: '0133-api-interface-hygiene'
 uid: 73D74CA486A29352
 ---
 
-# ADR-0121: API and interface hygiene — consolidation pass
+# ADR-0133: API and interface hygiene — consolidation pass
 
 ## Status
 

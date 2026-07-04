@@ -6,7 +6,7 @@ _meta:
   date: 2026-07-01
 ---
 
-# ADR-0125: Architecture deepening phase 3 — Writer port, single Infrastructure, manifest→workflow boundary
+# ADR-0134: Architecture deepening phase 3 — Writer port, single Infrastructure, manifest→workflow boundary
 
 ## Status
 

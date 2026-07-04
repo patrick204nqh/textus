@@ -1,8 +1,8 @@
 RSpec.describe Textus::Lanes::Knowledge::Handlers do
   describe ".loop" do
     it "returns nodes from manifest entries" do
-      ctx = instance_double("HandlerContext")
-      manifest = instance_double("Manifest", data: double("data"))
+      ctx, store = build_ctx
+      manifest = double("Manifest", data: double("Data"))
       entries = [
         double("entry", key: "knowledge.loop.intent"),
         double("entry", key: "knowledge.loop.constraint"),
@@ -17,8 +17,8 @@ RSpec.describe Textus::Lanes::Knowledge::Handlers do
     end
 
     it "excludes non-loop and nested loop entries" do
-      ctx = instance_double("HandlerContext")
-      manifest = instance_double("Manifest", data: double("data"))
+      ctx, store = build_ctx
+      manifest = double("Manifest", data: double("Data"))
       entries = [
         double("entry", key: "knowledge.loop.intent"),
         double("entry", key: "knowledge.identity"),
@@ -30,6 +30,13 @@ RSpec.describe Textus::Lanes::Knowledge::Handlers do
       result = described_class.loop(ctx:, call: nil)
       expect(result["count"]).to eq(1)
       expect(result["loop"].first["name"]).to eq("intent")
+    end
+
+    def build_ctx
+      store = double("store", cursor_store: double("cursor_store", read_loop_position: 0))
+      entry_index = double("entry_index", search: [])
+      ctx = double("HandlerContext", store:, entry_index:)
+      [ctx, store]
     end
   end
 end

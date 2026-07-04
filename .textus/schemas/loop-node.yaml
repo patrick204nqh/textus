@@ -1,0 +1,11 @@
+fields:
+  node:        { type: string, required: true, maintained_by: machine }
+  criteria:
+    type: list
+    required: true
+    maintained_by: machine
+    schema:
+      fields:
+        field:     { type: string, required: true, maintained_by: human }
+        operator:  { type: string, required: true, maintained_by: human }
+        expected:  { type: string, required: true, maintained_by: human }

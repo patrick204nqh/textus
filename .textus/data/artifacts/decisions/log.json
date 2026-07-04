@@ -4,6 +4,34 @@
   },
   "adrs": [
     {
+      "number": "0134",
+      "title": "architecture deepening phase 3",
+      "date": "2026-07-01",
+      "status": "Proposed",
+      "slug": "0134-architecture-deepening-phase-3"
+    },
+    {
+      "number": "0133",
+      "title": "api and interface hygiene",
+      "date": "2026-06-23",
+      "status": "Proposed",
+      "slug": "0133-api-interface-hygiene"
+    },
+    {
+      "number": "0132",
+      "title": "unify store dispatch paths",
+      "date": "2026-06-22",
+      "status": "Proposed",
+      "slug": "0132-unify-store-dispatch-paths"
+    },
+    {
+      "number": "0131",
+      "title": "adopt pipeline handler factory registry",
+      "date": "2026-06-23",
+      "status": "Accepted",
+      "slug": "0131-adopt-pipeline-handler-factory-registry"
+    },
+    {
       "number": "0125",
       "title": "bounded use case objects",
       "date": "2026-07-01",
@@ -65,13 +93,6 @@
       "date": null,
       "status": "",
       "slug": "0117-textus-4-protocol-version-bump"
-    },
-    {
-      "number": "0117",
-      "title": "adopt pipeline handler factory registry",
-      "date": null,
-      "status": "",
-      "slug": "0117-adopt-pipeline-handler-factory-registry"
     },
     {
       "number": "0116",

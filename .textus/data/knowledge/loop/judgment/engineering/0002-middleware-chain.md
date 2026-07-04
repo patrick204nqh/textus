@@ -1,6 +1,6 @@
 # Middleware Chain
 
-ADR-0117: Adopted pipeline + handler factory + registry pattern for dispatch.
+ADR-0131: Adopted pipeline + handler factory + registry pattern for dispatch.
 
 Cross-cutting concerns (auth, timing, audit indexing) are composed as middleware wrapping the use-case execution.
 

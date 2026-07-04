@@ -68,7 +68,7 @@ RSpec.describe "Schema evolution" do
       expect(env["_meta"]).to have_key("title")
       expect(env["_meta"]).not_to have_key("headline")
 
-      store = Textus::Protocol::Session.new(root)
+      store = Textus::Protocol::Session.open(root)
       expect(store.container.store.event_store.last_writer_for("knowledge.note")).to eq("human")
     end
 

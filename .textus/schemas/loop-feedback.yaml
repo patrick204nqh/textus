@@ -1,0 +1,5 @@
+fields:
+  node:       { type: string, required: true, maintained_by: agent }
+  confidence: { type: string, required: true, maintained_by: agent }
+  signal:     { type: string, required: true, maintained_by: agent }
+  summary:    { type: string, required: true, maintained_by: agent }

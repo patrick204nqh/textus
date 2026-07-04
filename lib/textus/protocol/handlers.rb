@@ -154,21 +154,23 @@ module Textus
       end
 
       def pulse(ctx:, call:, since: nil)
-        cursor_val = since || ctx.store.cursor_store.read(call.role)
-        audit_result = audit(seq_since: cursor_val, ctx:, call:)
-        changed = audit_result["rows"] || []
-        queue = ctx.manifest.policy.queue_lane
-        pending = queue ? list(lane: queue, ctx:, call:) : []
-        result = {
-          "cursor" => ctx.audit.latest_seq,
-          "changed" => changed,
-          "pending_review" => pending.is_a?(Array) ? pending.map { |r| r["key"] } : [],
-          "contract_etag" => Textus::Value::Etag.for_contract(ctx.manifest.data.root),
-          "index_etag" => pulse_index_etag(ctx),
-        }
-        ctx.store.cursor_store.write(call.role, result["cursor"])
-        result
-      end
+          cursor_val = since || ctx.store.cursor_store.read(call.role)
+          audit_result = audit(seq_since: cursor_val, ctx:, call:)
+          changed = audit_result["rows"] || []
+          queue = ctx.manifest.policy.queue_lane
+          pending = queue ? list(lane: queue, ctx:, call:) : []
+          runner = Lanes::Knowledge::Runner.new(ctx.manifest, cursor_store: ctx.store.cursor_store)
+          result = {
+            "cursor" => ctx.audit.latest_seq,
+            "changed" => changed,
+            "pending_review" => pending.is_a?(Array) ? pending.map { |r| r["key"] } : [],
+            "contract_etag" => Textus::Value::Etag.for_contract(ctx.manifest.data.root),
+            "index_etag" => pulse_index_etag(ctx),
+            "loop_state" => runner.current_position(call.role),
+          }
+          ctx.store.cursor_store.write(call.role, result["cursor"])
+          result
+        end
 
       def drain(ctx:, call:)
         registry = Textus::Workflow::Registry.new(ctx.workflows)
