@@ -44,41 +44,15 @@ data:
     - { key: artifacts.design.invariants, format: json }
     - { key: artifacts.how-to.agents-mcp, format: json }
     - { key: artifacts.how-to.configuring-lanes, format: json }
-    - { key: artifacts.how-to.drain-scheduling, format: json }
-    - { key: artifacts.how-to.migrations, format: json }
     - { key: artifacts.reference.lanes, format: json }
-    - key: artifacts.render.conventions
-      format: json
-      publish:
-        - { to: docs/reference/conventions.md, template: docs/reference/conventions.erb }
-    - key: artifacts.render.testing
-      format: json
-      publish:
-        - { to: docs/reference/testing.md, template: docs/reference/testing.erb }
-    - key: artifacts.render.engineering-skills
-      format: json
-      publish:
-        - { to: docs/reference/engineering-skills.md, template: docs/reference/engineering-skills.erb }
-    - key: artifacts.render.contributor-conventions
-      format: json
-      publish:
-        - { to: docs/reference/contributor-conventions.md, template: docs/reference/contributor-conventions.erb }
-    - key: artifacts.render.drain-scheduling
-      format: json
-      publish:
-        - { to: docs/how-to/drain-scheduling.md, template: docs/how-to/drain-scheduling.erb }
-    - key: artifacts.render.migrations
-      format: json
-      publish:
-        - { to: docs/how-to/migrations.md, template: docs/how-to/migrations.erb }
-    - key: artifacts.render.code-of-conduct
-      format: json
-      publish:
-        - { to: CODE_OF_CONDUCT.md, template: docs/meta/code-of-conduct.erb }
-    - key: artifacts.render.security
-      format: json
-      publish:
-        - { to: SECURITY.md, template: docs/meta/security.erb }
+    - { key: artifacts.render.conventions, format: json }
+    - { key: artifacts.render.testing, format: json }
+    - { key: artifacts.render.engineering-skills, format: json }
+    - { key: artifacts.render.contributor-conventions, format: json }
+    - { key: artifacts.render.drain-scheduling, format: json }
+    - { key: artifacts.render.migrations, format: json }
+    - { key: artifacts.render.code-of-conduct, format: json }
+    - { key: artifacts.render.security, format: json }
     - { key: artifacts.explanation.concepts, format: json }
     - { key: artifacts.doctor.rule-ambiguity, format: json }
     - { key: artifacts.doctor.manifest-files, format: json }
@@ -87,17 +61,13 @@ data:
     - { key: artifacts.doctor.illegal-keys, format: json }
     - { key: artifacts.doctor.sentinels, format: json }
     - { key: artifacts.doctor.audit-log, format: json }
-    - { key: artifacts.doctor.unowned-schema-fields, format: json }
     - { key: artifacts.doctor.schema-violations, format: json }
-    - { key: artifacts.doctor.orphaned-publish-targets, format: json }
     - { key: artifacts.doctor.proposal-targets, format: json }
     - { key: artifacts.doctor.generator-drift, format: json }
     - { key: artifacts.doctor.raw-asset-paths, format: json }
     - { key: artifacts.doctor.scratchpad-sources, format: json }
     - { key: artifacts.doctor.stale-reviewed-stamp, format: json }
     - { key: artifacts.doctor.cursor-retention, format: json }
-    - { key: artifacts.doctor.templates, format: json }
-    - { key: artifacts.doctor.schemas, format: json }
     - { key: artifacts.doctor.publish-tree-overlap, format: json }
     - { key: artifacts.doctor.loop-shape, format: json }
     - { key: artifacts.doctor.naming-check, format: json }

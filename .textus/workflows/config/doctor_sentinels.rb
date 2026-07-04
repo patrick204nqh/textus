@@ -1,5 +1,5 @@
-# Replaces Doctor::Check::Sentinels. Checks sentinel JSON integrity and
-# published-file drift/orphans.
+# Replaces Doctor::Check::Sentinels + Doctor::Check::OrphanedPublishTargets.
+# Checks sentinel JSON integrity, published-file drift/orphans, and store-source orphans.
 
 # rubocop:disable Metrics/BlockLength
 Textus.workflow "doctor-sentinels" do
@@ -35,6 +35,18 @@ Textus.workflow "doctor-sentinels" do
             "subject" => sentinel_path,
             "message" => "sentinel target #{sentinel.target.inspect} no longer exists",
             "fix" => "delete #{sentinel_path} (the published file is gone) or restore the target",
+          }
+          next
+        end
+
+        if sentinel.source && !File.exist?(sentinel.source)
+          issues << {
+            "code" => "publish.orphaned_target",
+            "level" => "warning",
+            "subject" => sentinel.target,
+            "message" => "published file #{sentinel.target} has no source in the store " \
+                         "(recorded source #{sentinel.source} is gone) — likely a renamed or removed leaf",
+            "fix" => "remove the stale copy and its sentinel: rm '#{sentinel.target}' '#{sentinel_path}'",
           }
           next
         end

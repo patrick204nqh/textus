@@ -1,4 +1,5 @@
-# Replaces Doctor::Check::SchemaParseError. Checks schema YAML parseability.
+# Replaces Doctor::Check::SchemaParseError + Doctor::Check::UnownedSchemaFields.
+# Checks schema YAML parseability and field ownership metadata.
 
 Textus.workflow "doctor-schema-parse-error" do
   match "artifacts.doctor.schema-parse-error"
@@ -9,7 +10,7 @@ Textus.workflow "doctor-schema-parse-error" do
 
     if File.directory?(dir)
       Dir.glob(File.join(dir, "*.yaml")).each do |path|
-        begin
+        schema = begin
           Textus::Schema.load(path)
         rescue StandardError => e
           issues << {
@@ -19,7 +20,19 @@ Textus.workflow "doctor-schema-parse-error" do
             "message" => "schema failed to parse: #{e.class}: #{e.message}",
             "fix" => "fix the YAML at #{path} (check indentation, quoted scalars, and aliases)",
           }
+          next
         end
+
+        unowned = schema.unowned_fields
+        next if unowned.empty?
+
+        issues << {
+          "code" => "schema.unowned_fields",
+          "level" => "info",
+          "subject" => schema.name || File.basename(path, ".yaml"),
+          "message" => "schema has fields without maintained_by: #{unowned.join(", ")}",
+          "fix" => "add 'maintained_by: <role>' to each field in #{path} (optional but recommended)",
+        }
       end
     end
 
