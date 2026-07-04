@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "uid": "e64946ac4be8f8f1"
+    "uid": "313d5b2b483b9174"
   },
   "project": {
     "name": "textus",
@@ -9,6 +9,18 @@
     "has_commands": true
   },
   "runbooks": [
+    {
+      "name": "doctor",
+      "description": "Read and act on doctor workflow reports to keep the store healthy."
+    },
+    {
+      "name": "session",
+      "description": "Begin and end agent sessions, review feedback, propose changes to canon."
+    },
+    {
+      "name": "deploy",
+      "description": "Cut a textus release — bump version, update lockfile, tag, publish."
+    },
     {
       "name": "release",
       "description": "Cut a textus release — bump the version, regenerate Gemfile.lock, then tag via PR."
