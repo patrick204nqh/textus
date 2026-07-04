@@ -13,6 +13,19 @@ module Textus
                     :validate_steps, :depends_on_patterns,
                     :handled_events, :workflow_type
 
+        def self.register(defn)
+          @definitions ||= []
+          @definitions << defn
+        end
+
+        def self.definitions
+          @definitions || []
+        end
+
+        def self.clear_registered
+          @definitions = []
+        end
+
         def initialize(name)
           @name                = name
           @steps               = []

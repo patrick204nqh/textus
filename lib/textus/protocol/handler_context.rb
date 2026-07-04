@@ -45,6 +45,7 @@ module Textus
       def event_store = @container.event_store
       def workflows   = @container.workflows
       def entry_index = @container.entry_index
+      def container   = @container
 
       # Convenience
       def mentry_for(key)

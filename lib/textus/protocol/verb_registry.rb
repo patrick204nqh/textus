@@ -289,9 +289,7 @@ module Textus
       # ── drain ────────────────────────────────────────────
       register VerbSpec.new(
         :drain, "Seed materialize + sweep jobs then drain the queue to empty.",
-        [ArgSpec.arg(name: :prefix, description: "restrict to keys under this dotted prefix"),
-         ArgSpec.arg(name: :lane, description: "restrict to entries in this lane")],
-        %i[cli mcp], :maintenance
+        [], %i[cli mcp], :maintenance
       )
     require_relative "../lanes/knowledge/verbs"
     require_relative "../lanes/scratchpad/verbs"

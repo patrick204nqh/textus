@@ -172,10 +172,10 @@ module Textus
         result
       end
 
-      def drain(ctx:, call:, prefix: nil, lane: nil)
+      def drain(ctx:, call:)
         registry = Textus::Workflow::Registry.new(ctx.workflows)
         result = Textus::Protocol::Events::Consumer.new.drain(
-          event_store: ctx.event_store, registry:, container: nil, call:,
+          event_store: ctx.event_store, registry:, container: ctx.container, call:,
         )
         { "protocol" => Textus::PROTOCOL, "ok" => result[:failed].zero?,
           "completed" => result[:completed], "failed" => result[:failed] }
