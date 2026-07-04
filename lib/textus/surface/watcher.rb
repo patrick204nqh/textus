@@ -45,7 +45,8 @@ module Textus
           call: Textus::Value::Call.build(role: Textus::Value::Role::AUTOMATION, correlation_id: SecureRandom.uuid),
         ).run(row[:key])
         true
-      rescue StandardError
+      rescue Textus::Error => e
+        warn "textus: watcher workflow #{row[:workflow_type]} failed: #{e.message}"
         false
       end
     end

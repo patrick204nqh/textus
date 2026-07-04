@@ -24,6 +24,7 @@ module Textus
           Array(keys).each do |key|
             IN_FLIGHT_MUTEX.synchronize { IN_FLIGHT.add(key) }
             record_outcome(produce_one(key), results)
+          ensure
             IN_FLIGHT_MUTEX.synchronize { IN_FLIGHT.delete(key) }
           end
           results
@@ -41,7 +42,7 @@ module Textus
             publish_only(key)
           end
           Textus::Value::Outcome::Completed.new(details: { key: key })
-        rescue StandardError => e
+        rescue Textus::Error => e
           Textus::Value::Outcome::DeadLettered.new(error: { key: key, message: e.message })
         end
 

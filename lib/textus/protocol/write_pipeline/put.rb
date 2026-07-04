@@ -128,7 +128,8 @@ module Textus
             )
             emitter.emit(event_type: "entry.written", key: ctx.key, lane: ctx.mentry.lane)
             ctx
-          rescue StandardError
+          rescue StandardError => e
+            warn "textus: emit_workflow_event(entry.written, #{ctx.key}) failed: #{e.message}"
             ctx
           end
         end

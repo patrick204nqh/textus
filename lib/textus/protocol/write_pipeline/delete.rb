@@ -78,7 +78,8 @@ module Textus
             )
             emitter.emit(event_type: "entry.deleted", key: ctx.key)
             ctx
-          rescue StandardError
+          rescue StandardError => e
+            warn "textus: emit_workflow_event(entry.deleted, #{ctx.key}) failed: #{e.message}"
             ctx
           end
         end

@@ -117,8 +117,8 @@ module Textus
             )
             emitter.emit(event_type: "entry.moved", key: ctx.to_key, lane: ctx.new_mentry.lane)
             ctx
-          rescue StandardError
-            ctx
+          rescue StandardError => e
+            warn "textus: emit_workflow_event(entry.moved, #{ctx.key}) failed: #{e.message}"
           end
         end
 

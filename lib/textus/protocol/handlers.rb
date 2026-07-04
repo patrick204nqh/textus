@@ -28,7 +28,7 @@ module Textus
         else
           rows = ctx.manifest.resolver.enumerate(prefix:)
           rows = rows.select { |row| row[:manifest_entry].lane == lane } if lane
-          rows.map { |row| { "key" => row[:key], "lane" => row[:manifest_entry].lane, "path" => row[:path] } }
+          rows.map { |row| { "key" => row[:key], "lane" => row[:manifest_entry].lane } }
         end
       end
 
