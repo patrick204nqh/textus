@@ -21,6 +21,7 @@ Textus.workflow "boot" do
     runbooks = read_family.call("knowledge.loop.execution").filter_map do |env|
       m = env.meta
       next unless m
+
       m.merge("schema" => env.schema_ref)
     end
 

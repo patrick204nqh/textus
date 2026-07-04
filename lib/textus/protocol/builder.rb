@@ -9,7 +9,7 @@ module Textus
         schemas     = Protocol::Schema::Registry.new(layout.schemas_dir)
 
         store       = Infra::Store.new(database:, file_system:)
-        workflows   = Workflow::Loader.load_all(root)
+        workflows   = Workflow::Registry.load_all(root)
         workflows.push(Textus::Workflow::Instances::Materialize)
         workflow_registry = Workflow::Registry.new(workflows)
 

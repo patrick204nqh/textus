@@ -1,4 +1,4 @@
-RSpec.describe Textus::Workflow::Loader do
+RSpec.describe Textus::Workflow::Registry do
   include_context "textus_store_fixture"
 
   it "returns an empty array when no workflows/ dir exists" do

@@ -58,7 +58,7 @@ Textus.workflow "doctor" do
         issues << { "code" => "manifest.missing_file", "severity" => "info",
                     "subject" => entry.key,
                     "message" => "declared entry has no file on disk at #{path}",
-                    "fix" => "create the entry with 'textus put #{entry.key} --stdin --as=<role>'", }
+                    "fix" => "create the entry with 'textus put #{entry.key} --stdin --as=<role>'" }
       end
 
       entry.publish_to.each do |target|
@@ -164,15 +164,15 @@ Textus.workflow "doctor" do
         end
 
         unowned = schema.unowned_fields
-        unless unowned.empty?
-          issues << {
-            "code" => "schema.unowned_fields",
-            "level" => "info",
-            "subject" => schema.name || File.basename(path, ".yaml"),
-            "message" => "schema has fields without maintained_by: #{unowned.join(", ")}",
-            "fix" => "add 'maintained_by: <role>' to each field in #{path} (optional but recommended)",
-          }
-        end
+        next if unowned.empty?
+
+        issues << {
+          "code" => "schema.unowned_fields",
+          "level" => "info",
+          "subject" => schema.name || File.basename(path, ".yaml"),
+          "message" => "schema has fields without maintained_by: #{unowned.join(", ")}",
+          "fix" => "add 'maintained_by: <role>' to each field in #{path} (optional but recommended)",
+        }
       end
     end
 
@@ -313,15 +313,15 @@ Textus.workflow "doctor" do
         src_path = File.join(root, src)
         next unless File.exist?(src_path)
 
-        if File.mtime(src_path) > entry_mtime
-          issues << {
-            "code" => "generator_drift",
-            "level" => "warning",
-            "subject" => entry.key,
-            "message" => "source '#{src}' is newer than produced entry '#{entry.key}'",
-            "fix" => "rematerialize the entry: `textus drain`",
-          }
-        end
+        next unless File.mtime(src_path) > entry_mtime
+
+        issues << {
+          "code" => "generator_drift",
+          "level" => "warning",
+          "subject" => entry.key,
+          "message" => "source '#{src}' is newer than produced entry '#{entry.key}'",
+          "fix" => "rematerialize the entry: `textus drain`",
+        }
       end
     end
 
@@ -471,11 +471,11 @@ Textus.workflow "doctor" do
         end
 
         target = sentinel["target"]
-        if target && !File.exist?(target)
-          issues << { "code" => "sentinel.orphan", "level" => "warning", "subject" => target,
-                      "message" => "sentinel target #{target} no longer exists",
-                      "fix" => "delete #{sentinel_path} or restore the target" }
-        end
+        next unless target && !File.exist?(target)
+
+        issues << { "code" => "sentinel.orphan", "level" => "warning", "subject" => target,
+                    "message" => "sentinel target #{target} no longer exists",
+                    "fix" => "delete #{sentinel_path} or restore the target" }
       end
     end
 
@@ -507,12 +507,12 @@ Textus.workflow "doctor" do
       next if cursor.nil? || cursor <= 0
 
       min_seq = store.audit_log.min_available
-      if min_seq && cursor < min_seq
-        issues << { "code" => "cursor.expired", "level" => "warning",
-                    "subject" => "cursor:#{role}",
-                    "message" => "cursor for role '#{role}' (seq #{cursor}) is no longer available",
-                    "fix" => "call pulse to get a fresh cursor" }
-      end
+      next unless min_seq && cursor < min_seq
+
+      issues << { "code" => "cursor.expired", "level" => "warning",
+                  "subject" => "cursor:#{role}",
+                  "message" => "cursor for role '#{role}' (seq #{cursor}) is no longer available",
+                  "fix" => "call pulse to get a fresh cursor" }
     end
 
     issues
