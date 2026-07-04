@@ -1,7 +1,7 @@
 RSpec.describe Textus::Protocol::Events::Consumer do
   subject(:consumer) { described_class.new }
 
-  let(:event_store) { instance_double(Textus::Infra::Store::EventStore) }
+  let(:workflow_queue) { instance_double(Textus::Infra::Store::WorkflowQueue) }
   let(:registry) { instance_double(Textus::Workflow::Registry) }
   let(:workflow) { instance_double(Textus::Workflow::DSL::Definition, type: "materialize") }
   let(:container) { instance_double(Textus::Protocol::Container) }
@@ -13,13 +13,13 @@ RSpec.describe Textus::Protocol::Events::Consumer do
   end
 
   describe "#drain" do
-    it "loops until consume_pending returns nil, tallying completed and failed" do
+    it "loops until pop returns nil, tallying completed and failed" do
       rows = [
         pending_row.merge(id: 1),
         pending_row.merge(id: 2, retry_count: 2, max_attempts: 3),
         nil,
       ]
-      allow(event_store).to receive(:consume_pending).and_return(*rows)
+      allow(workflow_queue).to receive(:pop).and_return(*rows)
       call_count = 0
       allow(Textus::Workflow::Runner).to receive(:new) do
         call_count += 1
@@ -31,10 +31,10 @@ RSpec.describe Textus::Protocol::Events::Consumer do
         end
         runner
       end
-      allow(event_store).to receive(:mark_done)
-      allow(event_store).to receive(:mark_failed)
+      allow(workflow_queue).to receive(:complete)
+      allow(workflow_queue).to receive(:fail)
 
-      result = consumer.drain(event_store:, registry:, container:, call:)
+      result = consumer.drain(workflow_queue:, registry:, container:, call:)
 
       expect(result).to eq(completed: 1, failed: 1)
     end

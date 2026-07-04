@@ -9,6 +9,7 @@ module Textus
             etag_before:, etag_after:, correlation_id:
           )
         end
+        alias append_audit append
 
         def list(seq_since: nil, key: nil, role: nil, verb: nil, correlation_id: nil, limit: nil)
           dataset = table(:audit_events)
@@ -26,7 +27,7 @@ module Textus
         end
 
         def min_available
-          result(table(:audit_events).order(:seq).first)
+          result(table(:audit_events).order(:seq).first)&.dig(:seq)
         end
 
         def last_writer(key)

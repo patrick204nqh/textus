@@ -4,58 +4,58 @@ RSpec.describe Textus::Infra::Store::CursorStore do
   let(:layout) { Textus::Protocol::Layout.new(Dir.mktmpdir("textus-test-")) }
   let(:db) { Textus::Infra::Database.new(layout:).setup!.connection }
 
-  describe "#read / #write" do
-    it "defaults to 0" do
-      expect(store.read("agent")).to eq(0)
+  describe "#get / #set" do
+    it "defaults to seq 0" do
+      expect(store.get("agent")).to eq({ role: "agent", seq: 0 })
     end
 
     it "persists and reads back" do
-      store.write("agent", 42)
-      expect(store.read("agent")).to eq(42)
+      store.set("agent", 42)
+      expect(store.get("agent")).to include(role: "agent", seq: 42)
     end
 
     it "updates in place" do
-      store.write("agent", 1)
-      store.write("agent", 99)
-      expect(store.read("agent")).to eq(99)
+      store.set("agent", 1)
+      store.set("agent", 99)
+      expect(store.get("agent")).to include(role: "agent", seq: 99)
     end
 
     it "isolates by role" do
-      store.write("agent", 10)
-      store.write("human", 20)
-      expect(store.read("agent")).to eq(10)
-      expect(store.read("human")).to eq(20)
+      store.set("agent", 10)
+      store.set("human", 20)
+      expect(store.get("agent")).to include(role: "agent", seq: 10)
+      expect(store.get("human")).to include(role: "human", seq: 20)
     end
   end
 
-  describe "#read_loop_position / #write_loop_position" do
-    it "defaults to 0" do
-      expect(store.read_loop_position("agent")).to eq(0)
+  describe "#get_loop / #set_loop" do
+    it "defaults to index 0" do
+      expect(store.get_loop("agent")).to eq({ role: "agent", index: 0 })
     end
 
     it "persists and reads back" do
-      store.write_loop_position("agent", 3)
-      expect(store.read_loop_position("agent")).to eq(3)
+      store.set_loop("agent", 3)
+      expect(store.get_loop("agent")).to include(role: "agent", index: 3)
     end
 
     it "updates in place" do
-      store.write_loop_position("agent", 1)
-      store.write_loop_position("agent", 7)
-      expect(store.read_loop_position("agent")).to eq(7)
+      store.set_loop("agent", 1)
+      store.set_loop("agent", 7)
+      expect(store.get_loop("agent")).to include(role: "agent", index: 7)
     end
 
     it "isolates by role" do
-      store.write_loop_position("agent", 2)
-      store.write_loop_position("human", 5)
-      expect(store.read_loop_position("agent")).to eq(2)
-      expect(store.read_loop_position("human")).to eq(5)
+      store.set_loop("agent", 2)
+      store.set_loop("human", 5)
+      expect(store.get_loop("agent")).to include(role: "agent", index: 2)
+      expect(store.get_loop("human")).to include(role: "human", index: 5)
     end
 
     it "does not interfere with cursor positions" do
-      store.write("agent", 100)
-      store.write_loop_position("agent", 5)
-      expect(store.read("agent")).to eq(100)
-      expect(store.read_loop_position("agent")).to eq(5)
+      store.set("agent", 100)
+      store.set_loop("agent", 5)
+      expect(store.get("agent")).to include(role: "agent", seq: 100)
+      expect(store.get_loop("agent")).to include(role: "agent", index: 5)
     end
   end
 end

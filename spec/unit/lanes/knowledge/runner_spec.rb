@@ -60,7 +60,7 @@ RSpec.describe Textus::Lanes::Knowledge::Runner do
 
   describe "#current_position" do
     it "reads from cursor_store and returns the node" do
-      expect(cursor_store).to receive(:read_loop_position).with("agent").and_return(1)
+      expect(cursor_store).to receive(:get_loop).with("agent").and_return({ role: "agent", index: 1 })
       pos = runner.current_position("agent")
       expect(pos[:name]).to eq("evidence")
     end
@@ -74,8 +74,8 @@ RSpec.describe Textus::Lanes::Knowledge::Runner do
 
   describe "#advance_role" do
     it "advances the cursor_store and returns next node" do
-      expect(cursor_store).to receive(:read_loop_position).with("agent").and_return(0)
-      expect(cursor_store).to receive(:write_loop_position).with("agent", 1)
+      expect(cursor_store).to receive(:get_loop).with("agent").and_return({ role: "agent", index: 0 })
+      expect(cursor_store).to receive(:set_loop).with("agent", 1)
       pos = runner.advance_role("agent")
       expect(pos[:name]).to eq("evidence")
     end

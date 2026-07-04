@@ -2,8 +2,8 @@ module Textus
   module Protocol
     module Events
       class Consumer
-        def drain(event_store:, registry:, container:, call:)
-          queue = Async::Queue.new(event_store)
+        def drain(workflow_queue:, registry:, container:, call:)
+          queue = Async::Queue.new(workflow_queue)
           completed = 0
           failed = 0
 

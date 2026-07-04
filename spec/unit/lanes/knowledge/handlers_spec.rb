@@ -33,7 +33,8 @@ RSpec.describe Textus::Lanes::Knowledge::Handlers do
     end
 
     def build_ctx
-      store = double("store", cursor_store: double("cursor_store", read_loop_position: 0))
+      cursor_store = double("cursor_store", get_loop: { role: "agent", index: 0 })
+      store = double("store", cursor_store:)
       entry_index = double("entry_index", search: [])
       ctx = double("HandlerContext", store:, entry_index:)
       [ctx, store]

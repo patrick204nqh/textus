@@ -125,7 +125,7 @@ module Textus
 
       def audit(ctx:, call:, key: nil, lane: nil, role: nil, verb: nil, since: nil, seq_since: nil, correlation_id: nil, limit: nil)
         if seq_since
-          min = ctx.audit.min_available_seq
+          min = ctx.audit.min_available
           raise Textus::CursorExpired.new(requested: seq_since, min_available: min) if min && seq_since < min - 1
         end
         rows = ctx.audit.list(seq_since:, key:, role:, verb:, correlation_id:, limit:).select do |row|
@@ -155,7 +155,7 @@ module Textus
         pending = queue ? list(lane: queue, ctx:, call:) : []
         runner = Lanes::Knowledge::Runner.new(ctx.manifest, cursor_store: ctx.store.cursor_store)
         result = {
-          "cursor" => ctx.audit.latest_seq,
+          "cursor" => ctx.audit.latest[:seq],
           "changed" => changed,
           "pending_review" => pending.is_a?(Array) ? pending.map { |r| r["key"] } : [],
           "contract_etag" => Textus::Value::Etag.for_contract(ctx.layout),
@@ -191,7 +191,7 @@ module Textus
       def drain(ctx:, call:)
         registry = ctx.workflow_registry || Textus::Workflow::Registry.new(ctx.workflows)
         result = Textus::Protocol::Events::Consumer.new.drain(
-          event_store: ctx.event_store, registry:, container: ctx.container, call:,
+          workflow_queue: ctx.store.workflow_queue, registry:, container: ctx.container, call:,
         )
         { "protocol" => Textus::PROTOCOL, "ok" => result[:failed].zero?,
           "completed" => result[:completed], "failed" => result[:failed] }
