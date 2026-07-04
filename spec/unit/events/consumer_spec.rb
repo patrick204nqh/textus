@@ -31,6 +31,7 @@ RSpec.describe Textus::Protocol::Events::Consumer do
         end
         runner
       end
+      allow(workflow_queue).to receive(:mark_processing)
       allow(workflow_queue).to receive(:complete)
       allow(workflow_queue).to receive(:fail)
 

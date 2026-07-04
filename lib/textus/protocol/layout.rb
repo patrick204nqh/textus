@@ -31,6 +31,7 @@ module Textus
       def lock_path(name) = File.join(run_root, "locks", "#{name}.lock")
       def track_root = File.join(@root, "track")
       def sentinels_root = File.join(track_root, "sentinels")
+      def cursor_path(role) = File.join(track_root, "cursors", role.to_s)
 
       def asset_raw_dir(date_path, zone)
         File.join(@root, ASSETS, "raw", date_path, zone.to_s)
@@ -77,7 +78,7 @@ module Textus
       private
 
       def runtime_ignore_dirs
-        ["db/", "log/", "run/", "track/"]
+        ["db/", "log/", "run/", "track/", ".state/"]
       end
 
       def normalize_relative_path(path)

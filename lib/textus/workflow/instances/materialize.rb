@@ -8,10 +8,29 @@ module Textus
                    "proposal.accepted", "proposal.rejected"
         wf.priority 10
         wf.max_attempts 3
-        wf.step :converge do |data, ctx|
-          Textus::Protocol::Produce::Engine.converge(container: ctx.container, call: ctx.call, keys: [ctx.key])
-          data
-        end
+wf.step :converge do |data, ctx|
+  registry = ctx.workflow_registry || Textus::Workflow::Registry.new(ctx.workflows)
+  workflow = registry.match_for_key(ctx.key)
+  if workflow
+    Textus::Workflow::Runner.new(workflow, container: ctx.container, call: ctx.call).run(ctx.key)
+  else
+    entry = ctx.container.manifest.resolver.resolve(ctx.key).entry
+    if entry.publish_tree || !Array(entry.publish_to).empty?
+      es = Textus::Protocol::EntryStore.new(
+        file_system: ctx.container.store.file_system,
+        manifest: ctx.container.manifest,
+        layout: ctx.container.layout,
+        store: ctx.container.store,
+      )
+      pctx = Textus::Protocol::Manifest::Entry::Base::PublishContext.new(
+        container: ctx.container, call: ctx.call,
+        reader: es.method(:read),
+      )
+      entry.publish_via(pctx)
+    end
+  end
+  data
+end
       end
     end
   end

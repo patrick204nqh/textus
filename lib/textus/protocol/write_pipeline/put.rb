@@ -120,7 +120,7 @@ module Textus
         module EmitWorkflowEvent
           def self.call(ctx, deps)
             return ctx unless deps.workflow_registry
-            return ctx if Textus::Protocol::Produce::Engine.converging?(ctx.key)
+            return ctx if deps.store.workflow_queue.pending?(event_type: "entry.written", key: ctx.key)
 
             emitter = Textus::Protocol::Events::Emitter.new(
               workflow_queue: deps.store.workflow_queue,

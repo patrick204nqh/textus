@@ -20,6 +20,7 @@ module Textus
           row = @workflow_queue.pop
           return nil unless row
 
+          @workflow_queue.mark_processing(row[:id])
           workflow = registry.for(row[:workflow_type])
           Textus::Workflow::Runner.new(workflow, container:, call:).run(row[:key])
           @workflow_queue.complete(row[:id])

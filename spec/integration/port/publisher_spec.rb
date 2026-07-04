@@ -22,7 +22,7 @@ RSpec.describe Textus::Infra::Port::Publisher do
     expect(File.binread(dst)).to eq(File.binread(src))
   end
 
-  it "writes the sentinel under <store_root>/.state/tracking/sentinels/ with repo-relative source/target fields" do
+  it "writes the sentinel under <store_root>/track/sentinels/ with repo-relative source/target fields" do
     publisher.publish(source: src, target: dst, store_root: store_root)
     expect(File.exist?(sentinel)).to be true
 

@@ -23,6 +23,17 @@ module Textus
           result(row)
         end
 
+        def pending?(event_type:, key:)
+          table(:workflow_events)
+            .where(event_type: event_type.to_s, key: key)
+            .where(state: ["pending", "processing"])
+            .count > 0
+        end
+
+        def mark_processing(event_id)
+          table(:workflow_events).where(id: event_id).update(state: "processing")
+        end
+
         def complete(event_id)
           table(:workflow_events).where(id: event_id).update(state: "done")
         end

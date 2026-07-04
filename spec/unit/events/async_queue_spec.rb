@@ -21,23 +21,27 @@ RSpec.describe Textus::Protocol::Async::Queue do
 
     it "runs the workflow and marks the event done on success" do
       allow(workflow_queue).to receive(:pop).and_return(pending_row)
+      allow(workflow_queue).to receive(:mark_processing)
       allow(Textus::Workflow::Runner).to receive(:new).with(workflow, container:, call:)
                                                       .and_return(instance_double(Textus::Workflow::Runner, run: nil))
       allow(workflow_queue).to receive(:complete)
 
       result = queue.consume_one(registry:, container:, call:)
 
+      expect(workflow_queue).to have_received(:mark_processing).with(1)
       expect(workflow_queue).to have_received(:complete).with(1)
       expect(result[:state]).to eq("done")
     end
 
     it "reschedules with backoff when the workflow raises and retries remain" do
       allow(workflow_queue).to receive(:pop).and_return(pending_row)
+      allow(workflow_queue).to receive(:mark_processing)
       allow(Textus::Workflow::Runner).to receive(:new).with(workflow, container:, call:).and_raise(StandardError.new("boom"))
       allow(workflow_queue).to receive(:reschedule)
 
       result = queue.consume_one(registry:, container:, call:)
 
+      expect(workflow_queue).to have_received(:mark_processing).with(1)
       expect(workflow_queue).to have_received(:reschedule).with(1, retry_count: 1, delay: 10, error: "boom")
       expect(result[:state]).to eq("retrying")
     end
@@ -45,6 +49,7 @@ RSpec.describe Textus::Protocol::Async::Queue do
     it "marks the event failed (dead-letters it) once max_attempts is reached" do
       exhausted_row = pending_row.merge(retry_count: 2, max_attempts: 3)
       allow(workflow_queue).to receive(:pop).and_return(exhausted_row)
+      allow(workflow_queue).to receive(:mark_processing)
       allow(Textus::Workflow::Runner).to receive(:new).with(workflow, container:, call:).and_raise(StandardError.new("boom"))
       allow(workflow_queue).to receive(:fail)
 
