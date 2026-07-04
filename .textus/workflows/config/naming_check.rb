@@ -9,17 +9,15 @@ Textus.workflow "naming-check" do
       next unless entry.naming
 
       pattern = Textus::Protocol::V4::NAMING_PATTERNS.fetch(entry.naming)
-      root = ctx.layout.root
-      resolved = File.join(root, Textus::Protocol::Key::Path.normalize_relative_path(entry.path))
-      next unless File.directory?(resolved)
 
-      Dir.children(resolved).each do |filename|
+      ctx.manifest.resolver.enumerate(prefix: entry.key).each do |row|
+        filename = File.basename(row[:path])
         next if pattern.match?(filename)
 
         issues << {
           "code" => "loop.naming",
           "level" => "warning",
-          "subject" => "#{entry.key}.#{filename}",
+          "subject" => row[:key],
           "message" => "#{filename} does not match the required naming pattern for #{entry.key} (#{entry.naming})",
           "fix" => "rename to match #{pattern.inspect}",
         }
