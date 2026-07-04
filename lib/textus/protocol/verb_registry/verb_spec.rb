@@ -6,6 +6,8 @@ module Textus
         Array => "array", :boolean => "boolean"
       }.freeze
 
+      SYSTEM_VERBS = %i[boot audit blame pulse drain workflow_spec].to_set.freeze
+
       VerbSpec = Data.define(:verb, :summary, :args, :surfaces, :category) do
         def initialize(verb:, summary:, args:, surfaces:, category:, lane: nil)
           @lane = lane
@@ -13,6 +15,7 @@ module Textus
         end
 
         def lane = @lane
+        def system? = SYSTEM_VERBS.include?(verb)
         def mcp? = surfaces.include?(:mcp)
         def cli? = surfaces.include?(:cli)
         def cli_path = verb.to_s.tr("_", " ")

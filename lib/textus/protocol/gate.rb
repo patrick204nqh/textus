@@ -7,15 +7,6 @@ module Textus
         maintenance: Handlers::System,
       }.freeze
 
-      VERB_HANDLERS = {
-        boot: Handlers::System,
-        audit: Handlers::System,
-        blame: Handlers::System,
-        pulse: Handlers::System,
-        drain: Handlers::System,
-        workflow_spec: Handlers::System,
-      }.freeze
-
       def initialize(manifest:, resolver:, container:, store_engine:, async: nil)
         @manifest = manifest
         @resolver = resolver
@@ -42,7 +33,9 @@ module Textus
       private
 
       def handler_group(spec)
-        VERB_HANDLERS[spec.verb] || HANDLER_GROUPS[spec.category] || Handlers::System
+        return Handlers::System if spec.system?
+
+        HANDLER_GROUPS[spec.category] || Handlers::System
       end
 
       def authorize!(role, _verb, key, spec)
