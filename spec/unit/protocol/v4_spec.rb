@@ -2,9 +2,9 @@ require "spec_helper"
 
 RSpec.describe Textus::Protocol::V4 do
   describe "LANES" do
-    it "declares exactly the 5 fixed lanes" do
+    it "declares exactly the 4 fixed lanes" do
       expect(described_class::LANES.keys).to contain_exactly(
-        "knowledge", "scratchpad", "proposals", "artifacts", "raw"
+        "knowledge", "scratchpad", "artifacts", "raw"
       )
     end
 

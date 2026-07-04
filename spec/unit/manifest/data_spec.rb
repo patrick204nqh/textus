@@ -17,7 +17,7 @@ RSpec.describe Textus::Protocol::Manifest::Data do
       expect(data.entries.find { |e| e.key == "knowledge.foo" }.lane).to eq("knowledge")
     end
 
-    it "rejects a data: key that isn't one of the 5 fixed lane names" do
+    it "rejects a data: key that isn't a known lane name" do
       expect do
         described_class.parse(
           { "version" => "textus/4", "data" => { "bogus" => [] } },

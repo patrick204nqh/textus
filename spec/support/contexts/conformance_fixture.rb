@@ -15,7 +15,6 @@ RSpec.shared_context "textus/4 conformance fixture" do
     FileUtils.mkdir_p(File.join(root, "data/scratchpad/notes"))
     FileUtils.mkdir_p(File.join(root, "data/scratchpad/sessions"))
     FileUtils.mkdir_p(File.join(root, "data/scratchpad/scripts"))
-    FileUtils.mkdir_p(File.join(root, "data/proposals/notes"))
     FileUtils.mkdir_p(File.join(root, "data/raw"))
     FileUtils.mkdir_p(File.join(root, "data/artifacts"))
 
@@ -41,8 +40,6 @@ RSpec.shared_context "textus/4 conformance fixture" do
             tracked: false
           - key: scratchpad.scripts
             tracked: false
-        proposals:
-          - key: proposals.notes
         raw:
           - key: raw
             format: yaml
