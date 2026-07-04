@@ -106,23 +106,98 @@ git commit -m "refactor: clean up scratchpad — replace notes/scripts with prop
 
 ---
 
-### Task 4: Update orientation template (remove proposals lane references)
+### Task 4: Move propose/accept/reject handlers from knowledge lane to scratchpad lane
+
+**Files:**
+- Move (create+delete): propose/accept/reject handlers from `lib/textus/lanes/knowledge/handlers.rb` to `lib/textus/lanes/scratchpad/handlers.rb`
+- Move: verb registrations from `lib/textus/lanes/knowledge/verbs.rb` to `lib/textus/lanes/scratchpad/verbs.rb`
+- Modify: `lib/textus/lanes/knowledge/handlers.rb` — remove propose/accept/reject (moved out)
+- Modify: `lib/textus/lanes/knowledge/verbs.rb` — remove propose/accept/reject registrations (moved out)
+- Modify: `lib/textus/lanes/scratchpad/handlers.rb` — add propose/accept/reject handlers that target `scratchpad.proposals.*`
+- Modify: `lib/textus/lanes/scratchpad/verbs.rb` — add propose/accept/reject verb registrations with `lane: :scratchpad`
+
+- [ ] **Step 1: Move propose/accept/reject verb registrations from knowledge/verbs.rb to scratchpad/verbs.rb**
+
+```ruby
+# In lib/textus/lanes/scratchpad/verbs.rb, add:
+Textus::Protocol::VerbRegistry.register(
+  Textus::Protocol::VerbRegistry::VerbSpec.new(
+    verb: :propose, summary: "Write a proposal to scratchpad.proposals for human review.",
+    args: [...], surfaces: %i[cli mcp], category: :write,
+    lane: :scratchpad
+  ),
+)
+Textus::Protocol::VerbRegistry.register(
+  Textus::Protocol::VerbRegistry::VerbSpec.new(
+    verb: :accept, summary: "Promote a scratchpad.proposals entry to its target knowledge key.",
+    args: [...], surfaces: %i[cli mcp], category: :write,
+    lane: :scratchpad
+  ),
+)
+Textus::Protocol::VerbRegistry.register(
+  Textus::Protocol::VerbRegistry::VerbSpec.new(
+    verb: :reject, summary: "Discard a scratchpad.proposals entry.",
+    args: [...], surfaces: %i[cli mcp], category: :write,
+    lane: :scratchpad
+  ),
+)
+
+# In lib/textus/lanes/knowledge/verbs.rb, remove the propose/accept/reject registrations.
+```
+
+- [ ] **Step 2: Move propose/accept/reject handlers from knowledge/handlers.rb to scratchpad/handlers.rb**
+
+Copy the `propose`, `accept`, and `reject` methods from `Textus::Lanes::Knowledge::Handlers` into `Textus::Lanes::Scratchpad::Handlers`. Update each to target `scratchpad.proposals.*` instead of the old proposals queue lane:
+
+```ruby
+# In scratchpad/handlers.rb, the propose handler resolves scratchpad.proposals as parent:
+PARENT_KEY = "scratchpad.proposals"
+
+def propose(key:, ctx:, call:)
+  mentry = ctx.manifest.data.entries.find { |e| e.key == PARENT_KEY }
+  target = ctx.meta.dig("proposal", "target_key")
+  raise UsageError.new("proposal must have proposal.target_key in _meta") unless target
+  ctx.write(key, mentry:, payload: ctx.payload(...), call:)
+end
+
+def accept(key:, ctx:, call:)
+  # Read from scratchpad.proposals.<key>, promote to target knowledge entry
+  env = ctx.read("scratchpad.proposals.#{key}")
+  target_key = env.meta.dig("proposal", "target_key")
+  raise UsageError.new("target_key not found") unless target_key
+  ctx.write(target_key, payload: ..., call:)
+  ctx.delete("scratchpad.proposals.#{key}", call:)
+end
+
+def reject(key:, ctx:, call:)
+  ctx.delete("scratchpad.proposals.#{key}", call:)
+end
+```
+
+- [ ] **Step 3: Remove propose/accept/reject from knowledge handlers**
+
+In `lib/textus/lanes/knowledge/handlers.rb`, delete the `propose`, `accept`, and `reject` method definitions (they've moved to scratchpad).
+
+- [ ] **Step 4: Run tests to verify**
+
+Run: `bundle exec rspec spec/`
+Expected: 0 failures
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add lib/textus/lanes/knowledge/ lib/textus/lanes/scratchpad/
+git commit -m "refactor: move propose/accept/reject handlers from knowledge to scratchpad lane"
+```
+
+---
+
+### Task 5: Update orientation template (remove proposals lane, add procedures + feedback)
 
 **Files:**
 - Modify: `.textus/templates/docs/meta/orientation.erb`
 
-- [ ] **Step 1: Update write authority section — remove proposals lane, add proposals sub-section**
-
-```erb
-# Change line 11 from:
-<% Array(boot["lanes"]).each do |z| -%>    - **<%= z["name"] %>** (<%= Array(z["writers"]).join(" ") %>)<%= z["purpose"] ? " — #{z["purpose"]}" : "" %>
-<% end -%>
-
-# To (keep same — the lanes array no longer includes proposals since we removed the lane):
-# (The lane is auto-generated from manifest, so removing the manifest entry handles this)
-```
-
-- [ ] **Step 2: Remove propose recipe from boot catalog section**
+- [ ] **Step 1: Remove propose recipe from boot catalog section**
 
 ```erb
 # Delete these lines (the propose recipe block):
@@ -132,16 +207,35 @@ git commit -m "refactor: clean up scratchpad — replace notes/scripts with prop
 <% end -%><% end -%>
 ```
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 2: Add procedures section alongside runbooks**
+
+```erb
+## Procedures
+<% runbooks.select { |rb| rb["schema"] == "execution/procedure" }.each do |rb| -%>
+- **<%= rb["name"] %>** — <%= rb["description"] %>
+<% end -%>
+```
+
+- [ ] **Step 3: Add reference to feedback criteria in loop section**
+
+```erb
+## Feedback Criteria
+
+The feedback node (`knowledge.loop.feedback.*`) defines when the agent should
+generate feedback or propose upstream changes. Review criteria before proposing:
+- `textus list --lane=knowledge --prefix=knowledge.loop.feedback`
+```
+
+- [ ] **Step 4: Commit**
 
 ```bash
 git add .textus/templates/docs/meta/orientation.erb
-git commit -m "refactor: update orientation template — remove propose recipe"
+git commit -m "refactor: update orientation — remove propose recipe, add procedures, feedback criteria"
 ```
 
 ---
 
-### Task 5: Delete trigger feedback entry, move solid-audit to judgment.engineering
+### Task 6: Delete trigger feedback entry, move solid-audit to judgment.engineering
 
 **Files:**
 - Delete: `.textus/data/knowledge/loop/feedback/0002-session-lifecycle.md`
@@ -165,7 +259,7 @@ git commit -m "refactor: feedback node becomes criteria — move solid-audit to 
 
 ---
 
-### Task 6: Write feedback criteria entries
+### Task 7: Write feedback criteria entries
 
 **Files:**
 - Create: `.textus/data/knowledge/loop/feedback/0001-protocol-gap.md`
@@ -240,7 +334,7 @@ git commit -m "feat: add feedback criteria entries — protocol-gap, repetitive-
 
 ---
 
-### Task 7: Create execution schema files
+### Task 8: Create execution schema files
 
 **Files:**
 - Create: `.textus/schemas/execution/runbook.yaml`
@@ -362,7 +456,7 @@ git commit -m "feat: add execution schemas — runbook, checklist, procedure"
 
 ---
 
-### Task 8: Move existing runbooks to runbook/ subdirectory
+### Task 9: Move existing runbooks to runbook/ subdirectory
 
 **Files:**
 - Move: `.textus/data/knowledge/loop/execution/0001-release.md` → `.textus/data/knowledge/loop/execution/runbook/0001-release.md`
@@ -389,7 +483,7 @@ git commit -m "refactor: move execution entries to runbook/ subdirectory"
 
 ---
 
-### Task 9: Create procedure entries (doctor, session, deploy)
+### Task 10: Create procedure entries (doctor, session, deploy)
 
 **Files:**
 - Create: `.textus/data/knowledge/loop/execution/procedure/0001-doctor.md`
@@ -518,7 +612,7 @@ git commit -m "feat: add procedure entries — doctor, session, deploy"
 
 ---
 
-### Task 10: Update boot.rb read logic for nested execution structure
+### Task 11: Update boot.rb read logic for nested execution structure
 
 **Files:**
 - Modify: `.textus/workflows/config/boot.rb`
@@ -541,7 +635,7 @@ No code change required.
 
 ---
 
-### Task 11: Update loop_shape.rb to validate execution sub-families
+### Task 12: Update loop_shape.rb to validate execution sub-families
 
 **Files:**
 - Modify: `.textus/workflows/config/loop_shape.rb`
@@ -564,7 +658,7 @@ git commit -m "feat: add shape validation for execution sub-families"
 
 ---
 
-### Task 12: Final drain and verification
+### Task 13: Final drain and verification
 
 **Files:**
 - Regenerate: `CLAUDE.md`, `AGENTS.md` (via `textus drain`)
