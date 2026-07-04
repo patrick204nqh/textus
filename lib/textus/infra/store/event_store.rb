@@ -67,6 +67,7 @@ module Textus
             .where(Sequel.|({ scheduled_at: nil }, Sequel.lit("scheduled_at <= datetime('now')")))
             .order(:created_at, :id)
             .limit(1)
+            .for_update
             .first
         end
 

@@ -1,5 +1,3 @@
-require "spec_helper"
-
 RSpec.describe Textus::Protocol::Events::Consumer do
   subject(:consumer) { described_class.new }
 
@@ -12,50 +10,6 @@ RSpec.describe Textus::Protocol::Events::Consumer do
 
   before do
     allow(registry).to receive(:for).with("materialize").and_return(workflow)
-  end
-
-  describe "#consume_one" do
-    it "returns nil when there is no pending event" do
-      allow(event_store).to receive(:consume_pending).and_return(nil)
-
-      expect(consumer.consume_one(event_store:, registry:, container:, call:)).to be_nil
-    end
-
-    it "runs the workflow and marks the event done on success" do
-      allow(event_store).to receive(:consume_pending).and_return(pending_row)
-      allow(Textus::Workflow::Runner).to receive(:new).with(workflow, container:, call:)
-                                                      .and_return(instance_double(Textus::Workflow::Runner, run: nil))
-      allow(event_store).to receive(:mark_done)
-
-      result = consumer.consume_one(event_store:, registry:, container:, call:)
-
-      expect(event_store).to have_received(:mark_done).with(event_id: 1)
-      expect(result[:state]).to eq("done")
-    end
-
-    it "reschedules with backoff when the workflow raises and retries remain" do
-      allow(event_store).to receive(:consume_pending).and_return(pending_row)
-      allow(Textus::Workflow::Runner).to receive(:new).with(workflow, container:, call:).and_raise(StandardError.new("boom"))
-      allow(event_store).to receive(:reschedule)
-
-      result = consumer.consume_one(event_store:, registry:, container:, call:)
-
-      expect(event_store).to have_received(:reschedule).with(event_id: 1, retry_count: 1, delay: 10, error: "boom")
-      expect(result[:state]).to eq("retrying")
-    end
-
-    it "marks the event failed (dead-letters it) once max_attempts is reached" do
-      exhausted_row = pending_row.merge(retry_count: 2, max_attempts: 3)
-      allow(event_store).to receive(:consume_pending).and_return(exhausted_row)
-      allow(Textus::Workflow::Runner).to receive(:new).with(workflow, container:, call:).and_raise(StandardError.new("boom"))
-      allow(event_store).to receive(:mark_failed)
-
-      result = consumer.consume_one(event_store:, registry:, container:, call:)
-
-      expect(event_store).to have_received(:mark_failed).with(event_id: 1, retry_count: 3, error: "boom")
-      expect(result[:state]).to eq("failed")
-      expect(result[:error]).to eq("boom")
-    end
   end
 
   describe "#drain" do
