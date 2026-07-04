@@ -48,6 +48,7 @@ module Textus
       def method_missing(name, *args, **kwargs)
         if DOMAIN_VERBS.include?(name)
           raise ArgumentError.new("#{name} accepts keyword arguments only") unless args.empty?
+
           return bridge.dispatch(role.to_sym, name, kwargs, call: context.call)
         end
 
