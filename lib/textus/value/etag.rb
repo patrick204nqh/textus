@@ -16,8 +16,9 @@ module Textus
       # mid-session edit to any of these makes the cached orientation stale, so
       # the session must re-boot (ADR 0074). The composite is one digest over the
       # sorted per-file listing, so it is order-stable.
-      def self.for_contract(root)
-        listing = contract_files(root).map do |path|
+      def self.for_contract(layout)
+        root = layout.root
+        listing = contract_files(layout).map do |path|
           rel = path.delete_prefix(root).delete_prefix("/")
           "#{rel}:#{for_file(path)}"
         end.join("\n")
@@ -26,12 +27,11 @@ module Textus
 
       # manifest.yaml, then every hook and schema file. Dir.glob already returns
       # sorted paths (Ruby 3.0+), keeping the digest independent of FS order.
-      def self.contract_files(root)
-        geom = Textus::Protocol::Layout.new(root)
+      def self.contract_files(layout)
         [
-          geom.manifest_path,
-          *Dir.glob(File.join(geom.hooks_dir, "**", "*.rb")),
-          *Dir.glob(geom.schemas_glob).select { |f| File.file?(f) },
+          layout.manifest_path,
+          *Dir.glob(File.join(layout.hooks_dir, "**", "*.rb")),
+          *Dir.glob(layout.schemas_glob).select { |f| File.file?(f) },
         ]
       end
     end

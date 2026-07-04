@@ -158,7 +158,7 @@ module Textus
             "cursor" => ctx.audit.latest_seq,
             "changed" => changed,
             "pending_review" => pending.is_a?(Array) ? pending.map { |r| r["key"] } : [],
-            "contract_etag" => Textus::Value::Etag.for_contract(ctx.manifest.data.root),
+            "contract_etag" => Textus::Value::Etag.for_contract(ctx.layout),
             "index_etag" => pulse_index_etag(ctx),
             "loop_state" => runner.current_position(call.role),
           }

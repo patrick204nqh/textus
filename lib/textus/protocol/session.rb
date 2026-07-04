@@ -15,7 +15,7 @@ module Textus
           correlation_id: correlation_id || SecureRandom.uuid,
           dry_run: dry_run,
           cursor: container.store.event_store.latest_seq,
-          contract_etag: Value::Etag.for_contract(root),
+          contract_etag: Value::Etag.for_contract(bridge.layout),
           propose_lane: container.manifest.policy.propose_lane_for(role.to_s),
         )
         new(bridge:, context:)
@@ -71,7 +71,7 @@ module Textus
           context: context.with(
             role: new_role.to_s,
             cursor: container.store.event_store.latest_seq,
-            contract_etag: Value::Etag.for_contract(root),
+            contract_etag: Value::Etag.for_contract(container.layout),
             propose_lane: manifest.policy.propose_lane_for(new_role.to_s),
           ),
         )

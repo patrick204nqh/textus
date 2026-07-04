@@ -25,7 +25,7 @@ require "textus"
 # calls (without quotes). These were previously resolvable through autoloading but
 # are no longer top-level constants after the layer-architecture refactoring.
 Manifest  = Textus::Protocol::Manifest unless defined?(Manifest)
-Envelope  = Textus::Value::Envelope    unless defined?(Envelope)
+Envelope  = Textus::Protocol::Envelope unless defined?(Envelope)
 Call      = Textus::Value::Call        unless defined?(Call)
 Entry     = Textus::Protocol::Manifest::Entry unless defined?(Entry)
 Mentry    = Textus::Protocol::Manifest::Entry::Base unless defined?(Mentry)

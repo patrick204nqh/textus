@@ -107,7 +107,7 @@ module Textus
           raise_handler_error("internal: #{e.message}", -32_603)
         end
 
-        def contract_etag_now = Textus::Value::Etag.for_contract(@store.root)
+        def contract_etag_now = Textus::Value::Etag.for_contract(@store.layout)
 
         def short_etag(etag) = etag.to_s.delete_prefix("sha256:")[0, 8]
 

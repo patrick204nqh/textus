@@ -84,7 +84,7 @@ module Textus
 
         module BuildEnvelope
           def self.call(ctx, _deps)
-            envelope = Textus::Value::Envelope.build(
+            envelope = Textus::Protocol::Envelope.build(
               key: ctx.key, mentry: ctx.mentry, path: ctx.path,
               meta: ctx.eff_meta, body: ctx.eff_body,
               etag: Textus::Value::Etag.for_bytes(ctx.bytes),

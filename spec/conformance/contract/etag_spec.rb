@@ -39,11 +39,11 @@ RSpec.describe "Textus::Value::Etag.for_contract" do
 
   after { FileUtils.remove_entry(tmp) }
 
-  def etag = Textus::Value::Etag.for_contract(root)
+  def etag = Textus::Value::Etag.for_contract(Textus::Protocol::Layout.new(root))
 
   it "produces a stable sha256-prefixed digest" do
     expect(etag).to start_with("sha256:")
-    expect(etag).to eq(Textus::Value::Etag.for_contract(root))
+    expect(etag).to eq(Textus::Value::Etag.for_contract(Textus::Protocol::Layout.new(root)))
   end
 
   it "changes when the manifest changes" do
