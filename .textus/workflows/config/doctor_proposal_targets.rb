@@ -6,20 +6,16 @@ Textus.workflow "doctor-proposal-targets" do
   match "artifacts.doctor.proposal-targets"
 
   step :scan do |_, ctx|
-    manifest = ctx.container.manifest
+    manifest = ctx.manifest
     queue = manifest.policy.queue_lane
     issues = []
 
     unless queue.nil?
-      proposals = ctx.container.pipeline.dispatch(
-        Textus::Dispatch::Binder.command(Textus::VerbRegistry.for(:list), lane: queue),
-        call: Textus::Value::Call.build(role: Textus::Value::Role::DEFAULT),
-      )
-      rows = Textus::Value::Result.extract(proposals)
+      rows = ctx.list(lane: queue)
 
       rows.each do |row|
         key = row["key"]
-        envelope = ctx.container.reader.read(key)
+        envelope = ctx.read(key)
 
         target = envelope&.meta&.dig("proposal", "target_key")
         next if target.nil?

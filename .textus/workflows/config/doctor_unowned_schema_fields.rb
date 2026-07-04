@@ -6,7 +6,7 @@ Textus.workflow "doctor-unowned-schema-fields" do
   match "artifacts.doctor.unowned-schema-fields"
 
   step :scan do |_, ctx|
-    dir = ctx.container.layout.schemas_dir
+    dir = ctx.layout.schemas_dir
     issues = []
 
     if File.directory?(dir)

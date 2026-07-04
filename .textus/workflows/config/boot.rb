@@ -3,17 +3,16 @@ Textus.workflow "boot" do
   match "artifacts.boot"
 
   step :build do |_, ctx|
-    manifest = ctx.container.manifest
-    reader = ctx.container.reader
+    manifest = ctx.manifest
 
     read_family = lambda do |prefix|
       manifest.resolver.enumerate(prefix: prefix, include_keyless: true)
               .reject { |row| row[:key] == prefix }
               .sort_by { |row| row[:key] }
-              .filter_map { |row| reader.read(row[:key]) }
+              .filter_map { |row| ctx.read(row[:key]) }
     end
 
-    fetch = ->(key) { begin; reader.read(key); rescue StandardError; nil; end }
+    fetch = ->(key) { ctx.read(key) }
 
     # Project context (was artifacts.config.orientation)
     identity_env = fetch.call("knowledge.intent.0003-identity")

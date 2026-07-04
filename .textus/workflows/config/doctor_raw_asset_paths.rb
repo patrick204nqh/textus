@@ -6,11 +6,11 @@ Textus.workflow "doctor-raw-asset-paths" do
   match "artifacts.doctor.raw-asset-paths"
 
   step :scan do |_, ctx|
-    raw_lane = ctx.container.manifest.policy.lanes_of_kind(:raw).first
+    raw_lane = ctx.manifest.policy.lanes_of_kind(:raw).first
     issues = []
 
     unless raw_lane.nil?
-      ctx.container.manifest.resolver.enumerate.each do |row|
+      ctx.manifest.resolver.enumerate.each do |row|
         next unless row[:key].start_with?("raw.")
         next unless row[:path] && File.exist?(row[:path])
 
@@ -24,7 +24,7 @@ Textus.workflow "doctor-raw-asset-paths" do
         asset = raw_content["asset"]
         next unless asset.is_a?(String) && !asset.empty?
 
-        asset_path = File.join(ctx.container.layout.root, "assets", asset)
+        asset_path = File.join(ctx.layout.root, "assets", asset)
         next if File.exist?(asset_path)
 
         issues << {

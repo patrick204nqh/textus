@@ -6,13 +6,12 @@ Textus.workflow "doctor-schema-violations" do
   match "artifacts.doctor.schema-violations"
 
   step :scan do |_, ctx|
-    manifest = ctx.container.manifest
-    schemas = ctx.container.schemas
-    reader = ctx.container.reader
+    manifest = ctx.manifest
+    schemas = ctx.schemas
 
     violations = manifest.resolver.enumerate(include_keyless: true).filter_map do |row|
       key = row[:key]
-      envelope = reader.read(key)
+      envelope = ctx.read(key)
       next unless envelope
 
       schema_ref = envelope.schema_ref

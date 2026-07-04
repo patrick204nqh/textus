@@ -4,8 +4,8 @@ Textus.workflow "templates" do
   match "artifacts.doctor.templates"
 
   step :check do |_, ctx|
-    manifest = ctx.container.manifest
-    layout = ctx.container.layout
+    manifest = ctx.manifest
+    layout = ctx.layout
     issues = []
     manifest.data.entries.each do |entry|
       entry.publish_to.each do |target|

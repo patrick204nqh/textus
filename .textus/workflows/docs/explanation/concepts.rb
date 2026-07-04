@@ -11,8 +11,8 @@ Textus.workflow "explanation-concepts" do
   match "artifacts.explanation.concepts"
 
   step :build do |_, ctx|
-    data   = ctx.container.manifest.data
-    policy = ctx.container.manifest.policy
+    data   = ctx.manifest.data
+    policy = ctx.manifest.policy
     kmap   = Textus::Manifest::Schema::Vocabulary::LANES
 
     lanes = data.declared_lane_kinds.map do |name, kind|

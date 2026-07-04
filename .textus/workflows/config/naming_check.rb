@@ -2,14 +2,14 @@ Textus.workflow "naming-check" do
   match "artifacts.doctor.naming-check"
 
   step :scan do |_, ctx|
-    manifest = ctx.container.manifest
+    manifest = ctx.manifest
     issues = []
 
     manifest.data.entries.each do |entry|
       next unless entry.naming
 
       pattern = Textus::Protocol::V4::NAMING_PATTERNS.fetch(entry.naming)
-      root = ctx.container.root
+      root = ctx.layout.root
       resolved = File.join(root, Textus::Protocol::Key::Path.normalize_relative_path(entry.path))
       next unless File.directory?(resolved)
 

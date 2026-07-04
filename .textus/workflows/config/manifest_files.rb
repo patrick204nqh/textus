@@ -4,8 +4,8 @@ Textus.workflow "manifest-files" do
   match "artifacts.doctor.manifest-files"
 
   step :check do |_, ctx|
-    manifest = ctx.container.manifest
-    file_system = ctx.container.file_system
+    manifest = ctx.manifest
+    file_system = ctx.file_system
     issues = []
     manifest.data.entries.each do |entry|
       next if entry.nested? || entry.derived? || entry.external?

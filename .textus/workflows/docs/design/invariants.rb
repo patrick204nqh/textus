@@ -2,14 +2,13 @@ Textus.workflow "invariants-assembler" do
   match "artifacts.design.invariants"
 
   step :assemble do |_, ctx|
-    reader = ctx.container.reader
-    resolver = ctx.container.manifest.resolver
+    resolver = ctx.manifest.resolver
 
     read_atoms = lambda do |prefix|
       resolver.enumerate(prefix: prefix, include_keyless: true)
               .reject { |row| row[:key] == prefix }
               .sort_by { |row| row[:key] }
-              .filter_map { |row| reader.read(row[:key]) }
+              .filter_map { |row| ctx.read(row[:key]) }
               .uniq(&:key)
               .map { |env| { "key" => env.key, "slug" => env.key.split(".").last, "body" => env.body.to_s } }
     end

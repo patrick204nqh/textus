@@ -7,7 +7,7 @@ Textus.workflow "doctor-protocol-version" do
   match "artifacts.doctor.protocol-version"
 
   step :scan do |_, ctx|
-    path = ctx.container.layout.manifest_path
+    path = ctx.layout.manifest_path
     issues = []
 
     if File.exist?(path)

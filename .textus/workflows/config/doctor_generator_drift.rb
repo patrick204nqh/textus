@@ -6,12 +6,12 @@ Textus.workflow "doctor-generator-drift" do
 
   step :scan do |_, ctx|
     detector = Textus::Store::Freshness::DriftDetector.new(
-      manifest: ctx.container.manifest,
+      manifest: ctx.manifest,
       file_stat: Textus::Port::Storage::FileStat.new,
       clock: Textus::Port::Clock.new,
     )
 
-    issues = ctx.container.manifest.data.entries.flat_map { |entry| detector.drift_rows(entry) }.map do |row|
+    issues = ctx.manifest.data.entries.flat_map { |entry| detector.drift_rows(entry) }.map do |row|
       {
         "code" => "generator_drift",
         "level" => "warning",

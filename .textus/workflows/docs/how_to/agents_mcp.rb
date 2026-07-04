@@ -2,8 +2,8 @@ Textus.workflow "how-to-agents-mcp" do
   match "artifacts.how-to.agents-mcp"
 
   step :build do |_, ctx|
-    data   = ctx.container.manifest.data
-    policy = ctx.container.manifest.policy
+    data   = ctx.manifest.data
+    policy = ctx.manifest.policy
 
     agent_lanes = lambda do
       data.declared_lane_kinds.filter_map do |name, kind|

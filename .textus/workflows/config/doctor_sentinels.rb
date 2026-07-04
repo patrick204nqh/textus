@@ -8,11 +8,11 @@ Textus.workflow "doctor-sentinels" do
   step :scan do |_, ctx|
     store = Textus::Port::SentinelStore.new
     file_stat = Textus::Port::Storage::FileStat.new
-    dir = Textus::Protocol::Layout.new(ctx.container.root).sentinels_root
+    dir = ctx.layout.sentinels_root
     issues = []
 
     if file_stat.directory?(dir)
-      repo_root = File.dirname(ctx.container.root)
+      repo_root = File.dirname(ctx.layout.root)
       pattern = File.join(dir, "**", "*#{Textus::Port::SentinelStore::SUFFIX}")
 
       file_stat.glob(pattern).each do |sentinel_path|

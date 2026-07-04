@@ -11,7 +11,7 @@ Textus.workflow "doctor-stale-reviewed-stamp" do
     current_minor = Textus::VERSION.sub(/\Av/, "").split(".").map(&:to_i)[1] || 0
     issues = []
 
-    ctx.container.manifest.resolver.enumerate.each do |row|
+    ctx.manifest.resolver.enumerate.each do |row|
       next unless row[:key].to_s.start_with?("knowledge.")
       next unless row[:path] && File.file?(row[:path])
 

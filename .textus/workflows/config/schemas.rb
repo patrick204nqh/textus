@@ -4,8 +4,8 @@ Textus.workflow "schemas" do
   match "artifacts.doctor.schemas"
 
   step :check do |_, ctx|
-    manifest = ctx.container.manifest
-    schemas = ctx.container.schemas
+    manifest = ctx.manifest
+    schemas = ctx.schemas
     issues = []
     manifest.data.entries.each do |entry|
       next unless entry.schema

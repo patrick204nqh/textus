@@ -4,7 +4,7 @@ Textus.workflow "doctor-schema-parse-error" do
   match "artifacts.doctor.schema-parse-error"
 
   step :scan do |_, ctx|
-    dir = ctx.container.layout.schemas_dir
+    dir = ctx.layout.schemas_dir
     issues = []
 
     if File.directory?(dir)

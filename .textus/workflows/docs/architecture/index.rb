@@ -2,8 +2,8 @@ Textus.workflow "architecture-index-generator" do
   match "artifacts.architecture.index"
 
   step :build do |_, ctx|
-    data   = ctx.container.manifest.data
-    policy = ctx.container.manifest.policy
+    data   = ctx.manifest.data
+    policy = ctx.manifest.policy
 
     lanes = data.declared_lane_kinds.map do |name, kind|
       writers = policy.writers_for(name)

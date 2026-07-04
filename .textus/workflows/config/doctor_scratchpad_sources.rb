@@ -8,7 +8,7 @@ Textus.workflow "doctor-scratchpad-sources" do
   step :scan do |_, ctx|
     issues = []
 
-    ctx.container.manifest.resolver.enumerate.each do |row|
+    ctx.manifest.resolver.enumerate.each do |row|
       next unless row[:key].start_with?("scratchpad.notes.")
       next unless row[:path] && File.exist?(row[:path])
 
@@ -37,7 +37,7 @@ Textus.workflow "doctor-scratchpad-sources" do
 
       sources.each do |raw_key|
         exists = begin
-          path = ctx.container.manifest.resolver.resolve(raw_key).path
+          path = ctx.manifest.resolver.resolve(raw_key).path
           File.exist?(path)
         rescue Textus::UnknownKey, Textus::Error
           false

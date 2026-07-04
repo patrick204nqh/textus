@@ -4,13 +4,13 @@ Textus.workflow "decisions-log" do
 
   step :build do |_, ctx|
     normalize = ->(s) { s.to_s.gsub(/\[([^\]]+)\]\([^)]+\)/, '\\1').gsub(/\s+/, " ").strip }
-    repo_root = File.dirname(ctx.container.root)
+    repo_root = File.dirname(ctx.layout.root)
 
     read_family = lambda do |prefix|
-      ctx.container.manifest.resolver.enumerate(prefix: prefix, include_keyless: true)
+      ctx.manifest.resolver.enumerate(prefix: prefix, include_keyless: true)
          .reject { |row| row[:key] == prefix }
          .sort_by { |row| row[:key] }
-         .filter_map { |row| ctx.container.reader.read(row[:key]) }
+         .filter_map { |row| ctx.read(row[:key]) }
     end
 
     heading_value = lambda do |text, heading|

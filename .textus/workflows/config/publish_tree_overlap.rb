@@ -6,7 +6,7 @@ Textus.workflow "publish-tree-overlap" do
   match "artifacts.doctor.publish-tree-overlap"
 
   step :check do |_, ctx|
-    entries = ctx.container.manifest.data.entries
+    entries = ctx.manifest.data.entries
     trees = entries.select { |entry| entry.nested? && entry.publish_tree }
     derived_targets = entries.flat_map { |entry| Array(entry.publish_to).map { |rel| [entry, rel] } }
 

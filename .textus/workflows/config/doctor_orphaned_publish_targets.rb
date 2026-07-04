@@ -5,11 +5,11 @@ Textus.workflow "doctor-orphaned-publish-targets" do
   match "artifacts.doctor.orphaned-publish-targets"
 
   step :scan do |_, ctx|
-    sdir = Textus::Protocol::Layout.new(ctx.container.root).sentinels_root
+    sdir = ctx.layout.sentinels_root
     issues = []
 
     if File.directory?(sdir)
-      repo_root = File.dirname(ctx.container.root)
+      repo_root = File.dirname(ctx.layout.root)
       store = Textus::Port::SentinelStore.new
       glob = File.join(sdir, "**", "*#{Textus::Port::SentinelStore::SUFFIX}")
 

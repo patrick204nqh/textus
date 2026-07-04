@@ -7,8 +7,8 @@ Textus.workflow "doctor-illegal-keys" do
 
   step :scan do |_, ctx|
     issues = []
-    root = ctx.container.root
-    manifest = ctx.container.manifest
+    root = ctx.layout.root
+    manifest = ctx.manifest
 
     walk_nested = lambda do |base, &block|
       Dir.each_child(base) do |name|
