@@ -20,11 +20,9 @@ data:
       naming: sequential
     - key: knowledge.reference
   scratchpad:
-    - key: scratchpad.notes
+    - key: scratchpad.proposals
       tracked: false
     - key: scratchpad.sessions
-      tracked: false
-    - key: scratchpad.scripts
       tracked: false
   raw:
     - key: raw
