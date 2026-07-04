@@ -14,20 +14,6 @@
     {
       "code": "manifest.missing_file",
       "severity": "info",
-      "subject": "scratchpad.proposals",
-      "message": "declared entry has no file on disk at /Users/patrick/Development/sandbox/textus/.textus/data/scratchpad/proposals.md",
-      "fix": "create the entry with 'textus put scratchpad.proposals --stdin --as=<role>'"
-    },
-    {
-      "code": "manifest.missing_file",
-      "severity": "info",
-      "subject": "scratchpad.sessions",
-      "message": "declared entry has no file on disk at /Users/patrick/Development/sandbox/textus/.textus/data/scratchpad/sessions.md",
-      "fix": "create the entry with 'textus put scratchpad.sessions --stdin --as=<role>'"
-    },
-    {
-      "code": "manifest.missing_file",
-      "severity": "info",
       "subject": "artifacts.render.conventions",
       "message": "declared entry has no file on disk at /Users/patrick/Development/sandbox/textus/.textus/data/artifacts/render/conventions.json",
       "fix": "create the entry with 'textus put artifacts.render.conventions --stdin --as=<role>'"
@@ -89,5 +75,5 @@
       "fix": "create the entry with 'textus put artifacts.system.index --stdin --as=<role>'"
     }
   ],
-  "count": 12
+  "count": 10
 }

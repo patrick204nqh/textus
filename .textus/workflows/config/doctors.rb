@@ -51,7 +51,7 @@ Textus.workflow "doctor" do
     issues = []
 
     manifest.data.entries.each do |entry|
-      next if entry.nested? || entry.derived? || entry.external?
+      next if entry.nested? || entry.derived? || entry.external? || entry.respond_to?(:tracked?) && !entry.tracked?
 
       path = Textus::Protocol::Key::Path.resolve(manifest.data, entry)
       unless file_system.exists?(path)
