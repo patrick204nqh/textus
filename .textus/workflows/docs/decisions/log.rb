@@ -1,6 +1,6 @@
 # rubocop:disable Metrics/BlockLength
 Textus.workflow "decisions-log" do
-  match "artifacts.decisions.log"
+  on "artifacts.decisions.log"
 
   step :build do |_, ctx|
     normalize = ->(s) { s.to_s.gsub(/\[([^\]]+)\]\([^)]+\)/, '\\1').gsub(/\s+/, " ").strip }

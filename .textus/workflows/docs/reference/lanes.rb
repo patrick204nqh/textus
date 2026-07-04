@@ -1,5 +1,5 @@
 Textus.workflow "reference-lanes" do
-  match "artifacts.reference.lanes"
+  on "artifacts.reference.lanes"
 
   step :build do |_, ctx|
     kmap  = Textus::Manifest::Schema::Vocabulary::LANES

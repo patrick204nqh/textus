@@ -140,18 +140,18 @@ A matching `Textus.workflow` block in `.textus/workflows/`:
 
 ```ruby
 Textus.workflow "agentskills" do
-  match "artifacts.feeds.skills"
+  on "artifacts.feeds.skills"
 
   step :fetch do |_, _ctx|
     # acquire data — return { "content" => { ... } }
     { "content" => { "skills" => [...], "count" => 1 } }
   end
 
-  publish
+  save to: "artifacts.feeds.skills"  # persists data; triggers the entry's publish targets
 end
 ```
 
-`drain` discovers all workflow files, matches each to the produced entries via `match`, runs the steps, and writes the result back to the entry's data path. `publish:` then copies or renders it to consumer paths.
+`drain` discovers all workflow files, triggers each by its `on` pattern, runs the steps, and executes `save`/`publish` targets. `save to:` writes results to a store key (cascading to the entry's publish targets); `publish to:` renders a template to a file directly. Multiple matching workflows run in `priority` order.
 
 **`sources:`** lists dotted-key prefixes or repo-relative paths whose mtimes `doctor`'s `generator_drift` check compares against `_meta.generated.at`. An empty list (`sources: []`) disables drift detection for that entry.
 

@@ -1,6 +1,6 @@
 # rubocop:disable Metrics/BlockLength
 Textus.workflow "changelog" do
-  match "artifacts.changelog"
+  on "artifacts.changelog"
 
   step :build do |_, _|
     # skip: merge commits, and housekeeping drain commits that would otherwise

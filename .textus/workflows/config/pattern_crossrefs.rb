@@ -3,9 +3,9 @@
 # Inspired by knowledge_pipeline_spec cross-reference check.
 
 Textus.workflow "pattern-crossrefs" do
-  match "knowledge.loop.judgment.engineering.**"
+  on "knowledge.loop.judgment.engineering.**"
 
-  validate :check_refs do |_data, ctx|
+  check "adr-refs" do |ctx|
     body = ctx.read(ctx.key)&.body.to_s
     if body.match?(/ADR-\d+/)
       []

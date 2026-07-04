@@ -1,5 +1,5 @@
 Textus.workflow "readme" do
-  match "artifacts.docs.readme"
+  on "artifacts.docs.readme"
 
   step :assemble do |_, ctx|
     pitch = ctx.read("knowledge.loop.intent.0004-pitch")&.body.to_s

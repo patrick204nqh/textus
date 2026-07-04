@@ -1,8 +1,22 @@
 {
   "_meta": {
-    "uid": "3702c1f8b4bac7a9"
+    "uid": "697a77c0b6336023"
   },
   "adrs": [
+    {
+      "number": "0136",
+      "title": "Priority-based multi-workflow routing replaces inline chaining and boot_refresh",
+      "date": null,
+      "status": "",
+      "slug": "0136-priority-based-multi-workflow-routing"
+    },
+    {
+      "number": "0135",
+      "title": "Workflow DSL simplification: `on`/`save`/`notify` replace `match`/bare-publish/validate",
+      "date": null,
+      "status": "",
+      "slug": "0135-workflow-dsl-simplification"
+    },
     {
       "number": "0134",
       "title": "architecture deepening phase 3",
@@ -12,7 +26,7 @@
     },
     {
       "number": "0133",
-      "title": "api and interface hygiene",
+      "title": "api interface hygiene",
       "date": "2026-06-23",
       "status": "Proposed",
       "slug": "0133-api-interface-hygiene"
@@ -27,8 +41,8 @@
     {
       "number": "0131",
       "title": "adopt pipeline handler factory registry",
-      "date": "2026-06-23",
-      "status": "Accepted",
+      "date": null,
+      "status": "",
       "slug": "0131-adopt-pipeline-handler-factory-registry"
     },
     {

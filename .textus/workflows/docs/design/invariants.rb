@@ -1,5 +1,5 @@
 Textus.workflow "invariants-assembler" do
-  match "artifacts.design.invariants"
+  on "artifacts.design.invariants"
 
   step :assemble do |_, ctx|
     resolver = ctx.manifest.resolver

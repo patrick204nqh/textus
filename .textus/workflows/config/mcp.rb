@@ -1,5 +1,5 @@
 Textus.workflow "mcp_config" do
-  match "artifacts.config.mcp"
+  on "artifacts.config.mcp"
 
   step :build do |_, _ctx|
     { "content" => {

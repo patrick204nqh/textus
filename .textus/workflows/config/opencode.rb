@@ -1,6 +1,6 @@
 # rubocop:disable Metrics/BlockLength
 Textus.workflow "opencode_config" do
-  match "artifacts.config.opencode"
+  on "artifacts.config.opencode"
 
   step :build do |_, _ctx|
     { "content" => {

@@ -8,7 +8,7 @@ LOOP_NODES = [
 ].freeze
 
 Textus.workflow "explanation-concepts" do
-  match "artifacts.explanation.concepts"
+  on "artifacts.explanation.concepts"
 
   step :build do |_, ctx|
     kmap  = Textus::Manifest::Schema::Vocabulary::LANES

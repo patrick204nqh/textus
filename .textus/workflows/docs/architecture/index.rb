@@ -1,5 +1,5 @@
 Textus.workflow "architecture-index-generator" do
-  match "artifacts.architecture.index"
+  on "artifacts.architecture.index"
 
   step :build do |_, ctx|
     { "content" => { "lanes" => build_lanes(ctx), "roles" => build_roles(ctx) } }

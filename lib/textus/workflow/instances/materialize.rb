@@ -10,9 +10,9 @@ module Textus
         wf.max_attempts 3
 wf.step :converge do |data, ctx|
   registry = ctx.container.workflow_registry || Textus::Workflow::Registry.new(ctx.workflows)
-  workflow = registry.match_for_key(ctx.key)
-  if workflow
-    Textus::Workflow::Runner.new(workflow, container: ctx.container, call: ctx.call).run(ctx.key)
+  workflows = registry.workflows_for_key(ctx.key)
+  if workflows.any?
+    workflows.each { |wf| Textus::Workflow::Runner.new(wf, container: ctx.container, call: ctx.call).run(ctx.key) }
   else
     entry = ctx.container.manifest.resolver.resolve(ctx.key).entry
     if entry.publish_tree || !Array(entry.publish_to).empty?

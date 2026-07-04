@@ -1,6 +1,6 @@
 # rubocop:disable Metrics/BlockLength
 Textus.workflow "boot" do
-  match "artifacts.boot"
+  on "artifacts.boot"
 
   step :build do |_, ctx|
     manifest = ctx.manifest

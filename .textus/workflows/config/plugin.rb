@@ -1,5 +1,5 @@
 Textus.workflow "claude_plugin" do
-  match "artifacts.config.plugin"
+  on "artifacts.config.plugin"
 
   step :build do |_, ctx|
     project_env = ctx.read("knowledge.loop.intent.0003-identity")

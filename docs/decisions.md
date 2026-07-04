@@ -15,6 +15,12 @@ Live status of every architecture decision, derived from each file's `**Status:*
 
 | # | Title | Date | Status |
 |---|---|---|---|
+| [0136](architecture/decisions/0136-priority-based-multi-workflow-routing.md) | Priority-based multi-workflow routing replaces inline chaining and boot_refresh |  |  |
+| [0135](architecture/decisions/0135-workflow-dsl-simplification.md) | Workflow DSL simplification: `on`/`save`/`notify` replace `match`/bare-publish/validate |  |  |
+| [0134](architecture/decisions/0134-architecture-deepening-phase-3.md) | architecture deepening phase 3 | 2026-07-01 | Proposed |
+| [0133](architecture/decisions/0133-api-interface-hygiene.md) | api interface hygiene | 2026-06-23 | Proposed |
+| [0132](architecture/decisions/0132-unify-store-dispatch-paths.md) | unify store dispatch paths | 2026-06-22 | Proposed |
+| [0131](architecture/decisions/0131-adopt-pipeline-handler-factory-registry.md) | adopt pipeline handler factory registry |  |  |
 | [0125](architecture/decisions/0125-bounded-use-case-objects.md) | bounded use case objects | 2026-07-01 | Proposed |
 | [0124](architecture/decisions/0124-workflow-parallel-steps.md) | workflow parallel steps | 2026-07-01 | Accepted |
 | [0123](architecture/decisions/0123-mcp-session-resilience.md) | mcp session resilience | 2026-07-01 | Accepted |
@@ -23,10 +29,6 @@ Live status of every architecture decision, derived from each file's `**Status:*
 | [0120](architecture/decisions/0120-atomic-canon-composed-artifacts.md) | atomic canon composed artifacts | 2026-06-30 | Proposed |
 | [0119](architecture/decisions/0119-architecture-deepening-phase-2.md) | architecture deepening phase 2 | 2026-06-22 | Proposed |
 | [0118](architecture/decisions/0118-sources-first-class-envelope-field.md) | sources first class envelope field | 2026-06-20 | Proposed |
-| [0134](architecture/decisions/0134-architecture-deepening-phase-3.md) | architecture deepening phase 3 | 2026-07-01 | Proposed |
-| [0133](architecture/decisions/0133-api-interface-hygiene.md) | api and interface hygiene | 2026-06-23 | Proposed |
-| [0132](architecture/decisions/0132-unify-store-dispatch-paths.md) | unify store dispatch paths | 2026-06-22 | Proposed |
-| [0131](architecture/decisions/0131-adopt-pipeline-handler-factory-registry.md) | adopt pipeline handler factory registry | 2026-06-23 | Accepted |
 | [0117](architecture/decisions/0117-textus-4-protocol-version-bump.md) | textus 4 protocol version bump |  |  |
 | [0116](architecture/decisions/0116-raw-lane-and-ingest-verb.md) | raw lane and ingest verb |  |  |
 | [0115](architecture/decisions/0115-role-trust-model.md) | role trust model |  |  |

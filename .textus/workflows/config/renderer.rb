@@ -1,5 +1,5 @@
 Textus.workflow "render" do
-  match "artifacts.render.**"
+  on "artifacts.render.**"
   step(:render) { |_, _| {} }
   publish to: "docs/reference/conventions.md", template: "docs/reference/conventions.erb"
   publish to: "docs/reference/testing.md", template: "docs/reference/testing.erb"

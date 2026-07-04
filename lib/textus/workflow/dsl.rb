@@ -2,15 +2,14 @@ module Textus
   module Workflow
     module DSL
       Step = Data.define(:name, :callable, :timeout)
-      ValidateStep = Data.define(:name, :callable)
       Parallel = Data.define(:steps)
       PublishTarget = Data.define(:to, :template, :tree, :inject_boot)
 
       class Definition
         include Textus::Workflow::Helpers
 
-        attr_reader :name, :steps, :match_pattern, :publish_block, :publish_targets,
-                    :validate_steps, :depends_on_patterns,
+        attr_reader :name, :steps, :on_patterns, :save_key, :notify_keys,
+                    :publish_block, :publish_targets,
                     :handled_events, :workflow_type
 
         def self.register(defn)
@@ -29,19 +28,18 @@ module Textus
         def initialize(name)
           @name                = name
           @steps               = []
-          @validate_steps      = []
-          @match_pattern       = nil
+          @on_patterns         = []
+          @save_key            = nil
+          @notify_keys         = []
           @publish_block       = nil
           @publish_targets     = []
           @priority            = 0
-          @depends_on_patterns = []
-          @ttl                 = nil
-          @on_expire           = nil
           @handled_events      = []
           @max_attempts        = 3
           @workflow_type       = name
         end
 
+        # ── Event handling (internal) ──
         def handles(*event_types)
           @handled_events.concat(event_types.map(&:to_s).freeze)
         end
@@ -56,10 +54,12 @@ module Textus
           @max_attempts = n.to_i
         end
 
-        def match(pattern)
-          @match_pattern = pattern
+        # ── Trigger ──
+        def on(*patterns)
+          @on_patterns = patterns
         end
 
+        # ── Steps ──
         def step(name, callable = nil, timeout: nil, &block)
           if callable.is_a?(Hash)
             raise ArgumentError.new(
@@ -78,37 +78,57 @@ module Textus
           @steps << Step.new(name: name, callable: resolved, timeout: timeout)
         end
 
-        def validate(name, &block)
-          @validate_steps << ValidateStep.new(name: name, callable: block)
-        end
+        def check(name, naming: nil, scope: nil, &block)
+          if naming
+            raise ArgumentError.new("check :#{name} requires a scope: for naming checks") unless scope
 
-        def shape(key_pattern, naming:)
-          @steps << Step.new(
-            name: :"shape_#{key_pattern.tr(".*", "_")}",
-            callable: lambda do |data, ctx|
-              entries = ctx.container.manifest.resolver.enumerate.select do |row|
-                Pattern.match?(key_pattern, row[:key].to_s)
-              end
+            @steps << Step.new(
+              name: :"check_#{name}",
+              callable: lambda do |data, ctx|
+                entries = ctx.container.manifest.resolver.enumerate.select do |row|
+                  Pattern.match?(scope, row[:key].to_s)
+                end
 
-              new_issues = check_naming(
-                entries,
-                pattern: naming,
-                code: "loop.naming",
-                fix: "rename to match #{naming.inspect}",
-              )
-              existing_issues = Array(data&.dig("content", "issues"))
-              issues = existing_issues + new_issues
+                new_issues = check_naming(
+                  entries,
+                  pattern: naming,
+                  code: "check.#{name}",
+                  fix: "rename to match #{naming.inspect}",
+                )
+                existing_issues = Array(data&.dig("content", "issues"))
+                issues = existing_issues + new_issues
 
-              {
-                "content" => {
-                  "ok" => issues.empty?,
-                  "issues" => issues,
-                  "count" => issues.size,
-                },
-              }
-            end,
-            timeout: nil,
-          )
+                {
+                  "content" => {
+                    "ok" => issues.empty?,
+                    "issues" => issues,
+                    "count" => issues.size,
+                  },
+                }
+              end,
+              timeout: nil,
+            )
+          elsif block
+            @steps << Step.new(
+              name: :"check_#{name}",
+              callable: lambda do |data, ctx|
+                issues = block.call(ctx) || []
+                existing_issues = Array(data&.dig("content", "issues"))
+                all = existing_issues + issues
+
+                {
+                  "content" => {
+                    "ok" => all.empty?,
+                    "issues" => all,
+                    "count" => all.size,
+                  },
+                }
+              end,
+              timeout: nil,
+            )
+          else
+            raise ArgumentError.new("check :#{name} requires naming: or a block")
+          end
         end
 
         def parallel(&)
@@ -119,26 +139,33 @@ module Textus
           @steps = saved << Parallel.new(steps: parallel_steps)
         end
 
+        # ── Output ──
         def publish(to: nil, template: nil, tree: nil, inject_boot: nil, &block)
           if block
             @publish_block = block
           elsif to || tree
             @publish_targets << PublishTarget.new(to: to, template: template, tree: tree, inject_boot: inject_boot)
           else
-            @publish_block = :default
+            raise ArgumentError.new("publish requires to: (file), tree:, or a block; use save to: for store keys")
           end
         end
 
+        def save(to:)
+          @save_key = to
+        end
+
+        def notify(key)
+          @notify_keys << key
+        end
+
+        # ── Ordering ──
         def priority(n = nil)
           return @priority if n.nil?
 
           @priority = n.to_i
         end
 
-        def depends_on(pattern)
-          @depends_on_patterns << pattern
-        end
-
+        # ── Lifecycle ──
         def ttl(duration_string)
           @ttl = Textus::Value::Duration.seconds(duration_string)
         end
@@ -151,18 +178,15 @@ module Textus
           @on_expire = sym
         end
 
+        # ── Matching (internal) ──
         def match?(key)
-          return false unless @match_pattern && !@match_pattern.end_with?("**")
+          return false unless @on_patterns&.any?
 
-          Pattern.match?(@match_pattern, key)
+          @on_patterns.any? { |p| Pattern.match?(p, key) }
         end
 
         def multi_match?
-          @match_pattern&.end_with?("**")
-        end
-
-        def validation_workflow?
-          @validate_steps.any?
+          @on_patterns&.any? { |p| p.end_with?("**") }
         end
       end
     end

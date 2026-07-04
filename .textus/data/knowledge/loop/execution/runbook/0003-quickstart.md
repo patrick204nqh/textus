@@ -141,12 +141,12 @@ Templates live in `.textus/templates/` as ERB files (`.erb`). The template recei
 
 ## Workflows
 
-textus extends through **workflows** — a `Textus.workflow` block placed in `.textus/workflows/**/*.rb`. Each workflow matches a produced entry by key glob, then runs one or more named steps to acquire its data:
+textus extends through **workflows** — a `Textus.workflow` block placed in `.textus/workflows/**/*.rb`. Each workflow declares a trigger pattern with `on`, runs ordered steps, and optionally saves results to a store key or publishes to a file:
 
 ```ruby
 # .textus/workflows/docs/my_report.rb
 Textus.workflow "my_report" do
-  match "artifacts.my-report"
+  on "artifacts.my-report"
 
   step :build do |_, ctx|
     # read from knowledge, fetch external data, compute anything
@@ -155,10 +155,12 @@ Textus.workflow "my_report" do
               .map { |r| { "key" => r[:key], "title" => r[:entry].schema } }
     { "content" => { "entries" => rows } }
   end
+
+  save to: "artifacts.my-report"    # persist data and trigger publish targets
 end
 ```
 
-`drain` discovers all workflow files, matches them against produced entries, and runs the steps. The result is written back to the entry's data path; `publish:` then copies it to its consumer paths.
+`drain` discovers all workflow files, triggers each by its `on` pattern, runs the steps, and executes `save`/`publish` targets. `save to:` writes results back to a store key (which cascades to the entry's file publish targets); `publish to:` renders a template to a file directly.
 
 ## Intake and ingest
 

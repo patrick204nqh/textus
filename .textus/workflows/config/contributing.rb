@@ -1,5 +1,5 @@
 Textus.workflow "contributing" do
-  match "artifacts.contributing"
+  on "artifacts.contributing"
 
   step :build do |_, ctx|
     project_env = ctx.read("knowledge.loop.intent.0003-identity")

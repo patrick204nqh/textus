@@ -22,22 +22,13 @@ module Textus
         @container  = container
         @call       = call
         @publisher  = Publisher.new(container: container, call: call)
-        @validator  = Validator.new(definition, container: container)
       end
 
       def run(key)
         ctx  = build_context(key)
         data = execute_steps(ctx)
-        publish(key, data, ctx) if data
+        @publisher.publish(key, data, ctx, @definition) if data
         data
-      end
-
-      def publish(key, data, ctx)
-        @publisher.publish(key, data, ctx, @definition)
-      end
-
-      def validate_all
-        @validator.validate_all
       end
 
       private
@@ -63,14 +54,9 @@ module Textus
       def execute_one(step, data, ctx)
         case step
         when DSL::Step then execute_single(step, data, ctx)
-        when DSL::ValidateStep then execute_validate(step, data, ctx)
         when DSL::Parallel then execute_parallel(step, ctx)
         else raise ArgumentError.new("unknown step type: #{step.class}")
         end
-      end
-
-      def execute_validate(step, data, ctx)
-        step.callable.call(data, ctx)
       end
 
       def execute_single(step, data, ctx)

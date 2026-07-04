@@ -10,9 +10,9 @@ RSpec.describe Textus::Workflow::Loader do
     FileUtils.mkdir_p(File.join(root, "workflows"))
     File.write(File.join(root, "workflows", "test.rb"), <<~RUBY)
       Textus.workflow "test_wf" do
-        match "knowledge.notes.*"
+        on "knowledge.notes.*"
         step :fetch do |_data, _ctx|
-          { content: "loaded" }
+          { "content" => "loaded" }
         end
       end
     RUBY

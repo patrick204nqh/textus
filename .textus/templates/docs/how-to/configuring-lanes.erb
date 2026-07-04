@@ -85,7 +85,7 @@ roles:
 
 ## Wiring produced entries — the workflow DSL
 
-Produced entries acquire their data via `Textus.workflow` blocks in `.textus/workflows/**/*.rb`. Each workflow matches a produced entry by key glob, then runs one or more named steps to acquire its data.
+Produced entries acquire their data via `Textus.workflow` blocks in `.textus/workflows/**/*.rb`. Each workflow declares a trigger with `on`, runs ordered steps, and saves/publishes results.
 
 ### Declaring a produced entry
 
@@ -103,14 +103,14 @@ entries:
 
 ```ruby
 Textus.workflow "agentskills" do
-  match "artifacts.feeds.skills"
+  on "artifacts.feeds.skills"
 
   step :fetch do |_, _ctx|
     skills = [{ "name" => "brainstorming", "description" => "..." }]
     { "content" => { "skills" => skills, "count" => skills.size } }
   end
 
-  publish
+  save to: "artifacts.feeds.skills"  # persists data, triggers publish targets
 end
 ```
 

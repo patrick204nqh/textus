@@ -1,5 +1,5 @@
 Textus.workflow "how-to-agents-mcp" do
-  match "artifacts.how-to.agents-mcp"
+  on "artifacts.how-to.agents-mcp"
 
   step :build do |_, ctx|
     agent_lanes = build_lanes(ctx).select { |l| l["writers"].include?("agent") }

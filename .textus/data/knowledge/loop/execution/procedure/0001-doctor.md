@@ -4,12 +4,12 @@ description: Read and act on doctor workflow reports to keep the store healthy.
 ---
 ## doctor
 
-Doctor workflows run automatically on drain and publish to `artifacts.doctor.*`.
+Doctor workflows run automatically on drain and publish to `artifacts.doctor`.
 
 **Reading reports:**
 
 ```sh
-textus get artifacts.doctor.manifest-files
+textus get artifacts.doctor
 ```
 
 Each report is a JSON file with:
