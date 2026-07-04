@@ -33,8 +33,6 @@ data:
       format: yaml
   artifacts:
     - { key: artifacts.contributing, format: json }
-    - { key: artifacts.security, format: json }
-    - { key: artifacts.code-of-conduct, format: json }
     - { key: artifacts.changelog, format: json }
     - { key: artifacts.boot, format: json }
     - { key: artifacts.config.opencode, format: json }
@@ -49,10 +47,38 @@ data:
     - { key: artifacts.how-to.drain-scheduling, format: json }
     - { key: artifacts.how-to.migrations, format: json }
     - { key: artifacts.reference.lanes, format: json }
-    - { key: artifacts.reference.conventions, format: json }
-    - { key: artifacts.reference.testing, format: json }
-    - { key: artifacts.reference.engineering-skills, format: json }
-    - { key: artifacts.reference.contributor-conventions, format: json }
+    - key: artifacts.render.conventions
+      format: json
+      publish:
+        - { to: docs/reference/conventions.md, template: docs/reference/conventions.erb }
+    - key: artifacts.render.testing
+      format: json
+      publish:
+        - { to: docs/reference/testing.md, template: docs/reference/testing.erb }
+    - key: artifacts.render.engineering-skills
+      format: json
+      publish:
+        - { to: docs/reference/engineering-skills.md, template: docs/reference/engineering-skills.erb }
+    - key: artifacts.render.contributor-conventions
+      format: json
+      publish:
+        - { to: docs/reference/contributor-conventions.md, template: docs/reference/contributor-conventions.erb }
+    - key: artifacts.render.drain-scheduling
+      format: json
+      publish:
+        - { to: docs/how-to/drain-scheduling.md, template: docs/how-to/drain-scheduling.erb }
+    - key: artifacts.render.migrations
+      format: json
+      publish:
+        - { to: docs/how-to/migrations.md, template: docs/how-to/migrations.erb }
+    - key: artifacts.render.code-of-conduct
+      format: json
+      publish:
+        - { to: CODE_OF_CONDUCT.md, template: docs/meta/code-of-conduct.erb }
+    - key: artifacts.render.security
+      format: json
+      publish:
+        - { to: SECURITY.md, template: docs/meta/security.erb }
     - { key: artifacts.explanation.concepts, format: json }
     - { key: artifacts.doctor.rule-ambiguity, format: json }
     - { key: artifacts.doctor.manifest-files, format: json }
