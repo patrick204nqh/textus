@@ -7,9 +7,8 @@ module Textus
         @store = store
         @layout = layout
         @workflow_registry = workflow_registry
-        # Allow backward compat construction without store
-        @audit_log = audit_log || store&.event_store
-        @entry_index = entry_index || store&.entry_store
+        @audit_log = audit_log || store&.audit_log
+        @entry_index = entry_index || store&.entry_index
       end
 
       def read(key)

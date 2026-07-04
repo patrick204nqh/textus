@@ -51,7 +51,7 @@ module Textus
 
         module AppendDeleteAudit
           def self.call(ctx, deps)
-            deps.audit_log.append_audit(
+            deps.audit_log.append(
               role: deps.call.role, verb: "key_delete", key: ctx.key,
               etag_before: ctx.etag_before, etag_after: nil,
               correlation_id: deps.call.correlation_id

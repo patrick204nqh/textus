@@ -16,7 +16,7 @@ module Textus
         manifest = container.manifest
         envelope = Context.build(
           manifest:,
-          event_store: container.store.event_store,
+          event_store: container.store.audit_log,
           file_system: container.store.file_system,
           layout: container.layout,
         )

@@ -56,7 +56,7 @@ module Textus
                     previous_etag: short_etag(previous_etag)
           )
 
-          @store = @store.advance_cursor(@store.container.store.event_store.latest_seq) if verb_name == :pulse
+          @store = @store.advance_cursor(@store.container.store.audit_log.latest[:seq]) if verb_name == :pulse
           @store = @store.with_role(@store.role) if verb_name == :boot
           ::MCP::Tool::Response.new([{ type: "text", text: JSON.dump(result) }])
         rescue Textus::CursorExpired => e

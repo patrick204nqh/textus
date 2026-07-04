@@ -14,7 +14,7 @@ module Textus
       end
 
       def list(prefix: nil, lane: nil, q: nil, schema: nil)
-        store.entry_store.search(query: q, schema:, lane:, prefix:)
+        store.entry_index.search(query: q, schema:, lane:, prefix:)
       end
 
       def exists?(key)
@@ -49,7 +49,6 @@ module Textus
       def file_system    = store.file_system
       def audit          = store.audit_log
       def links          = store.link_store
-      def event_store    = store.event_store
       def entry_index    = store.entry_index
       def file_store     = store.file_store
 

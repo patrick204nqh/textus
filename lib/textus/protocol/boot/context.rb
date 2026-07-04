@@ -4,7 +4,7 @@ module Textus
       module Context
         def self.build(manifest:, event_store:, file_system:, layout:)
           etag       = Textus::Value::Etag.for_contract(layout)
-          latest_seq = event_store.latest_seq
+          latest_seq = event_store.latest[:seq]
           artifact   = read_artifact_content(manifest, file_system, layout)
           context    = read_boot_context(manifest, file_system, layout)
 

@@ -14,7 +14,7 @@ module Textus
           role: role.to_s,
           correlation_id: correlation_id || SecureRandom.uuid,
           dry_run: dry_run,
-          cursor: container.store.event_store.latest_seq,
+          cursor: container.store.audit_log.latest[:seq],
           contract_etag: Value::Etag.for_contract(bridge.layout),
           propose_lane: container.manifest.policy.propose_lane_for(role.to_s),
         )

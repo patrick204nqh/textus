@@ -1,7 +1,7 @@
 # Queries the audit event store. Raises if no events found.
 module TextusAuditHelpers
   def last_audit_row(store)
-    store.container.store.event_store.scan_audit.last ||
+    store.container.store.audit_log.list.last ||
       (raise "no audit events found")
   end
 end
@@ -16,13 +16,13 @@ RSpec::Matchers.define :have_audit_verb do |verb|
   chain(:with_correlation) { |cid| @cid = cid }
 
   match do |store|
-    events = store.container.store.event_store.scan_audit
+    events = store.container.store.audit_log.list
     next false if events.empty?
 
     @row = events.last
-    next false unless @row["verb"] == verb
+    next false unless @row[:verb] == verb
 
-    @cid.nil? || @row["correlation_id"] == @cid
+    @cid.nil? || @row[:correlation_id] == @cid
   end
 
   failure_message do

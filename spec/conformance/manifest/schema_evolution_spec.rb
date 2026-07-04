@@ -69,7 +69,7 @@ RSpec.describe "Schema evolution" do
       expect(env["_meta"]).not_to have_key("headline")
 
       store = Textus::Protocol::Session.open(root)
-      expect(store.container.store.event_store.last_writer_for("knowledge.note")).to eq("human")
+      expect(store.container.store.audit_log.last_writer("knowledge.note")[:role]).to eq("human")
     end
 
     it "uses knowledge lane's first writer as migration authority" do

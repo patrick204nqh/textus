@@ -1,8 +1,8 @@
 require "spec_helper"
 require "tmpdir"
 
-RSpec.describe Textus::Infra::Store::EventStore do
-  subject(:event_store) { described_class.new(database.connection) }
+RSpec.describe Textus::Infra::Store::WorkflowQueue do
+  subject(:queue) { described_class.new(database.connection) }
 
   let(:root) { Dir.mktmpdir }
   let(:layout) { Textus::Protocol::Layout.new(root) }
@@ -10,42 +10,37 @@ RSpec.describe Textus::Infra::Store::EventStore do
 
   after { FileUtils.remove_entry(root) }
 
-  it "emits a pending event and makes it available via consume_pending" do
-    event_store.emit(event_type: "entry.written", workflow_type: "materialize", key: "knowledge.a", lane: "knowledge", payload: {})
+  it "pushes a pending event and pops it" do
+    queue.push(event_type: "entry.written", workflow_type: "materialize", key: "knowledge.a", lane: "knowledge", payload: {})
 
-    row = event_store.consume_pending
+    row = queue.pop
     expect(row[:workflow_type]).to eq("materialize")
-    expect(row[:state]).to eq("pending")
   end
 
   it "marks an event done" do
-    event_store.emit(event_type: "entry.written", workflow_type: "materialize", key: "knowledge.a", lane: "knowledge", payload: {})
-    row = event_store.consume_pending
+    queue.push(event_type: "entry.written", workflow_type: "materialize", key: "knowledge.a", lane: "knowledge", payload: {})
+    row = queue.pop
 
-    event_store.mark_done(event_id: row[:id])
+    queue.complete(row[:id])
 
-    expect(event_store.consume_pending).to be_nil
+    expect(queue.pop).to be_nil
   end
 
   it "marks an event failed with an error message" do
-    event_store.emit(event_type: "entry.written", workflow_type: "materialize", key: "knowledge.a", lane: "knowledge", payload: {})
-    row = event_store.consume_pending
+    queue.push(event_type: "entry.written", workflow_type: "materialize", key: "knowledge.a", lane: "knowledge", payload: {})
+    row = queue.pop
 
-    event_store.mark_failed(event_id: row[:id], retry_count: 3, error: "boom")
+    queue.fail(row[:id], retry_count: 3, error: "boom")
 
-    expect(event_store.consume_pending).to be_nil
+    expect(queue.pop).to be_nil
   end
 
   it "reschedules an event into the future" do
-    event_store.emit(event_type: "entry.written", workflow_type: "materialize", key: "knowledge.a", lane: "knowledge", payload: {})
-    row = event_store.consume_pending
+    queue.push(event_type: "entry.written", workflow_type: "materialize", key: "knowledge.a", lane: "knowledge", payload: {})
+    row = queue.pop
 
-    event_store.reschedule(event_id: row[:id], retry_count: 1, delay: 3600, error: "transient")
+    queue.reschedule(row[:id], retry_count: 1, delay: 3600, error: "transient")
 
-    expect(event_store.consume_pending).to be_nil
-  end
-
-  it "no longer responds to search_entries (moved to Store::EntryIndex)" do
-    expect(event_store).not_to respond_to(:search_entries)
+    expect(queue.pop).to be_nil
   end
 end

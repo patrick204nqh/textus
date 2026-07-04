@@ -1,13 +1,12 @@
 require "spec_helper"
 require "tmpdir"
 
-RSpec.describe Textus::Infra::Store::EntryStore do
-  subject(:index) { described_class.new(database.connection, file_system) }
+RSpec.describe Textus::Infra::Store::EntryIndex do
+  subject(:index) { described_class.new(database.connection) }
 
   let(:root) { Dir.mktmpdir }
   let(:layout) { Textus::Protocol::Layout.new(root) }
   let(:database) { Textus::Infra::Database.new(layout:).setup! }
-  let(:file_system) { instance_double(Textus::Infra::FileSystem) }
 
   after { FileUtils.remove_entry(root) }
 
@@ -17,7 +16,7 @@ RSpec.describe Textus::Infra::Store::EntryStore do
 
       rows = index.search(query: "hello", schema: nil, lane: nil, prefix: nil)
 
-      expect(rows.map { |r| r["key"] }).to eq(["knowledge.a"])
+      expect(rows.map { |r| r[:key] }).to eq(["knowledge.a"])
     end
 
     it "does not error and returns no rows for a non-matching query" do
@@ -34,7 +33,7 @@ RSpec.describe Textus::Infra::Store::EntryStore do
 
       rows = index.search(query: nil, schema: "runbook", lane: nil, prefix: nil)
 
-      expect(rows.map { |r| r["key"] }).to eq(["knowledge.a"])
+      expect(rows.map { |r| r[:key] }).to eq(["knowledge.a"])
     end
 
     it "filters by lane and prefix" do
@@ -43,15 +42,15 @@ RSpec.describe Textus::Infra::Store::EntryStore do
 
       rows = index.search(query: nil, schema: nil, lane: "knowledge", prefix: "knowledge.")
 
-      expect(rows.map { |r| r["key"] }).to eq(["knowledge.a"])
+      expect(rows.map { |r| r[:key] }).to eq(["knowledge.a"])
     end
 
-    it "upserts on repeated record calls for the same key instead of ignoring the update" do
+    it "upserts on repeated record calls for the same key" do
       index.record(key: "knowledge.a", lane: "knowledge", format: "markdown", schema: nil, content: "first version")
       index.record(key: "knowledge.a", lane: "knowledge", format: "markdown", schema: nil, content: "second version")
 
       rows = index.search(query: "second", schema: nil, lane: nil, prefix: nil)
-      expect(rows.map { |r| r["key"] }).to eq(["knowledge.a"])
+      expect(rows.map { |r| r[:key] }).to eq(["knowledge.a"])
 
       stale = index.search(query: "first", schema: nil, lane: nil, prefix: nil)
       expect(stale).to eq([])
