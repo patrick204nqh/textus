@@ -15,6 +15,7 @@ module Textus
           { "name" => "accept" },
           { "name" => "key", "summary" => "key operations: 'key delete', 'key mv', 'key uid'" },
           { "name" => "drain" },
+          { "name" => "session", "summary" => "session lifecycle: session_open, session_close" },
           { "name" => "audit" },
           { "name" => "blame" },
           { "name" => "pulse" },
