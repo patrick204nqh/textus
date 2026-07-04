@@ -26,8 +26,6 @@ data:
       tracked: false
     - key: scratchpad.scripts
       tracked: false
-  proposals:
-    - key: proposals.notes
   raw:
     - key: raw
       format: yaml
