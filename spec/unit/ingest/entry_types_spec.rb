@@ -19,16 +19,18 @@ RSpec.describe Textus::Lanes::Ingest::EntryTypes do
 
   describe Textus::Lanes::Ingest::EntryTypes::Link do
     describe ".build" do
-      it "returns url source hash" do
-        result = described_class.build(url: "https://example.com", label: "Example")
+      it "returns url source hash with ingested_at" do
+        time = Time.new(2026, 7, 3, 12, 0, 0, "UTC")
+        result = described_class.build(url: "https://example.com", label: "Example", time:)
         expect(result).to eq({
                                "source" => { "kind" => "url", "url" => "https://example.com", "label" => "Example" },
-                               "body" => nil,
+                               "ingested_at" => "2026-07-03T12:00:00Z", "body" => nil,
                              })
       end
 
       it "uses url as default label" do
-        result = described_class.build(url: "https://example.com")
+        time = Time.new(2026, 7, 3, 12, 0, 0, "UTC")
+        result = described_class.build(url: "https://example.com", time:)
         expect(result["source"]["label"]).to eq("https://example.com")
       end
     end
@@ -52,6 +54,7 @@ RSpec.describe Textus::Lanes::Ingest::EntryTypes do
         expect(result["source"]["kind"]).to eq("asset")
         expect(result["source"]["label"]).to eq("Photo")
         expect(result["asset"]).to eq("raw/2026/07/03/screenshots/photo.png")
+        expect(result["ingested_at"]).to eq("2026-07-03T12:00:00Z")
         expect(result["body"]).to be_nil
       end
     end
@@ -97,21 +100,24 @@ RSpec.describe Textus::Lanes::Ingest::EntryTypes do
 
   describe Textus::Lanes::Ingest::EntryTypes::Text do
     describe ".build" do
-      it "reads file and returns body" do
+      it "reads file and returns body with ingested_at" do
+        time = Time.new(2026, 7, 3, 12, 0, 0, "UTC")
         Tempfile.create do |f|
           f.write("article content")
           f.rewind
-          result = described_class.build(path: f.path, label: "Article")
+          result = described_class.build(path: f.path, label: "Article", time:)
           expect(result["source"]).to eq({ "kind" => "file", "path" => f.path, "label" => "Article" })
+          expect(result["ingested_at"]).to eq("2026-07-03T12:00:00Z")
           expect(result["body"]).to eq("article content")
         end
       end
 
       it "uses basename as default label" do
+        time = Time.new(2026, 7, 3, 12, 0, 0, "UTC")
         Tempfile.create(["test", ".md"]) do |f|
           f.write("content")
           f.rewind
-          result = described_class.build(path: f.path)
+          result = described_class.build(path: f.path, time:)
           expect(result["source"]["label"]).to eq(File.basename(f.path))
         end
       end

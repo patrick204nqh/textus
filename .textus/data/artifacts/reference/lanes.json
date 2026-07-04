@@ -1,55 +1,46 @@
 {
   "_meta": {
-    "uid": "a93fefd340f19f74"
+    "uid": "ca0d4ec3b90429f6"
   },
   "lanes": [
     {
       "name": "knowledge",
       "kind": "knowledge",
       "purpose": "the maintained source of truth about the repo",
-      "capability": "",
       "writers": [
         "human"
-      ]
+      ],
+      "capability": "n/a"
     },
     {
       "name": "scratchpad",
       "kind": "scratchpad",
       "purpose": "the agent's own durable scratchpad (working memory)",
-      "capability": "",
-      "writers": [
-        "agent"
-      ]
-    },
-    {
-      "name": "proposals",
-      "kind": "proposals",
-      "purpose": "changes awaiting a human accept",
-      "capability": "",
       "writers": [
         "human",
         "agent"
-      ]
+      ],
+      "capability": "n/a"
     },
     {
       "name": "artifacts",
       "kind": "artifacts",
       "purpose": "machine-maintained computed outputs",
-      "capability": "",
       "writers": [
         "automation"
-      ]
+      ],
+      "capability": "n/a"
     },
     {
       "name": "raw",
       "kind": "raw",
       "purpose": "ingested external source material (write-once)",
-      "capability": "ingest",
       "writers": [
         "human",
         "agent",
         "automation"
-      ]
+      ],
+      "capability": "ingest"
     }
   ],
   "roles": [],

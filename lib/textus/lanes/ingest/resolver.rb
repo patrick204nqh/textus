@@ -9,7 +9,7 @@ module Textus
           old_env = ctx.read(old_key)
           old_content = old_env&.content || {}
           tombstone = {}
-          %w[ingested_at].each { |k| tombstone[k] = old_content[k] if old_content.key?(k) }
+          %w[ingested_at ingest_count].each { |k| tombstone[k] = old_content[k] if old_content.key?(k) }
           source_kind = old_content.dig("source", "kind")
           tombstone["source"] = { "kind" => source_kind } if source_kind
           tombstone["superseded_by"] = new_key

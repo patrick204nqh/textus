@@ -23,22 +23,20 @@ RSpec.describe Textus::Lanes::Ingest::Resolver do
 
       allow(manifest.resolver).to receive(:resolve).with("raw.2026.06.01.old").and_return(entry)
       allow(entry_store).to receive(:read).with("raw.2026.06.01.old").and_return(
-        instance_double(Envelope, content: { "ingested_at" => "2026-06-01T00:00:00Z", "source" => { "kind" => "url" } }),
+        instance_double(Envelope, content: { "ingested_at" => "2026-06-01T00:00:00Z", "ingest_count" => 3, "source" => { "kind" => "url" } }),
       )
-      allow(entry_store).to receive(:put)
+      payloads = []
+      allow(entry_store).to receive(:put) { |*, **kwargs| payloads << kwargs[:payload]; nil }
       ctx = Textus::Protocol::HandlerContext.new(container)
 
       call = instance_double(Call, role: "automation", correlation_id: "abc")
 
       described_class.supersede("raw.2026.06.01.old", "raw.2026.07.03.new", ctx, call:)
 
-      expect(entry_store).to have_received(:put).with(
-        "raw.2026.06.01.old",
-        mentry: entry.entry,
-        if_etag: nil,
-        call:,
-        payload: instance_of(Textus::Value::Payload),
-      )
+      expect(payloads.last.content["ingested_at"]).to eq("2026-06-01T00:00:00Z")
+      expect(payloads.last.content["ingest_count"]).to eq(3)
+      expect(payloads.last.content["superseded_by"]).to eq("raw.2026.07.03.new")
+      expect(payloads.last.content["source"]).to eq({ "kind" => "url" })
     end
 
     it "handles missing old content gracefully" do

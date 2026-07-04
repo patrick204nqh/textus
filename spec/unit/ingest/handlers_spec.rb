@@ -70,10 +70,15 @@ RSpec.describe Textus::Lanes::Ingest::Handlers do
       allow(Textus::Lanes::Ingest::Dedup).to receive(:find).and_return("raw.2026.06.01.old")
       allow(Textus::Lanes::Ingest::Resolver).to receive(:supersede)
       allow(entry_store).to receive(:put).and_return(instance_double(Envelope, uid: "uid456", etag: "etag789"))
-      allow(entry_store).to receive(:read)
+      allow(entry_store).to receive(:read).and_return(
+        instance_double(Envelope, content: { "ingest_count" => 1 }),
+      )
       allow(Textus::Lanes::Ingest::IndexRebuilder).to receive(:rebuild!)
 
       allow(Time).to receive(:now).and_return(Time.new(2026, 7, 3, 12, 0, 0, "UTC"))
+
+      payloads = []
+      allow(entry_store).to receive(:put) { |*, **kwargs| payloads << kwargs[:payload]; instance_double(Envelope, uid: "uid456", etag: "etag789") }
 
       described_class.ingest(
         kind: "url", slug: "test-link", url: "https://example.com",
@@ -83,6 +88,11 @@ RSpec.describe Textus::Lanes::Ingest::Handlers do
       expect(Textus::Lanes::Ingest::Resolver).to have_received(:supersede).with(
         "raw.2026.06.01.old", "raw.2026.07.03.url-test", ctx, call:
       )
+
+      content = payloads.last.content
+      expect(content["duplicated_at"]).to eq("2026-07-03T12:00:00Z")
+      expect(content["ingest_count"]).to eq(2)
+      expect(content["supersedes"]).to eq("raw.2026.06.01.old")
     end
 
     it "returns failure for invalid kind" do

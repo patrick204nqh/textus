@@ -8,7 +8,7 @@ module Textus
           def build(path:, lane:, time:, layout:, label: nil, **)
             asset_rel = copy(path, lane:, time:, layout:)
             { "source" => { "kind" => "asset", "label" => label || File.basename(path) },
-              "asset" => asset_rel, "body" => nil }
+              "asset" => asset_rel, "ingested_at" => time.utc.iso8601, "body" => nil }
           end
 
           def copy(path, lane:, time:, layout:)

@@ -5,9 +5,9 @@ module Textus
         module Link
           module_function
 
-          def build(url:, label: nil, **)
+          def build(url:, label: nil, time:, **)
             { "source" => { "kind" => "url", "url" => url, "label" => label || url },
-              "body" => nil }
+              "ingested_at" => time.utc.iso8601, "body" => nil }
           end
         end
       end

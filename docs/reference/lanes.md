@@ -43,10 +43,9 @@ Note: `accept` and `reject` are **transition verbs**, not capabilities. Both req
 
 | Kind | Required capability | Writers in this store |
 |---|---|---|
-| `knowledge` | `` | `human` |
-| `scratchpad` | `` | `agent` |
-| `proposals` | `` | `human`, `agent` |
-| `artifacts` | `` | `automation` |
+| `knowledge` | `n/a` | `human` |
+| `scratchpad` | `n/a` | `human`, `agent` |
+| `artifacts` | `n/a` | `automation` |
 | `raw` | `ingest` | `human`, `agent`, `automation` |
 
 ### Declared lanes
@@ -55,7 +54,6 @@ Note: `accept` and `reject` are **transition verbs**, not capabilities. Both req
 |---|---|---|
 | `knowledge` | `knowledge` | the maintained source of truth about the repo |
 | `scratchpad` | `scratchpad` | the agent's own durable scratchpad (working memory) |
-| `proposals` | `proposals` | changes awaiting a human accept |
 | `artifacts` | `artifacts` | machine-maintained computed outputs |
 | `raw` | `raw` | ingested external source material (write-once) |
 
@@ -91,6 +89,53 @@ entries:
 | `ignore:` | no | For `nested:` entries — gitignore-style globs excluded from enumeration. |
 
 The full schema lives in the entry schema (`textus get knowledge.constraint.protocol.0004-manifest`).
+
+---
+
+## Raw lane conventions
+
+The `raw` lane stores write-once ingested external source material. Every entry is append-only — re-ingesting the same content creates a new record and supersedes the old one.
+
+### Key format
+
+```
+raw.YYYY.MM.DD.<kind>-<slug>
+```
+
+Where `<kind>` is `url`, `file`, or `asset`.
+
+### Entry content
+
+Every raw entry carries these fields:
+
+| Field | Meaning |
+|-------|---------|
+| `ingested_at` | ISO-8601 timestamp of when this entry was created |
+| `ingest_count` | How many times this source has been ingested (1 = first, 2 = first duplicate, etc.) |
+| `source` | Object with `kind`, `url`/`path`, and `label` identifying the origin |
+
+When an ingest duplicates an earlier entry, the new entry also records:
+
+| Field | Meaning |
+|-------|---------|
+| `duplicated_at` | ISO-8601 timestamp of the duplicate ingest |
+| `supersedes` | Key of the entry that was superseded by this one |
+
+### Supersede chain
+
+When a URL or file is ingested more than once:
+
+1. A **new entry** is created with a fresh date-based key (`raw.<today>.<kind>-<slug>`)
+2. The **old entry** is pruned to a tombstone: `{ ingested_at, ingest_count, source, superseded_by: "<new-key>" }`
+3. Forwarding pointers (`supersedes` / `superseded_by`) let references to old keys follow the chain to current content
+4. Chain depth (`ingest_count`) reveals the total number of ingestions for that source
+
+### Example
+
+```
+raw.2026.01.15.url-example-post   → tombstone: { ingested_at: "2026-01-15T…", ingest_count: 2, superseded_by: "raw.2026.07.04.url-example-post" }
+raw.2026.07.04.url-example-post   → content:   { ingested_at: "2026-07-04T…", ingest_count: 3, duplicated_at: "2026-07-04T…", supersedes: "raw.2026.01.15.url-example-post" }
+```
 
 ---
 

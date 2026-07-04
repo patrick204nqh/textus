@@ -30,15 +30,20 @@ module Textus
           duplicate_key = Dedup.find(lookup, content_hash, url:)
 
           if duplicate_key && duplicate_key != key
+            old_content = ctx.read(duplicate_key)&.content || {}
             Resolver.supersede(duplicate_key, key, ctx, call:)
 
             if kind == "asset"
-              old_content = ctx.read(duplicate_key)&.content || {}
               EntryTypes::Asset.move(old_content["asset"], lane, ctx.layout) if old_content["asset"]
             end
-          end
 
-          structured["supersedes"] = duplicate_key if duplicate_key && duplicate_key != key
+            old_count = old_content["ingest_count"] || 1
+            structured["ingest_count"] = old_count + 1
+            structured["duplicated_at"] = now.utc.iso8601
+            structured["supersedes"] = duplicate_key
+          else
+            structured["ingest_count"] = 1
+          end
 
           env = ctx.write(key, mentry:, call:,
                                payload: ctx.payload(meta: nil, body: nil, content: structured))
