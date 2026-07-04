@@ -70,6 +70,7 @@ module Textus
         module EmitWorkflowEvent
           def self.call(ctx, deps)
             return ctx unless deps.workflow_registry
+            return ctx if deps.call.role == "automation"
 
             emitter = Textus::Protocol::Events::Emitter.new(
               event_store: deps.audit_log,
