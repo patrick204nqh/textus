@@ -2,27 +2,27 @@ module Textus
   module Protocol
     module Async
       class Queue
-        def initialize(event_store, retry_policy: Events::RetryPolicy.new)
-          @event_store = event_store
+        def initialize(workflow_queue, retry_policy: Events::RetryPolicy.new)
+          @workflow_queue = workflow_queue
           @retry_policy = retry_policy
         end
 
         def enqueue(workflow_type, key, lane:, payload: nil, scheduled_at: nil)
-          @event_store.emit(
+          @workflow_queue.push(
             event_type: "workflow", workflow_type:,
             key:, lane:,
-            payload: payload&.to_json,
+            payload: payload,
             scheduled_at: scheduled_at || Time.now.utc
           )
         end
 
         def consume_one(registry:, container:, call:)
-          row = @event_store.consume_pending
+          row = @workflow_queue.pop
           return nil unless row
 
           workflow = registry.for(row[:workflow_type])
           Textus::Workflow::Runner.new(workflow, container:, call:).run(row[:key])
-          @event_store.mark_done(event_id: row[:id])
+          @workflow_queue.complete(row[:id])
           row.merge(state: "done")
         rescue StandardError => e
           handle_failure(row, e)
@@ -36,10 +36,10 @@ module Textus
           decision = @retry_policy.decide(retry_count:, max_attempts:)
 
           if decision.terminal?
-            @event_store.mark_failed(event_id: row[:id], retry_count:, error: error.message)
+            @workflow_queue.fail(row[:id], retry_count:, error: error.message)
             row.merge(state: "failed", error: error.message)
           else
-            @event_store.reschedule(event_id: row[:id], retry_count:, delay: decision.delay, error: error.message)
+            @workflow_queue.reschedule(row[:id], retry_count:, delay: decision.delay, error: error.message)
             row.merge(state: "retrying")
           end
         end

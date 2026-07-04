@@ -30,13 +30,13 @@ module Textus
         end
 
         def current_position(role)
-          idx = @cursor_store ? @cursor_store.read_loop_position(role) : 0
+          idx = @cursor_store ? @cursor_store.get_loop(role)[:index] : 0
           current_node(active_index: idx)
         end
 
         def advance_role(role)
-          idx = @cursor_store ? @cursor_store.read_loop_position(role) + 1 : 1
-          @cursor_store&.write_loop_position(role, idx)
+          idx = @cursor_store ? @cursor_store.get_loop(role)[:index] + 1 : 1
+          @cursor_store&.set_loop(role, idx)
           current_node(active_index: idx).merge(advanced: true)
         end
       end

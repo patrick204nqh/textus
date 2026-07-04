@@ -70,7 +70,7 @@ module Textus
           bridge:,
           context: context.with(
             role: new_role.to_s,
-            cursor: container.store.event_store.latest_seq,
+cursor: container.store.audit_log.latest[:seq],
             contract_etag: Value::Etag.for_contract(container.layout),
             propose_lane: manifest.policy.propose_lane_for(new_role.to_s),
           ),

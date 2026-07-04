@@ -46,11 +46,12 @@ module Textus
       def workflow_registry = @container.workflow_registry
       attr_reader :container
 
-      def file_system = store.file_system
-      def audit       = store.event_store
-      def links       = store.link_store
-      def event_store = store.event_store
-      def entry_index = store.entry_store
+      def file_system    = store.file_system
+      def audit          = store.audit_log
+      def links          = store.link_store
+      def event_store    = store.event_store
+      def entry_index    = store.entry_index
+      def file_store     = store.file_store
 
       # Convenience
       def mentry_for(key)

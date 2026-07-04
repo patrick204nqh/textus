@@ -5,7 +5,7 @@ module Textus
     class Watcher
       def initialize(container:)
         @container = container
-        @queue = Protocol::Async::Queue.new(container.store.event_store)
+        @queue = Protocol::Async::Queue.new(container.store.workflow_queue)
         @registry = Textus::Workflow::Registry.new(container.workflows)
       end
 

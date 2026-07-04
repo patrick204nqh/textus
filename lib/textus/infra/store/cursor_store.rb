@@ -1,29 +1,23 @@
 module Textus
   module Infra
     class Store
-      class CursorStore
-        def initialize(database)
-          @db = database
+      class CursorStore < Base
+        def get(role)
+          result(table(:cursors).where(role:).first) || { role:, seq: 0 }
         end
 
-        def read(role)
-          row = @db[:cursors].where(role:).first
-          row ? row[:seq] : 0
-        end
-
-        def write(role, seq)
-          @db[:cursors].insert_conflict(
+        def set(role, seq)
+          table(:cursors).insert_conflict(
             update: { seq:, updated_at: Time.now.utc },
           ).insert(role:, seq:, updated_at: Time.now.utc)
         end
 
-        def read_loop_position(role)
-          row = @db[:loop_positions].where(role:).first
-          row ? row[:index] : 0
+        def get_loop(role)
+          result(table(:loop_positions).where(role:).first) || { role:, index: 0 }
         end
 
-        def write_loop_position(role, index)
-          @db[:loop_positions].insert_conflict(
+        def set_loop(role, index)
+          table(:loop_positions).insert_conflict(
             update: { index:, updated_at: Time.now.utc },
           ).insert(role:, index:, updated_at: Time.now.utc)
         end

@@ -70,8 +70,8 @@ module Textus
         private
 
         def resume_from_cursor!
-          saved = @store.container.store.cursor_store.read(@store.role)
-          latest = @store.container.store.event_store.latest_seq
+          saved = @store.container.store.cursor_store.get(@store.role)[:seq]
+          latest = @store.container.store.audit_log.latest[:seq]
           @store = @store.advance_cursor(saved) if saved.positive? && saved <= latest
         end
 
@@ -81,7 +81,7 @@ module Textus
               sleep(self.class::CHECKPOINT_INTERVAL)
               break if @shutdown
 
-              @store.container.store.cursor_store.write(@store.role, @store.cursor)
+              @store.container.store.cursor_store.set(@store.role, @store.cursor)
             end
           end
         end

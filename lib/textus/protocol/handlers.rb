@@ -128,7 +128,7 @@ module Textus
           min = ctx.audit.min_available_seq
           raise Textus::CursorExpired.new(requested: seq_since, min_available: min) if min && seq_since < min - 1
         end
-        rows = ctx.audit.scan(seq_since:, key:, role:, verb:, correlation_id:, limit:).select do |row|
+        rows = ctx.audit.list(seq_since:, key:, role:, verb:, correlation_id:, limit:).select do |row|
           next false if lane && !key_in_lane?(row["key"], lane, ctx)
           next false if since && row["ts"] && Time.parse(row["ts"]) < since
 
@@ -148,7 +148,7 @@ module Textus
       end
 
       def pulse(ctx:, call:, since: nil)
-        cursor_val = since || ctx.store.cursor_store.read(call.role)
+        cursor_val = since || ctx.store.cursor_store.get(call.role)[:seq]
         audit_result = audit(seq_since: cursor_val, ctx:, call:)
         changed = audit_result["rows"] || []
         queue = ctx.manifest.policy.queue_lane
@@ -162,7 +162,7 @@ module Textus
           "index_etag" => pulse_index_etag(ctx),
           "loop_state" => runner.current_position(call.role),
         }
-        ctx.store.cursor_store.write(call.role, result["cursor"])
+        ctx.store.cursor_store.set(call.role, result["cursor"])
         result
       end
 

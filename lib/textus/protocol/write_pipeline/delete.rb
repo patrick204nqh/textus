@@ -73,7 +73,7 @@ module Textus
             return ctx if Textus::Protocol::Produce::Engine.converging?(ctx.key)
 
             emitter = Textus::Protocol::Events::Emitter.new(
-              event_store: deps.audit_log,
+              workflow_queue: deps.store.workflow_queue,
               workflow_registry: deps.workflow_registry,
             )
             emitter.emit(event_type: "entry.deleted", key: ctx.key)

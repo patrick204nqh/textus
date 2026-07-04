@@ -2,8 +2,8 @@ module Textus
   module Protocol
     module Events
       class Emitter
-        def initialize(event_store:, workflow_registry:)
-          @event_store = event_store
+        def initialize(workflow_queue:, workflow_registry:)
+          @workflow_queue = workflow_queue
           @registry = workflow_registry
         end
 
@@ -12,9 +12,9 @@ module Textus
           return 0 if workflows.empty?
 
           workflows.each do |wf|
-            @event_store.emit(
+            @workflow_queue.push(
               event_type: event_type.to_s, workflow_type: wf.type,
-              key: key, lane: lane, payload: payload,
+              key:, lane:, payload:,
               max_attempts: wf.max_attempts
             )
           end

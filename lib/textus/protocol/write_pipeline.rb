@@ -11,8 +11,9 @@ module Textus
       end
 
       WriteDeps = Data.define(:file_system, :manifest, :store, :call, :reader, :layout, :workflow_registry) do
-        def audit_log   = store.event_store
-        def entry_index = store.entry_store
+        def audit_log    = store.audit_log
+        def entry_index  = store.entry_index
+        def file_store   = store.file_store
       end
 
       DeleteContext = Data.define(:key, :if_etag, :path, :etag_before) do
