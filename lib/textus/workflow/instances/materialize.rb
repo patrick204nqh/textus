@@ -9,7 +9,7 @@ module Textus
         wf.priority 10
         wf.max_attempts 3
 wf.step :converge do |data, ctx|
-  registry = ctx.workflow_registry || Textus::Workflow::Registry.new(ctx.workflows)
+  registry = ctx.container.workflow_registry || Textus::Workflow::Registry.new(ctx.workflows)
   workflow = registry.match_for_key(ctx.key)
   if workflow
     Textus::Workflow::Runner.new(workflow, container: ctx.container, call: ctx.call).run(ctx.key)

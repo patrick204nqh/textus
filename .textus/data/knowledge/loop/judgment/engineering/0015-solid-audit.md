@@ -24,3 +24,5 @@ Grades: S(C) O(B) L(A) I(A) D(C)
 - Store#build_ctx instantiates 14+ concretions
 - Three use cases duplicate ContainerProxy construction
 - Middleware depends on callable next_handler (good)
+
+cross-ref: knowledge.loop.judgment.engineering.0009-conventions
