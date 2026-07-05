@@ -1,6 +1,7 @@
 RSpec.describe Textus::Protocol::Manifest::Policy do
-  let(:data) { instance_double("Textus::Protocol::Manifest::Data") }
   subject(:policy) { described_class.new(data) }
+
+  let(:data) { instance_double(Textus::Protocol::Manifest::Data) }
 
   describe "#allowed?" do
     it "allows a writer in V4::LANES for the lane" do
