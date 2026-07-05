@@ -32,7 +32,7 @@ module Textus
             klass.from_raw(common, raw)
           end
 
-          def self.infer_kind(key, raw, root:)
+          def self.infer_kind(key, _raw, root:)
             base = key.split(".").join("/")
             dir = root ? File.join(root, "data", base) : nil
 

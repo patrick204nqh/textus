@@ -67,9 +67,7 @@ module Textus
         end
 
         def post_dispatch!(verb_name)
-          if verb_name == :pulse
-            @store = @cursor_manager.advance!(seq: @store.container.store.audit_log.latest[:seq])
-          end
+          @store = @cursor_manager.advance!(seq: @store.container.store.audit_log.latest[:seq]) if verb_name == :pulse
           @store = @store.with_role(@store.role) if verb_name == :boot
         end
 

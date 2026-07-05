@@ -6,7 +6,7 @@ RSpec.describe Textus::Protocol::Session::Context do
       dry_run: false,
       cursor: 42,
       contract_etag: "sha256:a1b2",
-      propose_lane: nil
+      propose_lane: nil,
     )
     expect(ctx.role).to eq("agent")
     expect(ctx.cursor).to eq(42)

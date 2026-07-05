@@ -66,7 +66,10 @@ RSpec.describe Textus::Lanes::Ingest::Handlers do
       allow(Time).to receive(:now).and_return(Time.new(2026, 7, 3, 12, 0, 0, "UTC"))
 
       payloads = []
-      allow(store_engine).to receive(:put) { |**kwargs| payloads << kwargs; instance_double(Envelope, uid: "uid456", etag: "etag789") }
+      allow(store_engine).to receive(:put) { |**kwargs|
+        payloads << kwargs
+        instance_double(Envelope, uid: "uid456", etag: "etag789")
+      }
 
       described_class.ingest(
         kind: "url", slug: "test-link", url: "https://example.com",

@@ -10,7 +10,7 @@ module Textus
               description: "workflow type name (e.g. 'boot', 'decisions-log', 'materialize')"
             )],
             %i[cli mcp], :read
-          )
+          ),
         )
       end
     end

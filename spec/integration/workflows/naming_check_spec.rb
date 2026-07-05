@@ -6,17 +6,17 @@ RSpec.describe "naming-convention check" do
   def build_store
     FileUtils.mkdir_p(File.join(root, "data/knowledge/loop/judgment"))
     store_from_manifest(root, lanes: %w[knowledge artifacts], files: {
-      "workflows/config/doctors.rb" => File.read(".textus/workflows/config/doctors.rb"),
-    }, manifest: <<~YAML)
-      version: textus/4
-      data:
-        knowledge:
-          - key: knowledge.loop.judgment
-            naming: sequential
-        artifacts:
-          - key: artifacts.doctor
-            format: json
-    YAML
+                          "workflows/config/doctors.rb" => File.read(".textus/workflows/config/doctors.rb"),
+                        }, manifest: <<~YAML)
+                          version: textus/4
+                          data:
+                            knowledge:
+                              - key: knowledge.loop.judgment
+                                naming: sequential
+                            artifacts:
+                              - key: artifacts.doctor
+                                format: json
+                        YAML
   end
 
   it "flags a file that doesn't match its entry's declared naming" do

@@ -61,8 +61,8 @@ module Textus
         module EmitWorkflowEvent
           def self.call(ctx, deps)
             Pipeline.emit_event(ctx, deps,
-              event_type: "entry.deleted", pending_key: ctx.key,
-              emit_key: ctx.key)
+                                event_type: "entry.deleted", pending_key: ctx.key,
+                                emit_key: ctx.key)
           end
         end
 
@@ -77,7 +77,7 @@ module Textus
           DeindexEntry,
         ].freeze
 
-        def self.call(key, if_etag: nil, deps:)
+        def self.call(key, deps:, if_etag: nil)
           ctx = Pipeline::DeleteContext.new(key:, if_etag:, path: nil, etag_before: nil)
           STEPS.reduce(ctx) { |c, step| step.call(c, deps) }
           nil

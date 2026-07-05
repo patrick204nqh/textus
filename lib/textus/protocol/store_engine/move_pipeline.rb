@@ -155,8 +155,8 @@ module Textus
             return ctx if deps.store.workflow_queue.pending?(event_type: "entry.moved", key: ctx.to_key)
 
             Pipeline.emit_event(ctx, deps,
-              event_type: "entry.moved", pending_key: ctx.from_key,
-              emit_key: ctx.to_key, emit_lane: ctx.to_entry.lane)
+                                event_type: "entry.moved", pending_key: ctx.from_key,
+                                emit_key: ctx.to_key, emit_lane: ctx.to_entry.lane)
           end
         end
 
@@ -182,7 +182,7 @@ module Textus
           ReindexEntry,
         ].freeze
 
-        def self.call(from_key:, to_key:, if_etag: nil, dry_run: false, deps:)
+        def self.call(from_key:, to_key:, deps:, if_etag: nil, dry_run: false)
           ctx = Pipeline::MoveContext.new(
             from_key:, to_key:, if_etag:,
             from_path: nil, to_path: nil,

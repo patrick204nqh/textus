@@ -24,7 +24,7 @@ RSpec.describe Textus::Lanes::Ingest::EntryTypes do
         result = described_class.build(url: "https://example.com", label: "Example", time:)
         expect(result).to eq({
                                "source" => { "kind" => "url", "url" => "https://example.com", "label" => "Example" },
-                               "ingested_at" => "2026-07-03T12:00:00Z", "body" => nil,
+                               "ingested_at" => "2026-07-03T12:00:00Z", "body" => nil
                              })
       end
 

@@ -26,7 +26,7 @@ module Textus
         def pending?(event_type:, key:)
           table(:workflow_events)
             .where(event_type: event_type.to_s, key: key)
-            .where(state: ["pending", "processing"])
+            .where(state: %w[pending processing])
             .count > 0
         end
 

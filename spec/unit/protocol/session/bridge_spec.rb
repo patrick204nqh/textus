@@ -14,12 +14,12 @@ RSpec.describe Textus::Protocol::Session::Bridge do
     )
   end
   let(:gate) { instance_double(Textus::Protocol::Gate) }
-  let(:store_double)   { double("store") }
+  let(:store_double) { double("store") }
   let(:manifest_double) { double("manifest") }
   let(:schemas_double)  { double("schemas") }
   let(:layout_double)   { double("layout") }
   let(:workflows_double) { double("workflows") }
-  let(:ttl_double)      { double("ttl_evaluator") }
+  let(:ttl_double) { double("ttl_evaluator") }
 
   it "is a Data.define with container and gate" do
     expect(bridge.container).to eq(container)

@@ -63,7 +63,7 @@ module Textus
             workflow_queue: ctx.workflow_queue, registry:, container: ctx.container, call:,
           )
           response(ok: result[:failed].zero?,
-                    completed: result[:completed], failed: result[:failed])
+                   completed: result[:completed], failed: result[:failed])
         end
 
         private

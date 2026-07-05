@@ -7,10 +7,12 @@ module Textus
         end
 
         def read(path)  = @fs.read(path)
+
         def write(path, bytes)
           @fs.mkdir_p(File.dirname(path))
           @fs.write(path, bytes)
         end
+
         def delete(path)   = @fs.delete(path)
         def move(from, to) = @fs.mv(from, to)
         def exists?(path)  = @fs.exists?(path)

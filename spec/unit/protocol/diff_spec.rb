@@ -65,16 +65,16 @@ RSpec.describe Textus::Protocol::Diff do
   describe ".summary" do
     it "formats additions, deletions, and meta changes" do
       result = described_class.summary({
-        "body" => { "stats" => { "additions" => 3, "deletions" => 1 } },
-        "meta" => { "stats" => { "changed" => 2 } },
-      })
+                                         "body" => { "stats" => { "additions" => 3, "deletions" => 1 } },
+                                         "meta" => { "stats" => { "changed" => 2 } },
+                                       })
       expect(result).to eq("3+ 1- 2~")
     end
 
     it "omits sections with no changes" do
       result = described_class.summary({
-        "body" => { "stats" => { "additions" => 5, "deletions" => 0 } },
-      })
+                                         "body" => { "stats" => { "additions" => 5, "deletions" => 0 } },
+                                       })
       expect(result).to eq("5+ 0-")
     end
 

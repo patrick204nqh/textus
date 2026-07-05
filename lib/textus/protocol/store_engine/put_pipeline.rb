@@ -117,8 +117,8 @@ module Textus
         module EmitWorkflowEvent
           def self.call(ctx, deps)
             Pipeline.emit_event(ctx, deps,
-              event_type: "entry.written", pending_key: ctx.key,
-              emit_key: ctx.key, emit_lane: ctx.mentry.lane)
+                                event_type: "entry.written", pending_key: ctx.key,
+                                emit_key: ctx.key, emit_lane: ctx.mentry.lane)
           end
         end
 
@@ -128,7 +128,7 @@ module Textus
           CheckEtag, WriteBytes, BuildEnvelope, AppendAudit, EmitWorkflowEvent, IndexEntry
         ].freeze
 
-        def self.call(key, mentry:, path:, payload:, if_etag: nil, deps:)
+        def self.call(key, mentry:, path:, payload:, deps:, if_etag: nil)
           ctx = Pipeline::WriteContext.new(
             key:, mentry:, payload:, if_etag:,
             path:, existing_env: nil, meta: nil, content: nil,

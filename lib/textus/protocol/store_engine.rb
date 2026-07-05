@@ -67,7 +67,6 @@ module Textus
           layout: @layout, workflow_registry: @workflow_registry, reader:, call:
         )
       end
-
     end
   end
 end

@@ -9,6 +9,7 @@ module Textus
             etag_before:, etag_after:, correlation_id:
           )
         end
+
         def list(seq_since: nil, key: nil, role: nil, verb: nil, correlation_id: nil, limit: nil)
           dataset = table(:audit_events)
           dataset = dataset.where { seq > seq_since } if seq_since

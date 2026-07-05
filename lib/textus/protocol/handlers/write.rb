@@ -19,7 +19,7 @@ module Textus
         def move(old_key:, new_key:, ctx:, call:, if_etag: nil, dry_run: false)
           mctx = ctx.move(from_key: old_key, to_key: new_key, call:, if_etag:, dry_run:)
           base = response(ok: true, from_key: mctx.from_key, to_key: mctx.to_key,
-                           from_path: mctx.from_path, to_path: mctx.to_path)
+                          from_path: mctx.from_path, to_path: mctx.to_path)
           return base.merge("dry_run" => true) if mctx.dry_run
 
           base.merge("uid" => mctx.envelope.uid, "envelope" => mctx.envelope.to_h_for_wire)
