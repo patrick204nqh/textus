@@ -1,0 +1,10 @@
+{
+  "name": <%= JSON.generate(name) %>,
+  "description": <%= JSON.generate(description) %>,
+  "version": <%= JSON.generate(version) %>,
+  "homepage": <%= JSON.generate(homepage) %>,
+  "repository": <%= JSON.generate(repository) %>,
+  "license": <%= JSON.generate(license) %>,
+  "hooks": <%= JSON.pretty_generate(hooks) %>,
+  "mcpServers": { "textus": { "command": "textus", "args": ["mcp", "serve"] } }
+}

@@ -45,4 +45,5 @@ Textus.workflow "docs-lanes" do
   publish to: "docs/explanation/concepts.md", template: "docs/explanation/concepts.erb"
   publish to: "docs/how-to/configuring-lanes.md", template: "docs/how-to/configuring-lanes.erb"
   publish to: "docs/how-to/agents-mcp.md", template: "docs/how-to/agents-mcp.erb"
+  publish to: "docs/how-to/drain-scheduling.md", template: "docs/how-to/drain-scheduling.erb"
 end

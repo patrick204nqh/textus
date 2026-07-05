@@ -34,24 +34,12 @@ data:
     - key: raw
       format: yaml
   artifacts:
-    - { key: artifacts.contributing, format: json }
     - { key: artifacts.changelog, format: json }
     - { key: artifacts.boot, format: json }
-    - { key: artifacts.config.opencode, format: json }
-    - { key: artifacts.config.mcp, format: json }
-    - { key: artifacts.config.plugin, format: json }
     - { key: artifacts.decisions.log, format: json }
     - { key: artifacts.docs.readme, format: json }
     - { key: artifacts.docs.lanes, format: json }
     - { key: artifacts.design.invariants, format: json }
-    - { key: artifacts.render.conventions, format: json }
-    - { key: artifacts.render.testing, format: json }
-    - { key: artifacts.render.engineering-skills, format: json }
-    - { key: artifacts.render.contributor-conventions, format: json }
-    - { key: artifacts.render.drain-scheduling, format: json }
-    - { key: artifacts.render.migrations, format: json }
-    - { key: artifacts.render.code-of-conduct, format: json }
-    - { key: artifacts.render.security, format: json }
     - { key: artifacts.doctor, format: json }
     - { key: artifacts.system.index, format: json }
     - { key: artifacts.feeds.skills, format: json }
