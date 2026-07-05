@@ -1,9 +1,17 @@
+require "forwardable"
+
 module Textus
   module Protocol
     class Session
+      extend Forwardable
+
       attr_reader :context, :bridge
 
       DOMAIN_VERBS = (VerbRegistry::ENTRY_VERBS + VerbRegistry::OPS_VERBS).to_set.freeze
+
+      def_delegators :context, :role, :cursor, :correlation_id, :contract_etag, :propose_lane
+      def_delegator  :context, :dry_run, :dry_run?
+      def_delegators :bridge, :root, :container, :store, :manifest, :schemas, :layout, :workflows, :gate, :ttl_evaluator
 
       def self.open(root, role: Value::Role::DEFAULT, correlation_id: nil, dry_run: false)
         root = File.expand_path(root)
@@ -25,25 +33,6 @@ module Textus
         @bridge = bridge
         @context = context
       end
-
-      # Context-derived
-      def role = context.role
-      def cursor = context.cursor
-      def correlation_id = context.correlation_id
-      def contract_etag = context.contract_etag
-      def propose_lane = context.propose_lane
-      def dry_run? = context.dry_run
-
-      # Bridge-derived
-      def root = bridge.root
-      def container = bridge.container
-      def store = bridge.store
-      def manifest = bridge.manifest
-      def schemas = bridge.schemas
-      def layout = bridge.layout
-      def workflows = bridge.workflows
-      def gate = bridge.gate
-      def ttl_evaluator = bridge.ttl_evaluator
 
       def method_missing(name, *args, **kwargs)
         if DOMAIN_VERBS.include?(name)
