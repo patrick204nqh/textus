@@ -11,6 +11,13 @@
         "serve"
       ],
       "enabled": true
+    },
+    "codebase-memory": {
+      "type": "local",
+      "command": [
+        "codebase-memory-mcp"
+      ],
+      "enabled": true
     }
   },
   "lsp": {
@@ -70,7 +77,7 @@
       "AGENTS.md": "deny",
       "CHANGELOG.md": "deny",
       "CODE_OF_CONDUCT.md": "deny",
-      ".mcp.json": "deny"
+       ".mcp.json": "deny"
     }
   },
   "instructions": [

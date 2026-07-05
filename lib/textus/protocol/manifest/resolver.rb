@@ -57,9 +57,11 @@ module Textus
           if remaining.empty?
             resolve_leaf_path(entry)
           else
-            primary_ext = Textus::Protocol::Format.for(entry.format).extensions.first
+            fmt = Textus::Protocol::Format.for(entry.format)
+            primary_ext = fmt.extensions.first
             base = Textus::Protocol::Key::Path.normalize_relative_path(entry.path)
-            File.join(@data.root, base, *remaining) + primary_ext
+            path = File.join(@data.root, base, *remaining)
+            fmt.append_ext_on_nested? ? path + primary_ext : path
           end
         end
 

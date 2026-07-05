@@ -20,7 +20,8 @@ module Textus
         end
 
         def self.extensions = EXTENSIONS
-        def self.nested_glob = "**/*.{rb,py,sh,js,pl,rs,exs}"
+        def self.nested_glob = "**/*"
+        def self.append_ext_on_nested? = false
         def self.enforce_name_match!(_path, _meta); end
 
         def self.rewrite_name(_path, _basename)

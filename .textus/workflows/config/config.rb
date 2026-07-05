@@ -18,6 +18,9 @@ Textus.workflow "config" do
         "textus" => {
           "command" => "bundle", "args" => %w[exec exe/textus --root .textus mcp serve],
         },
+        "codebase-memory" => {
+          "command" => "codebase-memory-mcp", "args" => [],
+        },
       },
       "lsp" => {
         "yaml-ls" => { "command" => %w[node_modules/.bin/yaml-language-server --stdio], "extensions" => %w[yml yaml] },
@@ -25,7 +28,10 @@ Textus.workflow "config" do
         "marksman" => { "command" => %w[marksman serve], "extensions" => ["md"] },
         "ruby-lsp" => { "command" => %w[bundle exec ruby-lsp], "extensions" => %w[rb erb builder rake ru] },
       },
-      "mcp" => { "textus" => { "type" => "local", "command" => %w[bundle exec exe/textus mcp serve], "enabled" => true } },
+      "mcp" => {
+        "textus" => { "type" => "local", "command" => %w[bundle exec exe/textus mcp serve], "enabled" => true },
+        "codebase-memory" => { "type" => "local", "command" => ["codebase-memory-mcp"], "enabled" => true },
+      },
       "permission" => {
         "edit" => {
           "*" => "allow",

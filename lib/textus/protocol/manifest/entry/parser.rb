@@ -44,7 +44,7 @@ module Textus
           private_class_method :infer_kind
 
           def self.resolve_format(key, kind, root, declared)
-            return "markdown" if kind == :nested
+            return declared || "markdown" if kind == :nested
 
             dir = root ? File.join(root, "data", key.split(".").join("/")) : nil
             if dir
