@@ -7,7 +7,18 @@ uid: 73D74CA486A29352
 
 ## Status
 
-Proposed
+Accepted — all 8 findings verified as resolved (2026-07-05 audit)
+
+| # | Finding | Resolution |
+|---|---------|------------|
+| 1 | Duplicate CursorExpired | Already unified — no MCP-specific variant exists |
+| 2 | Top-level Result alias | Already removed — no `Textus::Result` in `lib/textus.rb` |
+| 3 | FileStore port leak | Already reorganized — `lib/textus/store/` no longer exists |
+| 4 | Validation coupled to write path | Fixed — `ValidateInput` moved to step 0 of `PutPipeline`, before any IO |
+| 5 | Duplicate write-verb categorization | Already derives from VerbSpec predicates |
+| 6 | Redundant contract fetch | Resolved — `lib/textus/dispatch.rb` no longer exists |
+| 7 | Schema::Store silent load errors | Already uses `warn` instead of silent `next` |
+| 8 | Inconsistent module vs class nesting | Resolved — `Store::` namespace reorganized into pipeline system |
 
 ## Date
 
