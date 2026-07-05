@@ -425,7 +425,11 @@ Textus.workflow "doctor" do
       next unless row[:key].to_s.end_with?(".feedback")
       next unless row[:path] && File.file?(row[:path])
 
-      feedback = JSON.parse(File.read(row[:path])) rescue next
+      feedback = begin
+        JSON.parse(File.read(row[:path]))
+      rescue JSON::ParserError
+        next
+      end
       next unless feedback["signal"] == "session_closed"
 
       checked = Array(feedback["nodes_checked"]).map(&:to_s)

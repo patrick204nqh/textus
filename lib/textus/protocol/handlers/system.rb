@@ -65,7 +65,7 @@ module Textus
           reader = ->(key:) { ctx.read(key:) }
 
           Textus::Workflow::Scheduler.new(
-            registry:, workflow_queue: ctx.workflow_queue, reader:
+            registry:, workflow_queue: ctx.workflow_queue, reader:,
           ).seed_expired
 
           consumer = Textus::Workflow::Consumer.new(registry:, container: ctx.container, call:)
@@ -74,6 +74,7 @@ module Textus
           loop do
             row = ctx.workflow_queue.pop
             break unless row
+
             result = consumer.consume(row, ctx.workflow_queue)
             result[:state] == "done" ? completed += 1 : failed += 1
           end

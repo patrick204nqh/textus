@@ -1,9 +1,10 @@
 RSpec.describe Textus::Protocol::Handlers::CommandContext do
+  subject(:ctx) { described_class.new(store_engine, container, call) }
+
   let(:store_engine) { instance_double("Textus::Protocol::StoreEngine") }
   let(:container) { instance_double("Textus::Protocol::Container") }
   let(:call) { instance_double("Textus::Value::Call") }
   let(:store) { instance_double("Textus::Infra::Store") }
-  subject(:ctx) { described_class.new(store_engine, container, call) }
 
   before do
     allow(container).to receive(:manifest).and_return(double)

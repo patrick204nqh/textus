@@ -21,6 +21,7 @@ module Textus
         loop do
           row = @container.store.workflow_queue.pop
           break unless row
+
           consumer.consume(row, @container.store.workflow_queue)
         end
       end

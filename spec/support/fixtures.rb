@@ -132,6 +132,7 @@ module TextusSpecHelpers
     loop do
       row = workflow_queue.pop
       break unless row
+
       consumer.consume(row, workflow_queue)
     end
   end

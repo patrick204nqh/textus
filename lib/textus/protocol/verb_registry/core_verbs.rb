@@ -33,7 +33,8 @@ module Textus
           :data_mv, "Rename a data lane — manifest + files. Refuses if destination exists.",
           [ArgSpec.arg(name: :from, required: true, positional: true, description: "current data lane name"),
            ArgSpec.arg(name: :to, required: true, positional: true, description: "new data lane name"),
-           ArgSpec.arg(name: :dry_run, type: :boolean, default: false, description: "when true, returns planned zone move without applying")],
+           ArgSpec.arg(name: :dry_run, type: :boolean, default: false,
+                       description: "when true, returns planned zone move without applying")],
           %i[cli mcp], :write
         ),
 
@@ -82,7 +83,8 @@ module Textus
         key_delete_prefix: VerbSpec.new(
           :key_delete_prefix, "Bulk-delete every leaf key under prefix.",
           [ArgSpec.arg(name: :prefix, required: true, positional: true, description: "every leaf key under this dotted prefix is deleted"),
-           ArgSpec.arg(name: :dry_run, type: :boolean, default: false, description: "when true, returns keys that would be deleted without deleting")],
+           ArgSpec.arg(name: :dry_run, type: :boolean, default: false,
+                       description: "when true, returns keys that would be deleted without deleting")],
           %i[cli mcp], :write
         ),
 
@@ -120,9 +122,11 @@ module Textus
         put: VerbSpec.new(
           :put, "Create or update an entry. Schema-validated. Returns {uid, etag}.",
           [ArgSpec.arg(name: :key, required: true, positional: true, description: "dotted entry key, e.g. 'knowledge.project'; must resolve to a zone the role may write"),
-           ArgSpec.arg(name: :meta, type: Hash, wire_name: :_meta, description: "frontmatter; reads back as `_meta`. Schema-validated — call `schema KEY` first"),
+           ArgSpec.arg(name: :meta, type: Hash, wire_name: :_meta,
+                       description: "frontmatter; reads back as `_meta`. Schema-validated — call `schema KEY` first"),
            ArgSpec.arg(name: :body, description: "markdown/text payload for md entries; use `content` for json/yaml"),
-           ArgSpec.arg(name: :content, type: Hash, description: "structured payload for json/yaml-format entries; omit (use `body`) for markdown entries"),
+           ArgSpec.arg(name: :content, type: Hash,
+                       description: "structured payload for json/yaml-format entries; omit (use `body`) for markdown entries"),
            ArgSpec.arg(name: :if_etag, description: "optimistic-concurrency guard; write rejected if entry changed since")],
           %i[cli mcp], :write
         ),

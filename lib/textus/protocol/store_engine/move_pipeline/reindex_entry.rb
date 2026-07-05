@@ -8,7 +8,8 @@ module Textus
             content = ctx.envelope.content ? ctx.envelope.content.to_json : ctx.envelope.body
             deps.entry_index.record(
               key: ctx.to_key, lane: ctx.to_entry.lane, format: ctx.to_entry.format,
-              schema: ctx.to_entry.schema, content: content)
+              schema: ctx.to_entry.schema, content: content
+            )
             ctx
           end
         end

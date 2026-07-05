@@ -15,7 +15,11 @@ module Textus
           content = { "session_id" => uuid, "created_at" => Time.now.utc.iso8601, "status" => "active" }
           ctx.put(key:, meta: {}, body: JSON.generate(content), content: nil, call:)
 
-          boot = Textus::Protocol::Boot.build(container: ctx.container) rescue nil
+          boot = begin
+            Textus::Protocol::Boot.build(container: ctx.container)
+          rescue StandardError
+            nil
+          end
           result = { "session_id" => uuid, "status" => "active" }
           result["boot"] = boot if boot
           result

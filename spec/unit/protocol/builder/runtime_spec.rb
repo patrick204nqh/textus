@@ -10,7 +10,7 @@ RSpec.describe Textus::Protocol::Builder::Runtime do # rubocop:disable RSpec/Mul
   let(:manifest) { instance_double(Textus::Protocol::Manifest) }
   let(:resolver) { instance_double(Textus::Protocol::Manifest::Resolver) }
   let(:schemas) { instance_double(Textus::Protocol::Schema::Registry) }
-  let(:workflows) { double("workflows") } # rubocop:disable RSpec/VerifiedDoubles
+  let(:workflows) { double("workflows") }
   let(:workflow_registry) { instance_double(Textus::Workflow::Registry) }
   let(:domain) do
     instance_double(Textus::Protocol::Builder::Domain::Components,

@@ -1,6 +1,5 @@
 require "spec_helper"
 
-# rubocop:disable RSpec/VerifiedDoubles
 RSpec.describe "WritePipeline indexing" do
   let(:entry_index) { instance_double(Textus::Infra::Store::EntryIndex) }
   let(:audit_log) { instance_double(Textus::Infra::Store::AuditLog) }
@@ -70,4 +69,3 @@ RSpec.describe "WritePipeline indexing" do
     end
   end
 end
-# rubocop:enable RSpec/VerifiedDoubles
