@@ -1,12 +1,12 @@
 {
   "_meta": {
-    "generated_at": "2026-07-05T17:36:20Z",
+    "generated_at": "2026-07-05T17:41:05Z",
     "uid": "60e228765192c063"
   },
   "entries": [
     {
-      "tag": "Unreleased",
-      "date": null,
+      "tag": "v0.56.0",
+      "date": "2026-07-06",
       "groups": {
         "Features": [
           {

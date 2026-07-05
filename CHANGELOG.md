@@ -10,20 +10,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Features
 
-- web surface: POST /api/:verb via Sinatra + Puma, GET /api/status
-- shared Dispatch.call: all three surfaces (CLI, MCP, Web) route through it
-- EntryConstraint: naming/schema/format enforcement at propose, accept, put
-- CLI group/verb: 'textus web serve' starts the web server
-
-### Bug Fixes
-
-- workflow TTL reader (alias ttl every) destroyed @ttl on read, preventing reseeding
-- changelog now filters to feat:/fix: commits only, grouped by type
-
-## Unreleased
-
-### Features
-
 - add Knowledge/Scratchpad handlers, remove old Human/Agent stubs
 - add HandlerContext — restricted container view for handlers
 - add Session class with method_missing, replace Store in CLI/MCP surfaces
