@@ -8,6 +8,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+- feat: web surface, shared dispatch, entry constraint enforcement
+- fix: move CBM_CACHE_DIR constant outside namespace block (rubocop)
+- refactor: simplification phase 2 — pipeline inline, data param, ADR archive, adoption rename, boot improvements
+- chore: fix rubocop hash alignment in bin/smoke
+- feat: add ruby/python/javascript format files with proper extensions
+- feat: per-language script formats (bash/ruby/python/js)
+- chore: gitignore bin/.smoke-sids marker file
+- fix: add --as-format to put for per-write format override
+- fix: script files under sessions get no extension instead of .md
+- fix: smoke output now glance-friendly and session-id capture fixed
+- fix: smoke --clean now sweeps orphan session dirs via marker file
+- chore: fix rubocop offenses for CI compliance
+- feat: smoke tests 4 script formats (bash/ruby/python/js) under sessions.<id>.scripts
+- feat: add bin/smoke for agent session lifecycle testing
+- style: disable RSpec/VerifiedDoubles, StubbedMock, MessageSpies, VerifiedDoubleReference in rubocop; deduplicate config
+- style: rubocop autocorrect (non-RSpecVerifiedDoubles), fix rescue modifier/comma/guard-clause in new code
+- feat: strict agent session protocol — visible INPUT/LOOP/OUTPUT in AGENTS.md, boot context in session_open, nodes_checked in session_close, doctor check for skipped constraint, protocol entry 0016
+- fix: Runner::Context needs file_system/schemas for workflow step blocks, fix stale error message (match: → on:)
+- refactor: standardize pipeline shapes — extract Delete/Move steps into separate files, add narrow DeleteDeps/MoveDeps structs
+- refactor: add narrow file queries to QueryContext, update ops handlers; docs: align knowledge store with current architecture — 4 files updated, 3 deleted, data-flow rewritten
+- refactor: workflow redesign — two-seam drain/watch, deleted Engine/Queue/RetryPolicy, inline retry, Publisher uses container.store_engine, StepHelpers extracted from Helpers
+- refactor: collapse 21 single-file verb specs into core_verbs.rb
+- chore: remove dead code (Outcome, Result, verb stubs, session_open/close files, Registry#workflows_for_key, be_success/be_failure matchers)
+- style: suppress rubocop warnings in spec files
+- style: suppress Metrics/ParameterLists in Container
+- style: rubocop auto-correct fixes
+- refactor: split Workflow::DSL::Definition into sub-modules
+- refactor: group 11-step pipeline into 4 phases
+- refactor: split Builder into three testable layers
+- refactor: CQS context split — QueryContext + CommandContext
+- refactor: consolidate authorization into Manifest::Policy
+- refactor: collapse shallow namespace modules
+- chore: fix rubocop violations, key_delete module_function, and refresh docs
 - refactor: replace hand-written Session delegations with Forwardable
 - refactor: extract merge_issues helper in Definition#check
 - refactor: split VerbRegistry into per-verb files under verb_registry/verbs/

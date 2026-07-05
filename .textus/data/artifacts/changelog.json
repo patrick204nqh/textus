@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "generated_at": "2026-07-05T05:39:11Z",
+    "generated_at": "2026-07-05T17:33:08Z",
     "uid": "60e228765192c063"
   },
   "entries": [
@@ -8,6 +8,138 @@
       "tag": "Unreleased",
       "date": null,
       "commits": [
+        {
+          "subject": "feat: web surface, shared dispatch, entry constraint enforcement",
+          "date": "2026-07-06"
+        },
+        {
+          "subject": "fix: move CBM_CACHE_DIR constant outside namespace block (rubocop)",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "refactor: simplification phase 2 — pipeline inline, data param, ADR archive, adoption rename, boot improvements",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "chore: fix rubocop hash alignment in bin/smoke",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "feat: add ruby/python/javascript format files with proper extensions",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "feat: per-language script formats (bash/ruby/python/js)",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "chore: gitignore bin/.smoke-sids marker file",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "fix: add --as-format to put for per-write format override",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "fix: script files under sessions get no extension instead of .md",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "fix: smoke output now glance-friendly and session-id capture fixed",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "fix: smoke --clean now sweeps orphan session dirs via marker file",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "chore: fix rubocop offenses for CI compliance",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "feat: smoke tests 4 script formats (bash/ruby/python/js) under sessions.<id>.scripts",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "feat: add bin/smoke for agent session lifecycle testing",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "style: disable RSpec/VerifiedDoubles, StubbedMock, MessageSpies, VerifiedDoubleReference in rubocop; deduplicate config",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "style: rubocop autocorrect (non-RSpecVerifiedDoubles), fix rescue modifier/comma/guard-clause in new code",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "feat: strict agent session protocol — visible INPUT/LOOP/OUTPUT in AGENTS.md, boot context in session_open, nodes_checked in session_close, doctor check for skipped constraint, protocol entry 0016",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "fix: Runner::Context needs file_system/schemas for workflow step blocks, fix stale error message (match: → on:)",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "refactor: standardize pipeline shapes — extract Delete/Move steps into separate files, add narrow DeleteDeps/MoveDeps structs",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "refactor: add narrow file queries to QueryContext, update ops handlers; docs: align knowledge store with current architecture — 4 files updated, 3 deleted, data-flow rewritten",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "refactor: workflow redesign — two-seam drain/watch, deleted Engine/Queue/RetryPolicy, inline retry, Publisher uses container.store_engine, StepHelpers extracted from Helpers",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "refactor: collapse 21 single-file verb specs into core_verbs.rb",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "chore: remove dead code (Outcome, Result, verb stubs, session_open/close files, Registry#workflows_for_key, be_success/be_failure matchers)",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "style: suppress rubocop warnings in spec files",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "style: suppress Metrics/ParameterLists in Container",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "style: rubocop auto-correct fixes",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "refactor: split Workflow::DSL::Definition into sub-modules",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "refactor: group 11-step pipeline into 4 phases",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "refactor: split Builder into three testable layers",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "refactor: CQS context split — QueryContext + CommandContext",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "refactor: consolidate authorization into Manifest::Policy",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "refactor: collapse shallow namespace modules",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "chore: fix rubocop violations, key_delete module_function, and refresh docs",
+          "date": "2026-07-05"
+        },
         {
           "subject": "refactor: replace hand-written Session delegations with Forwardable",
           "date": "2026-07-05"

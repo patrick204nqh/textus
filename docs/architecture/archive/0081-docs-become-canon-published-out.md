@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-04
 **Status:** Accepted
-**Touches:** [ADR 0050](./0050-native-authoring-and-content-identical-adoption.md) (content-identical adoption — the `guard_clobber` branch this migration rides on), [ADR 0046](./0046-publish-leaf-subtrees.md) and [ADR 0047](./0047-publish-tree-keyless-subtree-mirror.md) (the leaf/tree publish modes), [ADR 0052](./0052-typed-publish-block.md) (the typed `publish:` block those modes now fold into), [ADR 0070](./0070-content-addressed-build-artifacts.md) (moved sentinels out of tree to `.run/sentinels/` — why published docs are not annotated), [ADR 0041](./0041-dogfood-textus-in-its-own-repo.md) (textus dogfoods itself — the `knowledge` zone this extends), [ADR 0044](./0044-system-actors-resolved-by-capability.md) (`build` runs as the build-capable actor automatically).
+**Touches:** [ADR 0050](./0050-native-authoring-and-content-identical-adoption.md) (content-identical adoption — the `guard_clobber` branch this migration rides on), [ADR 0046](./0046-publish-leaf-subtrees.md) and [ADR 0047](./0047-publish-tree-keyless-subtree-mirror.md) (the leaf/tree publish modes), [ADR 0052](./0052-typed-publish-block.md) (the typed `publish:` block those modes now fold into), [ADR 0070](./0070-content-addressed-build-artifacts.md) (moved sentinels out of tree to `track/sentinels/` — why published docs are not annotated), [ADR 0041](./0041-dogfood-textus-in-its-own-repo.md) (textus dogfoods itself — the `knowledge` zone this extends), [ADR 0044](./0044-system-actors-resolved-by-capability.md) (`build` runs as the build-capable actor automatically).
 
 > **One sentence:** textus already dogfoods itself (ADR 0041) with a `knowledge` zone (kind `canon`) that holds only `project.md` + the runbooks, while every other committed doc under `docs/` is an un-owned flat file an agent can silently drift; this ADR makes **every committed `docs/` file canon** — authored under `.textus/zones/knowledge/`, published *back out* to its original `docs/` path by `textus build` — turning `docs/` into a committed, sentinel-managed mirror (the same status `CLAUDE.md`/`AGENTS.md` already hold), using ADR 0050's content-identical adoption so the first `build` is a **zero `git diff`** with links, blame, and layout preserved.
 
@@ -26,7 +26,7 @@ We already publish prose-heavy, multi-file artifacts in their **native shape** (
 
 5. **Entry keys use hyphens, not underscores.** The key segment grammar is `[a-z0-9][a-z0-9-]*` (`lib/textus/key/grammar.rb:4`) — lowercase, digits, hyphens; underscores are rejected. So directory keys are e.g. `knowledge.how-to`, `knowledge.reference`, `knowledge.architecture.decisions`.
 
-6. **Sentinels stay out of tree (ADR 0070).** Publish sentinels live under `.textus/.run/sentinels/` (gitignored), so the published `docs/` files are **not annotated** with any textus marker — they read as plain, clean docs to anyone who opens them on GitHub.
+6. **Sentinels stay out of tree (ADR 0070).** Publish sentinels live under `.textus/track/sentinels/` (gitignored), so the published `docs/` files are **not annotated** with any textus marker — they read as plain, clean docs to anyone who opens them on GitHub.
 
 7. **`build` runs as the build-capable actor automatically (ADR 0044).** No caller-role gymnastics: the existing build-actor resolution covers the docs publish like any other.
 

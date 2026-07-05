@@ -107,6 +107,8 @@ module Textus
 
         # ── Lifecycle ──
         def every(cadence = :__no_arg__)
+          return @ttl if cadence == :__no_arg__
+
           @ttl = ttl_value(cadence)
         end
 

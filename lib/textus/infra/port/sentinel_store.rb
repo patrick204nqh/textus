@@ -2,7 +2,7 @@ module Textus
   module Infra
     module Port
       # Persistence adapter for sentinel files. Owns the on-disk JSON shape, the
-      # path layout (<store_root>/.run/sentinels/<target-rel-to-repo>.textus-managed.json
+      # path layout (<store_root>/track/sentinels/<target-rel-to-repo>.textus-managed.json
       # — runtime, git-ignored, ADR 0070), and all File/FileUtils I/O.
       # Core::Sentinel is a pure value object that depends on this port for
       # reads and writes.
