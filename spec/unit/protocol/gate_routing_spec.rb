@@ -1,5 +1,6 @@
 RSpec.describe Textus::Protocol::Gate do
-  let(:manifest) { instance_double(Manifest, resolver:) }
+  let(:policy) { instance_double(Textus::Protocol::Manifest::Policy) }
+  let(:manifest) { instance_double(Manifest, resolver:, policy:) }
   let(:resolver) { instance_double("Resolver") }
   let(:store) { instance_double(Textus::Infra::Store, file_system: nil) }
   let(:store_engine) { double("StoreEngine") }
