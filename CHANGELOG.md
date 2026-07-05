@@ -8,1110 +8,230 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-- feat: web surface, shared dispatch, entry constraint enforcement
-- fix: move CBM_CACHE_DIR constant outside namespace block (rubocop)
-- refactor: simplification phase 2 — pipeline inline, data param, ADR archive, adoption rename, boot improvements
-- chore: fix rubocop hash alignment in bin/smoke
-- feat: add ruby/python/javascript format files with proper extensions
-- feat: per-language script formats (bash/ruby/python/js)
-- chore: gitignore bin/.smoke-sids marker file
-- fix: add --as-format to put for per-write format override
-- fix: script files under sessions get no extension instead of .md
-- fix: smoke output now glance-friendly and session-id capture fixed
-- fix: smoke --clean now sweeps orphan session dirs via marker file
-- chore: fix rubocop offenses for CI compliance
-- feat: smoke tests 4 script formats (bash/ruby/python/js) under sessions.<id>.scripts
-- feat: add bin/smoke for agent session lifecycle testing
-- style: disable RSpec/VerifiedDoubles, StubbedMock, MessageSpies, VerifiedDoubleReference in rubocop; deduplicate config
-- style: rubocop autocorrect (non-RSpecVerifiedDoubles), fix rescue modifier/comma/guard-clause in new code
-- feat: strict agent session protocol — visible INPUT/LOOP/OUTPUT in AGENTS.md, boot context in session_open, nodes_checked in session_close, doctor check for skipped constraint, protocol entry 0016
-- fix: Runner::Context needs file_system/schemas for workflow step blocks, fix stale error message (match: → on:)
-- refactor: standardize pipeline shapes — extract Delete/Move steps into separate files, add narrow DeleteDeps/MoveDeps structs
-- refactor: add narrow file queries to QueryContext, update ops handlers; docs: align knowledge store with current architecture — 4 files updated, 3 deleted, data-flow rewritten
-- refactor: workflow redesign — two-seam drain/watch, deleted Engine/Queue/RetryPolicy, inline retry, Publisher uses container.store_engine, StepHelpers extracted from Helpers
-- refactor: collapse 21 single-file verb specs into core_verbs.rb
-- chore: remove dead code (Outcome, Result, verb stubs, session_open/close files, Registry#workflows_for_key, be_success/be_failure matchers)
-- style: suppress rubocop warnings in spec files
-- style: suppress Metrics/ParameterLists in Container
-- style: rubocop auto-correct fixes
-- refactor: split Workflow::DSL::Definition into sub-modules
-- refactor: group 11-step pipeline into 4 phases
-- refactor: split Builder into three testable layers
-- refactor: CQS context split — QueryContext + CommandContext
-- refactor: consolidate authorization into Manifest::Policy
-- refactor: collapse shallow namespace modules
-- chore: fix rubocop violations, key_delete module_function, and refresh docs
-- refactor: replace hand-written Session delegations with Forwardable
-- refactor: extract merge_issues helper in Definition#check
-- refactor: split VerbRegistry into per-verb files under verb_registry/verbs/
-- refactor: move MovePipeline emit_event dedup guards into shared Pipeline.emit_event
-- refactor: extract shared CheckEtag/ResolvePath into Pipeline module
-- chore: remove vestigial Materialize workflow
-- refactor(workflow): eliminate Materialize re-dispatch and deepen Runner
-- refactor(workflow): extract shared Consumer and decouple event emission from pipeline
-- feat: wire TTL scheduler + refactor Workflow module ownership
-- style: fix rubocop safe autocorrects and update Lint/UnusedMethodArgument excludes for refactored handlers
-- fix: deps/rdeps/graph category  -> read (sed artifact from ac02cb77c)
-- refactor: pull serialize_for_put up to Format::Base
-- docs: update ADR-0133 to Accepted
-- docs: update ADR-0133 to Accepted, add session handoff
-- refactor: extract shared ContextWith module for pipeline context objects
-- refactor: extract handler response hash builder into Concern
-- refactor: bundle StoreEngine dependencies into WriteDeps
-- refactor: simplify store_engine pipelines — remove dead code, extract shared helpers
-- refactor: extract domain logic from handlers and MCP server into testable service objects
-- refactor: eliminate double-resolve, push move orchestration into pipeline, remove dead code
-- refactor(store-engine): Standardize StoreEngine method signatures to all-keyword args
-- refactor: consolidate config workflows, fix renderer trigger, add pipeline
-- refactor: remove redundant lane/kind/nested/owner from manifest schema
-- refactor: strip path/publish/source from manifest, remove dead code
-- refactor: move system verb routing from Gate override hash to VerbSpec#system?
-- refactor: StoreEngine + Handlers::Read/Write/System split
-- fix: skip tracked:false entries in doctor manifest check, fix schema ref
-- fix: correct doctor schema parsing, commit generated artifacts
-- refactor: consolidate lane/role docs workflows, fix nested schema loading
-- refactor: split HandlerContext into ReadOps/WriteOps/System capability interfaces
-- test: add unit tests for Diff module (body, meta, schema, summary)
-- refactor: remove dead publish code, inline Mode+None into publish.rb, inline VAR_RE into tree.rb
-- refactor: fold StepScope and Context into Runner as inner classes
-- refactor: inline Workflow::Loader into Registry
-- refactor: inline Workflow::Pattern into DSL::Definition
-- feat: workflow DSL redesign — on/save/notify, priority routing, doctor consolidation
-- feat: track ingested_at, ingest_count, duplicated_at in raw lane ingest flow
-- chore: regenerate boot artifact and orientation docs after dogfood flow changes
-- chore: remove stale boot cache
-- fix: update orientation template and boot.rb for procedures and feedback criteria
-- refactor: move propose/accept/reject handlers from proposal lane to scratchpad lane
-- chore: remove proposals lane from V4::LANES
-- chore: regenerate artifacts after dogfood flow changes
-- fix: materialize workflow — use container.workflow_registry
-- feat: add shape validation for execution sub-families
-- feat: add procedure entries — doctor, session, deploy
-- refactor: move execution entries to runbook/ subdirectory
-- feat: add execution schemas — runbook, checklist, procedure
-- feat: add feedback criteria entries — protocol-gap, repetitive-task, intent-drift
-- refactor: feedback node becomes criteria — move solid-audit to judgment.engineering
-- refactor: update orientation template — remove propose recipe
-- refactor: clean up scratchpad — replace notes/scripts with proposals
-- refactor: remove proposals lane (folded into scratchpad)
-- feat: surface session_open/session_close in agent boot catalog
-- docs: dogfood flow implementation plan
-- docs: dogfood flow design — session lifecycle, feedback criteria, execution zone
-- fix: dogfood audit — orientation keys, doctor cascade, session lifecycle
-- refactor: remove legacy store files, aliases, and dual code paths
-- refactor: reorganize infra/store with Base, split concerns, standardize API
-- docs: lock store naming conventions into knowledge loop
-- refactor: consolidate drain/watch around shared Async::Queue
-- refactor: consolidate dual paths and fix silent error swallowing
-- feat: add code-pattern entries to knowledge loop (0011-0014)
-- refactor: remove dead parameters from handlers, Data.define, and pipeline
-- fix: replace role-based event suppression with self-loop detection via Engine::IN_FLIGHT
-- fix: prevent infinite event loop — skip workflow event emission for automation-role writes
-- fix: update etag spec for layout-object API, remove naming-check debug output
-- refactor: merge overlapping doctor checks (sentinels+orphaned, schema+unowned, manifest+templates+schemas)
-- refactor: extract build_lanes/build_roles helpers, simplify 5 workflows
-- refactor: collapse 8 static-template workflows into 1 generic render workflow
-- fix: optimize naming-check to only scan naming-constrained entries directly
-- fix: use resolver.enumerate instead of Dir.children in naming-check (respects ignore patterns)
-- fix: reconnect event pipeline, move EventEmitter, add workflow_spec verb, remove published/schema verbs
-- fix: reorder knowledge loop keys and restore execution schema
-- feat: add boot_refresh produce workflow, fix guard clause
-- fix: renumber duplicate ADRs 0117/0120/0121/0125 → 0131-0134, fill stub reference docs
-- chore: remove stale hand-authored doc not produced by any workflow
-- fix: remove dead doctor CLI declaration, fix pattern-crossrefs and Workflow::Context#read
-- fix: update .textus dogfood workflows for store API and clean stale artifacts
-- style: fix 133 rubocop offenses (trailing whitespace, alignment, hash alignment, etc.)
-- refactor: migrate flat-file stores to Infra::Store with SQLite-backed sub-stores
-- refactor: remove dead code (Doctor, Retention, TraceBuffer, SequelAdapter, 3 error classes, spec redirects)
-- refactor: fix drain container crash, remove thread-local registry, delete ScopedContext
-- refactor: collapse Container structs, unify Publisher, remove EventStore Interface
-- refactor: unify result shape, remove views, deepen VerbSpec
-- refactor: replace error hashes with exceptions in handlers and gate
-- fix: drop stale contract check, add new verbs to CLI catalog and snapshot
-- refactor: move Container/Builder/WritePipeline/Retention from infra/store/ to protocol/
-- cleanup: remove dead VERB_TO_CONTRACT, Binder.command, Value::Result wrap, move human helpers to lanes/, delete agent/ and human/ dirs
-- refactor: remove Value::Result wrapping from Gate dispatch
-- cleanup: remove dead Binder.command method and Pending data class
-- cleanup: remove dead VERB_TO_CONTRACT lookup table
-- fix(scratchpad): use body for session storage, fix call forwarding
-- feat(lanes): add Knowledge/Scratchpad handlers, remove old Human/Agent stubs
-- refactor: move lane namespaces under Textus::Lanes:: (Ingest, Proposal, Artifact)
-- refactor: move Gate::Builtin to Protocol::Handlers, add HandlerContext, update handlers to use ctx
-- feat(protocol): add HandlerContext — restricted container view for handlers
-- fix: add spec_helper constant stubs for Manifest/Envelope/Call/Entry/Mentry/Container
-- cleanup: remove unused value types (Command, Trace)
-- feat(protocol): add Session class with method_missing, replace Store in CLI/MCP surfaces
-- feat(protocol): add Session class, replace Store facade in CLI and MCP surfaces
-- refactor: move store classes into protocol/ (event_store, entry_store, cursor, freshness, trace_buffer)
-- cleanup: move binder+contracts from dispatch/ to protocol/, remove empty dispatch/ dir
-- cleanup: remove use_cases/ and dispatch/ middleware/pipeline after migration
-- refactor(gate): route un-laned verbs to Gate::Builtin, remove pipeline path
-- feat(protocol): add Gate::Builtin with 20 internal handler methods
-- feat(proposal): add Proposal::Handlers with propose/accept/reject/diff
-- refactor(human): move proposal handlers to Proposal lane (was Human lane)
-- cleanup: remove migrated proposal use cases (propose/accept/reject/diff)
-- feat(protocol): wire propose/accept/reject/diff verbs to Human lane
-- feat(human): add Handlers.diff for proposal diff preview
-- feat(human): add Handlers.reject for proposal rejection
-- feat(human): add Handlers.accept for proposal acceptance with dry-run
-- feat(human): add Handlers.propose for proposal creation
-- cleanup: remove migrated UseCases::Ops::IngestEntry
-- feat(protocol): wire ingest verb to Ingest lane via VerbSpec lane: field
-- feat(ingest): rebuild Handlers with real ingest orchestration
-- feat(ingest): rebuild Resolver with real supersede logic
-- feat(ingest): add EntryTypes sub-modules for link/asset/text content builders
-- feat(ingest): add IndexRebuilder for event store index rebuild
-- feat(ingest): add Dedup for content hash and URL duplicate detection
-- feat(ingest): add KeyBuilder for key derivation and content hashing
-- feat(protocol): Gate dispatches directly to lane handlers when VerbSpec has lane
-- feat(protocol): add Lane.handler_for to resolve lane name to handler module
-- feat(protocol): add lane: field to VerbSpec
-- feat(infra): add Store::Index::Lookup and Store::Index::Builder classes
-- Implement Protocol::Manifest and related schema components
-- Add core infrastructure for Textus event processing and storage
-- Refactor Textus to use Protocol namespace
-- refactor: remove dead code, fix Gate authorization, drop audit_events table
-- chore: remove accidentally committed backup files
-- phase(cleanup): remove orphaned SqliteAdapter — Phase 5
-- phase(surface): update Watcher to use Protocol::Async and Infra::Locks — Phase 4
-- phase(lanes): add scoped Workflow::ScopedContext — Phase 3 complete
-- feat(human): create Textus::Human with LOOP Runner, Freeform, and handlers
-- feat(agent): create Textus::Agent with Session, Workspace, Runner, Evidence, and handlers
-- feat(artifact): create Textus::Artifact with cache, lifecycle, and handlers
-- feat(ingest): create Textus::Ingest with resolver, entry types, and handlers
-- phase(protocol): add Gate, Async, wire into Builder — Phase 2 complete
-- feat(protocol): add Protocol::Manifest alias for Textus::Manifest
-- phase(protocol): move Index, Links, Audit, Envelope to Protocol:: namespace with forwarding facades
-- phase(protocol): move Layout, Key, Schema to Protocol:: namespace with forwarding facades
-- feat(protocol): move Format strategies to Protocol::Format with forwarding facades
-- chore: ignore headroom backup file
-- feat(infra): wire Infra::FileStore, Infra::Database, Infra::Clock in Store::Builder
-- feat(infra): extract Infra::Locks with BuildLock and WatcherLock
-- feat(infra): extract Infra::Clock with now method
-- feat(infra): extract Infra::Database with table setup, FTS5, and transaction support
-- feat(infra): extract Infra::FileStore with 17 methods matching current FileSystem interface
-- refactor: hard-cut legacy workflow step syntax
-- fix: add lsp defaults to opencode workflow config
-- fix: restore workflow artifact generation and docs publish
-- fix: harden publish/parser and resolve lint regressions
-- docs: mark ADR-0125 container/double-emission notes superseded
-- refactor: group port by concern (storage vs concurrency)
-- refactor: rename store/jobs and fold materialize into workflow/instances
-- fix: protect .textus/data canon from direct agent writes
-- fix: remove stale jobs CLI help text
-- refactor: extract MCP contract-drift annotation from Server#dispatch
-- refactor: fold entry indexing into the synchronous write path
-- fix: wire Consumer and EventEmitter callers to EventStore
-- refactor: Produce::EventEmitter depends on EventStore
-- fix: Events::Consumer retry path delegates to EventStore and RetryPolicy
-- refactor: trim Store::EventStore to only own the events table
-- fix: add Store::EntryIndex and correct entries FTS indexing/search
-- refactor: extract Events::RetryPolicy as its own decision object
-- fix: rename db -> database in consumer.rb; move ADR 0127 to .textus via textus put; add ADR 0129 DependencyAdapter gate
-- style: fix rubocop enable directives in write_pipeline and event_store
-- fix: missing keyword database in converge_now drain call
-- docs: add ADR 0127 — interface consolidation decisions
-- chore: remove legacy code — Entry::Reader/Writer refs, dead LinkEdgeStore spec
-- fix: drain_store call recursion, boot protocol key, backward compat methods
-- fix: use respond_to? in HandlerResolver, fix BootStore Infrastructure ref
-- style: fix remaining rubocop offenses
-- fix: Boot.CLI_VERBS uses Catalog.build
-- style: fix all rubocop offenses
-- refactor: route ports through FileSystem, split Boot
-- feat: add Events middleware, convert all use cases to classes
-- fix: add trace_buffer/reader/writer accessors to Container, update specs
-- refactor: create Store::LinkGraph, rewire Builder to Container
-- refactor: create Store::EntryStore, retire Entry::Reader + Entry::Writer
-- feat: add Store::Container with grouped components
-- refactor: split Port::Store into Port::Database + Port::EventStore
-- refactor: create Port::FileSystem + Store::FileSystem, retire Storage/
-- refactor: split WriteStep into write_pipeline/ directory
-- refactor: extract VerbSpec into verb_registry/verb_spec.rb
-- refactor: extract ArgSpec into verb_registry/arg_spec.rb
-- fix: skip publish in Runner when data is nil, remove publish from system workflows that manage their own output; fix pulse_entries, LinkEdgeStore, CLI verbs catalog, specs for architecture changes; all 1014 tests pass
-- feat: implement new event system with Sequel-backed events table, Workflow DSL handles, Registry, EventEmitter, Consumer, Materialize/Index workflows, rewire Builder/Infrastructure/Watcher/Drain/LinkEdgeStore
-- refactor: remove Event::Bus, Event module, CascadeSubscriber, Store::Jobs namespace
-- refactor: remove write-time schema validation from WriteStep and Writer
-- refactor: remove rule system from manifest, data.rb, contracts, verb registry, CLI, auth, publisher, ttl evaluator, retention sweep
-- refactor: remove enqueue verb
-- refactor: remove doctor verb and module
-- feat: add sequel gem and SequelAdapter dependency adapter
-- refactor: move knowledge sections under knowledge.loop.* — clean separation of loop vs reference data
-- refactor: streamline conformance fixture — drop project-specific entries, align with repo shape
-- refactor(init): use consolidated entries for project-agnostic scaffold
-- refactor: align init and fixture entry names with .textus/manifest.yaml
-- refactor: add naming/schema governance to repo manifest entries
-- refactor: complete manifest entry simplification — align init, fixtures, helpers to repo shape
-- refactor(test-support): match repo entry shape; remove migrate_legacy_manifest
-- refactor: simplify repo manifest entries; fix resolve_format for explicit path override
-- refactor(init): simplify DEFAULT_MANIFEST and AGENT_ENTRIES — match repo entry shape
-- refactor: delete IgnoreMatcher; remove ignore system from Resolver, SubtreeMirror, Tree, schema, validators
-- refactor(nested): remove ignore/ignored? — no longer read from manifest
-- refactor(base): remove ignore/ignored? stubs; make schema/naming optional
-- refactor(parser): stop reading schema/naming/ignore/publish/source from manifest; infer kind/format from disk
-- docs: design doc for manifest entry simplification
-- feat: protocol textus/4 — manifest data: shape, roles/lanes hardcoded
-- refactor(manifest): drop owner from envelope and where output
-- refactor(manifest): Entry::Parser infers kind from lane+disk shape, adds naming:, drops owner:/format:
-- refactor(manifest): Data.parse reads data: grouped-by-lane, rejects stale roles:/lanes:/owner:
-- refactor(manifest): repoint write-gating predicates to Protocol::V4::LANES writers
-- refactor(manifest): Domain::Lane and Policy read writers from Protocol::V4::LANES directly
-- feat(manifest): add Textus::Protocol::V4 fixed lane/naming table
-- test: relax build-lock drain soft-miss assertion
-- chore: satisfy pre-push rubocop naming rules
-- chore: clean up lint warnings in workflow and jobs code
-- refactor(doctor): batch-port remaining class checks to workflows
-- refactor(doctor): port PublishTreeIndexOverlap check to a workflow
-- refactor(doctor): port OrphanedPublishTargets check to a workflow
-- refactor(doctor): port SchemaViolations check to a workflow
-- refactor(doctor): port UnownedSchemaFields check to a workflow
-- refactor(doctor): port AuditLog check to a workflow
-- refactor(doctor): port Sentinels check to a workflow
-- refactor(doctor): port IllegalKeys check to a workflow
-- refactor(doctor): port SchemaParseError check to a workflow
-- refactor(doctor): port ProtocolVersion check to a workflow
-- refactor(loop): renumber scratchpad.notes to NNNN-topic-slug.md, scaffold sessions/scripts
-- feat(workflow): add shape() DSL primitive, check_naming helper, loop-shape workflow
-- feat(loop): add loop summary to boot orientation output
-- feat(loop): add Loop node table to explanation concepts template
-- refactor(loop): realign task 6/7 identity and readme extraction
-- refactor(loop): fold knowledge.readme fragments into intent
-- refactor(loop): fold knowledge.project into intent section
-- refactor(loop): retire knowledge.architecture into loop sections
-- feat(loop): add knowledge.feedback zone
-- refactor(loop): split knowledge.patterns into judgment.engineering/.agent-behavior
-- refactor(loop): split knowledge.rules/specs into constraint.repo/.protocol
-- refactor(verbs): standardize verb-registry surfaces, naming, jobs split, error typing
-- refactor(architecture): deepen v2 — flatten jobs ceremony, extract publisher/validator/stepscope, delete facade
-- feat(architecture): integrate container's writer and reader into use cases and workflow runner
-- docs(architecture): sync docs to phase 3 refactor — Infrastructure container, workflow DSL surface, no Registry/Collector/Publisher
-- refactor(architecture): deepen phase 3 — Writer port, single Infrastructure, manifest→workflow boundary
-- Revert "feat(federation): add federation sync workflow — auto-mirrors remote store entries on drain"
-- feat(federation): add federation sync workflow — auto-mirrors remote store entries on drain
-- feat(workflow): migrate 4 more Doctor checks to validation workflows
-- feat(workflow): migrate Doctor::RuleAmbiguity to self-contained validation workflow
-- feat(workflow): add validate step type, multi-key matching, and validation workflow POC
-- chore: revert solid-process POC (gem not mature enough)
-- refactor(specs): remove 6 redundant files, simplify 5 overlapping specs, drop 6 dead refs
-- feat(pipeline): enforce cross-reference chain — decisions→architecture, patterns→decisions, runbooks→patterns
-- chore: regenerate changelog
-- chore: track knowledge.architecture entries and manifest
-- feat(patterns): add unified-dispatch, middleware-chain, handler-needs, store-builder + agent training
-- docs: document 6 intentional Reader/Writer bypass sites (P3)
-- refactor: drop Ctx alias, rename ctx.rb → infrastructure.rb
-- refactor: clean up P0-P2 anti-patterns — HANDLES_ALL, boot.rb layering, InfrastructureProxy rename, Store::Builder
-- feat(knowledge): enforce pipeline structure with conformance spec + agent protocol
-- feat(observability): Trace middleware — auto-instrumented dispatch with ring buffer (Phase 5)
-- feat(conformance): verb completeness, downward layer import, port contract guards (Phase 4)
-- feat(ports): formal port interfaces with conformance verification (Phase 3)
-- feat(domain): extract Domain::Key, Domain::Lane, Domain::Envelope — pure domain layer (Phase 2)
-- feat: land ADR-0120, ADR-0121, ADR-0125 — unified dispatch, bounded use cases, interface hygiene
-- refactor: remove unused handler modules and simplify dispatch logic
-- docs: refresh generated changelog and skills feed
-- refactor: simplify entry read handlers and pulse fallback
-- fix: align trigger catalog and etag conformance guards
-- docs: add dependency adoption gate guidance
-- docs: add architecture patterns for triggers and adapters
-- refactor: centralize trigger vocabulary in TriggerCatalog
-- refactor: add dependency adapter modules for runtime deps
-- refactor: model jobs and produce results with outcome values
-- refactor: extract drain jobs pulse per-verb handlers
-- refactor: extract key_mv key_delete data_mv handlers
-- refactor: extract get put list per-verb handlers
-- refactor: add concern handlers for dispatch domains
-- refactor: narrow handler invocation to keyword interface
-- refactor: route CLI and MCP via VerbDispatch
-- refactor: introduce Infrastructure aliases and dispatch seam baseline
-- feat: implement ADRs 0121-0125, including bounded use-case objects, workflow parallel steps, and session resilience; update changelog and context documentation
-- feat: add ADR-0125 for Bounded Use-Case Objects and related documentation; update manifest and CLI argument formatting
-- refactor: consolidate handlers into UseCases and remove Orchestration layer
-- feat: Implement ADRs 0121-0124 — link graph, proposal diff, session resilience, parallel workflows
-- chore: fix 3 rubocop offenses and regenerate docs
-- fix: rule_trace verb category should be :read, not :maintenance
-- feat: add rule_trace verb — trace rule resolution candidates, winners, and effective RuleSet
-- refactor: decompose Writer#move into WriteStep::DEFAULT_MOVE chain
-- refactor: decompose Writer#delete into WriteStep::DEFAULT_DELETE chain
-- refactor: two-phase Manifest.build — derived_entry? now correct
-- refactor(store)!: delete deprecated Container, Assembler, Cascade middleware
-- refactor(store): build Ctx+HandlerResolver pipeline internally
-- refactor: convert all write and maintenance handlers to pure modules (HANDLES/NEEDS/self.call)
-- refactor: convert all read handlers to pure modules (HANDLES/NEEDS/self.call)
-- feat: add HandlerResolver — discovers pure handler modules by convention
-- feat: add CascadeSubscriber — event-driven replacement for Cascade middleware
-- feat: add Store::Ctx, typed Event structs, and session-scoped Event::Bus
-- feat: Introduce Boot.wire and Typed Events
-- refactor: drop positional-arg support from entry/ops/rule — keyword args only
-- feat: replace generated verb methods with entry/ops/rule noun-domain API on Store
-- refactor: replace Container#build_pipeline with declarative HANDLER_MANIFEST in Dispatch::Assembler
-- refactor: decompose Entry::Writer#put into WriteStep::DEFAULT_PUT chain
-- chore: save architecture redesign plan to scratchpad
-- refactor: remove manual uid from all workflows — textus manages uid natively via inject_all
-- fix(ci): stable uid in architecture-index — use JSON.generate instead of Hash#inspect (Ruby 3.3 vs 3.4 diverge)
-- fix(ci): fetch-depth: 0 on docs job — git log needs full history for changelog workflow
-- refactor: clean up textus.rb — inline MCP namespace stub, remove dead ignores, drop duplicate Textus.workflow
-- fix: gemspec — drop partial docs/ from shipped files, ship code + README + CHANGELOG only
-- fix: gemspec — remove stale SPEC.md reference, update protocol version to textus/4, point docs_uri to README
-- feat: Claude Code hooks — block direct writes to textus-managed artifacts
-- chore: add textus drain to pre-push hook + docs-protocol-guard on pre-commit
-- refactor(Move1): rename Produce::ContextHelpers → Textus::ContainerHelpers — neutral top-level module used by both publish and workflow contexts
-- refactor(M3): rename Render::Context#binding → #to_erb_binding — avoids shadowing Ruby built-in
-- refactor(M2): remove silent StandardError rescue in read_family — reader.read returns nil for absent files
-- refactor(M1): drop edge_store param from Publisher — ToPaths reads container.link_edge_store directly
-- fix(critical): Container#link_edge_store shared — Engine + Workflow::Runner both record edges, RdepsEntry queries same instance (C1+C2)
-- chore: drop redundant require_relative — Zeitwerk autoloads lib/textus/**
-- refactor: extract ContextHelpers — manifest/repo_root shared across PublishContext + Workflow::Context (Audit #4)
-- refactor: Container#read_family — hide manifest.resolver.enumerate from workflows (Audit #5)
-- feat: wire LinkEdgeStore recording through Engine → Render → UriRewriter (ADR-0121 complete)
-- refactor: move link rewriting into Render — ToPaths drops UriRewriter dependency (Audit #2)
-- refactor: extract Render::Context — testable binding factory (Audit #1)
-- feat: ADR-0121 Phase 1 complete — textus-native link resolution (filesystem mode)
-- refactor: migrate template cross-links to textus_link helper
-- feat: LinkEdgeStore + extend rdeps to include link dependency edges
-- feat: add UriRewriter — post-process textus: URIs in rendered output
-- feat: inject textus_link method into ERB template context via binding
-- feat: add Textus::Links::Resolver — resolves textus:KEY to relative paths
-- feat: add ADR-0121 — textus-native link resolution via textus: URI scheme
-- feat: remove SPEC.md — spec lives in knowledge.specs/* via textus protocol
-- fix: changelog filters merge commits (--no-merges), delete unmanaged CHANGELOG/COC files
-- fix: remove orphaned docs/design/architecture.md sentinel
-- refactor: rules key ordering, contributing/security/changelog/coc as artifacts
-- fix: decisions log workflow — use container.reader.read, fix relative links in template
-- refactor: move knowledge.spec → artifacts.spec, remove orphaned artifacts, integrate decision log
-- chore: remove stale knowledge sources replaced by artifact equivalents
-- chore: remove knowledge/cookbook source directory
-- fix: clean orphaned sentinels/files, update decisions README link, restore ignore
-- refactor: rename adr-log to decision log, remove docs/README.md index artifact
-- refactor: prune legacy knowledge, remove cookbook, reorganize workflows+templates
-- feat: convert all how-to, reference, cookbook, explanation docs to generated artifacts
-- feat: wire artifacts.how-to.agents-mcp — pilot how-to artifact pattern
-- feat: wire artifacts.architecture.index — generates lane/role tables + static layer layout
-- feat: delete design/invariants monolith — replaced by atomic canon + assembler artifact
-- feat: wire artifacts.design.invariants — assembles goals + rules atoms via workflow
-- feat: decompose design/invariants into atomic knowledge.goals.* and knowledge.rules.* entries
-- feat: add knowledge.goals and knowledge.rules nested families to manifest
-- feat: add ADR-0120 — atomic canon + composed artifacts principle
+### Features
+
+- add Knowledge/Scratchpad handlers, remove old Human/Agent stubs
+- add HandlerContext — restricted container view for handlers
+- add Session class with method_missing, replace Store in CLI/MCP surfaces
+- add Session class, replace Store facade in CLI and MCP surfaces
+- add Gate::Builtin with 20 internal handler methods
+- add Proposal::Handlers with propose/accept/reject/diff
+- wire propose/accept/reject/diff verbs to Human lane
+- add Handlers.diff for proposal diff preview
+- add Handlers.reject for proposal rejection
+- add Handlers.accept for proposal acceptance with dry-run
+- add Handlers.propose for proposal creation
+- wire ingest verb to Ingest lane via VerbSpec lane: field
+- rebuild Handlers with real ingest orchestration
+- rebuild Resolver with real supersede logic
+- add EntryTypes sub-modules for link/asset/text content builders
+- add IndexRebuilder for event store index rebuild
+- add Dedup for content hash and URL duplicate detection
+- add KeyBuilder for key derivation and content hashing
+- Gate dispatches directly to lane handlers when VerbSpec has lane
+- add Lane.handler_for to resolve lane name to handler module
+- add lane: field to VerbSpec
+- add Store::Index::Lookup and Store::Index::Builder classes
+- create Textus::Human with LOOP Runner, Freeform, and handlers
+- create Textus::Agent with Session, Workspace, Runner, Evidence, and handlers
+- create Textus::Artifact with cache, lifecycle, and handlers
+- create Textus::Ingest with resolver, entry types, and handlers
+- add Protocol::Manifest alias for Textus::Manifest
+- move Format strategies to Protocol::Format with forwarding facades
+- wire Infra::FileStore, Infra::Database, Infra::Clock in Store::Builder
+- extract Infra::Locks with BuildLock and WatcherLock
+- extract Infra::Clock with now method
+- extract Infra::Database with table setup, FTS5, and transaction support
+- extract Infra::FileStore with 17 methods matching current FileSystem interface
+- add Textus::Protocol::V4 fixed lane/naming table
+- add shape() DSL primitive, check_naming helper, loop-shape workflow
+- add loop summary to boot orientation output
+- add Loop node table to explanation concepts template
+- add knowledge.feedback zone
+- integrate container's writer and reader into use cases and workflow runner
+- add federation sync workflow — auto-mirrors remote store entries on drain
+- migrate 4 more Doctor checks to validation workflows
+- migrate Doctor::RuleAmbiguity to self-contained validation workflow
+- add validate step type, multi-key matching, and validation workflow POC
+- enforce cross-reference chain — decisions→architecture, patterns→decisions, runbooks→patterns
+- add unified-dispatch, middleware-chain, handler-needs, store-builder + agent training
+- enforce pipeline structure with conformance spec + agent protocol
+- Trace middleware — auto-instrumented dispatch with ring buffer (Phase 5)
+- verb completeness, downward layer import, port contract guards (Phase 4)
+- formal port interfaces with conformance verification (Phase 3)
+- extract Domain::Key, Domain::Lane, Domain::Envelope — pure domain layer (Phase 2)
+
+### Bug Fixes
+
+- use body for session storage, fix call forwarding
+- stable uid in architecture-index — use JSON.generate instead of Hash#inspect (Ruby 3.3 vs 3.4 diverge)
+- fetch-depth: 0 on docs job — git log needs full history for changelog workflow
+- Container#link_edge_store shared — Engine + Workflow::Runner both record edges, RdepsEntry queries same instance (C1+C2)
 
 ## v0.55.2 — 2026-06-30
 
-- chore: bump version to 0.55.2
-- docs: fix 15 stale content issues found in audit
-- chore: sync how-to store source files and refresh boot artifact
-- docs: rewrite how-to guides — add MCP protocol lifecycle, remove stale content
-- fix: harden MCP server dispatch and resource handling
-- fix: scratchpad sources doctor check handles object-form sources
-- feat: expand sources with suspended flag at get time
-- feat: normalize sources to {key,etag} objects at write time
-- refactor: harden API and interface boundaries across Store, MCP, and registry
-- refactor: update all notebook→scratchpad references in docs, specs, lib, and store data
-- refactor: rename notebook lane to scratchpad across manifest, docs, lib, and specs
-- feat: extend list with q: FTS and schema: filter via SQLite entries index
-- feat: shadow writes to SQLite audit_events, pulse reads from index with flat-log fallback
-- feat: consolidate boot into artifacts.boot, drain computes stable content, boot injects live fields
-- chore: remove generated reference docs, superpowers scratch dirs, fix broken links
-- split Freshness::Evaluator into TtlEvaluator + DriftDetector
-- flatten Container wiring — remove hypothetical HandlerFactoryRegistry+Adapter seam
-- cascade delegates reactive enqueue to Planner — removes manifest-walking from middleware
-- extract Produce::Publisher — single seam for publish-after-materialise
-- fix: correct indentation in write_entry method for better readability
-- refactor: group handlers into read/write/maintenance subdirs (S-1)
-- refactor: rename Store::Envelope::Reader/Writer → Store::Entry::Reader/Writer (I/O for entries, not envelopes)
-- refactor: move Handlers::Orchestration → Textus::Orchestration (not a handler, shared service)
-- refactor: rename Store::Geometry → Store::Layout (filesystem layout, not spatial geometry)
-- refactor: inline Dispatch.dispatch into Store, move unwrap to Value::Result.extract
-- refactor: private_constant VERB_TO_CONTRACT/CONTRACT_TO_VERB, expose via contract_class_for
-- refactor: rename IngestEntry :zone → :lane to complete ADR-0114 vocabulary migration
-- refactor: rename Schema::Store → Schema::Registry (schema registry not a sub-store)
-- refactor: rename Container.build_full → Container.build (no contrast remains)
-- refactor: add Container#wire! to encapsulate post-construction boot mutation
-- refactor: extract Pipeline I/O to direct Writer/Reader calls, reduce Pipeline to single dispatch method
-- refactor: remove Store#as and Store#session, migrate all callers to with_role
-- refactor: delete dead Dispatch::Middleware::Audit (unwired, inline Writer audit is the seam)
-- refactor: delete dead handler registration path (build_pipeline + register_pipeline_registry_handlers)
-- feat: add architecture and design invariants documentation; update job queue handling
-- style(rubocop): align ADR-0121 refactor formatting
-- refactor: api and interface hygiene consolidation (ADR-0121)
-- fix(docs): regenerate adr-log.json to include new ADR 0117
-- fix(docs): deterministic ADR log uid across platforms; rubocop balance
-- workflow(adr_log): produce deterministic uid for adr-log to avoid CI drift
-- Regenerate docs artifacts: ADR log updated by textus drain --as=automation
-- ci(rubocop): ignore var/ temp clones from drain runs
-- chore(docs): add generated reference/specs files
-- ci(docs): run textus drain as automation in CI to stabilise generated metadata
-- chore(docs): regenerate docs via textus drain
-- docs: annotate HandlerFactoryRegistry to note it replaces Builder seam
-- docs(adr): record adoption of HandlerFactoryRegistry + Adapter for pipeline composition (ADR 0117)
-- refactor(container): switch pipeline composition to HandlerFactoryRegistry + Adapter (Design B)
-- feat(container): make pipeline composition pluggable; support HandlerFactoryRegistry+Adapter via TEXTUS_PIPELINE_ADAPTER=1
-- refactor(container): extract pipeline registry registrations to helper and simplify build_pipeline
-- refactor(container): extract handler registration and writer factory helpers from build_full
-- chore(ci): suppress method-size rubocop for build_full to satisfy CI
-- chore: add Design B adapter + registry; fix style
-- feat(design-b): add Pipeline Adapter and HandlerFactoryRegistry for alternative composition seam
-- chore(deepening): incremental pipeline+reader/writer injection, format registry, file_store helpers
-- docs: add engineering skills process contract
-- refactor: remove dispatch session_default plumbing
-- refactor: remove unused dispatch contract from_wire helpers
-- refactor: deepen dispatch, orchestration, and geometry seams
-- fix: update detect_skills to include descendant directories for SKILL.md
-- style: suppress remaining lint/metrics for predicate interface and build_pipeline
-- style: fix rubocop issues — line length, block alignment, suppress structural cops
-- fix: update workflow Bus.dispatch → Dispatch.dispatch
-- docs: update conventions.md, regenerate ref docs
-- refactor: unify dispatch, rename Bus→Dispatch, re-home modules
-- refactor(bus)!: Complete Gate-to-Bus migration with shared predicate classes
-- refactor: replace action/contract layer with Bus pipeline architecture
-- Architecture deepening phase 3 — write-path standardisation, container fix, format dedup
-- textus 0.55.1 — CI fix: converge_now purges done jobs
-- fix: purge done jobs before reseeding in converge_now to fix publish_tree prune test
+### Features
 
-## v0.55.0 — 2026-06-22
+- make pipeline composition pluggable; support HandlerFactoryRegistry+Adapter via TEXTUS_PIPELINE_ADAPTER=1
+- add Pipeline Adapter and HandlerFactoryRegistry for alternative composition seam
 
-- textus 0.55.0 — Architecture Deepening Phase 2 (#234)
-- Architecture-deepening: enforce 10 conventions structurally, kill dual paths (#233)
-- feat: action composition + contract/impl split + container wiring (#232)
-- feat: knowledge structure audit + sources as first-class envelope field (ADR-0118) (#231)
-- refactor: split knowledge.readme into composed fragments + template prototype (#230)
-- Architecture deepening — module restructuring, seam sealing, code smell cleanup (#229)
-- feat: centralized SQLite index and job queue (#228)
-- refactor: separate contract declaration from dispatch machinery (#227)
+### Bug Fixes
 
-## v0.54.2 — 2026-06-19
-
-- feat: ingest dedup with supersede chain, .run → .state rename (#226)
-- feat: restructure artifacts lane into config/docs/system concerns (#225)
-- feat: workflow rename, feeds pipeline, raw/ingest docs, SPEC v4, docs audit (#224)
-
-## v0.54.1 — 2026-06-17
-
-- feat: MCP SDK + dry ecosystem + ERB templates (v0.54.1) (#223)
-- fix: use Time.now.utc in ingest spec to match action's key derivation
-- fix: give artifacts.mcp explicit path to avoid collision with artifacts.mcp-config
-- fix: sort MCP tool catalog alphabetically for cross-platform determinism
-- chore: move templates into templates/artifacts/ to mirror workflow structure
-- feat: promote events.md and mcp.md to produced artifacts
-- feat: update index_key handling in boot process based on artifacts presence
-- feat: add StaleReviewedStamp doctor check for knowledge doc currency
-- chore: move SPEC.md into knowledge zone (knowledge.spec)
-- chore: adopt contributor-conventions.md into knowledge zone
-- fix: correct ADR filenames in CHANGELOG links (0114/0115/0116)
-- chore: expand 0.54.0 CHANGELOG — covers all 3 PRs and standalone commits
-- chore: release 0.54.0
-- fix: move string-described specs to conformance per SpecLayout rule
-- fix: advertise resources capability in MCP initialize handshake
-- refactor: move ContractDrift from MCP surface to core Textus::ContractDrift
-- refactor: apply Sandi Metz rules to MCP Server — extract methods and Routing module
-- chore: remove remaining --lean references from plugin manifest spec
-- fix: claude_plugin uses plain textus (external use); mcp_config keeps bundle exec (dev)
-- chore: refresh artifact files from drain
-- fix: adr_log workflow needs include_keyless: true for tree-publish knowledge.decisions
-- style: rubocop auto-fixes — alignment, redundant initialize
-- refactor: slim pulse — remove stale/doctor/next_due_at, add index_etag, delete Scanner
-- feat: add MCP resources/list and resources/read — exposes machine-lane artifacts
-- refactor: boot reads from artifacts, removes --lean flag and inline computation
-- feat: add artifacts.index produced workflow — pre-computed full-store catalog
-- refactor: standardize all workflows — :build step name, content wrapper, fix commands
-- chore: organise workflows into artifacts/ and config/ subdirectories
-- chore: migrate artifact data files from artifacts/derived/ to artifacts/
-- refactor: flatten artifacts.derived.* to artifacts.* in manifest + workflow matches
-- fix: rewrite adr_log + orientation workflows — use resolver.enumerate, fix List bug
-- style: fix extra blank lines left by BURN deletion (rubocop)
-- remove: delete dead derived_write? no-op guard from WriteVerb#cascade_to_rdeps
-- remove: delete stale publish_each runtime guard from Entry::Publish (validator catches it at load)
-- remove: drop duplicate inline check_action! from put/key_delete/reject (Gate covers these)
-- remove: drop cross-lane notebook side-effect from Action::Ingest
-- remove: delete dead BURN = :sync constant from all actions
-- fix: move doctor check specs to spec/integration/doctor/check/ per layout rule
-- feat: implement raw ingest pipeline — Action::Ingest, doctor checks, asset sentinel, ADR 0116
-- add gate predicates: raw_lane_ingest_only + raw_write_once
-- add Command::Ingest struct and gate verb routing stub
-- expand zone-kind bijection: add raw→ingest (ADR 0114)
-- remove Jobs::Refresh — workflow covers periodic re-derivation (ADR 0115)
-- fix: resolve all rubocop offenses (autocorrect + nest workflow errors spec)
-- docs: rewrite architecture README for workflow redesign — remove Step system, add Workflow layer
-- refactor: remove data/ prefix and explicit path: from spec manifest fixtures
-- refactor: rename docs-readme→docs-index, architecture-readme→architecture-index; drop last explicit path: fields
-- refactor: strip data/ prefix from manifest paths — implicit via normalize_relative_path
-- feat: make path: optional in manifest entries — derive from key + format + kind
-- remove: source: field narrowed to external-only keys; fetch/derive schema fields removed
-- remove: strip fetch/derive methods from Produced; freshness/pulse use retention rules; boot drops intake/derived keys; deps/rdeps simplified
-- breaking: narrow Manifest::Policy::Source to from: external only — fetch/derive removed
-- remove: delete dead step/events/projection code (step system fully removed)
-- fix: triage remaining failures — boot/mcp/spec-layout cleanup post workflow redesign
-- fix: update spec fixtures and container/store specs for workflows Container field
-- remove: delete stale specs for removed features (observers, events, steps, intake_registration)
-- fix: keyword args on Produce::Engine; delete Textus::Projection; init scaffolds workflows/ not steps/
-- remove: strip final Step:: references from entry/base, role_scope, mcp/server
-- remove: drop hook_errors from pulse output (step event bus removed)
-- refactor: replace boot hooks output with workflows list; remove Step::Catalog refs
-- remove: strip step system from doctor — delete IntakeRegistration check and run_registered_checks
-- migrate: .textus/ steps -> workflows; strip source/handler/rules from manifest
-- remove: delete dead hooks check and audit_subscriber (step system removed)
-- remove: delete no-op Events validator (step system removed)
-- feat: wire Workflow::Runner into Store; remove step/ and container.steps.publish
-- feat: add Workflow system (errors, Context, Pattern, DSL, Registry, Loader, Runner)
-- refactor: partially implement Task 5 (rename pipeline/ to produce/)
-- remove: delete handler_permit (doctor-only field with no runtime enforcement)
-- fix: remove accidentally committed produce/acquire/ copies with wrong constants
-- refactor: rename pipeline/ to produce/ and update callsites
-- refactor: rename background/ to jobs/ (Background::* → Jobs::*)
-- refactor: rename background/ to jobs/ (Background::* -> Jobs::*)
-- refactor: rename Ports::Queue to Ports::JobStore
-- refactor: flatten envelope/io/ to envelope/ and rename Ports::Queue to Ports::JobStore
-- refactor: flatten envelope/io/ to envelope/
-- refactor: rename entry/ format strategies to format/
+- regenerate adr-log.json to include new ADR 0117
+- deterministic ADR log uid across platforms; rubocop balance
 
 ## v0.53.0 — 2026-06-15
 
-- fix: rubocop line length in merged audit_log_spec.rb
-- chore: regenerate generated files via textus drain
-- chore: bump to 0.53.0
-- chore(dev): apply rubocop formatting
-- chore(dev): add affaan-m/ecc as skill source
-- refactor: replace hand-rolled mustache with mustache gem
-- refactor: generate args method dynamically in Action::Base
-- chore: add bin/dev for local skill sync from GitHub
-- refactor: extract ErrorInfo parameter object for Error#initialize
-- refactor: extract verify_integrity per-line checking into sub-methods
-- refactor: break Init.run into focused class methods
-- refactor: pull auth/writer/reader helpers into WriteVerb
-- refactor: deduplicate Gate::Auth#check! and #check_action!
-- refactor: extract Writer#put into composed methods
-- fix(cli): restore role_filter in RoleScope verb dispatch
-- refactor: rename Background::Planner::Planner → Planner::Plan (resolve double-name)
-- refactor: remove redundant container: param from Gate#dispatch (always @container)
-- chore: delete empty Textus::Dispatch module (dead since Dispatcher was removed)
-- refactor: remove dead else branch and role_filter from RoleScope verb dispatch
-- refactor: remove double auth in Accept; drop dead UnknownKey rescue from check_action!
-- refactor: inline dispatch_bound into define_method; delete build_command+build_action from RoleScope
-- fix: Background::Job registry O(1) hash lookup, delete stale domain/jobs spec, add pending_key guard test
-- spec: remove obsolete target_is_canon tests (removed from accept FLOOR)
-- docs: run textus drain — regenerate verbs ref, ADR log, hooks desc
-- refactor: move Core::Jobs::Job to Ports::Queue::Job; delete orphaned Core::Jobs::Registry
-- refactor: collapse Planner::Seeder+Scheduler into Planner.seed; unify manual.kick+schedule.tick into convergence trigger
-- refactor: move job handlers to Background::Job:: with own registry; remove Action::Background::
-- docs: ADR 0115 — document role trust model as asserted identities with ambient authority
-- fix: detect seq gaps and regressions in AuditLog#verify_integrity
-- fix: thread caller role through Doctor::Check dispatch instead of hardcoding human
-- fix: add 1MB message size ceiling to MCP server handle_line
-- fix: route dispatch_bound through Gate for verb-based commands
-- fix: add pending_key to Command::Propose; enforce propose+accept auth at Gate via FLOOR
-- fix: remove AUTOMATION bypass from Gate::Auth#check! — capability check handles it
-- refactor: replace command_to_action regex with VERB_COMMAND.invert constant
-- fix: propose_spec path depth (../../../../ → ../../../) — CI at 0 failures
-- fix: propose_spec path depth and etag_spec glob — 3 CI failures down to 0
-- docs: refresh architecture README for Surface → Command → Gate → Action; update how-to/contributor refs
-- fix: restore empty-holders edge case in Gate::Auth; fix accept GuardFailed for UnknownKey
-- refactor: clean Action::Background — remove dead BURN/Contract::DSL, simplify Action.fetch
-- fix: remove Gate-level audit recording — actions handle their own; fix Audit role filter mapping
-- refactor: install! and verbs.rb use Gate::ROUTES; replace store.as hook scope
-- refactor: rename Dispatch::Planner/Pipeline/Runtime — eliminate Dispatch:: namespace
-- fix: align Command structs with action kwargs, fix MCP dispatch
-- chore: skip audit for read commands in Gate, final cleanup
-- refactor: delete old dispatch layer (Dispatcher, Gate, Auth, Ledger, Executor, Event)
-- feat: add Surfaces::Watcher — consolidates watch + schedule triggers
-- feat: wire MCP surface to Gate
-- feat: wire CLI surface to Gate — delete RoleScope
-- feat: wire Gate into Container and Store
-- refactor: rename Dispatch::Actions → Action namespace
-- feat: add Textus::Gate with ROUTES map and Gate::Auth
-- feat: add Gate::Auth — command-based auth wrapper
-- feat: add Command namespace and Textus::Events constants
-- test: delete specs for dispatch layer being replaced
-- test: move string-described specs to conformance/ per spec_layout convention
-- test(config): volatile tagging for dispatch/ and surfaces/ unit specs; move manifest fixture to conformance
-- refactor(spec): update terminology and structure for lanes and sources
-- test(manifest): live fixture contract for project .textus manifest
-- test(core): integration spec for Retention::Sweep GC reporting
-- test(core): integration spec for Freshness::Evaluator currency verdicts
-- test(core): unit spec for Core::Sentinel orphan/drift predicates
-- test(core): unit spec for Freshness::Verdict wire serialization
-- test(support): add core domain doubles shared context
-- docs: update README zone→lane vocabulary and hooks→steps extension model
-- docs: update README source vocabulary (from: handler/project/command → fetch/derive/external)
-- fix: restore event lifecycle, drain seeding, and produce_failed after consolidation
-- chore: remove freshness.rb and pipeline/events.rb (dissolved in refactor)
-- refactor: remove ValidateAll verb from Dispatcher::VERBS; role_authority spec calls Doctor::Validator directly
-- docs: add stable/volatile spec convention; delete completed superpowers docs
-- test: add specs for new actions and planner; update fixture callers
-- test: delete stale unit specs for dissolved layers
-- feat: replace ACTIONS_BY_TRIGGER with rules-driven planner
-- feat: route async job execution through Dispatch::Gate; delete Handlers registry
-- refactor: migrate intake steps.publish calls to Gate events
-- refactor: delete Domain::Action stub — no callers
-- refactor: delete Domain::Action stub — no callers
-- refactor: delete capabilities verb — Dispatcher::VERBS is the static contract
-- refactor: move produce/ to dispatch/pipeline/
-- refactor: move maintenance/ to dispatch/runtime/
-- refactor: move jobs/ to dispatch/planner/
-- test(dispatch): migrate verb specs to actions layout
-- refactor(dispatch): migrate runtime verb paths to actions
-- refactor!: complete foundation refactor and dispatch gate rollout
+### Features
+
 - feat(core)!: cut over zones to data and adopt watch runtime
-- refactor(step): remove hook-era surfaces and restore full-suite green
-- refactor(step): wire Step::Registry into Container + Store, drop events/rpc fields
-- feat(step): port the five built-in fetch handlers to Step::Fetch
-- feat(step): add convention-discovery Step::Loader
-- feat(step): add Step::Registry unifying observe bus + invocable table
-- feat(step): add Discovery for path -> (kind, name)
-- feat(step): add Step base classes for the five step kinds
-- Configure opencode.json and enhance agent orientation
-- feat: integrate opencode configuration and orientation
-- docs: publish ADR 0113 + regenerate adr-log (drain)
-- feat: proposal block speaks _meta, not frontmatter (ADR 0113)
-- chore: release textus 0.52.0 (ADR 0112 — produced authority reference)
-- docs: ADR 0112 + dedupe authority tables into generated authority.md
-- feat: project the authority model as docs/reference/authority.md (ADR 0112)
-- feat: add authority handler projecting the lane/role/zone model (ADR 0112)
-- refactor: finish converge rename in SPEC.md + example manifest (ADR 0111)
-- refactor: rename reconcile capability to converge; sweep residual debt (ADR 0111)
-- test(queue): make #198 conformance green for added drain/jobs/serve surface
-- docs(queue): republish root files (README/CLAUDE/AGENTS/CONTRIBUTING/SECURITY) for drain rename
-- docs(queue): complete reconcile→drain rename in canon docs + templates
-- docs(queue): regenerate verbs.md for drain/jobs (docs-freshness gate)
-- feat(queue): add enqueue verb — general runner bounded by the allow-list
-- docs(queue): ADR 0110 — job queue model, drain/serve rename, async-only
+- port the five built-in fetch handlers to Step::Fetch
+- add convention-discovery Step::Loader
+- add Step::Registry unifying observe bus + invocable table
+- add Discovery for path -> (kind, name)
+- add Step base classes for the five step kinds
+- add enqueue verb — general runner bounded by the allow-list
 - feat(queue)!: hard-rename reconcile verb to drain/serve; regenerate docs
-- feat(queue): scheduler seeds TTL re-pull/sweep into serve tick
-- fix(queue): re-materialize dependents on delete/rename (ADR 0087 gap)
-- feat(queue): drop source.on_write knob (materialize is async-only)
-- refactor(queue): retire in-process AsyncRunner (queue is the only deferral)
-- feat(queue): write subscriber enqueues materialize (async-only)
-- test(queue): satisfy spec-layout guard (constant-described; worker_config is integration)
-- test(queue): drain/reconcile convergence parity (effect, not result shape)
-- feat(queue): add serve daemon (tick = reclaim + serial drain)
-- feat(queue): add jobs verb (list/retry/purge)
-- feat(queue): add drain verb (seed + serial drain + health)
-- feat(queue): add Jobs::Seeder (mirrors Reconcile produce_scope)
-- feat(queue): register materialize/re-pull/sweep convergence handlers
-- refactor(reconcile): extract Retention::Apply for reuse by sweep handler
-- feat(queue): add manifest worker: config (pool/poll/lease_ttl/max_attempts)
-- feat(queue): add Worker.drain_pool (N-thread, exactly-once)
-- feat(queue): add Maintenance::Worker single-pass drain
-- feat(queue): add Domain::Jobs::Registry closed allow-list
-- feat(queue): add lease reclaim + cover concurrent single-claim
-- feat(queue): add lease (atomic claim), ack, fail with dead-letter
-- feat(queue): add Ports::Queue enqueue with dedup + ready_ids
-- feat(queue): add Domain::Jobs::Job with stable dedup id
-- feat(queue): add Layout.queue paths under .run/queue
+- scheduler seeds TTL re-pull/sweep into serve tick
+- drop source.on_write knob (materialize is async-only)
+- write subscriber enqueues materialize (async-only)
+- add serve daemon (tick = reclaim + serial drain)
+- add jobs verb (list/retry/purge)
+- add drain verb (seed + serial drain + health)
+- add Jobs::Seeder (mirrors Reconcile produce_scope)
+- register materialize/re-pull/sweep convergence handlers
+- add manifest worker: config (pool/poll/lease_ttl/max_attempts)
+- add Worker.drain_pool (N-thread, exactly-once)
+- add Maintenance::Worker single-pass drain
+- add Domain::Jobs::Registry closed allow-list
+- add lease reclaim + cover concurrent single-claim
+- add lease (atomic claim), ack, fail with dead-letter
+- add Ports::Queue enqueue with dedup + ready_ids
+- add Domain::Jobs::Job with stable dedup id
+- add Layout.queue paths under .run/queue
 
-## v0.51.0 — 2026-06-08
+### Bug Fixes
 
-- textus 0.51.0 — the reconcile era + SPEC sync (#196)
-- ADR 0109 — board-exact schema split + single port shape (supersede 0107/0108) (#195)
-- ADR 0108 — name + document the two port shapes (don't convert) (#194)
-- ADR 0107 — split manifest/schema.rb: data vs validation walk (#193)
-- ADR 0106 — make the hexagonal layering executable (#192)
-- ADR 0105 — verb routing ⟺ contract bijection (#191)
-- docs: ADR 0104 — finish the root-doc canon move (CONTRIBUTING + SECURITY) (#190)
-- ADR 0100/0101 — produce/ topology + interface fossils (#189)
-- ADR 0099 — one Freshness evaluator (collapse the staleness family) (#188)
-- ADR 0098 — docs SSoT/DRY/SOLID cleanup (produce vs guard) (#187)
-- ADR 0097 — reference docs become produced (verbs, schema, ADR log) (#186)
-- test(conformance): consolidate the conformance spec tier (67→19 loose, zero coverage loss) (#185)
-- ADR 0095: collapse derived/intake into one produced kind (#184)
-- ADR 0094: source produces data, publish renders (#183)
-- ADR 0093 — source + retention over one reconcile engine (incl. ADR 0092) (#182)
-- ADR 0092: spec-suite churn-resistance — fixture vocabulary, retired-token guard, conformance split (#181)
-- ADR 0091 — one `machine` zone-kind; entry-kind is the single discriminator (#180)
-- Automation is one capability + one `upkeep` policy (ADR 0090) (#179)
-- Reconcile-era design cleanup (WS3/WS2/WS4/WS5 — ADR 0088, 0089) (#178)
-- fix: scrub deleted fetch/fetch_all/build verbs from agent-facing strings (WS1) (#177)
-- Fold build into reconcile (ADR 0087) (#176)
-
-## v0.50.0 — 2026-06-05
-
-- textus 0.50.0 — observability verbs + boot lifecycle + textus-managed agent config (#175)
-
-## v0.49.0 — 2026-06-04
-
-- textus 0.49.0 — normalize the key-verb family + remove migrate (ADR 0082) (#174)
-- textus 0.48.0 — docs become canon (ADR 0081) (#173)
-- test(suite): split specs into unit/integration/conformance + SOLID foundation (ADR 0080) (#172)
-- feat: unify staleness + retention into one lifecycle policy (ADR 0079) (#171)
+- restore role_filter in RoleScope verb dispatch
+- re-materialize dependents on delete/rename (ADR 0087 gap)
 
 ## v0.47.1 — 2026-06-04
 
-- Release textus 0.47.1 — External entries are a non-build path (#170)
-- fix(build): make External a non-build path; parse compute.command (#169)
+### Bug Fixes
 
-## v0.47.0 — 2026-06-04
-
-- Release textus 0.47.0 — close the agent loop over MCP (#168)
-- test(spec-layout): guard the spec/ ↔ lib/textus/ mirror (#167)
-- init --with-agent profile + surface build to MCP (ADRs 0076/0077) (#166)
-- Contract-etag drift guard + session_opened connect event (ADR 0074, 0075) (#165)
-- test: consolidate two duplicate spec examples (zero coverage loss) (#164)
-
-## v0.46.0 — 2026-06-03
-
-- ADR 0073: surfaces declares external projections; Ruby is the implicit base (#163)
-- Integration feedback from patrick-nexus: F1–F7 (#161) (#162)
-- docs: README — correct the .textus/ tree (audit log lives under .run/) (#160)
-- docs: README — surface store discovery + TEXTUS_ROOT (#159)
-- docs: README readability — hook tables + newcomer-friendlier opening (#158)
-- docs: freshness audit — verb drift, event-catalog dedup, output phrasing (#157)
-
-## v0.45.1 — 2026-06-03
-
-- 0.45.1 — streamline: kill the last dual-paths (ADR 0069) (#156)
-- 0.45.0 — the contract owns the request lifecycle (ADRs 0066–0068) (#155)
-- textus 0.44.1 — finish the CLI contract projection (ADR 0065) (#154)
-- 0.44.0 — one verb name across surfaces; CLI is a contract projection (ADRs 0058–0063) (#153)
-
-## v0.43.2 — 2026-06-02
-
-- textus 0.43.2 — agent-legible MCP contracts (ADR 0057) (#152)
+- make External a non-build path; parse compute.command (#169)
 
 ## v0.43.1 — 2026-06-02
 
-- textus 0.43.1 — boot agent surface derives from the MCP catalog (ADR 0056) (#151)
-- feat(boot): derive read_verbs from the MCP catalog; recipes reference verbs (ADR 0056) + draft entry-level desc (ADR 0054) (#150)
-- docs: fix load-invalid owner archetypes + refresh reviewed stamps (#149)
+### Features
+
+- derive read_verbs from the MCP catalog; recipes reference verbs (ADR 0056) + draft entry-level desc (ADR 0054) (#150)
 
 ## v0.43.0 — 2026-06-02
+
+### Features
 
 - feat(publish)!: typed publish: block + remove index_filename (ADR 0052, 0053) (#148)
 
 ## v0.42.0 — 2026-06-02
 
+### Features
+
 - feat(publish)!: remove publish_each — collapse to two modes (ADR 0051) (#147)
 
 ## v0.41.0 — 2026-06-02
 
-- textus 0.41.0 — publish_tree subtree mirror + content-identical publish adoption (#146)
-- feat(publish): adopt a byte-identical target instead of refusing (ADR 0050) (#144)
-- refactor(publish): resolve publish mode into a sum type; one shared subtree mirror (ADR 0049) (#143)
-- ADR 0048 — fetch subsystem: one home per concern (#142)
-- fix(gemspec): package the docs that moved — gem shipped no architecture/conventions doc (#141)
-- publish_tree: a key-less subtree mirror for a derived-index leaf (ADR 0047) (#140)
-- test: modernize spec suite onto current lane vocabulary (#139)
+### Features
 
-## v0.40.0 — 2026-06-02
+- adopt a byte-identical target instead of refusing (ADR 0050) (#144)
 
-- textus 0.40.0 — publish_each owns multi-file leaf subtrees (ADR 0046) (#138)
-- publish_each copies a leaf's whole subtree when index_filename is set (ADR 0046) (#136)
-- Owner-subject validation at load (#135 items 1+2) (#137)
-- Close the role-name set to {human, agent, automation} (ADR 0045) (#134)
-- Resolve system actors by capability (ADR 0044) + close role-name set (ADR 0045, proposed) (#133)
-- refactor(hooks): Catalog as single source of truth for event tables (#131)
+### Bug Fixes
+
+- package the docs that moved — gem shipped no architecture/conventions doc (#141)
 
 ## v0.39.1 — 2026-06-01
 
-- textus 0.39.1 — feed ergonomics: feeds.machine env snapshot + intake cookbook (ADR 0043) (#130)
-- feat(init): scaffold feeds.machines.* (nested) with a local env snapshot (ADR 0043) (#128)
-- docs(how-to): fix zone-rename drift in agents-mcp + :publish event name (#129)
-- cookbook: multi-machine environment-scan recipe (nested feeds.machines.*) (#127)
-- examples: use feeds.machine env snapshot, matching `textus init` (#126)
-- ADR 0043 — feed ergonomics without breaking core purity (#125)
-- chore: remove legacy ARCHITECTURE.md redirect stub (#124)
-- docs(readme): redesign flow diagram — group writers, colour-code roles (#123)
+### Features
 
-## v0.39.0 — 2026-06-01
-
-- textus 0.39.0 — native ignore patterns for entry enumeration (ADR 0042) (#122)
-- docs(readme): add trust×durability quadrant; sharpen the flow diagram (#121)
-- feat: native ignore patterns for entry enumeration + doctor (ADR 0042) (#120)
-- feat: dogfood textus in its own repo — self-dev store + MCP wiring (ADR 0041) (#118)
-- docs: fold docs/ into Diátaxis directories (#117)
+- scaffold feeds.machines.* (nested) with a local env snapshot (ADR 0043) (#128)
 
 ## v0.38.0 — 2026-05-31
 
-- textus 0.38.0 — MCP serve acts as `agent` by default (ADR 0040) (#116)
-- textus 0.37.0 — MCP catalog derive-or-guard (ADR 0039) (#115)
-- feat: runtime artifacts under .run/, Textus::Layout owns the on-disk map (ADR 0038) (#113)
-- ADR 0037: boot/pulse derive-or-guard — anti-drift contract specs (#114)
-- docs(examples): consolidate to a single reference example (project) (#112)
-- textus 0.36.0 — transports as pure framings: one verb vocabulary + lifted session (ADR 0036) (#111)
-- docs: fix confirmed drift against v0.35.1 (capability canon, §9 verbs, write/ listing, 0.35 notes) (#110)
-- fix(gemspec): align metadata with current project (textus/3 + coordination-space description) (#109)
-- textus 0.35.2 — Evaluation field rename + Container doc fix (internal) (#108)
+### Bug Fixes
 
-## v0.35.1 — 2026-05-31
-
-- textus 0.35.1 — RSpec foundation consolidation (test-only) (#107)
-- textus 0.35.0 — proposal target-canon constraint + author_held (ADR 0035) (#106)
-- textus 0.34.0 — unify the Lane vocabulary + finish boot's kind-derived zone naming (ADR 0034) (#105)
-- test(spec): build shared RSpec foundation and migrate the suite onto it (#104)
-- textus 0.33.0 — complete primitive set (workspace + keep) + vocabulary (ADR 0031→0033) (#103)
-- textus 0.32.1 — unified-Guard spec cleanup (#102)
-- textus 0.32.0 — unified Guard engine (ADR 0031) + drop read_policy (ADR 0032) (#101)
-- textus 0.31.0 — capability-based roles (ADR 0030) (#100)
-- docs: refresh content to current v0.30 behavior (#99)
-- Add brand identity: "Lanes" logo, asset set, and DESIGN.md (#98)
-- docs: restructure for clarity + maintainability (#97)
-
-## v0.30.0 — 2026-05-29
-
-- textus 0.30.0 — mandatory zone kind (strict) + retention (ADR 0028 moves 1 & 4) (#96)
-- textus 0.29.2 — converge hook registries; de-leak MCP transport (ADR 0027) (#95)
-- textus 0.29.1 — use-case construction seams (ADR 0026) (#94)
-
-## v0.29.0 — 2026-05-29
-
-- textus 0.29.0 — Honest Domain (domain purity via ports) (#93)
-- textus 0.28.0 — consistency sweep & legacy cleanup (#92)
-- textus 0.27.0 — architecture redesign (Container + Call + Dispatcher) (#91)
-- docs: cleanup — version drift, SPEC↔ARCH alignment, OSS scaffolding (#90)
-
-## v0.26.0 — 2026-05-28
-
-- textus 0.26.0 — architecture consolidation (#89)
-- textus 0.25.1 — application layering (Ports + EnvelopeIO split + Manifest carving) (#88)
-- textus 0.25.0 — pulse hardening (#87)
-- textus 0.24.0 — context-structure ergonomics (#86)
-- textus 0.23.0 — agent gate (MCP) + docs truth-up (#85)
+- align metadata with current project (textus/3 + coordination-space description) (#109)
 
 ## v0.22.0 — 2026-05-28
 
-- textus 0.22.0 — entry polymorphism pass (#84)
-- textus 0.21.1 — intake entries as builder outputs (#83)
+### Features
+
 - feat!: 0.21.0 — agent memory integration (boot + pulse) (#81)
-
-## v0.20.2 — 2026-05-27
-
-- 0.20.2 — finish role-kinds migration (#79)
-- 0.20.1 — user-defined role kinds (#72) (#78)
-- chore: prune dead code and tighten manifest seams (#77)
-
-## v0.20.0 — 2026-05-27
-
-- chore(release): textus 0.20.0 — architecture redesign (#76)
-- refactor(0.20.0): merge Build into Publish (#75)
-- refactor(0.20.0): discriminated Manifest::Entry kinds (#74)
-- refactor(0.20.0): narrowed hook payload (HookContext) (#73)
-- refactor(0.20.0): unified Hooks::Bus (#71)
-- refactor(0.20.0): extract Manifest::Resolver (#70)
-- refactor(0.20.0): kill top-level utility modules (#69)
-- chore(release): textus 0.19.1 — drop textus/2 migration hint (#68)
-- feat: explicit dependencies (v0.19.0) (#67)
-- fix: hook dispatcher safety (v0.18.1) (#66)
-
-## v0.18.0 — 2026-05-27
-
-- feat: extract storage ports, Store as composition root (v0.18.0) (#65)
-- feat: flatten Operations, centralize authz, explicit hook registration (v0.17.0) (#64)
-- feat: type cleanup & glue (v0.16.0) (#63)
-
-## v0.15.0 — 2026-05-26
-
-- feat: operation boundaries reshape (v0.15.0) (#62)
-
-## v0.14.4 — 2026-05-26
-
-- fix: lock hygiene + build/freshness decoupling (#58, #59) (#60)
-
-## v0.14.3 — 2026-05-26
-
-- feat: top-level build lock (v0.14.3, closes #56) (#57)
-
-## v0.14.2 — 2026-05-26
-
-- feat: per-rule fetch_timeout_seconds override (#54) (#55)
-
-## v0.14.1 — 2026-05-26
-
-- release: 0.14.1 (#53)
-- build: skip rewrite when only generated_at would change (#52)
-- Extract Manifest.check_version! to dedupe parse/load version guard (#51)
-
-## v0.14.0 — 2026-05-26
-
-- docs(readme): refresh for v0.14.0 — typed envelopes, Build/Publish split, spec count (#50)
-- v0.14.0 — Phase 4: Build/Publish split + Envelope Data.define (#49)
-- v0.13.1 — Phase 3: Manifest::Entry split (Parser + Validators) (#48)
-- v0.13.0 — Phase 2: Format-strategy extraction (#47)
-- v0.12.6 — Examples reorg (project + claude-plugin) (#46)
-- v0.12.5 — Docs refresh for textus/3 + Operations facade (#45)
-- v0.12.4 — Store facade final removal (Phase 1) (#44)
-- v0.12.3 — Agent protocol block in textus intro (#43)
-- v0.12.2 — Operations rename + Store facade removal (breaking) (#42)
 
 ## v0.12.1 — 2026-05-26
 
-- v0.12.1 — fix textus/2 hint at manifest parser (#41)
-- v0.12.0 — Legacy Sweep: delete textus/2 compat shims (#40)
-- 0.11.0 — textus/3 vocabulary redesign (BREAKING) (#39)
-- fix(doctor): IllegalKeys honors index_filename — skip non-matching siblings (#38)
+### Bug Fixes
+
+- IllegalKeys honors index_filename — skip non-matching siblings (#38)
 
 ## v0.10.5 — 2026-05-25
 
-- 0.10.5 — tech-debt cleanup + index_filename + docs polish (#37)
-- feat(manifest): index_filename — surface a fixed basename as the per-directory row (#36)
-- ci: accept unbracketed CHANGELOG headings when extracting release notes (#35)
+### Features
 
-## v0.10.4 — 2026-05-25
-
-- 0.10.4 — GitHub folder intake recipe + skill-bundle deferral ADR (#34)
-
-## v0.10.3 — 2026-05-23
-
-- 0.10.3 — documentation refresh and legacy-code removal (#33)
-
-## v0.10.2 — 2026-05-23
-
-- 0.10.2 — doctor and store cleanup (#32)
-
-## v0.10.1 — 2026-05-22
-
-- 0.10.1 — documentation refresh and spec hygiene (#31)
-
-## v0.10.0 — 2026-05-22
-
-- 0.10.0 — shim removal, signal-based zone detection, Builder extraction (#30)
-
-## v0.9.2 — 2026-05-22
-
-- 0.9.2 — policies, audit verbs, zone rename (#29)
-- 0.9.1 — write-path layering + request Context (#28)
-- 0.9.0 — intake, event standardization, read-time freshness, layered architecture (#27)
-- 0.8.3 — :mv, :reject, :loaded events (#26)
-- 0.8.2 — hook DSL sugar + :publish event (#24)
-
-## v0.8.1 — 2026-05-21
-
-- 0.8.1 — terminology cleanup: extension → hook (#23)
-
-## v0.8.0 — 2026-05-21
-
-- docs: 0.8 refresh — README, SPEC.md, examples, doctor cleanup, spec layout (#22)
-- 0.8.0 — folder restructure, Zeitwerk autoload, Doctor::Check split (#21)
-- 0.7.0 — Reader/Writer split, EventBus, Builder pipeline (#20)
-- 0.6.1 — deprecation cleanup + drop migrate v2 (#19)
-- feat: 0.6 hook unification — collapse 4 DSL verbs into Textus.hook(event, name) (#18)
+- index_filename — surface a fixed basename as the per-directory row (#36)
 
 ## v0.5.0 — 2026-05-21
 
-- chore(release): 0.5.0 — wire textus/2, CLI groups, Store split, NDJSON audit log (#17)
-- refactor(store): split Store into facade + Mover/Staleness/Validator/Events (#16)
-- feat(protocol): bump to textus/2; unify _meta block across formats (#14)
-- feat(audit): switch audit log to true NDJSON; legacy TSV reads still parse (#13)
-- refactor: v0.5 wrap-up batch A — legacy cruft + ManifestEntry split + CLI subcommand groups (#12)
-- refactor(cli): hash dispatch + alphabetize requires + unify PROTOCOL refs (#11)
-- refactor(cli): extract per-verb command objects (CLI 434 → 96 LOC) (#9)
-- feat(cli): fold validate-all into doctor --check=schema_violations (#8)
-- feat(cli): default --format=json (#7)
-- docs(architecture): rewrite layering section as module clusters (#6)
+### Features
+
+- bump to textus/2; unify _meta block across formats (#14)
+- switch audit log to true NDJSON; legacy TSV reads still parse (#13)
+- fold validate-all into doctor --check=schema_violations (#8)
+- default --format=json (#7)
 
 ## v0.4.0 — 2026-05-20
 
-- v0.4.0: extension API redesign — action primitive + doctor_check (#4) (#5)
-- chore(release): refresh Gemfile.lock for 0.3.0
-- chore(release): 0.3.0 — configurable store root
-- docs(spec): document store root resolution precedence (§3.1)
-- feat(cli): accept --root=<path> flag before subcommand
-- feat(store): accept explicit root via kwarg + TEXTUS_ROOT env
-- test(store): pin TEXTUS_ROOT/--root precedence (failing)
-- docs: badges + CONTRIBUTING + SECURITY
-- docs(readme): refresh for 0.2 — agent integration as the headline
+### Features
+
+- accept --root=<path> flag before subcommand
+- accept explicit root via kwarg + TEXTUS_ROOT env
 
 ## v0.2.0 — 2026-05-20
 
-- release: prep 0.2.0 (workflow + changelog + gemspec cleanup)
-- ci: complete CHECKSUMS in Gemfile.lock
-- feat(intro): textus intro verb + inject_intro builder flag
-- examples(claude-plugin): pending zone walkthrough (AI propose → human accept)
-- examples(claude-plugin): align with current library surface
-- feat(init): declare all five zones and pre-create their directories
-- fix(store): pass suggestions on UnknownKey from get/put/mv raise sites
-- feat(doctor): health-check verb + actionable error hints
-- feat(publish): publish_each for nested entries; example mirrors agents/skills/commands automatically
-- feat(uid): stable Textus UID + textus mv preserves identity across moves
-- refactor(publisher): move sentinels under .textus/sentinels/
-- examples(claude-plugin): real Claude plugin layout managed by textus
-- fix(projection): drop duplicate generated_at on Hash reducer results
-- docs(spec): per-entry formats, key grammar, envelope additions
-- examples(claude-plugin): json/yaml marketplace + deep nested working.network
-- feat(extensions): normalize fetcher results into {frontmatter, body, content}
-- refactor(publisher): rename Symlink → Publisher; copy-only publish
-- feat(builder): per-format build pipelines + _meta injection for structured outputs
-- feat(cli): textus migrate-keys helper for key-grammar migration
-- feat(manifest): per-entry format field + strict key grammar enforcement
-- feat(entry): add per-format storage strategies (markdown, json, yaml, text)
-- examples(claude-plugin): make bin/notify-build a real script
-- examples: showcase full 0.2 surface end-to-end
-- docs(readme): bump version reference to 0.2.0; disambiguate git hooks from Textus.hook
-- docs: rewrite §5.4/5.9/5.10/5.11 for extension surface; bump 0.2.0
-- chore: migrate example plugin extensions to new DSL
-- feat(init): scaffold .textus/extensions/ with README
-- feat(cli): add refresh + extensions list; rename --parse to --fetcher; remove hooks list
-- feat(manifest): validate event names against ExtensionRegistry::EVENTS
-- feat(audit): include pending_key/target_key in event_error extras
-- feat(audit): optional JSON extras column for event/error records
-- feat(events): fire :build after derived materialize and :accept after proposal
-- test(events): assert :refresh does not fire on unchanged bytes
-- feat(events): fire :refresh with change=:created/:updated
-- chore(store): grep-friendly TODO marker for hook-error audit gap
-- feat(events): fire :put and :delete after successful writes
-- feat(refresh): wrap fetcher exceptions with fetcher-name context
-- feat(refresh): in-process fetcher driver with 2s timeout
-- refactor(store_view): WRITE_METHODS loop, accept coverage, drift guard
-- feat(store_view): read-only proxy for extension code
-- refactor(projection): extract REDUCER_TIMEOUT_SECONDS; default config to {}
-- feat(projection): rename transform→reducer; route via store registry
-- refactor(manifest): fetcher_config always defaults to {}; fetcher.nil? is the discriminator
-- feat(manifest): source.fetcher/config/ttl with legacy-key rejection
-- chore(cli): mark --parse= bridge as temporary; timeout returns in task 14
-- feat(fetchers): port built-in parsers to BuiltinFetchers in new registry
-- feat(store): wrap extension load failures with filename context
-- fix(store): deterministic extension load order via Dir.glob.sort
-- feat(store): per-store ExtensionRegistry loaded from .textus/extensions/
-- refactor(dsl): private THREAD_REGISTRY_KEY; restructure DSL spec
-- feat(dsl): add Textus.fetcher/reducer/hook with thread-scoped registry
-- fix(registry): hooks() read should not auto-register the queried event
-- feat(registry): add ExtensionRegistry with fetcher/reducer/hook slots
-- scrub: replace 'envato' with 'acme' in fixtures and docs; sync README ruby versions
-- ci: drop ruby 3.1/3.2, target 3.3 and 3.4
-- release prep: CHANGELOG, gemspec metadata URIs, CI workflow, Brewfile for lefthook
-- quality: add rubocop config and lefthook git hooks; autocorrect existing code
-- gemspec: exclude internal plan docs from packaged gem
-- spec: align §6+ examples and keys with canon/working zone names
-- readme: rewrite for 0.1.0 release with current zone model and v1.1 features
-- entry: force UTF-8 on parsed content, reject invalid encoding
-- example: wire lowercase parser into intake.upstream.notes
-- cli: fix --zone=Z + --format=json flag combo on list/stale
-- example: README tour demonstrating parser, calculator, hooks, schema ownership
-- example: project schema with maintained_by per field
-- example: rank-by-recency calculator wired into derived.claude.root
-- example: register lowercase parser to demo .textus/parsers/*.rb auto-load
-- example: add intake zone with releases.rss source and on_stale hook
-- spec: §5.10 hooks declaration + §9 hooks verb
-- hooks: list verb exposes declared hooks; runners execute, textus declares
-- manifest: parse hooks: block on entries
-- spec: §5.9 document calculators extension point
-- projection: apply transform: NAME between pluck and sort
-- calculators: registry + auto-load with 2s timeout (mirrors parsers)
-- spec: document role_authority override (human always wins)
-- validate-all: cross-check field last-writer against schema.maintained_by
-- audit-log: expose last_writer_for(key)
-- spec: document schema fields.maintained_by and evolution block
-- schema-migrate: auto-apply evolution.migrate_from when --rename omitted
-- schema: parse maintained_by per field + evolution block
-- examples: ship refresh-intake.sh proving the runner-textus boundary
-- examples: 50-line MCP server wrapping textus get/list/put
-- examples: claude-plugin reference flow with templates, Rakefile, lefthook
-- schema-tools: init from entry, diff against entries, migrate field renames
-- init: textus init --profile= scaffolds .textus/ from bundled profiles
-- proposal: accept verb copies pending patch into target, deletes pending
-- put: --parse=NAME runs registered parser on stdin, stamps last_refreshed_at
-- stale: detect intake entries past their source.ttl
-- parsers: auto-load .textus/parsers/*.rb with 2s timeout bound
-- deps/rdeps/published: walk projection.select + generator.sources
-- builder: textus build materializes derived entries + publishes symlinks
-- symlink: publish_to with copy-mode fallback and sentinel
-- parsers: json, csv, markdown-links, ical-events, rss (stdlib-only)
-- projection: select/pluck/sort_by/limit engine, capped at 1000
-- mustache: vendor minimal stdlib-only engine with depth bound
-- list/stale: accept --zone=Z filter
-- cli: wire --as flag, delete verb, validate-all verb
-- store: validate-all walks every entry and reports violations
-- store: role-gated put, delete verb, audit log on every write
-- audit-log: append-only tsv with flock on every write
-- role: resolve from flag > env > .textus/role > default human
-- manifest: parse zones block with writable_by; synthesize legacy zones if absent
-- errors: add InvalidRole/InvalidProjection/TemplateError/PublishError/ProposalError
-- layout: move user content under .textus/zones/; manifest paths stay short
-- spec: rewrite CLI surface and conformance fixtures for v1.0
-- spec: add compute, publish, intake, pending, audit, security-bounds sections
-- spec: rewrite §1-5 for v1.0 general-purpose framing and role-based zones
-- Initial commit: textus/1 reference Ruby implementation
+### Features
+
+- textus intro verb + inject_intro builder flag
+- declare all five zones and pre-create their directories
+- health-check verb + actionable error hints
+- publish_each for nested entries; example mirrors agents/skills/commands automatically
+- stable Textus UID + textus mv preserves identity across moves
+- normalize fetcher results into {frontmatter, body, content}
+- per-format build pipelines + _meta injection for structured outputs
+- textus migrate-keys helper for key-grammar migration
+- per-entry format field + strict key grammar enforcement
+- add per-format storage strategies (markdown, json, yaml, text)
+- scaffold .textus/extensions/ with README
+- add refresh + extensions list; rename --parse to --fetcher; remove hooks list
+- validate event names against ExtensionRegistry::EVENTS
+- include pending_key/target_key in event_error extras
+- optional JSON extras column for event/error records
+- fire :build after derived materialize and :accept after proposal
+- fire :refresh with change=:created/:updated
+- fire :put and :delete after successful writes
+- wrap fetcher exceptions with fetcher-name context
+- in-process fetcher driver with 2s timeout
+- read-only proxy for extension code
+- rename transform→reducer; route via store registry
+- source.fetcher/config/ttl with legacy-key rejection
+- port built-in parsers to BuiltinFetchers in new registry
+- wrap extension load failures with filename context
+- per-store ExtensionRegistry loaded from .textus/extensions/
+- add Textus.fetcher/reducer/hook with thread-scoped registry
+- add ExtensionRegistry with fetcher/reducer/hook slots
+
+### Bug Fixes
+
+- pass suggestions on UnknownKey from get/put/mv raise sites
+- drop duplicate generated_at on Hash reducer results
+- deterministic extension load order via Dir.glob.sort
+- hooks() read should not auto-register the queried event
 
