@@ -417,6 +417,32 @@ Textus.workflow "doctor" do
     issues
   end
 
+  # ── Session protocol compliance ─────────────────────────────────────
+  check "session-protocol" do |ctx|
+    issues = []
+    ctx.manifest.resolver.enumerate.each do |row|
+      next unless row[:key].to_s.start_with?("scratchpad.sessions.")
+      next unless row[:key].to_s.end_with?(".feedback")
+      next unless row[:path] && File.file?(row[:path])
+
+      feedback = JSON.parse(File.read(row[:path])) rescue next
+      next unless feedback["signal"] == "session_closed"
+
+      checked = Array(feedback["nodes_checked"]).map(&:to_s)
+      next if checked.include?("constraint.repo")
+
+      session_key = row[:key].sub(/\.feedback\z/, ".session")
+      issues << {
+        "code" => "session.skipped_constraint",
+        "level" => "info",
+        "subject" => session_key,
+        "message" => "session closed without checking constraint.repo",
+        "fix" => "review the session; if it authored new entries, you may have missed hard limits",
+      }
+    end
+    issues
+  end
+
   # ── Stale reviewed stamp (was doctor_stale_reviewed_stamp.rb) ──
   check "reviewed-stamp" do |ctx|
     stamp_re = /\*\*reviewed\*\*\s+\d{4}-\d{2}\s+\(v(\d+\.\d+(?:\.\d+)?)\)/

@@ -15,7 +15,10 @@ module Textus
           content = { "session_id" => uuid, "created_at" => Time.now.utc.iso8601, "status" => "active" }
           ctx.put(key:, meta: {}, body: JSON.generate(content), content: nil, call:)
 
-          { "session_id" => uuid, "status" => "active" }
+          boot = Textus::Protocol::Boot.build(container: ctx.container) rescue nil
+          result = { "session_id" => uuid, "status" => "active" }
+          result["boot"] = boot if boot
+          result
         end
 
         def parent_mentry(ctx)
@@ -105,7 +108,7 @@ module Textus
           result
         end
 
-        def session_close(session_id:, ctx:, call:)
+        def session_close(session_id:, ctx:, call:, nodes_checked: nil)
           key = "scratchpad.sessions.#{session_id}.session"
           env = ctx.read(key:)
           raise Textus::UsageError.new("session not found: #{session_id}") unless env
@@ -123,6 +126,7 @@ module Textus
             "summary" => "Session #{session_id[0..8]} sealed after #{duration}. " \
                          "Created at #{current["created_at"]}, closed at #{Time.now.utc.iso8601}.",
           }
+          feedback["nodes_checked"] = nodes_checked if nodes_checked
           ctx.put(key: feedback_key, meta: {}, body: JSON.generate(feedback), content: nil, call:)
 
           { "session_id" => session_id, "status" => "sealed", "feedback_key" => feedback_key }

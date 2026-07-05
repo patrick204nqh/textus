@@ -9,6 +9,7 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
       allow(data).to receive(:entries).and_return([mentry])
       allow(mentry).to receive(:key).and_return("scratchpad.sessions")
       allow(ctx).to receive(:manifest).and_return(manifest)
+      allow(ctx).to receive(:container).and_return(nil)
       allow(ctx).to receive(:put)
       allow(SecureRandom).to receive(:uuid).and_return("test-uuid-123")
 

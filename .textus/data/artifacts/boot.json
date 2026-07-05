@@ -1,5 +1,6 @@
 {
   "_meta": {
+    "generated_at": "2026-07-05T08:09:20Z",
     "uid": "603316d35ea2de1b"
   },
   "project": {
@@ -92,30 +93,31 @@
   ],
   "agent_quickstart": {
     "read_verbs": [
-      "get",
-      "list",
-      "where",
-      "uid",
-      "blame",
       "audit",
-      "deps",
-      "rdeps",
-      "graph",
-      "pulse",
-      "schema_show",
+      "blame",
       "boot",
+      "deps",
+      "get",
+      "graph",
+      "list",
+      "pulse",
+      "rdeps",
+      "schema_list",
+      "schema_show",
+      "uid",
+      "where",
       "loop",
       "diff",
       "workflow_spec"
     ],
     "write_verbs": [
-      "put",
-      "key_delete",
-      "key_mv",
-      "ingest",
       "data_mv",
-      "key_mv_prefix",
+      "ingest",
+      "key_delete",
       "key_delete_prefix",
+      "key_mv",
+      "key_mv_prefix",
+      "put",
       "session_open",
       "session_close",
       "propose"

@@ -18,7 +18,9 @@ Textus::Protocol::VerbRegistry.register(
   Textus::Protocol::VerbRegistry::VerbSpec.new(
     verb: :session_close, summary: "Seal an active session by ID.",
     args: [Textus::Protocol::VerbRegistry::ArgSpec.arg(name: :session_id, required: true,
-                                                       description: "UUID of the session to close")],
+                                                       description: "UUID of the session to close"),
+           Textus::Protocol::VerbRegistry::ArgSpec.arg(name: :nodes_checked, type: Array,
+                                                       description: "list of loop nodes checked during the session")],
     surfaces: %i[cli mcp], category: :write,
     lane: :scratchpad
   ),
