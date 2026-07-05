@@ -21,7 +21,7 @@ module Textus
 
         def where(key:, ctx:, call:)
           res = ctx.resolve(key:)
-          { "protocol" => Textus::PROTOCOL, "key" => key, "lane" => res.entry.lane, "path" => res.path }
+          response(key:, lane: res.entry.lane, path: res.path)
         end
 
         def uid(key:, ctx:, call:)
@@ -58,8 +58,7 @@ module Textus
         def schema_show(key:, ctx:, call:)
           mentry = ctx.mentry_for(key:)
           schema = ctx.schemas.fetch_or_nil(mentry.schema)
-          { "protocol" => Textus::PROTOCOL, "key" => key,
-            "schema_ref" => mentry.schema, "schema" => schema&.to_h }
+          response(key:, schema_ref: mentry.schema, schema: schema&.to_h)
         end
       end
     end

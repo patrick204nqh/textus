@@ -7,20 +7,19 @@ module Textus
 
         def put(key:, ctx:, call:, meta: nil, body: nil, content: nil, if_etag: nil)
           env = ctx.put(key:, meta: meta || {}, body:, content:, if_etag:, call:)
-          { "protocol" => Textus::PROTOCOL, "ok" => true, "key" => key, "uid" => env.uid, "etag" => env.etag }
+          response(ok: true, key:, uid: env.uid, etag: env.etag)
         end
 
         def delete(key:, ctx:, call:, if_etag: nil)
           ctx.delete(key:, if_etag:, call:)
-          { "protocol" => Textus::PROTOCOL, "ok" => true, "key" => key, "deleted" => true }
+          response(ok: true, key:, deleted: true)
         end
         alias key_delete delete
 
         def move(old_key:, new_key:, ctx:, call:, if_etag: nil, dry_run: false)
           mctx = ctx.move(from_key: old_key, to_key: new_key, call:, if_etag:, dry_run:)
-          base = { "protocol" => Textus::PROTOCOL, "ok" => true,
-                   "from_key" => mctx.from_key, "to_key" => mctx.to_key,
-                   "from_path" => mctx.from_path, "to_path" => mctx.to_path }
+          base = response(ok: true, from_key: mctx.from_key, to_key: mctx.to_key,
+                           from_path: mctx.from_path, to_path: mctx.to_path)
           return base.merge("dry_run" => true) if mctx.dry_run
 
           base.merge("uid" => mctx.envelope.uid, "envelope" => mctx.envelope.to_h_for_wire)
