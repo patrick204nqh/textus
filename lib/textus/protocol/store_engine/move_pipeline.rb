@@ -150,13 +150,10 @@ module Textus
 
         module EmitWorkflowEvent
           def self.call(ctx, deps)
-            return ctx unless deps.event_emitter
-            return ctx if deps.store.workflow_queue.pending?(event_type: "entry.moved", key: ctx.from_key)
-            return ctx if deps.store.workflow_queue.pending?(event_type: "entry.moved", key: ctx.to_key)
-
             Pipeline.emit_event(ctx, deps,
                                 event_type: "entry.moved", pending_key: ctx.from_key,
-                                emit_key: ctx.to_key, emit_lane: ctx.to_entry.lane)
+                                emit_key: ctx.to_key, emit_lane: ctx.to_entry.lane,
+                                pending_keys: [ctx.from_key, ctx.to_key])
           end
         end
 

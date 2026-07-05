@@ -57,9 +57,10 @@ module Textus
           # race: dir may have been emptied by another writer
         end
 
-        def emit_event(ctx, deps, event_type:, pending_key:, emit_key:, emit_lane: nil)
+        def emit_event(ctx, deps, event_type:, pending_key:, emit_key:, emit_lane: nil, pending_keys: [])
           return ctx unless deps.event_emitter
           return ctx if deps.store.workflow_queue.pending?(event_type:, key: pending_key)
+          return ctx if pending_keys.any? { |k| deps.store.workflow_queue.pending?(event_type:, key: k) }
 
           deps.event_emitter.emit(event_type:, key: emit_key, lane: emit_lane || "artifacts")
           ctx
