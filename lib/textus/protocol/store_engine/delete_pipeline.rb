@@ -77,12 +77,8 @@ module Textus
           DeindexEntry,
         ].freeze
 
-        def self.call(key, call:, file_system:, manifest:, store:, layout:, if_etag: nil, reader: nil, workflow_registry: nil)
-          ctx = Pipeline::DeleteContext.new(
-            key:, if_etag:,
-            path: nil, etag_before: nil
-          )
-          deps = Pipeline::WriteDeps.new(file_system:, manifest:, store:, call:, reader:, layout:, workflow_registry:)
+        def self.call(key, if_etag: nil, deps:)
+          ctx = Pipeline::DeleteContext.new(key:, if_etag:, path: nil, etag_before: nil)
           STEPS.reduce(ctx) { |c, step| step.call(c, deps) }
           nil
         end

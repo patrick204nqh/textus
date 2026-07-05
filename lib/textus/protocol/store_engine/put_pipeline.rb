@@ -128,17 +128,14 @@ module Textus
           CheckEtag, WriteBytes, BuildEnvelope, AppendAudit, EmitWorkflowEvent, IndexEntry
         ].freeze
 
-        def self.call(key, mentry:, path:, payload:, call:, file_system:, manifest:, store:, layout:, reader: nil, if_etag: nil,
-                      workflow_registry: nil)
+        def self.call(key, mentry:, path:, payload:, if_etag: nil, deps:)
           ctx = Pipeline::WriteContext.new(
             key:, mentry:, payload:, if_etag:,
             path:, existing_env: nil, meta: nil, content: nil,
             bytes: nil, eff_meta: nil, eff_body: nil, eff_content: nil,
             etag_before: nil, envelope: nil
           )
-          deps = Pipeline::WriteDeps.new(file_system:, manifest:, store:, call:, reader:, layout:, workflow_registry:)
-          ctx = STEPS.reduce(ctx) { |c, step| step.call(c, deps) }
-          ctx.envelope
+          STEPS.reduce(ctx) { |c, step| step.call(c, deps) }.envelope
         end
       end
     end

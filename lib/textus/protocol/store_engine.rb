@@ -45,22 +45,27 @@ module Textus
       def put(key:, meta:, body:, content:, call:, if_etag: nil)
         result = resolve(key:)
         payload = Value::Payload.new(meta: meta || {}, body:, content:)
-        PutPipeline.call(key, mentry: result.entry, path: result.path, payload:, call:,
-                              file_system: @file_system, manifest: @manifest, store: @store,
-                              layout: @layout, if_etag:,
-                              workflow_registry: @workflow_registry)
+        deps = build_deps(reader: nil, call:)
+        PutPipeline.call(key, mentry: result.entry, path: result.path, payload:, if_etag:, deps:)
       end
 
       def delete(key:, call:, if_etag: nil)
-        DeletePipeline.call(key, call:,
-                                 file_system: @file_system, manifest: @manifest, store: @store,
-                                 layout: @layout, if_etag:)
+        deps = build_deps(reader: nil, call:)
+        DeletePipeline.call(key, if_etag:, deps:)
       end
 
       def move(from_key:, to_key:, call:, if_etag: nil, dry_run: false)
-        MovePipeline.call(from_key:, to_key:, call:, if_etag:, dry_run:,
-                          file_system: @file_system, manifest: @manifest, store: @store,
-                          layout: @layout, reader: self)
+        deps = build_deps(reader: self, call:)
+        MovePipeline.call(from_key:, to_key:, if_etag:, dry_run:, deps:)
+      end
+
+      private
+
+      def build_deps(reader:, call:)
+        Pipeline::WriteDeps.new(
+          file_system: @file_system, manifest: @manifest, store: @store,
+          layout: @layout, workflow_registry: @workflow_registry, reader:, call:
+        )
       end
 
     end

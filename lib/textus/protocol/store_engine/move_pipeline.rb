@@ -182,17 +182,13 @@ module Textus
           ReindexEntry,
         ].freeze
 
-        def self.call(
-          from_key:, to_key:, call:, file_system:, manifest:, store:,
-          layout:, reader:, if_etag: nil, workflow_registry: nil, dry_run: false
-        )
+        def self.call(from_key:, to_key:, if_etag: nil, dry_run: false, deps:)
           ctx = Pipeline::MoveContext.new(
             from_key:, to_key:, if_etag:,
             from_path: nil, to_path: nil,
             from_entry: nil, to_entry: nil,
             etag_before: nil, etag_after: nil, envelope: nil, dry_run:
           )
-          deps = Pipeline::WriteDeps.new(file_system:, manifest:, store:, call:, reader:, layout:, workflow_registry:)
           steps = dry_run ? VALIDATION_STEPS : VALIDATION_STEPS + MUTATE_STEPS
           steps.reduce(ctx) { |c, step| step.call(c, deps) }
         end
