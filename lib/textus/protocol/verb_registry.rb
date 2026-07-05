@@ -16,10 +16,6 @@ module Textus
       def self.positional_for(verb) = POSITIONAL[verb] || []
       def self.summary_for(verb) = VERBS[verb]&.summary
       def self.registered = VERBS.values
-      def self.contract_class_for(_verb) = nil
-
-      VERB_TO_CONTRACT = {}.freeze
-      CONTRACT_TO_VERB = {}.freeze
 
       ENTRY_VERBS = %i[
         get put list key_delete key_mv propose accept reject
@@ -34,9 +30,6 @@ module Textus
 
       VERB_DOMAIN = ENTRY_VERBS.to_h { |v| [v, :entry] }
                                .merge(OPS_VERBS.to_h { |v| [v, :ops] }).freeze
-
-      def self.contract_to_verb(_klass) = nil
-      def self.contract_to_verb!(klass) = raise "contract lookup removed: #{klass}"
 
       require_relative "verb_registry/verbs/get"
       require_relative "verb_registry/verbs/put"
@@ -59,8 +52,6 @@ module Textus
       require_relative "verb_registry/verbs/key_mv_prefix"
       require_relative "verb_registry/verbs/key_delete_prefix"
       require_relative "verb_registry/verbs/drain"
-      require_relative "verb_registry/verbs/session_open"
-      require_relative "verb_registry/verbs/session_close"
 
       require_relative "../lanes/knowledge/verbs"
       require_relative "../lanes/scratchpad/verbs"

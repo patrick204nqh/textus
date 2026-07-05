@@ -32,29 +32,4 @@ RSpec::Matchers.define :have_audit_verb do |verb|
   end
 end
 
-# Result matchers for Textus::Value::Result (was Dry::Monads, replaced by ADR 0119 migration).
-#   expect(handler.call(...)).to be_success
-#   expect(handler.call(...)).to be_failure
-RSpec::Matchers.define :be_success do
-  match { |actual| actual.is_a?(Textus::Value::Result) && actual.success? }
-
-  failure_message do |actual|
-    if actual.is_a?(Textus::Value::Result)
-      "expected Success, got Failure(#{actual.error.inspect})"
-    else
-      "expected Success, got #{actual.class}"
-    end
-  end
-end
-
-RSpec::Matchers.define :be_failure do
-  match { |actual| actual.is_a?(Textus::Value::Result) && actual.failure? }
-
-  failure_message do |actual|
-    if actual.is_a?(Textus::Value::Result)
-      "expected Failure, got Success(#{actual.value.inspect})"
-    else
-      "expected Failure, got #{actual.class}"
-    end
-  end
-end
+# Result matchers removed (Textus::Value::Result was dead code — ADR 0119 migration completed)
