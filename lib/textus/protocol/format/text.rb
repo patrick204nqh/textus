@@ -18,8 +18,7 @@ module Textus
         end
 
         def self.extensions = [".txt"]
-        def self.nested_glob = "**/*"
-        def self.append_ext_on_nested? = false
+        def self.nested_glob = "**/*.txt"
         def self.enforce_name_match!(_path, _meta); end
 
         def self.rewrite_name(_path, _basename) # rubocop:disable Naming/PredicateMethod

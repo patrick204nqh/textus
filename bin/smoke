@@ -162,7 +162,7 @@ SCRIPTS.each do |name, s|
   payload = JSON.generate({ _meta: { name: name }, body: s[:body] })
   assert("write scripts/#{name}", "put",
          "scratchpad.sessions.#{sid}.scripts.#{name}", "--stdin", "--as=agent",
-         stdin: payload, key: %w[etag])
+         "--as-format=script", stdin: payload, key: %w[etag])
 end
 
 # ── OUTPUT: seal, publish, verify ───────────────────────────────────────────

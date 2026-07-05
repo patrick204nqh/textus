@@ -21,7 +21,7 @@ module Textus
           def self.index_entry(ctx, deps)
             content = ctx.eff_content ? ctx.eff_content.to_json : ctx.eff_body
             deps.entry_index.record(
-              key: ctx.key, lane: ctx.mentry.lane, format: ctx.mentry.format,
+              key: ctx.key, lane: ctx.mentry.lane, format: ctx.format,
               schema: ctx.mentry.schema, content: content
             )
             ctx

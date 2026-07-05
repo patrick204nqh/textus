@@ -43,11 +43,18 @@ module Textus
       def resolve(key:)   = @manifest.resolver.resolve(key)
       def mentry_for(key:)= resolve(key:).entry
 
-      def put(key:, meta:, body:, content:, call:, if_etag: nil)
+      def put(key:, meta:, body:, content:, call:, if_etag: nil, format: nil)
         result = resolve(key:)
         payload = Value::Payload.new(meta: meta || {}, body:, content:)
         deps = build_deps(reader: nil, call:)
-        PutPipeline.call(key, mentry: result.entry, path: result.path, payload:, if_etag:, deps:)
+
+        if format
+          fmt_mod = Textus::Protocol::Format.for(format)
+          path = result.path.sub(/\.[^.]+$/, "") + (fmt_mod.append_ext_on_nested? ? fmt_mod.extensions.first : "")
+          PutPipeline.call(key, mentry: result.entry, path:, payload:, if_etag:, deps:, fmt: format)
+        else
+          PutPipeline.call(key, mentry: result.entry, path: result.path, payload:, if_etag:, deps:)
+        end
       end
 
       def delete(key:, call:, if_etag: nil)

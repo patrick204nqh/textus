@@ -7,8 +7,10 @@ RSpec.describe "WritePipeline indexing" do
 
   describe Textus::Protocol::StoreEngine::PutPipeline::Emit do
     it "records the written entry in the index" do
-      ctx = double("ctx", key: "knowledge.a", mentry: double(schema: "runbook", lane: "knowledge", format: "markdown"), eff_content: nil,
-                          eff_body: "hello", envelope: double(etag: "abc"), etag_before: nil)
+      mentry = double(schema: "runbook", lane: "knowledge", format: "markdown")
+      ctx = double("ctx", key: "knowledge.a", format: "markdown", mentry:,
+                          eff_content: nil, eff_body: "hello",
+                          envelope: double(etag: "abc"), etag_before: nil)
       deps = double("deps", entry_index:, audit_log:, call:)
       allow(entry_index).to receive(:record)
       allow(audit_log).to receive(:append)
@@ -23,8 +25,10 @@ RSpec.describe "WritePipeline indexing" do
     end
 
     it "indexes serialized content (not body) when the entry is content-based (json/yaml)" do
-      ctx = double("ctx", key: "artifacts.b", mentry: double(schema: nil, lane: "artifacts", format: "json"), eff_content: { "x" => 1 },
-                          eff_body: nil, envelope: double(etag: "def"), etag_before: nil)
+      mentry = double(schema: nil, lane: "artifacts", format: "json")
+      ctx = double("ctx", key: "artifacts.b", format: "json", mentry:,
+                          eff_content: { "x" => 1 }, eff_body: nil,
+                          envelope: double(etag: "def"), etag_before: nil)
       deps = double("deps", entry_index:, audit_log:, call:)
       allow(entry_index).to receive(:record)
       allow(audit_log).to receive(:append)

@@ -11,7 +11,7 @@ RSpec.describe Textus::Protocol::StoreEngine::Pipeline do
         key: key, mentry: mentry, payload: payload, if_etag: nil,
         path: nil, existing_env: nil, meta: nil, content: nil,
         bytes: nil, eff_meta: nil, eff_body: nil, eff_content: nil,
-        etag_before: nil, envelope: nil
+        etag_before: nil, envelope: nil, fmt: nil
       )
       updated = ctx.with(path: "/tmp/demo.md")
       expect(updated.path).to eq("/tmp/demo.md")

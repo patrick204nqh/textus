@@ -10,9 +10,11 @@ module Textus
           :key, :mentry, :payload, :if_etag,
           :path, :existing_env, :meta, :content,
           :bytes, :eff_meta, :eff_body, :eff_content,
-          :etag_before, :envelope
+          :etag_before, :envelope, :fmt
         ) do
           include ContextWith
+
+          def format = fmt || mentry.format
         end
 
         WriteDeps = Data.define(:file_system, :manifest, :store, :call, :reader, :layout, :event_emitter, :schemas) do

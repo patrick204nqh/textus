@@ -13,7 +13,7 @@ module Textus
             return ctx.with(existing_env: nil) unless ctx.path && deps.file_system.exists?(ctx.path)
 
             raw = deps.file_system.read(ctx.path)
-            parsed = Textus::Protocol::Format.for(ctx.mentry.format).parse(raw, path: ctx.path)
+            parsed = Textus::Protocol::Format.for(ctx.format).parse(raw, path: ctx.path)
             envelope = Textus::Protocol::Envelope.build(
               key: ctx.key, mentry: ctx.mentry, path: ctx.path,
               meta: parsed["_meta"] || {},
@@ -29,7 +29,7 @@ module Textus
             raw_meta = ctx.payload.meta || {}
             meta, content = Textus::Infra::Store::Envelope::Meta.inject_all(
               raw_meta, ctx.payload.content, existing_meta,
-              format: ctx.mentry.format,
+              format: ctx.format,
               etag_for: method(:resolve_source_etag).curry.call(deps)
             )
             ctx.with(meta:, content:)
@@ -46,7 +46,7 @@ module Textus
 
           def self.serialize(ctx, _deps)
             bytes, eff_meta, eff_body, eff_content =
-              Textus::Protocol::Format.for(ctx.mentry.format).serialize_for_put(
+              Textus::Protocol::Format.for(ctx.format).serialize_for_put(
                 meta: ctx.meta, body: ctx.payload.body,
                 content: ctx.content, path: ctx.path
               )

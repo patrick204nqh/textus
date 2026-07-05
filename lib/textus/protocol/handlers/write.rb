@@ -6,8 +6,8 @@ module Textus
 
         module_function
 
-        def put(key:, ctx:, call:, meta: nil, body: nil, content: nil, if_etag: nil)
-          env = ctx.put(key:, meta: meta || {}, body:, content:, if_etag:, call:)
+        def put(key:, ctx:, call:, meta: nil, body: nil, content: nil, if_etag: nil, format: nil)
+          env = ctx.put(key:, meta: meta || {}, body:, content:, if_etag:, call:, format:)
           response(ok: true, key:, uid: env.uid, etag: env.etag)
         end
 

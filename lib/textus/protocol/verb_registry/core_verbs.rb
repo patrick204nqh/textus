@@ -127,7 +127,8 @@ module Textus
            ArgSpec.arg(name: :body, description: "markdown/text payload for md entries; use `content` for json/yaml"),
            ArgSpec.arg(name: :content, type: Hash,
                        description: "structured payload for json/yaml-format entries; omit (use `body`) for markdown entries"),
-           ArgSpec.arg(name: :if_etag, description: "optimistic-concurrency guard; write rejected if entry changed since")],
+           ArgSpec.arg(name: :if_etag, description: "optimistic-concurrency guard; write rejected if entry changed since"),
+           ArgSpec.arg(name: :format, description: "override entry format for this write (e.g. script)")],
           %i[cli mcp], :write
         ),
 

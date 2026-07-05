@@ -30,7 +30,6 @@ data:
       naming: sequential
       tracked: false
     - key: scratchpad.sessions
-      format: text
       naming: dated
       tracked: false
     - key: scratchpad.issues
