@@ -2,7 +2,6 @@ module Textus
   module Surface
     module MCP
       module Catalog
-        PROJECTOR = Projector.new(view_key: :default).freeze
         MCP_ADAPTER = Textus::Surface::MCP::Adapters::McpAdapter.new
 
         module_function
@@ -45,7 +44,7 @@ module Textus
           spec = Textus::Protocol::VerbRegistry.for(name.to_sym)
           raise ToolError.new("unknown tool: #{name}") unless spec&.mcp?
 
-          PROJECTOR.dispatch(name, inputs: args, store:)
+          Textus::Surface::Dispatch.call(store, name.to_sym, args)
         rescue Textus::Protocol::MissingArgs => e
           raise ToolError.new("#{name}: missing #{e.missing.map { |a| a.wire.to_s }.join(", ")}")
         rescue Textus::ContractDrift, Textus::CursorExpired

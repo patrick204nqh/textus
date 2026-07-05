@@ -7,7 +7,7 @@ module Textus
         def call(key, mentry:, path:, payload:, deps:, if_etag: nil, fmt: nil)
           format = fmt || mentry.format
 
-          validate_input(path, payload, format, mentry)
+          validate_input(key, payload, format, mentry, path)
           validate_schema(payload, mentry, deps)
 
           existing_env = read_existing(key, mentry, path, format, deps)
@@ -31,7 +31,8 @@ module Textus
           envelope
         end
 
-        def validate_input(path, payload, format, mentry)
+        def validate_input(key, payload, format, mentry, path)
+          EntryConstraint.validate_naming!(key, mentry)
           fmt = Format.for(format)
           fmt.enforce_name_match!(path, payload.meta)
           fmt.validate_raw_entry!(
@@ -41,16 +42,7 @@ module Textus
         end
 
         def validate_schema(payload, mentry, deps)
-          schema_name = mentry.schema
-          return unless schema_name && deps.schemas
-
-          schema = deps.schemas.fetch_or_nil(schema_name)
-          return unless schema
-          return if mentry.lane == "scratchpad"
-
-          schema.validate!(payload.meta || {})
-        rescue Textus::SchemaViolation
-          raise if mentry.lane != "scratchpad"
+          EntryConstraint.validate_schema!(payload, mentry, schemas: deps.schemas)
         end
 
         def read_existing(key, mentry, path, format, deps)

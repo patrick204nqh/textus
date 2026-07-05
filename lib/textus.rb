@@ -14,6 +14,8 @@ end
 
 require_relative "textus/surface/mcp/errors"
 
+require "sinatra/base"
+
 loader = Zeitwerk::Loader.for_gem
 loader.inflector.inflect(
   "cli" => "CLI",

@@ -31,6 +31,13 @@ module Textus
 
         def propose(key:, ctx:, call:, meta: nil, data: nil)
           body, content = data.is_a?(Hash) ? [nil, data] : [data, nil]
+
+          target_key = meta&.dig("proposal", "target_key")
+          if target_key
+            resolution = ctx.manifest.resolver.resolve(target_key)
+            Textus::Protocol::EntryConstraint.validate_naming!(target_key, resolution.entry)
+          end
+
           full_key = "#{PROPOSALS_PARENT_KEY}.#{key}"
           env = ctx.put(key: full_key, meta: meta || {}, body:, content:, call:)
           env.to_h_for_wire
@@ -60,6 +67,21 @@ module Textus
           case action
           when "put"
             target_meta = env.meta.to_h.except("proposal")
+
+            # Parse body frontmatter to extract schema-relevant meta fields
+            resolution = ctx.manifest.resolver.resolve(target)
+            if env.body && !env.body.empty?
+              parsed = Textus::Protocol::Format.for(resolution.entry.format).parse(env.body)
+              body_meta = parsed["_meta"] || {}
+              target_meta = body_meta.merge(target_meta)
+            end
+
+            # Re-validate constraints at promotion time
+            payload = Textus::Value::Payload.new(meta: target_meta, body: env.body, content: env.content)
+            Textus::Protocol::EntryConstraint.validate_naming!(target, resolution.entry)
+            Textus::Protocol::EntryConstraint.validate_schema!(payload, resolution.entry, schemas: ctx.schemas)
+            Textus::Protocol::EntryConstraint.validate_format!(payload, resolution.entry)
+
             ctx.put(key: target, meta: target_meta, body: env.body, content: env.content, call:)
           when "delete"
             ctx.delete(key: target, call:)

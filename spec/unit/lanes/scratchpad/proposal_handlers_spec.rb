@@ -1,7 +1,9 @@
 RSpec.describe Textus::Lanes::Scratchpad::Handlers do
   def mock_container(manifest:, store:)
     c = double("Container")
-    allow(c).to receive_messages(manifest:, store:, layout: nil, workflow_registry: nil)
+    schemas = instance_double(Textus::Protocol::Schema::Registry)
+    allow(schemas).to receive(:fetch_or_nil).and_return(nil)
+    allow(c).to receive_messages(manifest:, store:, layout: nil, workflow_registry: nil, schemas:)
     c
   end
 
@@ -13,8 +15,15 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
       container = mock_container(manifest:, store:)
       call = instance_double(Call, role: "human", correlation_id: "abc")
       ctx = Textus::Protocol::Handlers::CommandContext.new(store_engine, container, call:)
-      entry = double("entry", entry: instance_double(Mentry))
-      allow(manifest.resolver).to receive(:resolve).with("scratchpad.proposals.decisions.feature-x").and_return(entry)
+
+      target_mentry = instance_double(Mentry, naming: nil, schema: nil, format: "markdown", lane: "knowledge")
+      target_path = "/tmp/foo.md"
+      target_resolution = instance_double(Textus::Protocol::Manifest::Resolver::Resolution, entry: target_mentry, path: target_path)
+      allow(manifest.resolver).to receive(:resolve).with("knowledge.foo").and_return(target_resolution)
+
+      proposals_mentry = instance_double(Mentry)
+      proposals_entry = double("entry", entry: proposals_mentry)
+      allow(manifest.resolver).to receive(:resolve).with("scratchpad.proposals.decisions.feature-x").and_return(proposals_entry)
       env = instance_double(Envelope)
       allow(env).to receive(:to_h_for_wire).and_return({ "key" => "scratchpad.proposals.decisions.feature-x", "uid" => "abc" })
       allow(store_engine).to receive(:put).and_return(env)
@@ -49,8 +58,9 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
                                     content: nil)
       allow(store_engine).to receive(:read).with(key: "scratchpad.proposals.test").and_return(pending_env)
 
-      entry = double("entry", entry: instance_double(Mentry))
-      allow(manifest.resolver).to receive(:resolve).with("knowledge.foo").and_return(entry)
+      target_mentry = instance_double(Mentry, naming: nil, schema: nil, format: "markdown", lane: "knowledge")
+      target_resolution = instance_double(Textus::Protocol::Manifest::Resolver::Resolution, entry: target_mentry, path: "/tmp/foo.md")
+      allow(manifest.resolver).to receive(:resolve).with("knowledge.foo").and_return(target_resolution)
       allow(store_engine).to receive(:put)
       allow(store_engine).to receive(:delete)
 
@@ -77,8 +87,9 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
                                     content: { "data" => 1 })
       allow(store_engine).to receive(:read).with(key: "scratchpad.proposals.test").and_return(pending_env)
 
-      entry = double("entry", entry: instance_double(Mentry))
-      allow(manifest.resolver).to receive(:resolve).with("knowledge.foo").and_return(entry)
+      target_mentry = instance_double(Mentry, naming: nil, schema: nil, format: "markdown", lane: "knowledge")
+      target_resolution = instance_double(Textus::Protocol::Manifest::Resolver::Resolution, entry: target_mentry, path: "/tmp/foo.md")
+      allow(manifest.resolver).to receive(:resolve).with("knowledge.foo").and_return(target_resolution)
       allow(store_engine).to receive(:put)
       allow(store_engine).to receive(:delete)
 
