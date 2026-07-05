@@ -7,6 +7,9 @@ module Textus
 
       class Definition
         include Textus::Workflow::Helpers
+        include StepBuilder
+        include PatternMatcher
+        include Lifecycle
 
         attr_reader :name, :steps, :on_patterns, :save_to, :notify_keys,
                     :publish_block, :publish_targets,
@@ -51,7 +54,7 @@ module Textus
         def max_attempts(n = nil)
           return @max_attempts if n.nil?
 
-          @max_attempts = n.to_i
+          @max_attempts = max_attempts_value(n)
         end
 
         # ── Trigger ──
@@ -61,57 +64,12 @@ module Textus
 
         # ── Steps ──
         def step(name, callable = nil, timeout: nil, &block)
-          if callable.is_a?(Hash)
-            raise ArgumentError.new(
-              "step :#{name} no longer accepts options hash; pass timeout: keyword instead",
-            )
-          end
-
-          resolved = if callable.respond_to?(:call)
-                       callable
-                     elsif block
-                       block
-                     else
-                       raise ArgumentError.new("step :#{name} requires a block or a callable (got neither)")
-                     end
-
-          @steps << Step.new(name: name, callable: resolved, timeout: timeout)
+          @steps << build_step(name, callable, timeout:, &block)
         end
 
         def check(name, naming: nil, scope: nil, &block)
-          merge = method(:merge_issues)
-
-          if naming
-            raise ArgumentError.new("check :#{name} requires a scope: for naming checks") unless scope
-
-            @steps << Step.new(
-              name: :"check_#{name}",
-              callable: lambda do |data, ctx|
-                entries = ctx.container.manifest.resolver.enumerate.select do |row|
-                  match_pattern?(scope, row[:key].to_s)
-                end
-
-                new_issues = check_naming(
-                  entries,
-                  pattern: naming,
-                  code: "check.#{name}",
-                  fix: "rename to match #{naming.inspect}",
-                )
-                merge.call(data, new_issues)
-              end,
-              timeout: nil,
-            )
-          elsif block
-            @steps << Step.new(
-              name: :"check_#{name}",
-              callable: lambda do |data, ctx|
-                merge.call(data, block.call(ctx) || [])
-              end,
-              timeout: nil,
-            )
-          else
-            raise ArgumentError.new("check :#{name} requires naming: or a block")
-          end
+          callable = build_check(name, naming:, scope:, &block)
+          @steps << Step.new(name: :"check_#{name}", callable: callable, timeout: nil)
         end
 
         def parallel(&)
@@ -119,7 +77,7 @@ module Textus
           @steps = []
           instance_eval(&)
           parallel_steps = @steps.dup
-          @steps = saved << Parallel.new(steps: parallel_steps)
+          @steps = saved << build_parallel(parallel_steps)
         end
 
         # ── Output ──
@@ -145,25 +103,18 @@ module Textus
         def priority(n = nil)
           return @priority if n.nil?
 
-          @priority = n.to_i
+          @priority = priority_value(n)
         end
 
         # ── Lifecycle ──
         def every(cadence = :__no_arg__)
-          return @ttl if cadence == :__no_arg__
-
-          @ttl = Textus::Value::Duration.seconds(cadence)
+          @ttl = ttl_value(cadence)
         end
 
         alias ttl every
 
         def on_expire(action = :__no_arg__)
-          return @on_expire if action == :__no_arg__
-
-          sym = action.to_s.to_sym
-          raise ArgumentError.new("on_expire must be one of drop|archive, got #{action.inspect}") unless %i[drop archive].include?(sym)
-
-          @on_expire = sym
+          @on_expire = expire_action(action)
         end
 
         # ── Matching (internal) ──
@@ -175,27 +126,6 @@ module Textus
 
         def multi_match?
           @on_patterns&.any? { |p| p.end_with?("**") }
-        end
-
-        private
-
-        def merge_issues(data, new_issues)
-          existing = Array(data&.dig("content", "issues"))
-          all = existing + new_issues
-          { "content" => { "ok" => all.empty?, "issues" => all, "count" => all.size } }
-        end
-
-        def match_pattern?(pattern, key)
-          if pattern.end_with?(".**")
-            prefix = pattern.delete_suffix(".**")
-            key.start_with?("#{prefix}.")
-          elsif pattern.end_with?(".*")
-            prefix = pattern.delete_suffix(".*")
-            suffix = key.delete_prefix("#{prefix}.")
-            key != suffix && !suffix.include?(".")
-          else
-            key == pattern
-          end
         end
       end
     end
