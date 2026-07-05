@@ -25,7 +25,7 @@ RSpec.describe "Textus::Surface::CLI verb return-value contract" do
   it "every registered verb returns an Integer from a no-op invocation" do
     with_store do |root|
       Textus::Surface::CLI.verbs.each_key do |verb|
-        next if verb == "watch"
+        next if %w[watch web].include?(verb)
 
         code, = run_cli([verb], cwd: root)
         expect(code).to be_an(Integer),
@@ -61,6 +61,7 @@ RSpec.describe "Textus::Surface::CLI verb return-value contract" do
       "session" => Textus::Surface::CLI::Group::Session,
       "drain" => Textus::Surface::CLI::Verb::GenDrain,
       "watch" => Textus::Surface::CLI::Verb::Watch,
+      "web" => Textus::Surface::CLI::Group::Web,
       "workflow" => Textus::Surface::CLI::Group::Workflow,
       "where" => Textus::Surface::CLI::Verb::GenWhere,
     }
@@ -90,6 +91,9 @@ RSpec.describe "Textus::Surface::CLI verb return-value contract" do
     expect(Textus::Surface::CLI::Group::Schema.subcommands).to eq(
       "list" => Textus::Surface::CLI::Verb::GenSchemaList,
       "show" => Textus::Surface::CLI::Verb::GenSchemaShow,
+    )
+    expect(Textus::Surface::CLI::Group::Web.subcommands).to eq(
+      "serve" => Textus::Surface::CLI::Verb::WebServe,
     )
   end
 end

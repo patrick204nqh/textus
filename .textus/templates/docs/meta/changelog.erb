@@ -9,8 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <% entries.each do |entry| -%>
 ## <%= entry["tag"] %><%= entry["date"] && !entry["date"].empty? ? " — #{entry["date"]}" : "" %>
 
+<% if entry["groups"] -%>
+<% entry["groups"].each do |group_name, commits| -%>
+### <%= group_name %>
+
+<% commits.each do |commit| -%>
+- <%= commit["subject"] %>
+<% end -%>
+
+<% end -%>
+<% elsif entry["commits"] -%>
 <% entry["commits"].each do |commit| -%>
 - <%= commit["subject"] %>
 <% end -%>
 
+<% end -%>
 <% end -%>

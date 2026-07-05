@@ -14,7 +14,7 @@ RSpec.describe "surface adapter dispatch parity" do
                              cwd: tmp)
     cli = JSON.parse(cli_out.string)
 
-    mcp = Textus::Surface::MCP::Projector.new.dispatch(:boot, inputs: {}, store: store)
+    mcp = Textus::Surface::Dispatch.call(store, :boot, {})
 
     expect(cli["protocol"]).to eq("textus/4")
     expect(mcp["protocol"]).to eq("textus/4")
@@ -29,7 +29,7 @@ RSpec.describe "surface adapter dispatch parity" do
                              cwd: tmp)
     cli_body = JSON.parse(cli_out.string)["body"]
 
-    mcp = Textus::Surface::MCP::Projector.new.dispatch(:get, inputs: { "key" => "knowledge.foo" }, store: store)
+    mcp = Textus::Surface::Dispatch.call(store, :get, { "key" => "knowledge.foo" })
     mcp_body = mcp["body"]
 
     expect(cli_body).to eq(mcp_body)

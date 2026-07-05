@@ -59,7 +59,7 @@ module Textus
           role = verb_instance.resolved_role(store)
 
           s = store.with_role(role)
-          result = s.public_send(spec.verb, **inputs)
+          result = Textus::Surface::Dispatch.call(s, spec.verb, **inputs)
           verb_instance.emit(result)
         rescue Textus::Protocol::MissingArgs => e
           raise UsageError.new("#{spec.cli_path} requires #{e.missing.first.wire}")

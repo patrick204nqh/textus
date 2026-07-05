@@ -3,3 +3,12 @@ export GIT_AUTHOR_NAME="someone"
 export GIT_AUTHOR_EMAIL="someone@example.com"
 
 export OPENCODE_CONFIG="$PWD/opencode.local.json"
+
+# headroom
+export HEADROOM_HOST=0.0.0.0
+export HEADROOM_PORT=8787
+export HEADROOM_BUDGET=100.0
+export HEADROOM_TELEMETRY=off
+
+# codebase-memory-mcp
+export CBM_CACHE_DIR=.cache/codebase-memory/

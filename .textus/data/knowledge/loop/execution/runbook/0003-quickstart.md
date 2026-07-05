@@ -135,7 +135,7 @@ Produced entries (`kind: produced`) declare how they're acquired in one `source:
 - **`source: { from: external, command: "...", sources: [...] }`** — *externally managed*: an out-of-band command or workflow writes the file; textus tracks staleness via declared `sources`.
 - **`source: { from: external, command: "true", sources: [] }` + a workflow** — *workflow-driven*: a `Textus.workflow` block (in `.textus/workflows/`) acquires and shapes the data on `drain`.
 
-Publishing is one typed `publish:` block (ADR 0052/0094). Each target is either `{ to: path, template?: name }` for a single file (optionally rendered through an ERB template) or `{ tree: "dir" }` to mirror a whole stored subtree. Sentinels for every published file live under `.textus/.state/sentinels/` (git-ignored, regenerated on drain). See SPEC §5.2, §5.3, §5.12.
+Publishing is one typed `publish:` block (ADR 0052/0094). Each target is either `{ to: path, template?: name }` for a single file (optionally rendered through an ERB template) or `{ tree: "dir" }` to mirror a whole stored subtree. Sentinels for every published file live under `.textus/track/sentinels/` (git-ignored, regenerated on drain). See SPEC §5.2, §5.3, §5.12.
 
 Templates live in `.textus/templates/` as ERB files (`.erb`). The template receives the entry's `content` hash as local variables via `ERB#result_with_hash`. If `inject_boot: true`, a `boot` variable is also available with the live orientation context.
 
