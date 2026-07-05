@@ -5,6 +5,12 @@ module Textus
     module Handlers
       module Ops
         class DataMv
+          Plan = Data.define(:steps, :warnings) do
+            def to_h
+              { "steps" => steps, "warnings" => warnings }
+            end
+          end
+
           def call(from:, to:, ctx:, dry_run: false)
             raise Textus::UsageError.new("from and to required") unless from && to
             raise Textus::UsageError.new("data lane '#{from}' not declared") unless ctx.manifest.data.declared_lane_kinds.key?(from)
@@ -15,7 +21,7 @@ module Textus
             affected_keys = ctx.manifest.data.entries.select { |e| e.lane == from }.map(&:key)
             steps = [{ "op" => "rename_zone", "from" => from, "to" => to }]
             steps += affected_keys.map { |k| { "op" => "mv", "from" => k, "to" => "#{to}#{k[from.length..]}" } }
-            plan = Textus::Protocol::Retention::Plan.new(steps:, warnings: [])
+            plan = Plan.new(steps:, warnings: [])
             return plan.to_h if dry_run
 
             rewrite_manifest!(from:, to:, ctx:)

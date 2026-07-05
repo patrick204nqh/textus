@@ -1,6 +1,3 @@
-require "timeout"
-require "concurrent"
-
 module Textus
   module Workflow
     class ParallelStepFailed < Textus::Error
@@ -14,32 +11,15 @@ module Textus
     end
 
     class Runner
-      DEFAULT_TIMEOUT = 30
-      CONCURRENCY_ADAPTER = Textus::Infra::Adapters::ConcurrencyAdapter.new
-
       Context = Data.define(:key, :entry, :config, :lane, :container, :call) do
-        def manifest    = container.manifest
-        def layout      = container.layout
-        def schemas     = container.schemas
-        def file_system = container.store.file_system
-        def read(key)   = Textus::Protocol::StoreEngine.new(file_system:, manifest:, layout:, store: container.store).read(key:)
-        def repo_root   = File.dirname(container.root)
-        def store_root  = container.root
-      end
-
-      class StepScope
-        include Textus::Workflow::Helpers
-
-        def initialize(data, ctx, _runner)
-          @data = data
-          @ctx  = ctx
-          @container = ctx.container
-          @call = ctx.call
-        end
-
-        def call(callable)
-          instance_exec(@data, @ctx, &callable)
-        end
+        def store_engine = container.store_engine
+        def manifest     = container.manifest
+        def layout       = container.layout
+        def file_system  = container.store.file_system
+        def schemas      = container.schemas
+        def read(key)    = store_engine.read(key:)
+        def repo_root    = File.dirname(container.root)
+        def store_root   = container.root
       end
 
       def initialize(definition, container:, call:)
@@ -47,20 +27,12 @@ module Textus
         @container  = container
         @call       = call
         @publisher  = Publisher.new(container: container, call: call)
+        @step_executor = StepExecutor.new
       end
 
       def run(key)
-        ctx  = build_context(key)
-        data = execute_steps(ctx)
-        @publisher.publish(key, data, ctx, @definition) if data
-        data
-      end
-
-      private
-
-      def build_context(key)
         res = @container.manifest.resolver.resolve(key)
-        Context.new(
+        ctx = Context.new(
           key: key,
           entry: res.entry,
           config: {}.freeze,
@@ -68,58 +40,9 @@ module Textus
           container: @container,
           call: @call,
         )
-      end
-
-      def execute_steps(ctx)
-        data = nil
-        @definition.steps.each { |step| data = execute_one(step, data, ctx) }
+        data = @step_executor.execute(@definition.steps, ctx)
+        @publisher.publish(key, data, ctx, @definition) if data
         data
-      end
-
-      def execute_one(step, data, ctx)
-        case step
-        when DSL::Step then execute_single(step, data, ctx)
-        when DSL::Parallel then execute_parallel(step, ctx)
-        else raise ArgumentError.new("unknown step type: #{step.class}")
-        end
-      end
-
-      def execute_single(step, data, ctx)
-        scope = StepScope.new(data, ctx, self)
-        timeout = step.timeout || DEFAULT_TIMEOUT
-        Timeout.timeout(timeout) { scope.call(step.callable) }
-      rescue Timeout::Error => e
-        raise StepFailed.new(step.name, e)
-      rescue Textus::Error
-        raise
-      rescue StandardError => e
-        raise StepFailed.new(step.name, e)
-      end
-
-      def execute_parallel(parallel, ctx)
-        scope = StepScope.new(nil, ctx, self)
-        promises = parallel.steps.map do |step|
-          CONCURRENCY_ADAPTER.future do
-            timeout = step.timeout || DEFAULT_TIMEOUT
-            Timeout.timeout(timeout) { scope.call(step.callable) }
-          end
-        end
-
-        results = CONCURRENCY_ADAPTER.zip_futures(*promises).value!
-        failures = []
-        outputs = {}
-        results.each_with_index do |result, i|
-          step = parallel.steps[i]
-          if result.fulfilled?
-            outputs[step.name] = result.value!
-          else
-            failures << { step: step.name, error: result.reason.message }
-          end
-        end
-
-        raise ParallelStepFailed.new(failures) unless failures.empty?
-
-        outputs
       end
     end
   end

@@ -27,8 +27,13 @@ data:
     - key: knowledge.reference
   scratchpad:
     - key: scratchpad.proposals
+      naming: sequential
       tracked: false
     - key: scratchpad.sessions
+      naming: dated
+      tracked: false
+    - key: scratchpad.issues
+      naming: sequential
       tracked: false
   raw:
     - key: raw

@@ -1,45 +1,42 @@
 # Store Builder
 
-ADR-0014: Explicit dependencies. Store SRP extraction from July 2026 architecture deepening.
+ADR-0014: Explicit dependencies. The container builder was extracted from Store into its own class.
 
-Dependency container construction is extracted into its own class so Store stays a thin facade.
+Dependency construction is extracted into `Protocol::Builder` so dispatchers stay thin facades.
 
 ## The Pattern
 
-Instead of Store building its own dependencies:
+The Builder chains three phases:
 
 ```ruby
-# Bad: Store does discovery, session management, AND context building
-class Store
-  def initialize(root, ...)
-    @ctx = build_ctx(root)  # 50 lines of concretions
+class Protocol::Builder
+  def call(root)
+    infra = Builder::Infrastructure.call(root)   # Database, FileSystem, Layout
+    domain = Builder::Domain.call(infra)          # Manifest, Schemas, Workflows
+    Builder::Runtime.call(infra, domain)          # StoreEngine, Gate, Container
   end
 end
 ```
 
-The Builder handles construction:
-
-```ruby
-# Good: Store delegates to Builder
-class Store
-  def initialize(root, ...)
-    @ctx = Store::Builder.new.call(root)
-  end
-end
-```
+Each phase produces a `Components` Data.define struct passed to the next phase.
 
 ## Builder Responsibilities
 
-The Builder (builder.rb) handles: Manifest loading, Port instantiation (Store, FileStore, AuditLog, Clock), Schema registry, Link edge store, Workflow loading, Event bus + cascade subscribers, Freshness evaluation, Trace buffer, Middleware wiring, Pipeline construction.
+| Phase | Produces | What it wires |
+|-------|----------|---------------|
+| Infrastructure | `Components(database, file_system, store, layout)` | SQLite, file I/O, path layout |
+| Domain | `Components(manifest, schemas, workflows, workflow_registry)` | Config, validation, workflow definitions |
+| Runtime | `Components(store_engine, gate, container)` | All together |
 
 ## Why It Works
 
-- **SRP:** Store owns session + dispatch. Builder owns construction.
-- **DIP:** Builder is extracted but still ultimately depends on concretions. The next step is a DI container.
-- **Testable:** Store can be tested with a mock Infrastructure instead of building the full graph.
+- **SRP:** Session owns dispatch. Builder owns construction.
+- **Testable:** Session can be tested with a mock container instead of building the full graph.
+- **Linear boot:** No circular dependencies — infra → domain → runtime is a strict DAG.
 
 ## Key Files
 
-- `lib/textus/store/builder.rb` — the Builder
-- `lib/textus/store.rb` — thin facade using Builder
-- `lib/textus/store/infrastructure.rb` — the Data.define container
+- `lib/textus/protocol/builder.rb` — orchestrator
+- `lib/textus/protocol/builder/infrastructure.rb` — infra layer
+- `lib/textus/protocol/builder/domain.rb` — domain layer
+- `lib/textus/protocol/builder/runtime.rb` — runtime layer

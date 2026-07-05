@@ -37,3 +37,7 @@ skills/
 .textus/data/scratchpad/scripts/
 /.textus/scripts/
 opencode.local.json.headroom-backup
+
+# Smoke test artifacts
+/bin/smoke.log
+/bin/.smoke-sids

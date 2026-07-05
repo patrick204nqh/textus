@@ -2,43 +2,9 @@ module Textus
   module Protocol
     class Builder
       def call(root)
-        manifest    = Manifest.load(root)
-        layout      = Protocol::Layout.new(root)
-        database    = Infra::Database.new(layout:).setup!
-        file_system = Infra::FileSystem.new
-        schemas     = Protocol::Schema::Registry.new(layout.schemas_dir)
-
-        store       = Infra::Store.new(database:, file_system:)
-        workflows   = Workflow::Registry.load_all(root)
-        workflows.push(Textus::Workflow::Instances::Materialize)
-        workflow_registry = Workflow::Registry.new(workflows)
-
-        store_engine = StoreEngine.new(
-          file_system:, manifest:, layout:, store:, workflow_registry:,
-        )
-
-        ttl_evaluator = Protocol::Freshness::TtlEvaluator.new(
-          manifest:,
-          file_stat: file_system,
-          clock: Infra::Clock.new,
-        )
-
-        container = Container.new(
-          store:, layout:,
-          manifest:, schemas:,
-          workflows:, workflow_registry:,
-          root:, ttl_evaluator:
-        )
-
-        gate = Protocol::Gate.new(
-          manifest:,
-          resolver: manifest.resolver,
-          container:,
-          store_engine:,
-        )
-
-        container.gate = gate
-        container
+        infra = Infrastructure.new.call(root)
+        domain = Domain.new.call(root, layout: infra.layout)
+        Runtime.new.call(infra:, domain:, root:).container
       end
     end
   end

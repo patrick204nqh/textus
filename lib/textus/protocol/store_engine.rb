@@ -1,12 +1,13 @@
 module Textus
   module Protocol
     class StoreEngine
-      def initialize(file_system:, manifest:, layout:, store:, workflow_registry: nil)
+      def initialize(file_system:, manifest:, layout:, store:, event_emitter: nil, schemas: nil)
         @file_system = file_system
         @manifest = manifest
         @layout = layout
         @store = store
-        @workflow_registry = workflow_registry
+        @event_emitter = event_emitter
+        @schemas = schemas
       end
 
       def read(key:)
@@ -42,20 +43,33 @@ module Textus
       def resolve(key:)   = @manifest.resolver.resolve(key)
       def mentry_for(key:)= resolve(key:).entry
 
-      def put(key:, meta:, body:, content:, call:, if_etag: nil)
+      def put(key:, meta:, body:, content:, call:, if_etag: nil, format: nil)
         result = resolve(key:)
         payload = Value::Payload.new(meta: meta || {}, body:, content:)
         deps = build_deps(reader: nil, call:)
-        PutPipeline.call(key, mentry: result.entry, path: result.path, payload:, if_etag:, deps:)
+
+        if format
+          fmt_mod = Textus::Protocol::Format.for(format)
+          path = result.path.sub(/\.[^.]+$/, "") + fmt_mod.nested_ext(result.remaining.last)
+          PutPipeline.call(key, mentry: result.entry, path:, payload:, if_etag:, deps:, fmt: format)
+        else
+          PutPipeline.call(key, mentry: result.entry, path: result.path, payload:, if_etag:, deps:)
+        end
       end
 
       def delete(key:, call:, if_etag: nil)
-        deps = build_deps(reader: nil, call:)
+        deps = Pipeline::DeleteDeps.new(
+          file_system: @file_system, manifest: @manifest, store: @store,
+          layout: @layout, event_emitter: @event_emitter, call:
+        )
         DeletePipeline.call(key, if_etag:, deps:)
       end
 
       def move(from_key:, to_key:, call:, if_etag: nil, dry_run: false)
-        deps = build_deps(reader: self, call:)
+        deps = Pipeline::MoveDeps.new(
+          file_system: @file_system, manifest: @manifest, store: @store,
+          layout: @layout, event_emitter: @event_emitter, reader: self, call:
+        )
         MovePipeline.call(from_key:, to_key:, if_etag:, dry_run:, deps:)
       end
 
@@ -64,7 +78,7 @@ module Textus
       def build_deps(reader:, call:)
         Pipeline::WriteDeps.new(
           file_system: @file_system, manifest: @manifest, store: @store,
-          layout: @layout, workflow_registry: @workflow_registry, reader:, call:
+          layout: @layout, event_emitter: @event_emitter, schemas: @schemas, reader:, call:
         )
       end
     end

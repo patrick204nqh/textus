@@ -4,6 +4,8 @@ module Textus
       class Resolver
         Resolution = ::Data.define(:entry, :path, :remaining)
 
+        MAX_DISTANCE_LEN = 200
+
         def initialize(data)
           @data = data
         end
@@ -21,7 +23,7 @@ module Textus
           candidates = enumerate.map { |r| r[:key] }
           candidates.concat(@data.entries.reject { |e| nested_entry?(e) }.map(&:key))
           candidates.uniq!
-          Protocol::Key::Distance.suggest(key, candidates, limit: 5)
+          suggest(key, candidates, limit: 5)
         rescue StandardError
           []
         end
@@ -36,6 +38,17 @@ module Textus
 
         private
 
+        def suggest(requested, candidates, limit: 5)
+          return [] if requested.nil? || requested.empty?
+
+          scored = candidates.first(200).map do |k|
+            prefix = self.class.shared_prefix_segments(requested, k)
+            dist = self.class.levenshtein(requested, k) || Float::INFINITY
+            [k, prefix, dist]
+          end
+          scored.sort_by { |(_, prefix, dist)| [-prefix, dist] }.first(limit).map(&:first)
+        end
+
         def nested_entry?(entry)
           entry.nested?
         end
@@ -44,9 +57,10 @@ module Textus
           if remaining.empty?
             resolve_leaf_path(entry)
           else
-            primary_ext = Textus::Protocol::Format.for(entry.format).extensions.first
+            fmt = Textus::Protocol::Format.for(entry.format)
             base = Textus::Protocol::Key::Path.normalize_relative_path(entry.path)
-            File.join(@data.root, base, *remaining) + primary_ext
+            path = File.join(@data.root, base, *remaining)
+            path + fmt.nested_ext(remaining.last)
           end
         end
 
@@ -101,6 +115,40 @@ module Textus
 
         def nested_glob(format)
           Textus::Protocol::Format.for(format).nested_glob
+        end
+        class << self
+          private
+
+          def shared_prefix_segments(left, right)
+            asegs = left.split(".")
+            bsegs = right.split(".")
+            n = [asegs.length, bsegs.length].min
+            i = 0
+            i += 1 while i < n && asegs[i] == bsegs[i]
+            i
+          end
+
+          def levenshtein(left, right)
+            return nil if left.length > MAX_DISTANCE_LEN || right.length > MAX_DISTANCE_LEN
+            return right.length if left.empty?
+            return left.length if right.empty?
+
+            prev = (0..right.length).to_a
+            curr = Array.new(right.length + 1, 0)
+            (1..left.length).each do |i|
+              curr[0] = i
+              (1..right.length).each do |j|
+                cost = left[i - 1] == right[j - 1] ? 0 : 1
+                curr[j] = [
+                  curr[j - 1] + 1,
+                  prev[j] + 1,
+                  prev[j - 1] + cost,
+                ].min
+              end
+              prev, curr = curr, prev
+            end
+            prev[right.length]
+          end
         end
       end
     end

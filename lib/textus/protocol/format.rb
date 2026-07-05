@@ -8,6 +8,11 @@ module Textus
         "json" => -> { Protocol::Format::Json },
         "yaml" => -> { Protocol::Format::Yaml },
         "text" => -> { Protocol::Format::Text },
+        "script" => -> { Protocol::Format::Script },
+        "bash" => -> { Protocol::Format::Bash },
+        "ruby" => -> { Protocol::Format::Ruby },
+        "python" => -> { Protocol::Format::Python },
+        "javascript" => -> { Protocol::Format::Javascript },
       }.freeze
 
       @registry = nil
@@ -26,6 +31,13 @@ module Textus
         ".yaml" => "yaml",
         ".yml" => "yaml",
         ".txt" => "text",
+        ".rb" => "ruby",
+        ".py" => "python",
+        ".sh" => "bash",
+        ".js" => "javascript",
+        ".pl" => "script",
+        ".rs" => "script",
+        ".exs" => "script",
       }.freeze
 
       def self.for(format)

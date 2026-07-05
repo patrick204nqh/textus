@@ -2,15 +2,9 @@ module Textus
   module Workflow
     class Publisher
       def initialize(container:, call:)
-        @container = container
-        @call      = call
-        @store_engine = Protocol::StoreEngine.new(
-          file_system: container.store.file_system,
-          manifest: container.manifest,
-          layout: container.layout,
-          store: container.store,
-          workflow_registry: container.workflow_registry,
-        )
+        @container    = container
+        @call         = call
+        @store_engine = container.store_engine
       end
 
       def publish(key, data, ctx, definition)

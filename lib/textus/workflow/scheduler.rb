@@ -19,7 +19,7 @@ module Textus
           unless entry
             @workflow_queue.push(
               event_type: "workflow", workflow_type: wf.type,
-              key: wf.save_to, lane: lane,
+              key: wf.save_to, lane: lane
             )
             seeded += 1
             next
@@ -34,7 +34,7 @@ module Textus
 
           @workflow_queue.push(
             event_type: "workflow", workflow_type: wf.type,
-            key: wf.save_to, lane: lane,
+            key: wf.save_to, lane: lane
           )
           seeded += 1
         end

@@ -34,7 +34,7 @@ RSpec.describe "Textus::Surface::CLI verb return-value contract" do
     end
   end
 
-  it "the auto-derived verb table matches the prior surface exactly" do # rubocop:disable RSpec/ExampleLength
+  it "the auto-derived verb table matches the prior surface exactly" do
     actual = Textus::Surface::CLI.verbs
     expected = {
       "accept" => Textus::Surface::CLI::Verb::GenAccept,
@@ -88,6 +88,7 @@ RSpec.describe "Textus::Surface::CLI verb return-value contract" do
       "open" => Textus::Surface::CLI::Verb::GenSessionOpen,
     )
     expect(Textus::Surface::CLI::Group::Schema.subcommands).to eq(
+      "list" => Textus::Surface::CLI::Verb::GenSchemaList,
       "show" => Textus::Surface::CLI::Verb::GenSchemaShow,
     )
   end

@@ -1,11 +1,12 @@
 {
   "_meta": {
+    "generated_at": "2026-07-05T08:07:25Z",
     "uid": "36318f45b6fec691"
   },
   "skills": [
     {
       "name": "agent",
-      "description": "Use when creating, optimizing, or evaluating Agent Skills — reusable instruction packages that extend AI agent capabilities. Reach for this skill when building new skills, improving skill descriptions for better triggering, testing skill quality, or implementing skills support in an agent client.",
+      "description": "Use when creating, testing, optimizing, or implementing Agent Skills — a standardized format for extending AI agent capabilities. Reach for this skill when building skills for agents, evaluating skill quality, optimizing skill descriptions for triggering, or adding skills support to an agent product.",
       "url": "https://agentskills.io/.well-known/agent-skills/agent/skill.md"
     }
   ],

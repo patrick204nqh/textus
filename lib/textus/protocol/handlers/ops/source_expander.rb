@@ -23,7 +23,7 @@ module Textus
             stored_etag = src["etag"]
             res = ctx.resolve(key:)
             path = res.path
-            current_etag = ctx.file_system.exists?(path) ? ctx.file_system.etag(path) : nil
+            current_etag = File.exist?(path) ? ctx.file_system.etag(path) : nil
             suspended = stored_etag && current_etag ? stored_etag != current_etag : false
             result = src.merge("suspended" => suspended)
             child_env = ctx.read(key:)

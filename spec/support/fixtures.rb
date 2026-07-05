@@ -124,12 +124,17 @@ module TextusSpecHelpers
       end
     end
 
-    Textus::Workflow::Queue.new(
-      workflow_queue,
-      registry: registry,
+    consumer = Textus::Workflow::Consumer.new(
+      registry:,
       container: store.container,
       call: Textus::Value::Call.build(role: role, correlation_id: SecureRandom.uuid),
-    ).drain
+    )
+    loop do
+      row = workflow_queue.pop
+      break unless row
+
+      consumer.consume(row, workflow_queue)
+    end
   end
 
   def with_missing_workflows(store)

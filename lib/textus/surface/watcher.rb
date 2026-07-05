@@ -5,15 +5,24 @@ module Textus
     class Watcher
       def initialize(container:)
         @container = container
-        @queue = Protocol::Async::Queue.new(container.store.workflow_queue)
         @registry = Textus::Workflow::Registry.new(container.workflows)
       end
 
       def tick
         call = Textus::Value::Call.build(role: Textus::Value::Role::AUTOMATION, correlation_id: SecureRandom.uuid)
+
+        Textus::Workflow::Scheduler.new(
+          registry: @registry,
+          workflow_queue: @container.store.workflow_queue,
+          reader: ->(key:) { @container.store_engine.read(key:) },
+        ).seed_expired
+
+        consumer = Textus::Workflow::Consumer.new(registry: @registry, container: @container, call:)
         loop do
-          row = @queue.consume_one(registry: @registry, container: @container, call:)
+          row = @container.store.workflow_queue.pop
           break unless row
+
+          consumer.consume(row, @container.store.workflow_queue)
         end
       end
 

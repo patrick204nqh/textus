@@ -8,6 +8,276 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+- refactor: replace hand-written Session delegations with Forwardable
+- refactor: extract merge_issues helper in Definition#check
+- refactor: split VerbRegistry into per-verb files under verb_registry/verbs/
+- refactor: move MovePipeline emit_event dedup guards into shared Pipeline.emit_event
+- refactor: extract shared CheckEtag/ResolvePath into Pipeline module
+- chore: remove vestigial Materialize workflow
+- refactor(workflow): eliminate Materialize re-dispatch and deepen Runner
+- refactor(workflow): extract shared Consumer and decouple event emission from pipeline
+- feat: wire TTL scheduler + refactor Workflow module ownership
+- style: fix rubocop safe autocorrects and update Lint/UnusedMethodArgument excludes for refactored handlers
+- fix: deps/rdeps/graph category  -> read (sed artifact from ac02cb77c)
+- refactor: pull serialize_for_put up to Format::Base
+- docs: update ADR-0133 to Accepted
+- docs: update ADR-0133 to Accepted, add session handoff
+- refactor: extract shared ContextWith module for pipeline context objects
+- refactor: extract handler response hash builder into Concern
+- refactor: bundle StoreEngine dependencies into WriteDeps
+- refactor: simplify store_engine pipelines — remove dead code, extract shared helpers
+- refactor: extract domain logic from handlers and MCP server into testable service objects
+- refactor: eliminate double-resolve, push move orchestration into pipeline, remove dead code
+- refactor(store-engine): Standardize StoreEngine method signatures to all-keyword args
+- refactor: consolidate config workflows, fix renderer trigger, add pipeline
+- refactor: remove redundant lane/kind/nested/owner from manifest schema
+- refactor: strip path/publish/source from manifest, remove dead code
+- refactor: move system verb routing from Gate override hash to VerbSpec#system?
+- refactor: StoreEngine + Handlers::Read/Write/System split
+- fix: skip tracked:false entries in doctor manifest check, fix schema ref
+- fix: correct doctor schema parsing, commit generated artifacts
+- refactor: consolidate lane/role docs workflows, fix nested schema loading
+- refactor: split HandlerContext into ReadOps/WriteOps/System capability interfaces
+- test: add unit tests for Diff module (body, meta, schema, summary)
+- refactor: remove dead publish code, inline Mode+None into publish.rb, inline VAR_RE into tree.rb
+- refactor: fold StepScope and Context into Runner as inner classes
+- refactor: inline Workflow::Loader into Registry
+- refactor: inline Workflow::Pattern into DSL::Definition
+- feat: workflow DSL redesign — on/save/notify, priority routing, doctor consolidation
+- feat: track ingested_at, ingest_count, duplicated_at in raw lane ingest flow
+- chore: regenerate boot artifact and orientation docs after dogfood flow changes
+- chore: remove stale boot cache
+- fix: update orientation template and boot.rb for procedures and feedback criteria
+- refactor: move propose/accept/reject handlers from proposal lane to scratchpad lane
+- chore: remove proposals lane from V4::LANES
+- chore: regenerate artifacts after dogfood flow changes
+- fix: materialize workflow — use container.workflow_registry
+- feat: add shape validation for execution sub-families
+- feat: add procedure entries — doctor, session, deploy
+- refactor: move execution entries to runbook/ subdirectory
+- feat: add execution schemas — runbook, checklist, procedure
+- feat: add feedback criteria entries — protocol-gap, repetitive-task, intent-drift
+- refactor: feedback node becomes criteria — move solid-audit to judgment.engineering
+- refactor: update orientation template — remove propose recipe
+- refactor: clean up scratchpad — replace notes/scripts with proposals
+- refactor: remove proposals lane (folded into scratchpad)
+- feat: surface session_open/session_close in agent boot catalog
+- docs: dogfood flow implementation plan
+- docs: dogfood flow design — session lifecycle, feedback criteria, execution zone
+- fix: dogfood audit — orientation keys, doctor cascade, session lifecycle
+- refactor: remove legacy store files, aliases, and dual code paths
+- refactor: reorganize infra/store with Base, split concerns, standardize API
+- docs: lock store naming conventions into knowledge loop
+- refactor: consolidate drain/watch around shared Async::Queue
+- refactor: consolidate dual paths and fix silent error swallowing
+- feat: add code-pattern entries to knowledge loop (0011-0014)
+- refactor: remove dead parameters from handlers, Data.define, and pipeline
+- fix: replace role-based event suppression with self-loop detection via Engine::IN_FLIGHT
+- fix: prevent infinite event loop — skip workflow event emission for automation-role writes
+- fix: update etag spec for layout-object API, remove naming-check debug output
+- refactor: merge overlapping doctor checks (sentinels+orphaned, schema+unowned, manifest+templates+schemas)
+- refactor: extract build_lanes/build_roles helpers, simplify 5 workflows
+- refactor: collapse 8 static-template workflows into 1 generic render workflow
+- fix: optimize naming-check to only scan naming-constrained entries directly
+- fix: use resolver.enumerate instead of Dir.children in naming-check (respects ignore patterns)
+- fix: reconnect event pipeline, move EventEmitter, add workflow_spec verb, remove published/schema verbs
+- fix: reorder knowledge loop keys and restore execution schema
+- feat: add boot_refresh produce workflow, fix guard clause
+- fix: renumber duplicate ADRs 0117/0120/0121/0125 → 0131-0134, fill stub reference docs
+- chore: remove stale hand-authored doc not produced by any workflow
+- fix: remove dead doctor CLI declaration, fix pattern-crossrefs and Workflow::Context#read
+- fix: update .textus dogfood workflows for store API and clean stale artifacts
+- style: fix 133 rubocop offenses (trailing whitespace, alignment, hash alignment, etc.)
+- refactor: migrate flat-file stores to Infra::Store with SQLite-backed sub-stores
+- refactor: remove dead code (Doctor, Retention, TraceBuffer, SequelAdapter, 3 error classes, spec redirects)
+- refactor: fix drain container crash, remove thread-local registry, delete ScopedContext
+- refactor: collapse Container structs, unify Publisher, remove EventStore Interface
+- refactor: unify result shape, remove views, deepen VerbSpec
+- refactor: replace error hashes with exceptions in handlers and gate
+- fix: drop stale contract check, add new verbs to CLI catalog and snapshot
+- refactor: move Container/Builder/WritePipeline/Retention from infra/store/ to protocol/
+- cleanup: remove dead VERB_TO_CONTRACT, Binder.command, Value::Result wrap, move human helpers to lanes/, delete agent/ and human/ dirs
+- refactor: remove Value::Result wrapping from Gate dispatch
+- cleanup: remove dead Binder.command method and Pending data class
+- cleanup: remove dead VERB_TO_CONTRACT lookup table
+- fix(scratchpad): use body for session storage, fix call forwarding
+- feat(lanes): add Knowledge/Scratchpad handlers, remove old Human/Agent stubs
+- refactor: move lane namespaces under Textus::Lanes:: (Ingest, Proposal, Artifact)
+- refactor: move Gate::Builtin to Protocol::Handlers, add HandlerContext, update handlers to use ctx
+- feat(protocol): add HandlerContext — restricted container view for handlers
+- fix: add spec_helper constant stubs for Manifest/Envelope/Call/Entry/Mentry/Container
+- cleanup: remove unused value types (Command, Trace)
+- feat(protocol): add Session class with method_missing, replace Store in CLI/MCP surfaces
+- feat(protocol): add Session class, replace Store facade in CLI and MCP surfaces
+- refactor: move store classes into protocol/ (event_store, entry_store, cursor, freshness, trace_buffer)
+- cleanup: move binder+contracts from dispatch/ to protocol/, remove empty dispatch/ dir
+- cleanup: remove use_cases/ and dispatch/ middleware/pipeline after migration
+- refactor(gate): route un-laned verbs to Gate::Builtin, remove pipeline path
+- feat(protocol): add Gate::Builtin with 20 internal handler methods
+- feat(proposal): add Proposal::Handlers with propose/accept/reject/diff
+- refactor(human): move proposal handlers to Proposal lane (was Human lane)
+- cleanup: remove migrated proposal use cases (propose/accept/reject/diff)
+- feat(protocol): wire propose/accept/reject/diff verbs to Human lane
+- feat(human): add Handlers.diff for proposal diff preview
+- feat(human): add Handlers.reject for proposal rejection
+- feat(human): add Handlers.accept for proposal acceptance with dry-run
+- feat(human): add Handlers.propose for proposal creation
+- cleanup: remove migrated UseCases::Ops::IngestEntry
+- feat(protocol): wire ingest verb to Ingest lane via VerbSpec lane: field
+- feat(ingest): rebuild Handlers with real ingest orchestration
+- feat(ingest): rebuild Resolver with real supersede logic
+- feat(ingest): add EntryTypes sub-modules for link/asset/text content builders
+- feat(ingest): add IndexRebuilder for event store index rebuild
+- feat(ingest): add Dedup for content hash and URL duplicate detection
+- feat(ingest): add KeyBuilder for key derivation and content hashing
+- feat(protocol): Gate dispatches directly to lane handlers when VerbSpec has lane
+- feat(protocol): add Lane.handler_for to resolve lane name to handler module
+- feat(protocol): add lane: field to VerbSpec
+- feat(infra): add Store::Index::Lookup and Store::Index::Builder classes
+- Implement Protocol::Manifest and related schema components
+- Add core infrastructure for Textus event processing and storage
+- Refactor Textus to use Protocol namespace
+- refactor: remove dead code, fix Gate authorization, drop audit_events table
+- chore: remove accidentally committed backup files
+- phase(cleanup): remove orphaned SqliteAdapter — Phase 5
+- phase(surface): update Watcher to use Protocol::Async and Infra::Locks — Phase 4
+- phase(lanes): add scoped Workflow::ScopedContext — Phase 3 complete
+- feat(human): create Textus::Human with LOOP Runner, Freeform, and handlers
+- feat(agent): create Textus::Agent with Session, Workspace, Runner, Evidence, and handlers
+- feat(artifact): create Textus::Artifact with cache, lifecycle, and handlers
+- feat(ingest): create Textus::Ingest with resolver, entry types, and handlers
+- phase(protocol): add Gate, Async, wire into Builder — Phase 2 complete
+- feat(protocol): add Protocol::Manifest alias for Textus::Manifest
+- phase(protocol): move Index, Links, Audit, Envelope to Protocol:: namespace with forwarding facades
+- phase(protocol): move Layout, Key, Schema to Protocol:: namespace with forwarding facades
+- feat(protocol): move Format strategies to Protocol::Format with forwarding facades
+- chore: ignore headroom backup file
+- feat(infra): wire Infra::FileStore, Infra::Database, Infra::Clock in Store::Builder
+- feat(infra): extract Infra::Locks with BuildLock and WatcherLock
+- feat(infra): extract Infra::Clock with now method
+- feat(infra): extract Infra::Database with table setup, FTS5, and transaction support
+- feat(infra): extract Infra::FileStore with 17 methods matching current FileSystem interface
+- refactor: hard-cut legacy workflow step syntax
+- fix: add lsp defaults to opencode workflow config
+- fix: restore workflow artifact generation and docs publish
+- fix: harden publish/parser and resolve lint regressions
+- docs: mark ADR-0125 container/double-emission notes superseded
+- refactor: group port by concern (storage vs concurrency)
+- refactor: rename store/jobs and fold materialize into workflow/instances
+- fix: protect .textus/data canon from direct agent writes
+- fix: remove stale jobs CLI help text
+- refactor: extract MCP contract-drift annotation from Server#dispatch
+- refactor: fold entry indexing into the synchronous write path
+- fix: wire Consumer and EventEmitter callers to EventStore
+- refactor: Produce::EventEmitter depends on EventStore
+- fix: Events::Consumer retry path delegates to EventStore and RetryPolicy
+- refactor: trim Store::EventStore to only own the events table
+- fix: add Store::EntryIndex and correct entries FTS indexing/search
+- refactor: extract Events::RetryPolicy as its own decision object
+- fix: rename db -> database in consumer.rb; move ADR 0127 to .textus via textus put; add ADR 0129 DependencyAdapter gate
+- style: fix rubocop enable directives in write_pipeline and event_store
+- fix: missing keyword database in converge_now drain call
+- docs: add ADR 0127 — interface consolidation decisions
+- chore: remove legacy code — Entry::Reader/Writer refs, dead LinkEdgeStore spec
+- fix: drain_store call recursion, boot protocol key, backward compat methods
+- fix: use respond_to? in HandlerResolver, fix BootStore Infrastructure ref
+- style: fix remaining rubocop offenses
+- fix: Boot.CLI_VERBS uses Catalog.build
+- style: fix all rubocop offenses
+- refactor: route ports through FileSystem, split Boot
+- feat: add Events middleware, convert all use cases to classes
+- fix: add trace_buffer/reader/writer accessors to Container, update specs
+- refactor: create Store::LinkGraph, rewire Builder to Container
+- refactor: create Store::EntryStore, retire Entry::Reader + Entry::Writer
+- feat: add Store::Container with grouped components
+- refactor: split Port::Store into Port::Database + Port::EventStore
+- refactor: create Port::FileSystem + Store::FileSystem, retire Storage/
+- refactor: split WriteStep into write_pipeline/ directory
+- refactor: extract VerbSpec into verb_registry/verb_spec.rb
+- refactor: extract ArgSpec into verb_registry/arg_spec.rb
+- fix: skip publish in Runner when data is nil, remove publish from system workflows that manage their own output; fix pulse_entries, LinkEdgeStore, CLI verbs catalog, specs for architecture changes; all 1014 tests pass
+- feat: implement new event system with Sequel-backed events table, Workflow DSL handles, Registry, EventEmitter, Consumer, Materialize/Index workflows, rewire Builder/Infrastructure/Watcher/Drain/LinkEdgeStore
+- refactor: remove Event::Bus, Event module, CascadeSubscriber, Store::Jobs namespace
+- refactor: remove write-time schema validation from WriteStep and Writer
+- refactor: remove rule system from manifest, data.rb, contracts, verb registry, CLI, auth, publisher, ttl evaluator, retention sweep
+- refactor: remove enqueue verb
+- refactor: remove doctor verb and module
+- feat: add sequel gem and SequelAdapter dependency adapter
+- refactor: move knowledge sections under knowledge.loop.* — clean separation of loop vs reference data
+- refactor: streamline conformance fixture — drop project-specific entries, align with repo shape
+- refactor(init): use consolidated entries for project-agnostic scaffold
+- refactor: align init and fixture entry names with .textus/manifest.yaml
+- refactor: add naming/schema governance to repo manifest entries
+- refactor: complete manifest entry simplification — align init, fixtures, helpers to repo shape
+- refactor(test-support): match repo entry shape; remove migrate_legacy_manifest
+- refactor: simplify repo manifest entries; fix resolve_format for explicit path override
+- refactor(init): simplify DEFAULT_MANIFEST and AGENT_ENTRIES — match repo entry shape
+- refactor: delete IgnoreMatcher; remove ignore system from Resolver, SubtreeMirror, Tree, schema, validators
+- refactor(nested): remove ignore/ignored? — no longer read from manifest
+- refactor(base): remove ignore/ignored? stubs; make schema/naming optional
+- refactor(parser): stop reading schema/naming/ignore/publish/source from manifest; infer kind/format from disk
+- docs: design doc for manifest entry simplification
+- feat: protocol textus/4 — manifest data: shape, roles/lanes hardcoded
+- refactor(manifest): drop owner from envelope and where output
+- refactor(manifest): Entry::Parser infers kind from lane+disk shape, adds naming:, drops owner:/format:
+- refactor(manifest): Data.parse reads data: grouped-by-lane, rejects stale roles:/lanes:/owner:
+- refactor(manifest): repoint write-gating predicates to Protocol::V4::LANES writers
+- refactor(manifest): Domain::Lane and Policy read writers from Protocol::V4::LANES directly
+- feat(manifest): add Textus::Protocol::V4 fixed lane/naming table
+- test: relax build-lock drain soft-miss assertion
+- chore: satisfy pre-push rubocop naming rules
+- chore: clean up lint warnings in workflow and jobs code
+- refactor(doctor): batch-port remaining class checks to workflows
+- refactor(doctor): port PublishTreeIndexOverlap check to a workflow
+- refactor(doctor): port OrphanedPublishTargets check to a workflow
+- refactor(doctor): port SchemaViolations check to a workflow
+- refactor(doctor): port UnownedSchemaFields check to a workflow
+- refactor(doctor): port AuditLog check to a workflow
+- refactor(doctor): port Sentinels check to a workflow
+- refactor(doctor): port IllegalKeys check to a workflow
+- refactor(doctor): port SchemaParseError check to a workflow
+- refactor(doctor): port ProtocolVersion check to a workflow
+- refactor(loop): renumber scratchpad.notes to NNNN-topic-slug.md, scaffold sessions/scripts
+- feat(workflow): add shape() DSL primitive, check_naming helper, loop-shape workflow
+- feat(loop): add loop summary to boot orientation output
+- feat(loop): add Loop node table to explanation concepts template
+- refactor(loop): realign task 6/7 identity and readme extraction
+- refactor(loop): fold knowledge.readme fragments into intent
+- refactor(loop): fold knowledge.project into intent section
+- refactor(loop): retire knowledge.architecture into loop sections
+- feat(loop): add knowledge.feedback zone
+- refactor(loop): split knowledge.patterns into judgment.engineering/.agent-behavior
+- refactor(loop): split knowledge.rules/specs into constraint.repo/.protocol
+- refactor(verbs): standardize verb-registry surfaces, naming, jobs split, error typing
+- refactor(architecture): deepen v2 — flatten jobs ceremony, extract publisher/validator/stepscope, delete facade
+- feat(architecture): integrate container's writer and reader into use cases and workflow runner
+- docs(architecture): sync docs to phase 3 refactor — Infrastructure container, workflow DSL surface, no Registry/Collector/Publisher
+- refactor(architecture): deepen phase 3 — Writer port, single Infrastructure, manifest→workflow boundary
+- Revert "feat(federation): add federation sync workflow — auto-mirrors remote store entries on drain"
+- feat(federation): add federation sync workflow — auto-mirrors remote store entries on drain
+- feat(workflow): migrate 4 more Doctor checks to validation workflows
+- feat(workflow): migrate Doctor::RuleAmbiguity to self-contained validation workflow
+- feat(workflow): add validate step type, multi-key matching, and validation workflow POC
+- chore: revert solid-process POC (gem not mature enough)
+- refactor(specs): remove 6 redundant files, simplify 5 overlapping specs, drop 6 dead refs
+- feat(pipeline): enforce cross-reference chain — decisions→architecture, patterns→decisions, runbooks→patterns
+- chore: regenerate changelog
+- chore: track knowledge.architecture entries and manifest
+- feat(patterns): add unified-dispatch, middleware-chain, handler-needs, store-builder + agent training
+- docs: document 6 intentional Reader/Writer bypass sites (P3)
+- refactor: drop Ctx alias, rename ctx.rb → infrastructure.rb
+- refactor: clean up P0-P2 anti-patterns — HANDLES_ALL, boot.rb layering, InfrastructureProxy rename, Store::Builder
+- feat(knowledge): enforce pipeline structure with conformance spec + agent protocol
+- feat(observability): Trace middleware — auto-instrumented dispatch with ring buffer (Phase 5)
+- feat(conformance): verb completeness, downward layer import, port contract guards (Phase 4)
+- feat(ports): formal port interfaces with conformance verification (Phase 3)
+- feat(domain): extract Domain::Key, Domain::Lane, Domain::Envelope — pure domain layer (Phase 2)
+- feat: land ADR-0120, ADR-0121, ADR-0125 — unified dispatch, bounded use cases, interface hygiene
+- refactor: remove unused handler modules and simplify dispatch logic
+- docs: refresh generated changelog and skills feed
+- refactor: simplify entry read handlers and pulse fallback
+- fix: align trigger catalog and etag conformance guards
+- docs: add dependency adoption gate guidance
 - docs: add architecture patterns for triggers and adapters
 - refactor: centralize trigger vocabulary in TriggerCatalog
 - refactor: add dependency adapter modules for runtime deps

@@ -1,0 +1,196 @@
+#!/usr/bin/env ruby
+# bin/smoke — simulate an agent session end-to-end against .textus
+#
+# Foundation — agent session protocol is INPUT → LOOP → OUTPUT.
+# This script exercises each node with real textus CLI calls.
+#
+# Usage:  bin/smoke            # run full session flow
+#         bin/smoke --clean    # remove all smoke-test artifacts
+#
+# Conventions:
+#   - Each step is an assert_on a real CLI command (no internal APIs)
+#   - Steps grouped by protocol phase: INPUT / LOOP / OUTPUT
+#   - Cleanup removes both registered keys AND files on disk
+#   - Log is human-readable, timestamped, append-only
+
+require "fileutils"
+require "json"
+require "open3"
+require "time"
+
+ROOT   = File.expand_path("..", __dir__)
+LOG    = File.join(ROOT, "bin/smoke.log")
+CMD    = %w[bundle exec exe/textus].freeze
+STORE  = File.join(ROOT, ".textus")
+DIRS   = %w[data/scratchpad/sessions data/scratchpad/proposals].freeze
+MARKER = File.join(ROOT, "bin/.smoke-sids")
+TARGET = %w[
+  knowledge.loop.intent.0001-north-star
+  knowledge.loop.constraint.protocol.0014-data-flow
+  knowledge.loop.judgment.engineering.0009-conventions
+].freeze
+
+@results = []
+
+def run(*, stdin: nil)
+  env = { "TEXTUS_ROOT" => STORE, "TEXTUS_ROLE" => "agent" }
+  out, _, status = Open3.capture3(env, *CMD, *, stdin_data: stdin)
+  [out.strip, status.success?]
+end
+
+def parse_json(out)
+  begin
+    JSON.parse(out)
+  rescue StandardError
+    nil
+  end
+end
+
+def assert(label, cmd, *flags, key: nil, **)
+  print "  #{label} … "
+  out, ok = run(cmd, *flags, **)
+  data = parse_json(out)
+  val  = key ? data&.dig(*key) : ok
+  if val
+    puts "\u2713"
+    @results << ["PASS", label]
+  else
+    puts "FAIL"
+    @results << ["FAIL", label, out]
+  end
+end
+
+# ── cleanup ──────────────────────────────────────────────────────────────────
+if ARGV.include?("--clean")
+  out, = run("list", "--prefix=scratchpad")
+  all = parse_json(out) || []
+
+  smoke = all.select { |e| e["key"]&.include?("smoke-test-") }
+  sids = smoke.filter_map { |e| e["key"][/smoke-test-([a-f0-9-]+)/, 1] }.uniq
+
+  # Also read marker file for orphaned SIDs (proposals already deleted)
+  if File.exist?(MARKER)
+    sids += File.read(MARKER).lines.map(&:strip).reject(&:empty?)
+    sids.uniq!
+  end
+
+  session = all.select { |e| sids.any? { |s| e["key"]&.include?(s) } }
+
+  deleted_keys = 0
+  (smoke + session).each do |e|
+    print "  #{e["key"]} … "
+    run("key", "delete", e["key"])
+    deleted_keys += 1
+    puts "\u2713"
+  end
+
+  deleted_dirs = 0
+  sids.each do |sid|
+    dir = File.join(STORE, "data/scratchpad/sessions", sid)
+    next unless File.directory?(dir)
+
+    print "  sessions/#{sid} … "
+    FileUtils.rm_rf(dir)
+    deleted_dirs += 1
+    puts "\u2713"
+  end
+
+  FileUtils.rm_f(MARKER)
+
+  orphaned = 0
+  Dir.glob(File.join(STORE, "data/scratchpad/sessions/*")).each do |d|
+    next unless File.directory?(d)
+
+    sid = File.basename(d)
+    next if sids.include?(sid)
+
+    print "  orphan sessions/#{sid} … "
+    FileUtils.rm_rf(d)
+    orphaned += 1
+    puts "\u2713"
+  end
+
+  total = deleted_keys + deleted_dirs + orphaned
+  File.write(LOG, "clean #{Time.now.utc.iso8601}\ndeleted #{total} items\n")
+  puts "\n  cleaned #{total} items (#{smoke.size} props, #{session.size} sess, #{deleted_dirs} marker, #{orphaned} orphan)"
+  exit 0
+end
+
+# ── run ─────────────────────────────────────────────────────────────────────
+File.write(LOG, "smoke #{Time.now.utc.iso8601}\n\n")
+puts "bin/smoke — #{CMD.join(" ")}"
+puts
+
+DIRS.each { |d| FileUtils.mkdir_p(File.join(STORE, d)) }
+
+# ── INPUT: orient the agent ─────────────────────────────────────────────────
+puts "[INPUT] orient"
+out, = run("session", "open", "--as=agent")
+data = parse_json(out)
+sid  = data&.dig("session_id") || "?"
+puts "  session open … #{sid == "?" ? "FAIL" : "✓"}"
+@results << (sid == "?" ? ["FAIL", "session open", out] : ["PASS", "session open"])
+
+assert("boot", "boot", key: %w[protocol])
+
+TARGET.each do |key|
+  assert("get #{key.split(".").last}", "get", key, key: %w[etag])
+end
+
+assert("list procedures", "list", "--prefix=knowledge.loop.execution") do |data|
+  data.is_a?(Array) && data.length.positive?
+end
+
+# ── LOOP: agent works ────────────────────────────────────────────────────────
+puts "[LOOP] work"
+proposal = JSON.generate({
+                           _meta: { name: "smoke-test-#{sid}",
+                                    proposal: { target_key: "scratchpad.sessions.#{sid}.smoke", action: "put" } },
+                           body: "Smoke test entry — safe to delete.\n",
+                         })
+assert("propose", "propose", "smoke-test-#{sid}", "--stdin", "--as=agent",
+       stdin: proposal, key: %w[key])
+
+SCRIPTS = {
+  "check" => { body: "echo 'agent bash script'\n", fmt: "bash" },
+  "task" => { body: "puts 'agent ruby script'\n", fmt: "ruby" },
+  "query" => { body: "print('agent python script')\n", fmt: "python" },
+  "report" => { body: "console.log('agent js script')\n", fmt: "javascript" },
+}.freeze
+
+SCRIPTS.each do |name, s|
+  payload = JSON.generate({ _meta: { name: name }, body: s[:body] })
+  assert("write scripts/#{name}", "put",
+         "scratchpad.sessions.#{sid}.scripts.#{name}", "--stdin", "--as=agent",
+         "--as-format=#{s[:fmt]}", stdin: payload, key: %w[etag])
+end
+
+# ── OUTPUT: seal, publish, verify ───────────────────────────────────────────
+puts "[OUTPUT] seal"
+assert("session close", "session", "close", "--session-id=#{sid}", "--as=agent",
+       "--nodes-checked=intent,constraint.repo,constraint.protocol," \
+       "judgment.engineering,judgment.agent-behavior,evidence,execution,feedback",
+       key: %w[status])
+
+assert("drain", "drain", "--as=automation", key: %w[ok])
+
+assert("audit", "audit", "--limit=5")
+
+File.open(MARKER, "a") { |f| f.puts sid }
+
+# ── summary ──────────────────────────────────────────────────────────────────
+puts "\n── summary ──"
+pass = @results.count { |r| r[0] == "PASS" }
+fail = @results.count { |r| r[0] == "FAIL" }
+
+@results.each do |status, msg, _detail|
+  sym = status == "PASS" ? "\u2713" : "\u2717"
+  puts "  #{sym} #{msg}"
+end
+
+puts "  pass: #{pass}  fail: #{fail}"
+puts "  log:  #{LOG}"
+
+File.open(LOG, "a") { |f| f.puts "result: #{pass} passed / #{fail} failed\n---\n" }
+
+exit(fail.positive? ? 1 : 0)

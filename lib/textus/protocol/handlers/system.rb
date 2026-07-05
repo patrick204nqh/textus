@@ -16,6 +16,10 @@ module Textus
           Textus::Protocol::Boot.build(container: proxy)
         end
 
+        def schema_list(ctx:, call:)
+          Textus::Protocol::Boot.build_schemas(ctx.schemas)
+        end
+
         def audit(ctx:, call:, key: nil, lane: nil, role: nil, verb: nil, since: nil, seq_since: nil, correlation_id: nil, limit: nil)
           Ops::AuditFilter.new.call(
             ctx:,
@@ -51,22 +55,31 @@ module Textus
             end,
             "priority" => wf.priority,
             "max_attempts" => wf.max_attempts,
-            "ttl" => wf.ttl ? wf.ttl.to_s : nil,
+            "ttl" => wf.ttl&.to_s,
             "on_expire" => wf.on_expire
           }
         end
 
         def drain(ctx:, call:)
           registry = ctx.workflow_registry || Textus::Workflow::Registry.new(ctx.workflows)
-          result = Textus::Workflow::Engine.new(
-            registry:,
-            workflow_queue: ctx.workflow_queue,
-            container: ctx.container,
-            call:,
-            reader: ->(key:) { ctx.read(key:) },
-          ).run
-          response(ok: result[:failed].zero?,
-                   completed: result[:completed], failed: result[:failed])
+          reader = ->(key:) { ctx.read(key:) }
+
+          Textus::Workflow::Scheduler.new(
+            registry:, workflow_queue: ctx.workflow_queue, reader:,
+          ).seed_expired
+
+          consumer = Textus::Workflow::Consumer.new(registry:, container: ctx.container, call:)
+          completed = 0
+          failed = 0
+          loop do
+            row = ctx.workflow_queue.pop
+            break unless row
+
+            result = consumer.consume(row, ctx.workflow_queue)
+            result[:state] == "done" ? completed += 1 : failed += 1
+          end
+
+          response(ok: failed.zero?, completed:, failed:)
         end
 
         private

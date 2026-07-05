@@ -59,3 +59,19 @@ _Avoid_: Cursor file, checkpoint file, seq file
 **Loop State**:
 The current knowledge pipeline phase (intent, constraint, judgment, evidence, execution, feedback) returned in `pulse` output as an advisory label. Not a state machine — agents read it to decide what to work on.
 _Avoid_: Loop driver, pipeline state, workflow phase
+
+**Workflow Consumer**:
+The module that executes a single workflow event row and handles its lifecycle (success completion, retry with backoff, dead-letter failure). Shared between the drain loop and the watcher to avoid duplicate retry logic.
+_Avoid_: Job runner, event handler
+
+**Workflow EventEmitter**:
+The module that observes store mutations and dispatches workflow events to the Workflow Queue. Replaces in-pipeline event emission so the store engine does not need to know about the workflow registry.
+_Avoid_: Event hook, pipeline step, workflow enqueuer
+
+**QueryContext**:
+A per-invocation value exposing only read-side operations (read, resolve, list, exists?, mentry_for) plus read-only container metadata (manifest, schemas, layout, link_store, entry_index). Injected by Gate into read-category handlers. Separates query from command at the seam — a read handler cannot accidentally write.
+_Avoid_: Context, god object, handler context bag
+
+**CommandContext**:
+A per-invocation value extending QueryContext with write-side operations (put, delete, move) and infrastructure access (audit_log, cursor_store, workflow_queue, file_system, workflows, workflow_registry). Injected by Gate into write- and maintenance-category handlers. Satisfies CQS: the caller's verb category determines which context type they see.
+_Avoid_: Context, god object, handler context bag

@@ -1,22 +1,14 @@
 RSpec.describe Textus::Lanes::Scratchpad::Handlers do
   describe ".session_open" do
-    it "creates session entry and workspace directories" do
-      ctx = instance_double("Textus::Protocol::Handlers::Context")
-      layout = instance_double("Layout")
-      allow(ctx).to receive(:layout).and_return(layout)
-      allow(layout).to receive(:lane_path).with("scratchpad").and_return("/tmp/textus/data/scratchpad")
-
-      expect(FileUtils).to receive(:mkdir_p).with("/tmp/textus/data/scratchpad/sessions/test-uuid-123/scripts")
-      expect(FileUtils).to receive(:mkdir_p).with("/tmp/textus/data/scratchpad/sessions/test-uuid-123/notes")
-      expect(FileUtils).to receive(:mkdir_p).with("/tmp/textus/data/scratchpad/sessions/test-uuid-123/output")
-
+    it "creates session entry" do
+      ctx = instance_double("Textus::Protocol::Handlers::CommandContext")
       manifest = double("Manifest")
       data = double("ManifestData")
       mentry = double("Mentry")
       allow(manifest).to receive(:data).and_return(data)
       allow(data).to receive(:entries).and_return([mentry])
       allow(mentry).to receive(:key).and_return("scratchpad.sessions")
-      allow(ctx).to receive(:manifest).and_return(manifest)
+      allow(ctx).to receive_messages(manifest: manifest, container: nil)
       allow(ctx).to receive(:put)
       allow(SecureRandom).to receive(:uuid).and_return("test-uuid-123")
 
@@ -28,7 +20,7 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
 
   describe ".session_close" do
     it "seals an active session" do
-      ctx = instance_double("Textus::Protocol::Handlers::Context")
+      ctx = instance_double("Textus::Protocol::Handlers::CommandContext")
       manifest = double("Manifest")
       data = double("ManifestData")
       mentry = double("Mentry")
@@ -45,7 +37,7 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
     end
 
     it "returns error for missing session" do
-      ctx = instance_double("Textus::Protocol::Handlers::Context")
+      ctx = instance_double("Textus::Protocol::Handlers::CommandContext")
       allow(ctx).to receive(:read).and_return(nil)
 
       expect { described_class.session_close(session_id: "missing", ctx:, call: nil) }

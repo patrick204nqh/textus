@@ -5,6 +5,8 @@ RSpec.describe "naming-convention check" do
 
   def build_store
     FileUtils.mkdir_p(File.join(root, "data/knowledge/loop/judgment"))
+    FileUtils.mkdir_p(File.join(root, "data/artifacts"))
+    File.write(File.join(root, "data/artifacts/doctor.json"), JSON.dump({}))
     store_from_manifest(root, lanes: %w[knowledge artifacts], files: {
                           "workflows/config/doctors.rb" => File.read(".textus/workflows/config/doctors.rb"),
                         }, manifest: <<~YAML)

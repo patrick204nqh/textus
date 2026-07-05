@@ -26,8 +26,7 @@ module Textus
           private
 
           def pulse_index_etag(ctx)
-            path = ctx.resolve(key: "artifacts.system.index").path
-            File.exist?(path) ? ctx.file_system.etag(path) : nil
+            ctx.etag_for("artifacts.system.index")
           rescue Textus::Error
             nil
           end

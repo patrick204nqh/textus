@@ -1,99 +1,107 @@
 # Data Flow
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                           INPUT (Sources)                           │
-│                                                                     │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐           │
-│  │  raw/    │  │knowledge/│  │scratchpad│  │proposals/│           │
-│  │external  │  │human     │  │agent     │  │pending   │           │
-│  │material  │  │truth     │  │memory    │  │changes   │           │
-│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘           │
-│       │  ingest     │  put        │  put        │  accept/reject   │
-│       ▼             ▼             ▼             ▼                  │
-├─────────────────────────────────────────────────────────────────────┤
-│                         CORE (Protocol Layer)                       │
-│                                                                     │
+┌──────────────────────────────────────────────────────────────────────┐
+│                            INPUT (Sources)                           │
+│                                                                      │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐            │
+│  │  raw/    │  │knowledge/│  │scratchpad│  │proposals/│            │
+│  │external  │  │human     │  │agent     │  │pending   │            │
+│  │material  │  │truth     │  │memory    │  │changes   │            │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘            │
+│       │  ingest     │  put        │  put        │  accept/reject    │
+│       ▼             ▼             ▼             ▼                   │
+├──────────────────────────────────────────────────────────────────────┤
+│                     GATE (Protocol Layer)                            │
+│                                                                      │
 │  ┌──────────────────────────────────────────────────────────────┐   │
-│  │                    Gate (auth → resolve → validate)          │   │
-│  └────────────────────────┬─────────────────────────────────────┘   │
-│                           │                                         │
-│                           ▼                                         │
+│  │  Session#method_missing → Bridge#dispatch → Gate#dispatch    │   │
+│  │   1. VerbRegistry.for(verb)    2. authorize! (write only)     │   │
+│  │   3. Protocol::Binder.bind     4. resolve handler             │   │
+│  │   5. handler.public_send(verb, **args, ctx:, call:)          │   │
+│  └──────────────────────┬───────────────────────────────────────┘   │
+│                         │                                           │
+│             ┌───────────┴───────────┐                               │
+│             │ read (QueryContext)   │ write (CommandContext)        │
+│             ▼                       ▼                               │
+│  ┌────────────────────┐  ┌──────────────────────────┐               │
+│  │  StoreEngine#read  │  │  StoreEngine#put          │               │
+│  │  read file from    │  │  → PutPipeline:           │               │
+│  │  disk, parse       │  │    Validate → Prepare →   │               │
+│  │  format, return    │  │    Write → Emit           │               │
+│  │  envelope          │  │  FileSystem + SQLite      │               │
+│  └────────────────────┘  └──────────┬───────────────┘               │
+│                                     │                               │
+│                                     ▼                               │
+├──────────── EVENT GATE ─────────────────────────────────────────────┤
+│                                                                      │
 │  ┌──────────────────────────────────────────────────────────────┐   │
-│  │  EntryStore (format parse + DB index + FTS + audit log)     │   │
-│  └──┬───────────────────────────────────────────────┬──────────┘   │
-│     │ write                                         │ read         │
-│     ▼                                               ▼              │
-│  ┌──────────┐  ┌───────────────────────────────────────────────┐   │
-│  │FileSystem│  │                   SQLite                       │   │
-│  │.md .json │  │ ┌──────────┐┌──────────┐┌───────────────┐    │   │
-│  │.yaml on  │  │ │ entries  ││ audit    ││workflow_events│    │   │
-│  │disk      │  │ │ (FTS5)   ││_events   ││(event queue)  │    │   │
-│  └──────────┘  │ ├──────────┤├──────────┤├───────────────┤    │   │
-│                │ │ cursors  ││loop_pos  ││ link_edges    │    │   │
-│                │ └──────────┘└──────────┘└───────────────┘    │   │
-│                └──────────────────────────────────────────────┘   │
-├─────────────────────────────────────────────────────────────────────┤
-│                     EVENT BUS (Workflow Engine)                     │
-│                                                                     │
-│  entry.written / entry.deleted / entry.moved                        │
-│         │                                                           │
-│         ▼                                                           │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐          │
-│  │  Materialize │───>│    Workflow   │───>│  Workflow::  │          │
-│  │ (auto, on    │    │   Registry    │    │   Runner     │          │
-│  │  every write) │    │ (key→workflow)│    │ (exec steps) │          │
-│  └──────────────┘    └──────────────┘    └──────┬───────┘          │
-│                                                  │                  │
-│                     ┌────────────────────────────┼──────┐           │
-│                     │                            │      │           │
-├─────────────────────────────────────────────────────────────────────┤
-│  KNOWLEDGE LOOP      │            ┌──────────┐   │      │           │
-│                      │            │  boot_   │   │      │           │
-│  ┌──────┐            │            │ refresh  │   │      │           │
-│  │intent│◄───────────┼────────────│ (watches │   │      │           │
-│  └──┬───┘            │            │know.boot)│   │      │           │
-│     ▼                │            └─────┬────┘   │      │           │
-│  ┌──────────┐        │                  │triggers│      │           │
-│  │constraint│        │                  ▼        │      │           │
-│  │ .repo    │        │           ┌──────────┐    │      │           │
-│  │ .protocol│        │           │Produce:: │    │      │           │
-│  └──┬───────┘        │           │Engine.con│    │      │           │
-│     ▼                │           │verge     │    │      │           │
-│  ┌──────────┐        │           └──────────┘    │      │           │
-│  │judgment  │        │                           │      │           │
-│  │.engineer │        │                           ▼      ▼           │
-│  │.agent-beh│        │                    ┌──────────────────┐     │
-│  └──┬───────┘        │                    │  Publisher       │     │
-│     ▼                │                    │  (templating +   │     │
-│  ┌──────────┐        │                    │  publish_to)     │     │
-│  │evidence  │        │                    └────────┬─────────┘     │
-│  └──┬───────┘        │                             │               │
-│     ▼                │                             │               │
-│  ┌──────────┐        │                             ▼               │
-│  │execution │        │                    ┌──────────────────┐     │
-│  └──┬───────┘        │                    │  CLAUDE.md       │     │
-│     ▼                │                    │  AGENTS.md       │     │
-│  ┌──────────┐        │                    │  README.md       │     │
-│  │ feedback │        │                    └──────────────────┘     │
-│  │(signals: │        │                                             │
-│  │promote/  │        │                                             │
-│  │eliminate │        │                                             │
-│  │/refine)  │        │                                             │
-│  └──────────┘        │                                             │
-│                      │                                             │
-├──────────────────────┼──────────────────────────────────────────────┤
-│                      │                                             │
-│  OUTPUT              ▼                                             │
-│  ┌────────────────────────────────────────────────────────────┐    │
-│  │  artifacts.boot     artifacts.docs.*  artifacts.changelog  │    │
-│  │  artifacts.system.index  (+ 40+ config/workflow outputs)   │    │
-│  └────────────────────────────────────────────────────────────┘    │
-│                                                                     │
-│  SURFACE (CLI / MCP Server / Watcher) → all verbs hit Gate         │
-│  pulse → cursor_store + loop_state  |  loop → flow + feedback      │
-└─────────────────────────────────────────────────────────────────────┘
+│  │  EventEmitter (centralized event gate)                       │   │
+│  │  Receives from: Store writes (put/delete/move), Scheduler    │   │
+│  │  (TTL expired), actor calls                                  │   │
+│  │  Validates → looks up matching workflows → pushes to queue   │   │
+│  └──────────────────────┬───────────────────────────────────────┘   │
+│                         │                                           │
+│                         ▼                                           │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │  Infra::Store::WorkflowQueue (SQLite)                       │   │
+│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐       │   │
+│  │  │ pending  │ │processing│ │ failed   │ │ done     │       │   │
+│  │  └──────────┘ └──────────┘ └──────────┘ └──────────┘       │   │
+│  └──────────────────────┬───────────────────────────────────────┘   │
+│                         │                                           │
+│             ┌───────────┴───────────┐                               │
+│             │                       │                               │
+│        Drain mode             Watch mode                            │
+│        (CLI, one-shot)        (process, continuous)                 │
+│             │                       │                               │
+│      1. seed_expired           each tick:                           │
+│      2. pop all → consume      1. seed_expired                      │
+│      3. report {ok, failed}    2. pop one → consume                 │
+│                                 3. sleep(poll_interval)             │
+│             │                       │                               │
+│             └───────────┬───────────┘                               │
+│                         │                                           │
+├─────────────────────────┼───────────────────────────────────────────┤
+│                         ▼                                           │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │  Core Execution (shared)                                    │   │
+│  │                                                              │   │
+│  │  Consumer.consume(row, queue)                                │   │
+│  │    → mark_processing → Runner.run → complete or fail/resched │   │
+│  │                                                              │   │
+│  │  Runner.run(key) → resolve → StepExecutor.execute → Publish  │   │
+│  │                                                              │   │
+│  │  StepExecutor: serial steps (with timeout)                   │   │
+│  │                parallel steps (Concurrent::Promise)           │   │
+│  │                                                              │   │
+│  │  Publisher: save_to → store_engine.put                       │   │
+│  │             publish_to → file write via template             │   │
+│  │             notify → empty trigger puts                      │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+│                                                                      │
+├──────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  OUTPUT                                                              │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │  artifacts.boot     artifacts.docs.*  artifacts.changelog    │   │
+│  │  artifacts.system.index  (+ published CLAUDE.md, AGENTS.md)  │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+│                                                                      │
+│  SURFACES: CLI (textus get/put/list/...)                            │
+│            MCP Server (agent tools via stdio)                       │
+│            Watcher (poll loop, seed_expired + consume)              │
+└──────────────────────────────────────────────────────────────────────┘
 ```
+
+## Key flows
+
+- **Write path:** `put` → Session → Gate → StoreEngine#put → PutPipeline (Validate → Prepare → Write → Emit) → FileSystem + SQLite → EventEmitter → WorkflowQueue
+- **Read path:** `get` → Session → Gate → StoreEngine#read → FileSystem read → Format parser → envelope
+- **Drain (CLI):** `drain` → Scheduler.seed_expired (TTL checks) → pop all pending from WorkflowQueue → Consumer.consume each → Runner → StepExecutor → Publisher
+- **Watch (process):** Watcher tick → seed_expired → pop one → consume → sleep → repeat; triggered writes push events immediately via EventEmitter
+- **Workflow execution:** EventEmitter receives event → looks up registry → pushes to WorkflowQueue → Consumer picks up → Runner resolves key → StepExecutor runs steps → Publisher writes save_to/publish_to/notify targets
+- **Scheduler seeding:** Scheduler checks each workflow with TTL + save_to: if entry missing or older than TTL, pushes a "workflow" event to the queue
 
 ## Mermaid version
 
@@ -106,79 +114,52 @@ flowchart TB
         PROPOSALS[".textus/data/proposals/\nSuggested changes\nawaiting human accept"]
     end
 
-    subgraph CORE["CORE — Protocol Layer"]
-        GATE["Gate\nauth → resolve → validate"]
-        ESTORE["EntryStore\nformat parse + DB index\n+ FTS + audit log"]
-        FS["File System\n.markdown / .json / .yaml"]
-        DB[("SQLite\n· entries (FTS5)\n· audit_events\n· workflow_events\n· cursors\n· loop_positions\n· link_edges")]
+    subgraph GATE_LAYER["GATE — Protocol Layer"]
+        SESSION["Session#method_missing"]
+        GATE["Gate#dispatch\n1. VerbRegistry\n2. authorize!\n3. Binder\n4. Handler"]
+        STORE_ENGINE["StoreEngine\nread / put / delete / move\nvia Pipeline steps"]
+        FS["File System\n.md / .json / .yaml on disk"]
+        DB[("SQLite\n· entries (FTS5)\n· audit_events\n· workflow_events\n· cursors\n· link_edges")]
     end
 
-    subgraph LOOP["LOOP — Knowledge Pipeline"]
-        direction LR
-        I["intent"]
-        CR["constraint.repo"]
-        CP["constraint.protocol"]
-        JE["judgment.engineering"]
-        JA["judgment.agent-behavior"]
-        EV["evidence"]
-        EX["execution"]
-        FB["feedback"]
-        I --> CR --> CP --> JE --> JA --> EV --> EX --> FB --> I
+    subgraph EVENTS["EVENT GATE — Workflow"]
+        EE["EventEmitter\n(registry lookup → push)"]
+        SCH["Scheduler\n(seed_expired: TTL check → push)"]
+        WQ[("WorkflowQueue\n(SQLite: pending /\n processing / failed / done)")]
     end
 
-    subgraph EVENTS["EVENT BUS — Workflow Engine"]
-        MAT["Materialize\n(auto, on every write)"]
-        WREG["Workflow Registry\nmatches key → workflow"]
-        RUNNER["Workflow::Runner\nexecutes steps"]
-        PUB["Publisher\ntemplate → publish_to"]
+    subgraph CORE["Core Execution (shared)"]
+        CON["Consumer\nconsume(row, queue)\nmark → run → complete/fail"]
+        RUN["Runner\nresolve → execute → publish"]
+        SE["StepExecutor\nserial + parallel steps\nwith timeouts"]
+        PUB["Publisher\nsave_to → store_engine.put\npublish_to → file write\nnotify → empty trigger"]
+    end
+
+    subgraph MODES["Invocation Modes"]
+        DRAIN["Drain (CLI)\n1. seed_expired\n2. pop all → consume\n3. report"]
+        WATCH["Watch (process)\neach tick:\n1. seed_expired\n2. pop one → consume\n3. sleep"]
     end
 
     subgraph OUTPUT["OUTPUT — Artifacts"]
-        BOOT["artifacts.boot\norientation contract"]
-        DOCS["artifacts.docs.*\nreference docs"]
-        CHANGELOG["artifacts.changelog"]
+        BOOT["artifacts.boot"]
+        DOCS["artifacts.docs.*"]
         SYSTEM["artifacts.system.index"]
-        CLAUDE["CLAUDE.md / AGENTS.md\n(published via template)"]
+        PUBLISHED["CLAUDE.md / AGENTS.md\n(published via template)"]
     end
 
-    subgraph SURFACE["SURFACE — Interfaces"]
-        CLI["CLI\n(textus get/put/list/…)"]
-        MCP["MCP Server\n(agent tools via stdio)"]
-        WATCH["Watcher\n(fs events → drain)"]
-    end
-
-    PROPOSALS -- "accept/reject" --> GATE
-    KNOWLEDGE -- "put (human)" --> GATE
-    SCRATCH -- "put (agent)" --> GATE
-    RAW -- "ingest" --> GATE
-    GATE --> ESTORE
-    ESTORE <--> FS
-    ESTORE --> DB
-    ESTORE -- "entry.written\nentry.deleted\nentry.moved" --> MAT
-    MAT --> WREG
-    WREG --> RUNNER
-    RUNNER -- "read knowledge.loop.*" --> ESTORE
-    RUNNER -- "read knowledge.boot" --> ESTORE
-    BOOT_REFRESH["boot_refresh workflow\n(watches knowledge.boot)"] -. "triggers" -.-> PRODUCE["Produce::Engine.converge"]
-    RUNNER --> BOOT
-    RUNNER --> DOCS
-    RUNNER --> CHANGELOG
-    RUNNER --> SYSTEM
-    RUNNER --> PUB
-    PUB --> CLAUDE
-    PULSE["pulse verb\n(delta + loop_state)"]
-    LOOP_VERB["loop verb\n(flow + feedback signals)"]
-    DB --> PULSE
-    DB --> LOOP_VERB
-    LOOP_VERB --> FB
-    CLI --> GATE
-    MCP --> GATE
-    WATCH --> MAT
+    INPUT --> GATE
+    GATE --> STORE_ENGINE
+    STORE_ENGINE <--> FS
+    STORE_ENGINE --> DB
+    STORE_ENGINE -- "entry.written/deleted/moved" --> EE
+    SCH -. "TTL check" .-> DB
+    SCH --> WQ
+    EE --> WQ
+    WQ --> DRAIN
+    WQ --> WATCH
+    DRAIN --> CORE
+    WATCH --> CORE
+    CORE --> OUTPUT
+    CORE --> PUBLISHED
+    DB --> PULSE["pulse verb\n(delta + loop_state)"]
 ```
-
-## Key flows
-
-- **Write path:** `put` → Gate (auth/resolve/validate) → EntryStore (file + DB index + audit + FTS) → Materialize → Workflow Runner → reads knowledge → produces artifacts → Publisher → CLAUDE.md/AGENTS.md
-- **Read path:** `get` → Gate → Manifest resolver (key→path) → FileSystem (read bytes) → Format parser (md/json/yaml → envelope) → response
-- **Loop cycle:** intent → constraint → judgment → evidence → execution → feedback → (repeat); `pulse` returns position, `loop` returns flow + feedback signals
-- **Boot refresh:** writing `knowledge.boot` → Materialize → boot_refresh workflow → triggers produce on `artifacts.boot` → boot workflow regenerates

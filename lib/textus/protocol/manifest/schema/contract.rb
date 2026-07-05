@@ -9,7 +9,7 @@ module Textus
           optional(:lanes).value(:array).each do
             hash do
               required(:name).value(:string)
-              required(:kind).value(included_in?: Vocabulary::LANE_KINDS)
+              required(:kind).value(included_in?: LANE_KINDS)
               optional(:owner).value(:string)
               optional(:desc).value(:string)
             end

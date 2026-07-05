@@ -3,7 +3,8 @@ module Textus
     module Handlers
       module Read
         include Concern
-        extend self
+
+        module_function
 
         def get(key:, ctx:, call:)
           env = ctx.read(key:)

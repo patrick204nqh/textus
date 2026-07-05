@@ -3,20 +3,19 @@
 ## Folder Structure
 ```
 lib/textus/
-  surface/    # Entry points (CLI, MCP)
-  use_cases/  # Orchestration (one file per contract read/write/ops)
-  domain/     # Pure logic, zero I/O
-  port/       # I/O abstractions (interface + impl)
-  dispatch/   # Command bus (pipeline, middleware, registry)
-  store/      # Store internals (Reader, Writer, Layout)
-  value/      # Value objects
-  manifest/   # Config data + policy
+  protocol/    # Core protocol: Session, Gate, Builder, Handlers, StoreEngine, Format
+  infra/       # Infrastructure: SQLite, FileStore, Ports, Adapters
+  lanes/       # Lane-specific handlers (knowledge, scratchpad, artifact)
+  surface/     # Entry points (CLI, MCP, Watcher)
+  workflow/    # Workflow engine (DSL, Runner, StepExecutor, Consumer, Publisher)
+  value/       # Value objects (Role, Etag, Call, Uid, Duration)
+  errors.rb    # Error hierarchy
 ```
 
 ## Role Design
 | Role | Used By | Default | Capabilities |
 |------|---------|---------|-------------|
-| automation | System (drain, converge, jobs) | Yes | converge |
+| automation | System (drain, watcher, workflows) | Yes | converge |
 | agent | MCP server | No | propose, keep |
 | human | CLI, direct | No | author, ingest |
 
@@ -46,7 +45,7 @@ judgment → evidence → execution → feedback
 
 | Section | Role | Examples |
 |---------|------|----------|
-| judgment/engineering | Reusable solutions and conventions | bounded-use-cases, dependency-adapters, anti-patterns |
+| judgment/engineering | Reusable solutions and conventions | unified-dispatch, store-builder, anti-patterns, error-handling |
 | evidence/ | Why we chose — historical ADRs | all ADR files |
 | execution/ | How to execute — procedural | adr, release |
 | feedback/ | Audits and review loops | solid-audit |
@@ -60,31 +59,32 @@ On session start, agents should read:
 1. `knowledge.loop.judgment.engineering.0009-conventions` — this file (folder structure, role design, pipeline)
 2. `knowledge.loop.constraint.protocol.0014-data-flow` — how data flows through the system
 3. `knowledge.loop.judgment.engineering.0010-anti-patterns` — what to avoid
-4. `knowledge.loop.feedback.0001-solid-audit` — SOLID evaluation of the codebase
+4. `knowledge.loop.judgment.engineering.0015-solid-audit` — SOLID evaluation of the codebase
 5. `knowledge.loop.judgment.engineering.*` — reusable patterns when designing new code
 
 When designing new code, prefer:
-- **Unified dispatch** — new verbs automatically route through Store#method_missing
-- **Middleware chain** — cross-cutting concerns as pluggable middleware
-- **Handler NEEDS** — declare minimal dependencies per use case
-- **Store::Builder** — dependency construction extracted from Store
+- **Unified dispatch** — new verbs automatically route through Protocol::Session#method_missing
+- **QueryContext/CommandContext** — CQS split for read vs write handler access
+- **Pipeline steps** — StoreEngine pipeline steps as Data.define context + module step
+- **Protocol::Builder** — 3-layer dependency construction (infra/domain/runtime)
 
 When reviewing:
 - Check for dual paths (two ways to do the same thing)
 - Check vocabulary collisions (same term, different meanings)
-- Check layer violations (domain/ never references manifest/ or ports/)
-- Check for vestigial code (HANDLES_ALL paths, dead branches)
+- Check layer violations (protocol/ never references surface/ or lanes/)
+- Check for vestigial code (dead branches, unused value objects)
 
 ## Naming
-- Use cases: `<Layer>::<Verb><Noun>` (Read::GetEntry, Write::PutEntry)
-- Contracts: `Dispatch::Contracts::<Same>` (GetEntry, PutEntry)
-- call = Value::Call, deps = injected dep struct, command = contract instance
+- Handlers: `<Module>::<verb>` (Handlers::Read.get, Handlers::Write.put)
+- Pipeline steps: `<Action><Noun>` (Validate, Prepare, Write, Emit)
+- Contexts: `QueryContext`, `CommandContext`, pipeline-specific `*Context`
+- call = Value::Call, ctx = context at the handler seam, deps = pipeline dependencies
 
 ## Avoid
 1. Dual paths — never two ways to do the same thing
-2. God classes — Store stays thin
+2. God classes — Gate and Session stay thin
 3. Vestigial code — delete what's unused
-4. Layer violations — domain never references manifest/ or ports/
+4. Layer violations — protocol/ never references surface/ or lanes/
 
 ## Agent Scratchpad Structure
 

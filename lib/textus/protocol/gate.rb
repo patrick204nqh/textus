@@ -7,12 +7,13 @@ module Textus
         maintenance: Handlers::System,
       }.freeze
 
-      def initialize(manifest:, resolver:, container:, store_engine:, async: nil)
+      def initialize(manifest:, resolver:, container:, store_engine:, policy: nil, async: nil)
         @manifest = manifest
         @resolver = resolver
         @container = container
         @store_engine = store_engine
         @async = async
+        @policy = policy || manifest.policy
       end
 
       def dispatch(role, verb, params = {}, call: nil)
@@ -24,7 +25,8 @@ module Textus
 
         call_obj = call || Value::Call.build(role:, correlation_id: SecureRandom.uuid)
         bound = Protocol::Binder.bind(spec, params)
-        ctx = Handlers::Context.new(@container, store_engine: @store_engine, call: call_obj)
+        ctx_class = spec.read? && !spec.system? ? Handlers::QueryContext : Handlers::CommandContext
+        ctx = ctx_class.new(@store_engine, @container, call_obj)
 
         handler = spec.lane ? Lane.handler_for(spec.lane) : handler_group(spec)
         handler.public_send(verb, **bound, ctx:, call: call_obj)
@@ -41,17 +43,14 @@ module Textus
       def authorize!(role, _verb, key, spec)
         return true unless spec&.write?
 
-        lane = key&.split(".")&.first || spec.lane&.to_s
+        key_lane = key&.split(".")&.first
+        lane = key_lane || spec.lane&.to_s
         return true unless lane
 
-        zone = Textus::Protocol::V4::LANES[lane]
-        return true unless zone
+        lane_map = Textus::Protocol::V4::LANES[lane]
+        return true unless lane_map
 
-        writers = zone[:writers] || []
-        allowed = writers.map(&:to_sym).include?(role)
-        raise Textus::WriteForbidden.new(key, lane, holders: writers) unless allowed
-
-        true
+        @policy.allowed!(role:, lane:, key:)
       end
 
       def error(code, message)
