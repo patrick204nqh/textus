@@ -50,7 +50,7 @@ module Textus
 
         if format
           fmt_mod = Textus::Protocol::Format.for(format)
-          path = result.path.sub(/\.[^.]+$/, "") + (fmt_mod.append_ext_on_nested? ? fmt_mod.extensions.first : "")
+          path = result.path.sub(/\.[^.]+$/, "") + fmt_mod.nested_ext(result.remaining.last)
           PutPipeline.call(key, mentry: result.entry, path:, payload:, if_etag:, deps:, fmt: format)
         else
           PutPipeline.call(key, mentry: result.entry, path: result.path, payload:, if_etag:, deps:)

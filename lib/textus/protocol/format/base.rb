@@ -66,9 +66,7 @@ module Textus
 
         def self.validate_raw_entry!(_parsed, _lane); end
 
-        def self.append_ext_on_nested?
-          true
-        end
+        def self.nested_ext(_segment = nil) = extensions.first
 
         def self.serialize_for_put(meta:, body:, content:, path:)
           _ = path
