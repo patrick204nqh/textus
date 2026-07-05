@@ -21,9 +21,9 @@ RSpec.describe Textus::Lanes::Ingest::Resolver do
       allow(store_engine).to receive(:put) { |**kwargs| payloads << kwargs; nil }
 
       call = instance_double(Call, role: "automation", correlation_id: "abc")
-      ctx = Textus::Protocol::Handlers::Context.new(container, call:)
+      ctx = Textus::Protocol::Handlers::Context.new(container, store_engine: store_engine, call:)
 
-      described_class.supersede("raw.2026.06.01.old", "raw.2026.07.03.new", store: store_engine, ctx:, call:)
+      described_class.supersede("raw.2026.06.01.old", "raw.2026.07.03.new", ctx:, call:)
 
       expect(payloads.last[:content]["ingested_at"]).to eq("2026-06-01T00:00:00Z")
       expect(payloads.last[:content]["ingest_count"]).to eq(3)
@@ -43,9 +43,9 @@ RSpec.describe Textus::Lanes::Ingest::Resolver do
       allow(store_engine).to receive(:put)
 
       call = instance_double(Call, role: "automation", correlation_id: "abc")
-      ctx = Textus::Protocol::Handlers::Context.new(container, call:)
+      ctx = Textus::Protocol::Handlers::Context.new(container, store_engine: store_engine, call:)
 
-      described_class.supersede("raw.2026.06.01.old", "raw.2026.07.03.new", store: store_engine, ctx:, call:)
+      described_class.supersede("raw.2026.06.01.old", "raw.2026.07.03.new", ctx:, call:)
 
       expect(store_engine).to have_received(:put)
     end

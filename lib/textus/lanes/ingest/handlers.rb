@@ -6,7 +6,7 @@ module Textus
 
         module_function
 
-        def ingest(kind:, slug:, store:, ctx:, call:, url: nil, path: nil, lane: nil, label: nil)
+        def ingest(kind:, slug:, ctx:, call:, url: nil, path: nil, lane: nil, label: nil)
           raise Textus::UsageError.new("kind must be one of #{SOURCE_KINDS.join("|")}") unless SOURCE_KINDS.include?(kind)
 
           case kind
@@ -29,8 +29,8 @@ module Textus
           duplicate_key = Dedup.find(lookup, content_hash, url:)
 
           if duplicate_key && duplicate_key != key
-            old_content = store.read(key: duplicate_key)&.content || {}
-            Resolver.supersede(duplicate_key, key, store:, ctx:, call:)
+            old_content = ctx.read(key: duplicate_key)&.content || {}
+            Resolver.supersede(duplicate_key, key, ctx:, call:)
 
             EntryTypes::Asset.move(old_content["asset"], lane, ctx.layout) if (kind == "asset") && old_content["asset"]
 
@@ -42,7 +42,7 @@ module Textus
             structured["ingest_count"] = 1
           end
 
-          env = store.put(key:, meta: {}, body: nil, content: structured, call:)
+          env = ctx.put(key:, meta: {}, body: nil, content: structured, call:)
 
           IndexRebuilder.rebuild!(ctx.container.store.db, ctx.manifest.resolver)
 

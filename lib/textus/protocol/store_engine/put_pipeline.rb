@@ -52,17 +52,12 @@ module Textus
           end
         end
 
-        module EnforceNameMatch
+        module ValidateInput
           def self.call(ctx, _deps)
-            Textus::Protocol::Format.for(ctx.mentry.format).enforce_name_match!(ctx.path, ctx.eff_meta)
-            ctx
-          end
-        end
-
-        module ValidateRaw
-          def self.call(ctx, _deps)
-            Textus::Protocol::Format.for(ctx.mentry.format).validate_raw_entry!(
-              { "_meta" => ctx.eff_meta, "content" => ctx.eff_content },
+            fmt = Textus::Protocol::Format.for(ctx.mentry.format)
+            fmt.enforce_name_match!(ctx.path, ctx.payload.meta)
+            fmt.validate_raw_entry!(
+              { "_meta" => ctx.payload.meta, "content" => ctx.payload.content },
               ctx.mentry.lane,
             )
             ctx
@@ -138,8 +133,8 @@ module Textus
         end
 
         STEPS = [
+          ValidateInput,
           ReadExisting, InjectMeta, Serialize,
-          EnforceNameMatch, ValidateRaw,
           CheckEtag, WriteBytes, BuildEnvelope, AppendAudit, EmitWorkflowEvent, IndexEntry
         ].freeze
 

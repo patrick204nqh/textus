@@ -8,7 +8,7 @@ module Textus
 
         SESSION_PARENT_KEY = "scratchpad.sessions"
 
-        def session_open(store:, ctx:, call:)
+        def session_open(ctx:, call:)
           uuid = SecureRandom.uuid
           key = "scratchpad.sessions.#{uuid}.session"
 
@@ -16,7 +16,7 @@ module Textus
           %w[scripts notes output].each { |d| FileUtils.mkdir_p(File.join(base, d)) }
 
           content = { "session_id" => uuid, "created_at" => Time.now.utc.iso8601, "status" => "active" }
-          store.put(key:, meta: {}, body: JSON.generate(content), content: nil, call:)
+          ctx.put(key:, meta: {}, body: JSON.generate(content), content: nil, call:)
 
           { "session_id" => uuid, "status" => "active", "workspace" => base }
         end
@@ -25,14 +25,14 @@ module Textus
           ctx.manifest.data.entries.find { |e| e.key == SESSION_PARENT_KEY }
         end
 
-        def propose(key:, store:, ctx:, call:, meta: nil, body: nil, content: nil) # rubocop:disable Lint/UnusedMethodArgument
+        def propose(key:, ctx:, call:, meta: nil, body: nil, content: nil)
           full_key = "#{PROPOSALS_PARENT_KEY}.#{key}"
-          env = store.put(key: full_key, meta: meta || {}, body:, content:, call:)
+          env = ctx.put(key: full_key, meta: meta || {}, body:, content:, call:)
           env.to_h_for_wire
         end
 
-        def accept(pending_key:, store:, ctx:, call:, dry_run: false) # rubocop:disable Lint/UnusedMethodArgument
-          env = store.read(key: pending_key)
+        def accept(pending_key:, ctx:, call:, dry_run: false)
+          env = ctx.read(key: pending_key)
           proposal = env&.meta&.dig("proposal")
           raise Textus::ProposalError.new("entry has no proposal block: #{pending_key}") unless proposal
 
@@ -42,7 +42,7 @@ module Textus
           action = proposal["action"] || "put"
 
           if dry_run
-            target_env = store.read(key: target)
+            target_env = ctx.read(key: target)
             body_diff = Textus::Protocol::Diff.body(target_env&.body, env.body)
             meta_diff = Textus::Protocol::Diff.meta(target_env&.meta&.dig("_meta") || {}, env.meta&.dig("_meta") || {})
             result = { "dry_run" => true, "pending_key" => pending_key, "target_key" => target, "action" => action }
@@ -54,39 +54,39 @@ module Textus
 
           case action
           when "put"
-            store.put(key: target, meta: env.meta["_meta"] || {}, body: env.body, content: nil, call:)
+            ctx.put(key: target, meta: env.meta["_meta"] || {}, body: env.body, content: nil, call:)
           when "delete"
-            store.delete(key: target, call:)
+            ctx.delete(key: target, call:)
           else
             raise Textus::ProposalError.new("unknown action: #{action}")
           end
 
-          store.delete(key: pending_key, call:)
+          ctx.delete(key: pending_key, call:)
           { "protocol" => Textus::PROTOCOL, "accepted" => pending_key,
             "target_key" => target, "action" => action, "cascade_key" => target }
         end
 
-        def reject(pending_key:, store:, ctx:, call:, reason: nil) # rubocop:disable Lint/UnusedMethodArgument
-          env = store.read(key: pending_key)
+        def reject(pending_key:, ctx:, call:, reason: nil)
+          env = ctx.read(key: pending_key)
           proposal = env&.meta&.dig("proposal")
           raise Textus::ProposalError.new("entry has no proposal block: #{pending_key}") unless proposal
 
           target_key = proposal["target_key"]
-          store.delete(key: pending_key, call:)
+          ctx.delete(key: pending_key, call:)
           result = { "protocol" => Textus::PROTOCOL, "rejected" => pending_key, "target_key" => target_key }
           result["reason"] = reason if reason
           result
         end
 
-        def diff(pending_key:, store:, ctx:, call:) # rubocop:disable Lint/UnusedMethodArgument
-          env = store.read(key: pending_key)
+        def diff(pending_key:, ctx:, call:)
+          env = ctx.read(key: pending_key)
           proposal = env&.meta&.dig("proposal")
           raise Textus::ProposalError.new("entry has no proposal block: #{pending_key}") unless proposal
 
           target_key = proposal["target_key"]
           raise Textus::ProposalError.new("proposal missing target_key") unless target_key
 
-          target_env = store.read(key: target_key)
+          target_env = ctx.read(key: target_key)
 
           body_diff = Textus::Protocol::Diff.body(target_env&.body, env.body)
           meta_diff = Textus::Protocol::Diff.meta(target_env&.meta&.dig("_meta") || {}, env.meta&.dig("_meta") || {})
@@ -107,14 +107,14 @@ module Textus
           result
         end
 
-        def session_close(session_id:, store:, ctx:, call:) # rubocop:disable Lint/UnusedMethodArgument
+        def session_close(session_id:, ctx:, call:)
           key = "scratchpad.sessions.#{session_id}.session"
-          env = store.read(key:)
+          env = ctx.read(key:)
           raise Textus::UsageError.new("session not found: #{session_id}") unless env
 
           current = JSON.parse(env.body || "{}")
           content = current.merge("status" => "sealed", "closed_at" => Time.now.utc.iso8601)
-          store.put(key:, meta: {}, body: JSON.generate(content), content: nil, call:)
+          ctx.put(key:, meta: {}, body: JSON.generate(content), content: nil, call:)
 
           feedback_key = "scratchpad.sessions.#{session_id}.feedback"
           duration = current["created_at"] ? "#{((Time.now.utc - Time.parse(current["created_at"])) / 60).round}m" : "unknown"
@@ -125,7 +125,7 @@ module Textus
             "summary" => "Session #{session_id[0..8]} sealed after #{duration}. " \
                          "Created at #{current["created_at"]}, closed at #{Time.now.utc.iso8601}.",
           }
-          store.put(key: feedback_key, meta: {}, body: JSON.generate(feedback), content: nil, call:)
+          ctx.put(key: feedback_key, meta: {}, body: JSON.generate(feedback), content: nil, call:)
 
           { "session_id" => session_id, "status" => "sealed", "feedback_key" => feedback_key }
         end

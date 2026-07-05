@@ -24,10 +24,10 @@ module Textus
 
         call_obj = call || Value::Call.build(role:, correlation_id: SecureRandom.uuid)
         bound = Protocol::Binder.bind(spec, params)
-        ctx = Handlers::Context.new(@container, call: call_obj)
+        ctx = Handlers::Context.new(@container, store_engine: @store_engine, call: call_obj)
 
         handler = spec.lane ? Lane.handler_for(spec.lane) : handler_group(spec)
-        handler.public_send(verb, **bound, store: @store_engine, ctx:, call: call_obj)
+        handler.public_send(verb, **bound, ctx:, call: call_obj)
       end
 
       private

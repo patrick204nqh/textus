@@ -1,5 +1,3 @@
-require "open3"
-
 module Textus
   module Protocol
     module Handlers
@@ -7,7 +5,7 @@ module Textus
         include Concern
         extend self
 
-        def boot(store:, ctx:, call:)
+        def boot(ctx:, call:)
           proxy = Textus::Protocol::Container.new(
             store: ctx.container.store,
             layout: ctx.layout,
@@ -18,50 +16,26 @@ module Textus
           Textus::Protocol::Boot.build(container: proxy)
         end
 
-        def audit(store:, ctx:, call:, key: nil, lane: nil, role: nil, verb: nil, since: nil, seq_since: nil, correlation_id: nil, limit: nil)
-          if seq_since
-            min = store.audit_log.min_available
-            raise Textus::CursorExpired.new(requested: seq_since, min_available: min) if min && seq_since < min - 1
-          end
-          rows = store.audit_log.list(seq_since:, key:, role:, verb:, correlation_id:, limit:).select do |row|
-            next false if lane && !key_in_lane?(row["key"], lane, store)
-            next false if since && row["ts"] && Time.parse(row["ts"]) < since
-
-            true
-          end
-          { "verb" => "audit", "rows" => rows }
+        def audit(ctx:, call:, key: nil, lane: nil, role: nil, verb: nil, since: nil, seq_since: nil, correlation_id: nil, limit: nil)
+          Ops::AuditFilter.new.call(
+            ctx:,
+            key:, lane:, role:, verb:,
+            since:, seq_since:, correlation_id:, limit:
+          )
         end
 
-        def blame(key:, store:, ctx:, call:)
-          audit_result = audit(key:, store:, ctx:, call:)
+        def blame(key:, ctx:, call:)
+          audit_result = audit(key:, ctx:, call:)
           audit_rows = audit_result["rows"] || []
-          root = ctx.manifest.data.root
-          path = resolve_blame_path(key, store)
-          return audit_rows.map { |row| row.merge("git" => nil) } unless git_tracked?(path, root:)
-
-          audit_rows.map { |row| row.merge("git" => git_commit_at(path, timestamp: row["ts"], root:)) }
+          git_map = Ops::GitBlame.new.call(key:, ctx:)
+          audit_rows.map { |row| row.merge("git" => git_map ? git_map[row["ts"]] : nil) }
         end
 
-        def pulse(store:, ctx:, call:, since: nil)
-          cursor_val = since || store.cursor_store.get(call.role)[:seq]
-          audit_result = audit(seq_since: cursor_val, store:, ctx:, call:)
-          changed = audit_result["rows"] || []
-          queue = ctx.manifest.policy.queue_lane
-          pending = queue ? store.list(lane: queue) : []
-          runner = Textus::Lanes::Knowledge::Runner.new(ctx.manifest, cursor_store: store.cursor_store)
-          result = {
-            "cursor" => store.audit_log.latest[:seq],
-            "changed" => changed,
-            "pending_review" => pending.is_a?(Array) ? pending.map { |r| r["key"] } : [],
-            "contract_etag" => Textus::Value::Etag.for_contract(ctx.layout),
-            "index_etag" => pulse_index_etag(store),
-            "loop_state" => runner.current_position(call.role),
-          }
-          store.cursor_store.set(call.role, result["cursor"])
-          result
+        def pulse(ctx:, call:, since: nil)
+          Ops::PulseCoordinator.new.call(role: call.role, ctx:, since:)
         end
 
-        def workflow_spec(name:, store:, ctx:, call:)
+        def workflow_spec(name:, ctx:, call:)
           registry = ctx.workflow_registry || Textus::Workflow::Registry.new(ctx.workflows)
           wf = registry.for(name)
           {
@@ -83,73 +57,16 @@ module Textus
           }
         end
 
-        def drain(store:, ctx:, call:)
+        def drain(ctx:, call:)
           registry = ctx.workflow_registry || Textus::Workflow::Registry.new(ctx.workflows)
           result = Textus::Protocol::Events::Consumer.new.drain(
-            workflow_queue: store.workflow_queue, registry:, container: ctx.container, call:,
+            workflow_queue: ctx.workflow_queue, registry:, container: ctx.container, call:,
           )
           { "protocol" => Textus::PROTOCOL, "ok" => result[:failed].zero?,
             "completed" => result[:completed], "failed" => result[:failed] }
         end
 
         private
-
-        def key_in_lane?(key, lane_name, store)
-          mentry = store.mentry_for(key:)
-          mentry && mentry.lane == lane_name
-        rescue Textus::Error
-          false
-        end
-
-        def resolve_blame_path(key, store)
-          res = store.resolve(key:)
-          res.path || Textus::Protocol::Key::Path.resolve(store.manifest.data, res.entry)
-        rescue Textus::Error
-          nil
-        end
-
-        def git_tracked?(path, root:)
-          return false if path.nil? || !File.exist?(path) || !git_repo?(root)
-
-          _out, _err, status = Open3.capture3("git", "ls-files", "--error-unmatch", path, chdir: root)
-          status.success?
-        rescue Errno::ENOENT
-          false
-        end
-
-        def git_repo?(root)
-          dir = root
-          loop do
-            return true if File.directory?(File.join(dir, ".git"))
-
-            parent = File.dirname(dir)
-            return false if parent == dir
-
-            dir = parent
-          end
-        end
-
-        def git_commit_at(path, timestamp:, root:)
-          args = ["git", "log", "-1"]
-          args << "--before=#{timestamp}" if timestamp
-          args += ["--format=%H%x09%an%x09%aI%x09%s", "--", path]
-          out, _err, status = Open3.capture3(*args, chdir: root)
-          return nil unless status.success?
-
-          sha, author, date, subject = out.strip.split("\t", 4)
-          return nil if sha.nil? || sha.empty?
-
-          { "sha" => sha, "author" => author, "date" => date, "subject" => subject }
-        rescue Errno::ENOENT
-          nil
-        end
-
-        def pulse_index_etag(store)
-          path = store.resolve(key: "artifacts.system.index").path
-          File.exist?(path) ? store.file_system.etag(path) : nil
-        rescue Textus::Error
-          nil
-        end
 
         def step_type(step)
           case step

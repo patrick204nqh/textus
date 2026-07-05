@@ -41,7 +41,6 @@ module Textus
 
       def resolve(key:)   = @manifest.resolver.resolve(key)
       def mentry_for(key:)= resolve(key:).entry
-      attr_reader :manifest, :layout
 
       def put(key:, meta:, body:, content:, call:, if_etag: nil)
         result = resolve(key:)
@@ -64,12 +63,6 @@ module Textus
                           layout: @layout, reader: self)
       end
 
-      def audit_log     = @store.audit_log
-      def link_store    = @store.link_store
-      def cursor_store  = @store.cursor_store
-      def workflow_queue = @store.workflow_queue
-      def entry_index   = @store.entry_index
-      def file_store    = @store.file_store
     end
   end
 end

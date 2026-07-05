@@ -12,7 +12,7 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
       store = instance_double(Textus::Infra::Store, file_system: nil)
       container = mock_container(manifest:, store:)
       call = instance_double(Call, role: "human", correlation_id: "abc")
-      ctx = Textus::Protocol::Handlers::Context.new(container, call:)
+      ctx = Textus::Protocol::Handlers::Context.new(container, store_engine: store_engine, call:)
       entry = double("entry", entry: instance_double(Mentry))
       allow(manifest.resolver).to receive(:resolve).with("scratchpad.proposals.decisions.feature-x").and_return(entry)
       env = instance_double(Envelope)
@@ -21,7 +21,7 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
 
       result = described_class.propose(
         key: "decisions.feature-x", meta: { "proposal" => { "target_key" => "knowledge.foo" } },
-        body: "some body", content: nil, ctx:, call:, store: store_engine
+        body: "some body", content: nil, ctx:, call:
       )
 
       expect(store_engine).to have_received(:put).with(
@@ -40,7 +40,7 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
       store = instance_double(Textus::Infra::Store, file_system: nil)
       container = mock_container(manifest:, store:)
       call = instance_double(Call, role: "human", correlation_id: "abc")
-      ctx = Textus::Protocol::Handlers::Context.new(container, call:)
+      ctx = Textus::Protocol::Handlers::Context.new(container, store_engine: store_engine, call:)
 
       pending_env = instance_double(Envelope,
                                     meta: { "proposal" => { "target_key" => "knowledge.foo", "action" => "put" } },
@@ -52,7 +52,7 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
       allow(store_engine).to receive(:put)
       allow(store_engine).to receive(:delete)
 
-      result = described_class.accept(pending_key: "scratchpad.proposals.test", dry_run: false, ctx:, call:, store: store_engine)
+      result = described_class.accept(pending_key: "scratchpad.proposals.test", dry_run: false, ctx:, call:)
 
       expect(store_engine).to have_received(:put).with(hash_including(key: "knowledge.foo"))
       expect(store_engine).to have_received(:delete).with(hash_including(key: "scratchpad.proposals.test"))
@@ -65,7 +65,7 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
       store = instance_double(Textus::Infra::Store, file_system: nil)
       container = mock_container(manifest:, store:)
       call = instance_double(Call, role: "human", correlation_id: "abc")
-      ctx = Textus::Protocol::Handlers::Context.new(container, call:)
+      ctx = Textus::Protocol::Handlers::Context.new(container, store_engine: store_engine, call:)
 
       pending_env = instance_double(Envelope,
                                     meta: { "proposal" => { "target_key" => "knowledge.foo", "action" => "put" } },
@@ -76,7 +76,7 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
       )
       allow(Textus::Protocol::Diff).to receive_messages(body: { "type" => "diff" }, meta: {}, summary: { "changes" => 1 })
 
-      result = described_class.accept(pending_key: "scratchpad.proposals.test", dry_run: true, ctx:, call:, store: store_engine)
+      result = described_class.accept(pending_key: "scratchpad.proposals.test", dry_run: true, ctx:, call:)
 
       expect(result["dry_run"]).to be true
       expect(result).to have_key("body")
@@ -88,11 +88,11 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
       manifest = instance_double(Manifest)
       container = mock_container(manifest:, store:)
       call = instance_double(Call, role: "human", correlation_id: "abc")
-      ctx = Textus::Protocol::Handlers::Context.new(container, call:)
+      ctx = Textus::Protocol::Handlers::Context.new(container, store_engine: store_engine, call:)
       env = instance_double(Envelope, meta: {})
       allow(store_engine).to receive(:read).and_return(env)
 
-      expect { described_class.accept(pending_key: "bad", ctx:, call:, store: store_engine) }
+      expect { described_class.accept(pending_key: "bad", ctx:, call:) }
         .to raise_error(Textus::ProposalError, /no proposal block/)
     end
   end
@@ -104,13 +104,13 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
       manifest = instance_double(Manifest)
       container = mock_container(manifest:, store:)
       call = instance_double(Call, role: "human", correlation_id: "abc")
-      ctx = Textus::Protocol::Handlers::Context.new(container, call:)
+      ctx = Textus::Protocol::Handlers::Context.new(container, store_engine: store_engine, call:)
 
       env = instance_double(Envelope, meta: { "proposal" => { "target_key" => "knowledge.foo" } })
       allow(store_engine).to receive(:read).with(key: "scratchpad.proposals.test").and_return(env)
       allow(store_engine).to receive(:delete)
 
-      result = described_class.reject(pending_key: "scratchpad.proposals.test", reason: "not needed", ctx:, call:, store: store_engine)
+      result = described_class.reject(pending_key: "scratchpad.proposals.test", reason: "not needed", ctx:, call:)
 
       expect(store_engine).to have_received(:delete).with(hash_including(key: "scratchpad.proposals.test", call:))
       expect(result["rejected"]).to eq("scratchpad.proposals.test")
@@ -123,11 +123,11 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
       manifest = instance_double(Manifest)
       container = mock_container(manifest:, store:)
       call = instance_double(Call, role: "human", correlation_id: "abc")
-      ctx = Textus::Protocol::Handlers::Context.new(container, call:)
+      ctx = Textus::Protocol::Handlers::Context.new(container, store_engine: store_engine, call:)
       env = instance_double(Envelope, meta: {})
       allow(store_engine).to receive(:read).and_return(env)
 
-      expect { described_class.reject(pending_key: "scratchpad.proposals.test", ctx:, call:, store: store_engine) }
+      expect { described_class.reject(pending_key: "scratchpad.proposals.test", ctx:, call:) }
         .to raise_error(Textus::ProposalError, /no proposal block/)
     end
   end
@@ -141,7 +141,7 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
       store = instance_double(Textus::Infra::Store, file_system: nil)
       container = mock_container(manifest:, store:)
       call = instance_double(Call, role: "human", correlation_id: "abc")
-      ctx = Textus::Protocol::Handlers::Context.new(container, call:)
+      ctx = Textus::Protocol::Handlers::Context.new(container, store_engine: store_engine, call:)
 
       env = instance_double(Envelope,
                             meta: { "proposal" => { "target_key" => "knowledge.foo" }, "_meta" => { "schema" => "v2" } },
@@ -157,7 +157,7 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
       allow(Textus::Protocol::Diff).to receive_messages(body: { "type" => "diff" }, meta: {},
                                                         schema: { "schema" => { "from" => "v1", "to" => "v2" } }, summary: { "changes" => 2 })
 
-      result = described_class.diff(pending_key: "scratchpad.proposals.test", ctx:, call:, store: store_engine)
+      result = described_class.diff(pending_key: "scratchpad.proposals.test", ctx:, call:)
 
       expect(result["pending_key"]).to eq("scratchpad.proposals.test")
       expect(result["target_key"]).to eq("knowledge.foo")
@@ -172,11 +172,11 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
       manifest = instance_double(Manifest)
       container = mock_container(manifest:, store:)
       call = instance_double(Call, role: "human", correlation_id: "abc")
-      ctx = Textus::Protocol::Handlers::Context.new(container, call:)
+      ctx = Textus::Protocol::Handlers::Context.new(container, store_engine: store_engine, call:)
       env = instance_double(Envelope, meta: {})
       allow(store_engine).to receive(:read).and_return(env)
 
-      expect { described_class.diff(pending_key: "bad", ctx:, call:, store: store_engine) }
+      expect { described_class.diff(pending_key: "bad", ctx:, call:) }
         .to raise_error(Textus::ProposalError, /no proposal block/)
     end
   end

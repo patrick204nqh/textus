@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 require "mcp"
 
 module Textus
@@ -14,9 +12,9 @@ module Textus
           @stdin  = stdin
           @stdout = stdout
           @shutdown = false
+          @cursor_manager = CursorManager.new(store: @store, role:)
 
-          resume_from_cursor!
-          start_cursor_checkpoint_thread!
+          @store = @cursor_manager.resume! || @store
 
           @sdk = MCP_ADAPTER.server(
             name: "textus",
@@ -43,21 +41,16 @@ module Textus
 
         def dispatch(verb_name, args, _server_context)
           str_args = deep_stringify_keys(args)
-
-          is_read = Catalog.read_verbs.include?(verb_name.to_s)
-          previous_etag = @store.contract_etag
-          current_etag = contract_etag_now
-          drifted = current_etag != previous_etag
+          drifted = drift_detected?
 
           result = Catalog.call(verb_name.to_s, store: @store, args: str_args)
           result = DriftAnnotation.apply(
-            result, verb_name:, drifted:, is_read:,
-                    current_etag: short_etag(current_etag),
-                    previous_etag: short_etag(previous_etag)
+            result, verb_name:, drifted:, is_read: Catalog.read_verbs.include?(verb_name.to_s),
+                    current_etag: short_etag(contract_etag_now),
+                    previous_etag: short_etag(@store.contract_etag)
           )
 
-          @store = @store.advance_cursor(@store.container.store.audit_log.latest[:seq]) if verb_name == :pulse
-          @store = @store.with_role(@store.role) if verb_name == :boot
+          post_dispatch!(verb_name)
           ::MCP::Tool::Response.new([{ type: "text", text: JSON.dump(result) }])
         rescue Textus::CursorExpired => e
           raise_handler_error(e.message, Textus::CursorExpired::JSONRPC_CODE)
@@ -69,21 +62,15 @@ module Textus
 
         private
 
-        def resume_from_cursor!
-          saved = @store.container.store.cursor_store.get(@store.role)[:seq]
-          latest = @store.container.store.audit_log.latest[:seq]
-          @store = @store.advance_cursor(saved) if saved.positive? && saved <= latest
+        def drift_detected?
+          @store.contract_etag != contract_etag_now
         end
 
-        def start_cursor_checkpoint_thread!
-          @checkpoint_thread = Thread.new do
-            loop do
-              sleep(self.class::CHECKPOINT_INTERVAL)
-              break if @shutdown
-
-              @store.container.store.cursor_store.set(@store.role, @store.cursor)
-            end
+        def post_dispatch!(verb_name)
+          if verb_name == :pulse
+            @store = @cursor_manager.advance!(seq: @store.container.store.audit_log.latest[:seq])
           end
+          @store = @store.with_role(@store.role) if verb_name == :boot
         end
 
         def build_resources
