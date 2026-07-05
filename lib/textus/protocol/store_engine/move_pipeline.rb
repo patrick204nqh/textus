@@ -98,16 +98,7 @@ module Textus
 
         module PruneSourceParents
           def self.call(ctx, deps)
-            floor = deps.layout.lane_floor(ctx.from_path)
-            if floor
-              dir = File.dirname(ctx.from_path)
-              while dir.start_with?("#{floor}/") && deps.file_system.dir_empty?(dir)
-                deps.file_system.rmdir(dir)
-                dir = File.dirname(dir)
-              end
-            end
-            ctx
-          rescue SystemCallError
+            Pipeline.prune_parents(ctx.from_path, deps)
             ctx
           end
         end
@@ -160,19 +151,12 @@ module Textus
         module EmitWorkflowEvent
           def self.call(ctx, deps)
             return ctx unless deps.workflow_registry
-            return ctx if deps.store.workflow_queue.pending?(event_type: "entry.moved",
-                                                             key: ctx.from_key) || deps.store.workflow_queue.pending?(
-                                                               event_type: "entry.moved", key: ctx.to_key,
-                                                             )
+            return ctx if deps.store.workflow_queue.pending?(event_type: "entry.moved", key: ctx.from_key)
+            return ctx if deps.store.workflow_queue.pending?(event_type: "entry.moved", key: ctx.to_key)
 
-            emitter = Textus::Protocol::Events::Emitter.new(
-              workflow_queue: deps.store.workflow_queue,
-              workflow_registry: deps.workflow_registry,
-            )
-            emitter.emit(event_type: "entry.moved", key: ctx.to_key, lane: ctx.to_entry.lane)
-            ctx
-          rescue StandardError => e
-            warn "textus: emit_workflow_event(entry.moved, #{ctx.from_key}) failed: #{e.message}"
+            Pipeline.emit_event(ctx, deps,
+              event_type: "entry.moved", pending_key: ctx.from_key,
+              emit_key: ctx.to_key, emit_lane: ctx.to_entry.lane)
           end
         end
 

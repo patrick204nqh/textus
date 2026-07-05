@@ -94,7 +94,6 @@ module Textus
 
         module AppendAudit
           def self.call(ctx, deps)
-            deps.call.correlation_id ? { "correlation_id" => deps.call.correlation_id } : nil
             deps.audit_log.append(
               role: deps.call.role, verb: "put", key: ctx.key,
               etag_before: ctx.etag_before, etag_after: ctx.envelope.etag,
@@ -117,18 +116,9 @@ module Textus
 
         module EmitWorkflowEvent
           def self.call(ctx, deps)
-            return ctx unless deps.workflow_registry
-            return ctx if deps.store.workflow_queue.pending?(event_type: "entry.written", key: ctx.key)
-
-            emitter = Textus::Protocol::Events::Emitter.new(
-              workflow_queue: deps.store.workflow_queue,
-              workflow_registry: deps.workflow_registry,
-            )
-            emitter.emit(event_type: "entry.written", key: ctx.key, lane: ctx.mentry.lane)
-            ctx
-          rescue StandardError => e
-            warn "textus: emit_workflow_event(entry.written, #{ctx.key}) failed: #{e.message}"
-            ctx
+            Pipeline.emit_event(ctx, deps,
+              event_type: "entry.written", pending_key: ctx.key,
+              emit_key: ctx.key, emit_lane: ctx.mentry.lane)
           end
         end
 

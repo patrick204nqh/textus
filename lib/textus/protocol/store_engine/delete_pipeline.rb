@@ -35,16 +35,7 @@ module Textus
 
         module PruneParents
           def self.call(ctx, deps)
-            floor = deps.layout.lane_floor(ctx.path)
-            if floor
-              dir = File.dirname(ctx.path)
-              while dir.start_with?("#{floor}/") && deps.file_system.dir_empty?(dir)
-                deps.file_system.rmdir(dir)
-                dir = File.dirname(dir)
-              end
-            end
-            ctx
-          rescue SystemCallError
+            Pipeline.prune_parents(ctx.path, deps)
             ctx
           end
         end
@@ -69,18 +60,9 @@ module Textus
 
         module EmitWorkflowEvent
           def self.call(ctx, deps)
-            return ctx unless deps.workflow_registry
-            return ctx if deps.store.workflow_queue.pending?(event_type: "entry.deleted", key: ctx.key)
-
-            emitter = Textus::Protocol::Events::Emitter.new(
-              workflow_queue: deps.store.workflow_queue,
-              workflow_registry: deps.workflow_registry,
-            )
-            emitter.emit(event_type: "entry.deleted", key: ctx.key)
-            ctx
-          rescue StandardError => e
-            warn "textus: emit_workflow_event(entry.deleted, #{ctx.key}) failed: #{e.message}"
-            ctx
+            Pipeline.emit_event(ctx, deps,
+              event_type: "entry.deleted", pending_key: ctx.key,
+              emit_key: ctx.key)
           end
         end
 

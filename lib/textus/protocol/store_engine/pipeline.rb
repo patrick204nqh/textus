@@ -26,6 +26,38 @@ module Textus
                                   :etag_before, :etag_after, :envelope, :dry_run) do
           def with(**attrs) = self.class.new(**to_h, **attrs)
         end
+
+        module_function
+
+        def prune_parents(path, deps)
+          floor = deps.layout.lane_floor(path)
+          return unless floor
+
+          dir = File.dirname(path)
+          while dir.start_with?("#{floor}/") && deps.file_system.dir_empty?(dir)
+            deps.file_system.rmdir(dir)
+            dir = File.dirname(dir)
+          end
+        rescue SystemCallError
+          # race: dir may have been emptied by another writer
+        end
+
+        def emit_event(ctx, deps, event_type:, pending_key:, emit_key:, emit_lane: nil)
+          return ctx unless deps.workflow_registry
+          return ctx if deps.store.workflow_queue.pending?(event_type:, key: pending_key)
+
+          emitter = Textus::Protocol::Events::Emitter.new(
+            workflow_queue: deps.store.workflow_queue,
+            workflow_registry: deps.workflow_registry,
+          )
+          kwargs = { event_type:, key: emit_key }
+          kwargs[:lane] = emit_lane if emit_lane
+          emitter.emit(**kwargs)
+          ctx
+        rescue StandardError => e
+          warn "textus: emit_workflow_event(#{event_type}, #{emit_key}) failed: #{e.message}"
+          ctx
+        end
       end
     end
   end
