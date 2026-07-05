@@ -3,7 +3,8 @@ module Textus
     module Handlers
       module Write
         include Concern
-        extend self
+
+        module_function
 
         def put(key:, ctx:, call:, meta: nil, body: nil, content: nil, if_etag: nil)
           env = ctx.put(key:, meta: meta || {}, body:, content:, if_etag:, call:)
@@ -14,7 +15,10 @@ module Textus
           ctx.delete(key:, if_etag:, call:)
           response(ok: true, key:, deleted: true)
         end
-        alias key_delete delete
+
+        def key_delete(key:, ctx:, call:, if_etag: nil)
+          delete(key:, ctx:, call:, if_etag:)
+        end
 
         def move(old_key:, new_key:, ctx:, call:, if_etag: nil, dry_run: false)
           mctx = ctx.move(from_key: old_key, to_key: new_key, call:, if_etag:, dry_run:)

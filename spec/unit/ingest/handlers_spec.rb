@@ -57,10 +57,9 @@ RSpec.describe Textus::Lanes::Ingest::Handlers do
       allow(Textus::Lanes::Ingest::EntryTypes).to receive(:for).with("url").and_return(Textus::Lanes::Ingest::EntryTypes::Link)
       allow(Textus::Lanes::Ingest::Dedup).to receive(:find).and_return("raw.2026.06.01.old")
       allow(Textus::Lanes::Ingest::Resolver).to receive(:supersede)
-      allow(store_engine).to receive(:put).and_return(instance_double(Envelope, uid: "uid456", etag: "etag789"))
-      allow(store_engine).to receive(:read).and_return(
-        instance_double(Envelope, content: { "ingest_count" => 1 }),
-      )
+      allow(store_engine).to receive_messages(put: instance_double(Envelope, uid: "uid456", etag: "etag789"),
+                                              read: instance_double(Envelope,
+                                                                    content: { "ingest_count" => 1 }))
       allow(Textus::Lanes::Ingest::IndexRebuilder).to receive(:rebuild!)
 
       allow(Time).to receive(:now).and_return(Time.new(2026, 7, 3, 12, 0, 0, "UTC"))

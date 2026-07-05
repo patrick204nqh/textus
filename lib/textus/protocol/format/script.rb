@@ -40,8 +40,8 @@ module Textus
           raise UsageError.new("script format requires #{EXTENSIONS.join(" | ")} extension (got #{ext.inspect})")
         end
 
-        def self.validate_raw_entry!(parsed, lane)
-          return unless lane == "scratchpad"
+        def self.validate_raw_entry!(_parsed, lane)
+          nil unless lane == "scratchpad"
         end
 
         def self.data_to_payload(data)

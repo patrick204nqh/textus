@@ -16,7 +16,7 @@ RSpec.describe Textus::Workflow::EventEmitter do
       expect(workflow_queue).to have_received(:push).with(
         event_type: "entry.written", workflow_type: "materialize",
         key: "knowledge.a", lane: "knowledge",
-        max_attempts: 3,
+        max_attempts: 3
       )
       expect(count).to eq(1)
     end

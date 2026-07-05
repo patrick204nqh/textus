@@ -51,7 +51,7 @@ module Textus
 
           case action
           when "put"
-            target_meta = env.meta.to_h.reject { |k, _| k == "proposal" }
+            target_meta = env.meta.to_h.except("proposal")
             ctx.put(key: target, meta: target_meta, body: env.body, content: env.content, call:)
           when "delete"
             ctx.delete(key: target, call:)

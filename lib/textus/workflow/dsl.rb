@@ -10,7 +10,7 @@ module Textus
 
         attr_reader :name, :steps, :on_patterns, :save_to, :notify_keys,
                     :publish_block, :publish_targets,
-                    :handled_events, :workflow_type, :ttl, :priority, :max_attempts
+                    :handled_events, :workflow_type
 
         def self.register(defn)
           @definitions ||= []
@@ -155,7 +155,7 @@ module Textus
           @ttl = Textus::Value::Duration.seconds(cadence)
         end
 
-        alias_method :ttl, :every
+        alias ttl every
 
         def on_expire(action = :__no_arg__)
           return @on_expire if action == :__no_arg__

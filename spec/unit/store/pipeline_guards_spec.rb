@@ -27,11 +27,11 @@ RSpec.describe Textus::Protocol::StoreEngine::Pipeline do
       deps = double("deps", file_system: double(exists?: true, etag: "def"))
       ctx  = described_class::DeleteContext.new(key: "my.key", if_etag: "abc", path: "/p", etag_before: nil)
       expect { described_class.check_etag(ctx, deps) }
-        .to raise_error { |e|
+        .to(raise_error do |e|
           expect(e.details["key"]).to eq("my.key")
           expect(e.details["wanted"]).to eq("abc")
           expect(e.details["got"]).to eq("def")
-        }
+        end)
     end
   end
 

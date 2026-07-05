@@ -55,7 +55,7 @@ module Textus
             end,
             "priority" => wf.priority,
             "max_attempts" => wf.max_attempts,
-            "ttl" => wf.ttl ? wf.ttl.to_s : nil,
+            "ttl" => wf.ttl&.to_s,
             "on_expire" => wf.on_expire
           }
         end

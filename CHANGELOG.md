@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+- refactor: replace hand-written Session delegations with Forwardable
+- refactor: extract merge_issues helper in Definition#check
+- refactor: split VerbRegistry into per-verb files under verb_registry/verbs/
+- refactor: move MovePipeline emit_event dedup guards into shared Pipeline.emit_event
+- refactor: extract shared CheckEtag/ResolvePath into Pipeline module
+- chore: remove vestigial Materialize workflow
+- refactor(workflow): eliminate Materialize re-dispatch and deepen Runner
 - refactor(workflow): extract shared Consumer and decouple event emission from pipeline
 - feat: wire TTL scheduler + refactor Workflow module ownership
 - style: fix rubocop safe autocorrects and update Lint/UnusedMethodArgument excludes for refactored handlers

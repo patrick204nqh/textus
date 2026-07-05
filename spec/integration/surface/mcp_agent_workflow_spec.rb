@@ -2,20 +2,20 @@ RSpec.describe "MCP agent workflow — end-to-end" do
   include_context "textus/4 conformance fixture"
 
   let(:agent_store) { Textus::Protocol::Session.open(root, role: "agent") }
+  let(:agent_server) { server_for(agent_store, role: "agent") }
+  let(:human_server) { server_for(human_store, role: "human") }
   let(:human_store) { Textus::Protocol::Session.open(root, role: "human") }
 
   def server_for(store, role:)
     Textus::Surface::MCP::Server.new(store:, role:, stdin: StringIO.new, stdout: StringIO.new)
   end
 
-  let(:agent_server) { server_for(agent_store, role: "agent") }
-  let(:human_server) { server_for(human_store, role: "human") }
-
   def dispatch(server, verb, args)
     resp = server.dispatch(verb, args, nil)
     raise "empty content for #{verb}" if resp.content.empty?
+
     JSON.parse(resp.content.first[:text] || resp.content.first["text"])
-  rescue => e
+  rescue StandardError => e
     raise "dispatch(#{verb}) failed: #{e.class}: #{e.message}"
   end
 
@@ -36,10 +36,10 @@ RSpec.describe "MCP agent workflow — end-to-end" do
 
     # 3. put a knowledge entry (human)
     put_result = dispatch(human_server, :put, {
-      key: "knowledge.intent.0002-test-intent",
-      _meta: { name: "0002-test-intent" },
-      body: "# Test intent\n\nBody content.\n",
-    })
+                            key: "knowledge.intent.0002-test-intent",
+                            _meta: { name: "0002-test-intent" },
+                            body: "# Test intent\n\nBody content.\n",
+                          })
     expect(put_result["ok"]).to be true
     expect(put_result["uid"]).to be_a(String)
     intent_uid = put_result["uid"]
@@ -50,12 +50,12 @@ RSpec.describe "MCP agent workflow — end-to-end" do
 
     # 5. propose a change
     propose_result = dispatch(agent_server, :propose, {
-      key: "intent-update",
-      _meta: {
-        proposal: { target_key: "knowledge.intent.0002-test-intent", action: "put" },
-      },
-      body: "# Test intent (updated)\n\nUpdated body.\n",
-    })
+                                key: "intent-update",
+                                _meta: {
+                                  proposal: { target_key: "knowledge.intent.0002-test-intent", action: "put" },
+                                },
+                                body: "# Test intent (updated)\n\nUpdated body.\n",
+                              })
     pending_key = propose_result["key"]
 
     # 6. diff
@@ -82,19 +82,23 @@ RSpec.describe "MCP agent workflow — end-to-end" do
 
   it "rejects a proposal" do
     propose_result = dispatch(agent_server, :propose, {
-      key: "to-reject",
-      _meta: {
-        proposal: { target_key: "knowledge.contacts.reject-person", action: "put" },
-      },
-      body: "Name: Test\nRelationship: peer\nOrg: Acme\n",
-    })
+                                key: "to-reject",
+                                _meta: {
+                                  proposal: { target_key: "knowledge.contacts.reject-person", action: "put" },
+                                },
+                                body: "Name: Test\nRelationship: peer\nOrg: Acme\n",
+                              })
     pending_key = propose_result["key"]
 
     reject_result = dispatch(human_server, :reject, { pending_key:, reason: "not needed" })
     expect(reject_result["rejected"]).to eq(pending_key)
     expect(reject_result["reason"]).to eq("not needed")
 
-    get_proposal = dispatch(agent_server, :get, { key: pending_key }) rescue nil
+    get_proposal = begin
+      dispatch(agent_server, :get, { key: pending_key })
+    rescue StandardError
+      nil
+    end
     expect(get_proposal).to be_nil.or(be_a(Hash).and(have_key("error")))
   end
 end

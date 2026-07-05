@@ -41,7 +41,7 @@ module Textus
       end
 
       def workflows_for_key(key)
-        @definitions.select { |wf| wf.match?(key) }
+        @definitions.grep(key)
                     .sort_by(&:priority)
       end
     end

@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "generated_at": "2026-07-05T05:03:59Z",
+    "generated_at": "2026-07-05T05:39:11Z",
     "uid": "60e228765192c063"
   },
   "entries": [
@@ -8,6 +8,34 @@
       "tag": "Unreleased",
       "date": null,
       "commits": [
+        {
+          "subject": "refactor: replace hand-written Session delegations with Forwardable",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "refactor: extract merge_issues helper in Definition#check",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "refactor: split VerbRegistry into per-verb files under verb_registry/verbs/",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "refactor: move MovePipeline emit_event dedup guards into shared Pipeline.emit_event",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "refactor: extract shared CheckEtag/ResolvePath into Pipeline module",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "chore: remove vestigial Materialize workflow",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "refactor(workflow): eliminate Materialize re-dispatch and deepen Runner",
+          "date": "2026-07-05"
+        },
         {
           "subject": "refactor(workflow): extract shared Consumer and decouple event emission from pipeline",
           "date": "2026-07-05"

@@ -11,7 +11,7 @@ module Textus
             return nil unless path && git_tracked?(path, root:)
 
             audit_rows = ctx.audit_log.list(key:)
-            audit_rows.each_with_object({}) { |row, h| h[row["ts"]] = git_commit_at(path, timestamp: row["ts"], root:) }
+            audit_rows.to_h { |row| [row["ts"], git_commit_at(path, timestamp: row["ts"], root:)] }
           end
 
           private

@@ -11,7 +11,7 @@ module Textus
         workflows.each do |wf|
           @workflow_queue.push(
             event_type: event_type.to_s, workflow_type: wf.type,
-            key:, lane:, max_attempts: wf.max_attempts,
+            key:, lane:, max_attempts: wf.max_attempts
           )
         end
         workflows.size
