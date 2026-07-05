@@ -1,16 +1,23 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/usr/bin/env ruby
+# bin/db — open the .textus store.db in sqlite3
+#
+# Usage:  bin/db [sqlite3 args...]
+#   No args  → interactive sqlite3 shell
+#   With args → runs as `sqlite3 -header -column <args>`
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-DB="$ROOT/.textus/db/store.db"
+require "fileutils"
 
-if [ ! -f "$DB" ]; then
-  echo "no store.db at $DB" >&2
+ROOT = File.expand_path("..", __dir__)
+DB   = File.join(ROOT, ".textus/db/store.db")
+
+unless File.exist?(DB)
+  warn "no store.db at #{DB}"
   exit 1
-fi
+end
 
-if [ $# -eq 0 ]; then
-  sqlite3 "$DB"
+sqlite = %w[sqlite3 -header -column]
+if ARGV.empty?
+  exec(*sqlite, DB)
 else
-  sqlite3 "$DB" -header -column "$@"
-fi
+  exec(*sqlite, DB, *ARGV)
+end
