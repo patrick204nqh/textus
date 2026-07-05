@@ -26,16 +26,12 @@ module Textus
             hash do
               required(:key).value(:string)
               required(:lane).value(:string)
-              optional(:path).value(:string)
-              optional(:owner).value(:string)
               optional(:format).value(:string)
               optional(:schema).maybe(:string)
               optional(:kind).value(:string)
               optional(:nested).value(:bool)
               optional(:tracked).value(:bool)
               optional(:naming).value(:string)
-              optional(:source)
-              optional(:publish).value(:array)
             end
           end
 

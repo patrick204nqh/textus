@@ -37,8 +37,6 @@ module Textus
           data   = Manifest::Data.parse(raw, root: root)
           policy = Manifest::Policy.new(data)
 
-          # Phase 2: validate entries with fully-formed Policy
-          data.entries.each { |entry| Manifest::Entry::Validators.run_all(entry, policy:) }
           policy.entries = data.entries
 
           new(

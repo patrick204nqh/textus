@@ -15,8 +15,6 @@ module Textus
         ROOT_KEYS             = Keys::ROOT_KEYS
         LANE_KEYS             = Keys::LANE_KEYS
         ENTRY_KEYS            = Keys::ENTRY_KEYS
-        PUBLISH_KEYS          = Keys::PUBLISH_KEYS
-        SOURCE_KEYS           = Keys::SOURCE_KEYS
         AUDIT_KEYS            = Keys::AUDIT_KEYS
         OWNER_SUBJECT_PATTERN = Keys::OWNER_SUBJECT_PATTERN
 

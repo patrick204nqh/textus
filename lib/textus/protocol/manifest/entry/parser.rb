@@ -16,9 +16,8 @@ module Textus
             end
 
             kind = infer_kind(key, raw, root:)
-            explicit_path = raw["path"]
-            format = resolve_format(key, kind, root, raw["format"], explicit_path)
-            path = explicit_path || derive_path(key, kind, format)
+            format = resolve_format(key, kind, root, raw["format"])
+            path = derive_path(key, kind, format)
 
             common = {
               raw: raw,
@@ -34,7 +33,7 @@ module Textus
           end
 
           def self.infer_kind(key, raw, root:)
-            base = raw["path"] || key.split(".").join("/")
+            base = key.split(".").join("/")
             dir = root ? File.join(root, "data", base) : nil
 
             return :nested if dir && File.directory?(dir)
@@ -44,10 +43,8 @@ module Textus
           end
           private_class_method :infer_kind
 
-          def self.resolve_format(key, kind, root, declared, explicit_path)
+          def self.resolve_format(key, kind, root, declared)
             return "markdown" if kind == :nested
-
-            return Textus::Protocol::Format.infer_from_extension(File.extname(explicit_path)) || declared || "markdown" if explicit_path
 
             dir = root ? File.join(root, "data", key.split(".").join("/")) : nil
             if dir

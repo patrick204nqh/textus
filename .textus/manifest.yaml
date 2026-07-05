@@ -38,8 +38,8 @@ data:
     - { key: artifacts.changelog, format: json }
     - { key: artifacts.boot, format: json }
     - { key: artifacts.config.opencode, format: json }
-    - { key: artifacts.config.mcp, path: artifacts/config/claude-mcp.json }
-    - { key: artifacts.config.plugin, path: artifacts/config/claude-plugin.json }
+    - { key: artifacts.config.mcp, format: json }
+    - { key: artifacts.config.plugin, format: json }
     - { key: artifacts.decisions.log, format: json }
     - { key: artifacts.docs.readme, format: json }
     - { key: artifacts.docs.lanes, format: json }
