@@ -159,7 +159,7 @@ module Textus
         :deps, "List the keys a derived entry depends on.",
         [ArgSpec.arg(name: :key, required: true, positional: true,
                      description: "dotted key of the derived entry whose source keys you want")],
-        %i[cli mcp], :$1
+        %i[cli mcp], :read
       )
 
       # ── rdeps ────────────────────────────────────────────
@@ -167,7 +167,7 @@ module Textus
         :rdeps, "List the derived entries that depend on a key (reverse deps).",
         [ArgSpec.arg(name: :key, required: true, positional: true,
                      description: "dotted key whose dependents you want")],
-        %i[cli mcp], :$1
+        %i[cli mcp], :read
       )
 
       # ── graph ────────────────────────────────────────────
@@ -177,7 +177,7 @@ module Textus
                      description: "entry key to query"),
          ArgSpec.arg(name: :depth, type: Integer,
                      description: "max traversal depth for reachable query (unlimited when omitted)")],
-        %i[cli mcp], :$1
+        %i[cli mcp], :read
       )
 
       # ── pulse ────────────────────────────────────────────
