@@ -152,9 +152,9 @@ assert("propose", "propose", "smoke-test-#{sid}", "--stdin", "--as=agent",
        stdin: proposal, key: %w[key])
 
 SCRIPTS = {
-  "check"  => { body: "echo 'agent bash script'\n",      fmt: "bash" },
-  "task"   => { body: "puts 'agent ruby script'\n",      fmt: "ruby" },
-  "query"  => { body: "print('agent python script')\n",  fmt: "python" },
+  "check" => { body: "echo 'agent bash script'\n", fmt: "bash" },
+  "task" => { body: "puts 'agent ruby script'\n", fmt: "ruby" },
+  "query" => { body: "print('agent python script')\n", fmt: "python" },
   "report" => { body: "console.log('agent js script')\n", fmt: "javascript" },
 }.freeze
 
