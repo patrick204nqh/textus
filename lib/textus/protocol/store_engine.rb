@@ -51,9 +51,9 @@ module Textus
         if format
           fmt_mod = Textus::Protocol::Format.for(format)
           path = result.path.sub(/\.[^.]+$/, "") + fmt_mod.nested_ext(result.remaining.last)
-          PutPipeline.call(key, mentry: result.entry, path:, payload:, if_etag:, deps:, fmt: format)
+          Put.call(key, mentry: result.entry, path:, payload:, if_etag:, deps:, fmt: format)
         else
-          PutPipeline.call(key, mentry: result.entry, path: result.path, payload:, if_etag:, deps:)
+          Put.call(key, mentry: result.entry, path: result.path, payload:, if_etag:, deps:)
         end
       end
 
@@ -62,7 +62,7 @@ module Textus
           file_system: @file_system, manifest: @manifest, store: @store,
           layout: @layout, event_emitter: @event_emitter, call:
         )
-        DeletePipeline.call(key, if_etag:, deps:)
+        Delete.call(key, if_etag:, deps:)
       end
 
       def move(from_key:, to_key:, call:, if_etag: nil, dry_run: false)
@@ -70,7 +70,7 @@ module Textus
           file_system: @file_system, manifest: @manifest, store: @store,
           layout: @layout, event_emitter: @event_emitter, reader: self, call:
         )
-        MovePipeline.call(from_key:, to_key:, if_etag:, dry_run:, deps:)
+        Move.call(from_key:, to_key:, if_etag:, dry_run:, deps:)
       end
 
       private

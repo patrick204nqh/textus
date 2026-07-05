@@ -72,8 +72,30 @@ module Textus
                           []
                         end
 
+          meta_glossary = {
+            "knowledge.loop.adoption" => { "node" => "target loop node", "confidence" => "high|medium|low",
+                                           "signal" => "observation type", "summary" => "brief description" },
+            "scratchpad.proposals" => { "proposal" => "{ target_key, action }" },
+            "raw" => { "source" => "{ kind, url, path, label }" },
+          }.freeze
+
+          blueprints = manifest.data.entries.map do |entry|
+            bp = { "key_prefix" => entry.key, "format" => entry.format.to_s, "naming" => entry.naming.to_s }
+            bp["schema"] = entry.schema.to_s if entry.schema
+            meta = meta_glossary[entry.key]
+            bp["meta"] = meta if meta
+            bp
+          end
+
           {
             "lanes" => lanes_for(manifest),
+            "entry_blueprints" => blueprints,
+            "workflow_tips" => [
+              { "when" => "write an entry", "then" => "`data` param: String for body, Hash for content" },
+              { "when" => "edit a protected path", "then" => "`textus propose key=my-change data=...` — human reviews and accepts" },
+              { "when" => "explore recent changes", "then" => "`textus pulse` then `textus get <changed_key>`" },
+              { "when" => "find related entries", "then" => "`textus graph key=<key> depth=2`" },
+            ],
             "agent_quickstart" => {
               "read_verbs" => Textus::Protocol::VerbRegistry.registered.select { |s| s.read? && s.mcp? }.map { |s| s.verb.to_s },
               "write_verbs" => write_verbs,

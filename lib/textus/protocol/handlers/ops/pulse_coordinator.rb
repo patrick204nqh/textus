@@ -6,7 +6,7 @@ module Textus
           def call(role:, ctx:, since: nil)
             cursor_val = since || ctx.cursor_store.get(role)[:seq]
             audit_filter = AuditFilter.new
-            audit_result = audit_filter.call(ctx:, seq_since: cursor_val)
+            audit_result = audit_filter.call(ctx:, filters: { seq_since: cursor_val })
             changed = audit_result["rows"] || []
             queue = ctx.manifest.policy.queue_lane
             pending = queue ? ctx.list(lane: queue) : []

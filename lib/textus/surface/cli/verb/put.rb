@@ -14,8 +14,8 @@ module Textus
 
             payload = JSON.parse(@stdin.read)
             Textus::Protocol::VerbRegistry.for(:put)
-            inputs = { key: key, meta: payload["_meta"] || {}, body: payload["body"] || "",
-                       content: nil, if_etag: payload["if_etag"] }
+            inputs = { key: key, meta: payload["_meta"] || {}, data: payload["data"],
+                       if_etag: payload["if_etag"] }
             inputs[:format] = as_format if as_format
             s = store.with_role(resolved_role(store))
             emit(s.put(**inputs))

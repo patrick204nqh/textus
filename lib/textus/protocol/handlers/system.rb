@@ -21,11 +21,8 @@ module Textus
         end
 
         def audit(ctx:, call:, key: nil, lane: nil, role: nil, verb: nil, since: nil, seq_since: nil, correlation_id: nil, limit: nil)
-          Ops::AuditFilter.new.call(
-            ctx:,
-            key:, lane:, role:, verb:,
-            since:, seq_since:, correlation_id:, limit:
-          )
+          filters = { key:, lane:, role:, verb:, since:, seq_since:, correlation_id:, limit: }
+          Ops::AuditFilter.new.call(ctx:, filters:)
         end
 
         def blame(key:, ctx:, call:)

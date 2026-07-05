@@ -18,16 +18,14 @@ module Textus
           ENVELOPE_SHAPE.merge(
             "lanes" => lanes_for(manifest),
             "roles" => Textus::Protocol::V4::LANES.values.flat_map { |r| r[:writers] }.uniq,
+            "discipline" => "When edit/write tools are blocked for a path, use `textus propose` to " \
+                            "suggest changes for human review. Never use shell scripts (sed, python, rm) " \
+                            "to bypass permission gates — that breaks the audit trail and bypasses role gates.",
           )
         end
 
         def self.lanes_for(manifest)
-          manifest.data.declared_lane_kinds.keys.map do |name|
-            row = { "name" => name, "writers" => manifest.policy.writers_for(name) }
-            purpose = manifest.data.lane_descs[name]
-            row["purpose"] = purpose if purpose && !purpose.empty?
-            row
-          end
+          Context.lanes_for(manifest)
         end
       end
     end

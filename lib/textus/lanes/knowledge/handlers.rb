@@ -12,7 +12,7 @@ module Textus
           "judgment.agent-behavior" => "knowledge.loop.judgment.agent-behavior",
           "evidence" => "knowledge.loop.evidence",
           "execution" => "knowledge.loop.execution.runbook",
-          "feedback" => "knowledge.loop.feedback",
+          "adoption" => "knowledge.loop.adoption",
         }.freeze
 
         def loop(ctx:, call:)

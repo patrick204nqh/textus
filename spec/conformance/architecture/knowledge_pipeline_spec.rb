@@ -1,6 +1,6 @@
 RSpec.describe "Knowledge pipeline conformance" do
   let(:known_sections) do
-    %w[intent constraint evidence judgment execution feedback]
+    %w[intent constraint evidence judgment execution adoption]
   end
 
   def loop_dir
@@ -16,7 +16,7 @@ RSpec.describe "Knowledge pipeline conformance" do
 
   it "has the core loop sections" do
     sections = Dir.children(loop_dir).select { |e| File.directory?(File.join(loop_dir, e)) }
-    expect(sections).to include("intent", "constraint", "evidence", "judgment", "execution", "feedback")
+    expect(sections).to include("intent", "constraint", "evidence", "judgment", "execution", "adoption")
   end
 
   it "each section has content" do

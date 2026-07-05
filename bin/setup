@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# Setup script for textus development environment.
+# Installs all tooling dependencies: brew formulae, MCP servers, LSP servers.
+set -euo pipefail
+
+CBM_CACHE_DIR=".cache/codebase-memory"
+
+echo "==> Installing Homebrew dependencies..."
+brew bundle install
+
+echo ""
+echo "==> Installing codebase-memory-mcp (with UI)..."
+./bin/install-codebase-memory
+
+echo ""
+echo "==> Creating codebase-memory cache directory..."
+mkdir -p "$CBM_CACHE_DIR"
+
+echo ""
+echo "==> Installing codegraph..."
+if ! command -v codegraph &>/dev/null; then
+  npm install -g codegraph
+  echo "   codegraph installed. Run 'codegraph init' in each project."
+else
+  echo "   codegraph already installed at $(which codegraph)"
+fi
+
+echo ""
+echo "==> Registering with codebase-memory-mcp..."
+CBM_CACHE_DIR="$PWD/$CBM_CACHE_DIR" codebase-memory-mcp install 2>&1 || echo "   (non-fatal — run 'codebase-memory-mcp install' manually if needed)"
+
+echo ""
+echo "==> All dependencies installed."
+echo "    Index this project:  codebase-memory-mcp cli index_repository '{\"repo_path\": \"$PWD\"}'"
+echo "    Open graph UI:       codebase-memory-mcp --ui=true --port=9749"
+echo "    Run tests:           bundle exec rspec"

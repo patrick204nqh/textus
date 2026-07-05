@@ -26,7 +26,6 @@ module Textus
             store: infra.store, layout: infra.layout,
             manifest: domain.manifest, schemas: domain.schemas,
             workflows: domain.workflows,
-            workflow_registry: domain.workflow_registry,
             store_engine: store_engine,
             root:, ttl_evaluator:
           )
