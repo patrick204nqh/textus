@@ -49,7 +49,7 @@ RSpec.describe "WritePipeline indexing" do
   describe Textus::Protocol::StoreEngine::MovePipeline::ReindexEntry do
     it "removes the old key and records the new key" do
       ctx = double("ctx", from_key: "knowledge.a", to_key: "knowledge.b", envelope: double(meta: nil, body: "hello", content: nil),
-                          new_mentry: double(schema: nil, lane: "knowledge", format: "markdown"))
+                          to_entry: double(schema: nil, lane: "knowledge", format: "markdown"))
       deps = double("deps", entry_index:)
       allow(entry_index).to receive(:remove)
       allow(entry_index).to receive(:record)

@@ -96,26 +96,6 @@ module TextusSpecHelpers
     )
   end
 
-  def build_envelope_reader(store)
-    Textus::Protocol::StoreEngine.new(
-      file_system: store.file_system,
-      manifest: store.manifest,
-      layout: store.layout,
-      store: store.container,
-    )
-  end
-
-  def build_envelope_writer(store, call, reader: nil)
-    _reader = reader || build_envelope_reader(store)
-    _call = call
-    Textus::Protocol::StoreEngine.new(
-      file_system: store.file_system,
-      manifest: store.manifest,
-      layout: store.layout,
-      store: store.container,
-    )
-  end
-
   # The Store builds its Container once at construction; this returns it.
   def fresh_container(store)
     store.container

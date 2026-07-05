@@ -2,17 +2,20 @@ module Textus
   module Protocol
     class StoreEngine
       module PutPipeline
-        module ResolvePath
-          def self.call(ctx, deps)
-            path = deps.manifest.resolver.resolve(ctx.key).path
-            ctx.with(path:)
-          end
-        end
-
         module ReadExisting
           def self.call(ctx, deps)
-            existing_env = deps.reader.read(key: ctx.key)
-            ctx.with(existing_env:)
+            return ctx.with(existing_env: nil) unless ctx.path && deps.file_system.exists?(ctx.path)
+
+            raw = deps.file_system.read(ctx.path)
+            parsed = Textus::Protocol::Format.for(ctx.mentry.format).parse(raw, path: ctx.path)
+            envelope = Textus::Protocol::Envelope.build(
+              key: ctx.key, mentry: ctx.mentry, path: ctx.path,
+              meta: parsed["_meta"] || {},
+              body: parsed["body"] || "",
+              content: parsed["content"],
+              etag: Textus::Value::Etag.for_file(ctx.path)
+            )
+            ctx.with(existing_env: envelope)
           end
         end
 
@@ -135,15 +138,16 @@ module Textus
         end
 
         STEPS = [
-          ResolvePath, ReadExisting, InjectMeta, Serialize,
+          ReadExisting, InjectMeta, Serialize,
           EnforceNameMatch, ValidateRaw,
           CheckEtag, WriteBytes, BuildEnvelope, AppendAudit, EmitWorkflowEvent, IndexEntry
         ].freeze
 
-        def self.call(key, mentry:, payload:, call:, file_system:, manifest:, store:, layout:, reader:, if_etag: nil, workflow_registry: nil)
+        def self.call(key, mentry:, path:, payload:, call:, file_system:, manifest:, store:, layout:, reader: nil, if_etag: nil,
+                      workflow_registry: nil)
           ctx = Pipeline::WriteContext.new(
             key:, mentry:, payload:, if_etag:,
-            path: nil, existing_env: nil, meta: nil, content: nil,
+            path:, existing_env: nil, meta: nil, content: nil,
             bytes: nil, eff_meta: nil, eff_body: nil, eff_content: nil,
             etag_before: nil, envelope: nil
           )

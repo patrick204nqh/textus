@@ -17,34 +17,13 @@ module Textus
         alias key_delete delete
 
         def move(old_key:, new_key:, store:, ctx:, call:, if_etag: nil, dry_run: false)
-          Textus::Protocol::Manifest::Data.validate_key!(old_key)
-          Textus::Protocol::Manifest::Data.validate_key!(new_key)
-          raise Textus::UsageError.new("old and new keys are identical") if old_key == new_key
+          mctx = store.move(from_key: old_key, to_key: new_key, call:, if_etag:, dry_run:)
+          base = { "protocol" => Textus::PROTOCOL, "ok" => true,
+                   "from_key" => mctx.from_key, "to_key" => mctx.to_key,
+                   "from_path" => mctx.from_path, "to_path" => mctx.to_path }
+          return base.merge("dry_run" => true) if mctx.dry_run
 
-          old_res = store.resolve(key: old_key)
-          new_res = store.resolve(key: new_key)
-
-          raise Textus::UnknownKey.new(old_key) unless store.exists?(key: old_key)
-          raise Textus::UsageError.new("target '#{new_key}' already exists") if store.exists?(key: new_key)
-          unless old_res.entry.lane == new_res.entry.lane
-            raise Textus::UsageError.new("cross-zone moves forbidden (#{old_res.entry.lane} → #{new_res.entry.lane})")
-          end
-
-          pre_env = store.read(key: old_key)
-          unless pre_env.uid
-            store.put(key: old_key, meta: pre_env.meta, body: pre_env.body, content: pre_env.content, call:)
-          end
-
-          if dry_run
-            return { "protocol" => Textus::PROTOCOL, "ok" => true, "dry_run" => true,
-                     "from_key" => old_key, "to_key" => new_key,
-                     "from_path" => old_res.path, "to_path" => new_res.path, "uid" => pre_env.uid }
-          end
-
-          envelope = store.move(from_key: old_key, to_key: new_key, new_mentry: new_res.entry, call:)
-          { "protocol" => Textus::PROTOCOL, "ok" => true, "from_key" => old_key, "to_key" => new_key,
-            "from_path" => old_res.path, "to_path" => new_res.path, "uid" => envelope.uid,
-            "envelope" => envelope.to_h_for_wire }
+          base.merge("uid" => mctx.envelope.uid, "envelope" => mctx.envelope.to_h_for_wire)
         end
 
         def key_mv_prefix(from_prefix:, to_prefix:, store:, ctx:, call:, dry_run: false)
@@ -95,14 +74,6 @@ module Textus
           rewrite_data_mv_manifest!(from:, to:, ctx:)
           FileUtils.mv(ctx.layout.lane_path(from), dest_dir)
           plan.to_h
-        end
-
-        def step_type(step)
-          case step
-          when Textus::Workflow::DSL::ValidateStep then "validate"
-          when Textus::Workflow::DSL::Parallel then "parallel"
-          else "step"
-          end
         end
 
         private

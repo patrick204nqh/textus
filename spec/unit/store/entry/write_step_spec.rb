@@ -34,9 +34,10 @@ RSpec.describe Textus::Protocol::StoreEngine::Pipeline do
     it "supports immutable update via #with" do
       ctx = described_class::MoveContext.new(
         from_key: "knowledge.alpha", to_key: "knowledge.beta",
-        new_mentry: nil, if_etag: nil,
+        if_etag: nil,
         from_path: nil, to_path: nil,
-        etag_before: nil, etag_after: nil, envelope: nil
+        from_entry: nil, to_entry: nil,
+        etag_before: nil, etag_after: nil, envelope: nil, dry_run: false
       )
       updated = ctx.with(from_path: "/tmp/alpha.md")
       expect(updated.from_path).to eq("/tmp/alpha.md")

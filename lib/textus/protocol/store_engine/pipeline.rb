@@ -21,8 +21,9 @@ module Textus
           def with(**attrs) = self.class.new(**to_h, **attrs)
         end
 
-        MoveContext = Data.define(:from_key, :to_key, :new_mentry, :if_etag,
-                                  :from_path, :to_path, :etag_before, :etag_after, :envelope) do
+        MoveContext = Data.define(:from_key, :to_key, :if_etag,
+                                  :from_path, :to_path, :from_entry, :to_entry,
+                                  :etag_before, :etag_after, :envelope, :dry_run) do
           def with(**attrs) = self.class.new(**to_h, **attrs)
         end
       end

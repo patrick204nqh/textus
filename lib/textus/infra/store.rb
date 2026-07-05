@@ -1,19 +1,6 @@
 module Textus
   module Infra
     class Store
-      module Interface
-        def audit_log = raise NotImplementedError
-        def entry_index = raise NotImplementedError
-        def link_store = raise NotImplementedError
-        def cursor_store = raise NotImplementedError
-        def workflow_queue = raise NotImplementedError
-        def file_store = raise NotImplementedError
-        def file_system = raise NotImplementedError
-        def transaction(&) = raise NotImplementedError
-      end
-
-      include Interface
-
       def initialize(database:, file_system:)
         @db = database.connection
         @file_system = file_system
@@ -21,10 +8,10 @@ module Textus
 
       attr_reader :file_system, :db
 
-      def cursor_store   = @cursor_store   ||= CursorStore.new(@db)
-      def link_store     = @link_store     ||= LinkStore.new(@db)
-      def entry_index    = @entry_index    ||= EntryIndex.new(@db)
-      def audit_log      = @audit_log      ||= AuditLog.new(@db)
+      def cursor_store   = @cursor_store ||= CursorStore.new(@db)
+      def link_store     = @link_store ||= LinkStore.new(@db)
+      def entry_index    = @entry_index ||= EntryIndex.new(@db)
+      def audit_log      = @audit_log ||= AuditLog.new(@db)
       def workflow_queue = @workflow_queue ||= WorkflowQueue.new(@db)
       def file_store     = @file_store     ||= FileStore.new(@file_system)
 

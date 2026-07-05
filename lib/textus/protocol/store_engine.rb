@@ -10,17 +10,17 @@ module Textus
       end
 
       def read(key:)
-        mentry = mentry_for(key:)
-        path = resolve(key:).path
+        result = resolve(key:)
+        path = result.path
         return nil unless path && @file_system.exists?(path)
 
         raw = @file_system.read(path)
-        parsed = Format.for(mentry.format).parse(raw, path:)
-        Envelope.build(key:, mentry:, path:,
-          meta: parsed["_meta"] || {},
-          body: parsed["body"] || "",
-          content: parsed["content"],
-          etag: Value::Etag.for_file(path))
+        parsed = Format.for(result.entry.format).parse(raw, path:)
+        Envelope.build(key:, mentry: result.entry, path:,
+                       meta: parsed["_meta"] || {},
+                       body: parsed["body"] || "",
+                       content: parsed["content"],
+                       etag: Value::Etag.for_file(path))
       end
 
       def exists?(key:)
@@ -41,28 +41,27 @@ module Textus
 
       def resolve(key:)   = @manifest.resolver.resolve(key)
       def mentry_for(key:)= resolve(key:).entry
-      def manifest       = @manifest
-      def layout         = @layout
+      attr_reader :manifest, :layout
 
-      def put(key:, meta:, body:, content:, if_etag: nil, call:)
-        mentry = mentry_for(key:)
+      def put(key:, meta:, body:, content:, call:, if_etag: nil)
+        result = resolve(key:)
         payload = Value::Payload.new(meta: meta || {}, body:, content:)
-        PutPipeline.call(key, mentry:, payload:, call:,
-          file_system: @file_system, manifest: @manifest, store: @store,
-          layout: @layout, reader: self, if_etag:,
-          workflow_registry: @workflow_registry)
+        PutPipeline.call(key, mentry: result.entry, path: result.path, payload:, call:,
+                              file_system: @file_system, manifest: @manifest, store: @store,
+                              layout: @layout, if_etag:,
+                              workflow_registry: @workflow_registry)
       end
 
-      def delete(key:, if_etag: nil, call:)
+      def delete(key:, call:, if_etag: nil)
         DeletePipeline.call(key, call:,
-          file_system: @file_system, manifest: @manifest, store: @store,
-          layout: @layout, if_etag:)
+                                 file_system: @file_system, manifest: @manifest, store: @store,
+                                 layout: @layout, if_etag:)
       end
 
-      def move(from_key:, to_key:, new_mentry:, call:)
-        MovePipeline.call(from_key:, to_key:, new_mentry:, call:,
-          file_system: @file_system, manifest: @manifest, store: @store,
-          layout: @layout, reader: self)
+      def move(from_key:, to_key:, call:, if_etag: nil, dry_run: false)
+        MovePipeline.call(from_key:, to_key:, call:, if_etag:, dry_run:,
+                          file_system: @file_system, manifest: @manifest, store: @store,
+                          layout: @layout, reader: self)
       end
 
       def audit_log     = @store.audit_log
