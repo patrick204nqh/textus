@@ -3,6 +3,12 @@ module Textus
     module Handlers
       module Ops
         class BulkPlanner
+          Plan = Data.define(:steps, :warnings) do
+            def to_h
+              { "steps" => steps, "warnings" => warnings }
+            end
+          end
+
           def plan_mv(from_prefix:, to_prefix:, ctx:)
             raise Textus::UsageError.new("from_prefix and to_prefix required") unless from_prefix && to_prefix
 
@@ -14,7 +20,7 @@ module Textus
               tail = row["key"].delete_prefix("#{from_prefix}.")
               { "op" => "mv", "from" => row["key"], "to" => "#{to_prefix}.#{tail}" }
             end
-            Textus::Protocol::Retention::Plan.new(steps:, warnings:)
+            Plan.new(steps:, warnings:)
           end
 
           def plan_delete(prefix:, ctx:)
@@ -23,7 +29,7 @@ module Textus
             leaves = ctx.list(prefix:)
             warnings = leaves.empty? ? ["no keys under #{prefix}"] : []
             steps = leaves.map { |row| { "op" => "delete", "key" => row["key"] } }
-            Textus::Protocol::Retention::Plan.new(steps:, warnings:)
+            Plan.new(steps:, warnings:)
           end
         end
       end

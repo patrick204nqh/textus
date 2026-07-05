@@ -13,7 +13,7 @@ module Textus
             raise BadManifest.new("manifest must be a hash") unless raw.is_a?(Hash)
 
             # Root unknown-key check before Contract so it fires even when lanes: is empty.
-            Semantics.walk(raw, ROOT_KEYS, "$")
+            Schema.walk(raw, ROOT_KEYS, "$")
 
             result = Contract.call(raw)
             raise BadManifest.new(format_first_error(result.errors.messages)) unless result.success?
@@ -23,8 +23,6 @@ module Textus
             elsif Array(raw["lanes"]).empty?
               raise BadManifest.new("manifest must declare lanes:")
             end
-
-            Semantics.check!(raw)
           end
 
           # Format the first dry-schema error to match the legacy path-prefixed style:

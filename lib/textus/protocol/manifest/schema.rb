@@ -1,25 +1,39 @@
 module Textus
   module Protocol
     class Manifest
-      # The manifest schema. Its data is split across Schema::Vocabulary (the
-      # coordination vocabulary) and Schema::Keys (key whitelists + FIELD_REGISTRY)
-      # as of ADR 0109; the validation walk lives in Schema::Validator (ADR 0107).
-      # The constants are re-exported here so callers keep saying `Schema::LANES`.
       module Schema
-        # Re-export the vocabulary.
-        LANES              = Vocabulary::LANES
-        LANE_KINDS         = Vocabulary::LANE_KINDS
-        CAPABILITIES       = Vocabulary::CAPABILITIES
-        KIND_REQUIRES_VERB = Vocabulary::KIND_REQUIRES_VERB
-        # Re-export the keys.
-        ROOT_KEYS             = Keys::ROOT_KEYS
-        LANE_KEYS             = Keys::LANE_KEYS
-        ENTRY_KEYS            = Keys::ENTRY_KEYS
-        AUDIT_KEYS            = Keys::AUDIT_KEYS
-        OWNER_SUBJECT_PATTERN = Keys::OWNER_SUBJECT_PATTERN
+        # The closed coordination vocabulary (ADR 0028; five in 0033; unified in
+        # 0034; the quarantine + derived ZONE-KINDS folded into one `machine` kind
+        # in ADR 0091). Each kind pairs with the capability that authorizes
+        # originating bytes in it.
+        LANES = {
+          "canon" => "author",
+          "workspace" => "keep",
+          "machine" => "converge",
+          "queue" => "propose",
+          "raw" => "ingest",
+        }.freeze
 
-        # Public entry point — the validation walk lives in Schema::Validator (ADR 0107).
+        LANE_KINDS         = LANES.keys.freeze
+        CAPABILITIES       = LANES.values.uniq.freeze
+        KIND_REQUIRES_VERB = LANES
+
+        # Key whitelists and rule-field registry (ADR 0109).
+        ROOT_KEYS  = %w[version roles owner lanes entries data audit worker].freeze
+        LANE_KEYS  = %w[name kind owner desc].freeze
+        ENTRY_KEYS = %w[key schema format naming tracked].freeze
+        AUDIT_KEYS = %w[max_size keep].freeze
+
+        OWNER_SUBJECT_PATTERN = /\A[a-z][a-z0-9_-]*\z/
+
+        # Public entry point — structural validation then semantic checks.
         def self.validate!(raw) = Validator.validate!(raw)
+
+        def self.walk(raw, allowed, path)
+          raw.each_key do |k|
+            raise BadManifest.new("unknown key '#{k}' at '#{path}'") unless allowed.include?(k)
+          end
+        end
       end
     end
   end

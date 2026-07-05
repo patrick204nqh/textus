@@ -67,3 +67,11 @@ _Avoid_: Job runner, event handler
 **Workflow EventEmitter**:
 The module that observes store mutations and dispatches workflow events to the Workflow Queue. Replaces in-pipeline event emission so the store engine does not need to know about the workflow registry.
 _Avoid_: Event hook, pipeline step, workflow enqueuer
+
+**QueryContext**:
+A per-invocation value exposing only read-side operations (read, resolve, list, exists?, mentry_for) plus read-only container metadata (manifest, schemas, layout, link_store, entry_index). Injected by Gate into read-category handlers. Separates query from command at the seam — a read handler cannot accidentally write.
+_Avoid_: Context, god object, handler context bag
+
+**CommandContext**:
+A per-invocation value extending QueryContext with write-side operations (put, delete, move) and infrastructure access (audit_log, cursor_store, workflow_queue, file_system, workflows, workflow_registry). Injected by Gate into write- and maintenance-category handlers. Satisfies CQS: the caller's verb category determines which context type they see.
+_Avoid_: Context, god object, handler context bag
