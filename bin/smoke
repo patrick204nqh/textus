@@ -152,17 +152,17 @@ assert("propose", "propose", "smoke-test-#{sid}", "--stdin", "--as=agent",
        stdin: proposal, key: %w[key])
 
 SCRIPTS = {
-  "check" => { body: "echo 'agent bash script'\n" },
-  "task" => { body: "puts 'agent ruby script'\n" },
-  "query" => { body: "print('agent python script')\n" },
-  "report" => { body: "console.log('agent js script')\n" },
+  "check"  => { body: "echo 'agent bash script'\n",      fmt: "bash" },
+  "task"   => { body: "puts 'agent ruby script'\n",      fmt: "ruby" },
+  "query"  => { body: "print('agent python script')\n",  fmt: "python" },
+  "report" => { body: "console.log('agent js script')\n", fmt: "javascript" },
 }.freeze
 
 SCRIPTS.each do |name, s|
   payload = JSON.generate({ _meta: { name: name }, body: s[:body] })
   assert("write scripts/#{name}", "put",
          "scratchpad.sessions.#{sid}.scripts.#{name}", "--stdin", "--as=agent",
-         "--as-format=script", stdin: payload, key: %w[etag])
+         "--as-format=#{s[:fmt]}", stdin: payload, key: %w[etag])
 end
 
 # ── OUTPUT: seal, publish, verify ───────────────────────────────────────────
