@@ -14,7 +14,7 @@ RSpec.describe Textus::Lanes::Ingest::Handlers do
       layout = instance_double("Layout")
       container = mock_container(manifest:, store:, layout:)
       call = instance_double(Call, role: "agent", correlation_id: "abc")
-      ctx = Textus::Protocol::Handlers::Context.new(container, store_engine: store_engine, call:)
+      ctx = Textus::Protocol::Handlers::CommandContext.new(store_engine, container, call:)
 
       entry = double("entry", entry: instance_double(Mentry, format: "yaml", lane: "raw"))
       allow(manifest.resolver).to receive(:resolve).and_return(entry)
@@ -47,7 +47,7 @@ RSpec.describe Textus::Lanes::Ingest::Handlers do
       layout = instance_double("Layout")
       container = mock_container(manifest:, store:, layout:)
       call = instance_double(Call, role: "agent", correlation_id: "abc")
-      ctx = Textus::Protocol::Handlers::Context.new(container, store_engine: store_engine, call:)
+      ctx = Textus::Protocol::Handlers::CommandContext.new(store_engine, container, call:)
 
       entry = double("entry", entry: instance_double(Mentry, format: "yaml", lane: "raw"))
       allow(manifest.resolver).to receive(:resolve).with("raw.2026.07.03.url-test").and_return(entry)
@@ -88,7 +88,7 @@ RSpec.describe Textus::Lanes::Ingest::Handlers do
     it "returns failure for invalid kind" do
       store_engine = instance_double(Textus::Protocol::StoreEngine)
       container = double("Container", workflow_registry: nil)
-      ctx = Textus::Protocol::Handlers::Context.new(container, store_engine: store_engine, call: instance_double(Call))
+      ctx = Textus::Protocol::Handlers::CommandContext.new(store_engine, container, call: instance_double(Call))
       call = instance_double(Call)
 
       expect { described_class.ingest(kind: "invalid", slug: "test", ctx:, call:) }

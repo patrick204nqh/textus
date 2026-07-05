@@ -12,7 +12,7 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
       store = instance_double(Textus::Infra::Store, file_system: nil)
       container = mock_container(manifest:, store:)
       call = instance_double(Call, role: "human", correlation_id: "abc")
-      ctx = Textus::Protocol::Handlers::Context.new(container, store_engine: store_engine, call:)
+      ctx = Textus::Protocol::Handlers::CommandContext.new(store_engine, container, call:)
       entry = double("entry", entry: instance_double(Mentry))
       allow(manifest.resolver).to receive(:resolve).with("scratchpad.proposals.decisions.feature-x").and_return(entry)
       env = instance_double(Envelope)
@@ -40,7 +40,7 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
       store = instance_double(Textus::Infra::Store, file_system: nil)
       container = mock_container(manifest:, store:)
       call = instance_double(Call, role: "human", correlation_id: "abc")
-      ctx = Textus::Protocol::Handlers::Context.new(container, store_engine: store_engine, call:)
+      ctx = Textus::Protocol::Handlers::CommandContext.new(store_engine, container, call:)
 
       pending_env = instance_double(Envelope,
                                     meta: { "proposal" => { "target_key" => "knowledge.foo", "action" => "put" },
@@ -69,7 +69,7 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
       store = instance_double(Textus::Infra::Store, file_system: nil)
       container = mock_container(manifest:, store:)
       call = instance_double(Call, role: "human", correlation_id: "abc")
-      ctx = Textus::Protocol::Handlers::Context.new(container, store_engine: store_engine, call:)
+      ctx = Textus::Protocol::Handlers::CommandContext.new(store_engine, container, call:)
 
       pending_env = instance_double(Envelope,
                                     meta: { "proposal" => { "target_key" => "knowledge.foo", "action" => "put" } },
@@ -95,7 +95,7 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
       store = instance_double(Textus::Infra::Store, file_system: nil)
       container = mock_container(manifest:, store:)
       call = instance_double(Call, role: "human", correlation_id: "abc")
-      ctx = Textus::Protocol::Handlers::Context.new(container, store_engine: store_engine, call:)
+      ctx = Textus::Protocol::Handlers::CommandContext.new(store_engine, container, call:)
 
       pending_env = instance_double(Envelope,
                                     meta: { "proposal" => { "target_key" => "knowledge.foo", "action" => "put" } },
@@ -118,7 +118,7 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
       manifest = instance_double(Manifest)
       container = mock_container(manifest:, store:)
       call = instance_double(Call, role: "human", correlation_id: "abc")
-      ctx = Textus::Protocol::Handlers::Context.new(container, store_engine: store_engine, call:)
+      ctx = Textus::Protocol::Handlers::CommandContext.new(store_engine, container, call:)
       env = instance_double(Envelope, meta: {})
       allow(store_engine).to receive(:read).and_return(env)
 
@@ -134,7 +134,7 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
       manifest = instance_double(Manifest)
       container = mock_container(manifest:, store:)
       call = instance_double(Call, role: "human", correlation_id: "abc")
-      ctx = Textus::Protocol::Handlers::Context.new(container, store_engine: store_engine, call:)
+      ctx = Textus::Protocol::Handlers::CommandContext.new(store_engine, container, call:)
 
       env = instance_double(Envelope, meta: { "proposal" => { "target_key" => "knowledge.foo" } })
       allow(store_engine).to receive(:read).with(key: "scratchpad.proposals.test").and_return(env)
@@ -153,7 +153,7 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
       manifest = instance_double(Manifest)
       container = mock_container(manifest:, store:)
       call = instance_double(Call, role: "human", correlation_id: "abc")
-      ctx = Textus::Protocol::Handlers::Context.new(container, store_engine: store_engine, call:)
+      ctx = Textus::Protocol::Handlers::CommandContext.new(store_engine, container, call:)
       env = instance_double(Envelope, meta: {})
       allow(store_engine).to receive(:read).and_return(env)
 
@@ -171,7 +171,7 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
       store = instance_double(Textus::Infra::Store, file_system: nil)
       container = mock_container(manifest:, store:)
       call = instance_double(Call, role: "human", correlation_id: "abc")
-      ctx = Textus::Protocol::Handlers::Context.new(container, store_engine: store_engine, call:)
+      ctx = Textus::Protocol::Handlers::CommandContext.new(store_engine, container, call:)
 
       env = instance_double(Envelope,
                             meta: { "proposal" => { "target_key" => "knowledge.foo" }, "_meta" => { "schema" => "v2" } },
@@ -202,7 +202,7 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
       manifest = instance_double(Manifest)
       container = mock_container(manifest:, store:)
       call = instance_double(Call, role: "human", correlation_id: "abc")
-      ctx = Textus::Protocol::Handlers::Context.new(container, store_engine: store_engine, call:)
+      ctx = Textus::Protocol::Handlers::CommandContext.new(store_engine, container, call:)
       env = instance_double(Envelope, meta: {})
       allow(store_engine).to receive(:read).and_return(env)
 

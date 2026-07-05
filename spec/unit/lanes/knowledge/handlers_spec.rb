@@ -35,9 +35,9 @@ RSpec.describe Textus::Lanes::Knowledge::Handlers do
       cursor_store = double("cursor_store", get_loop: { role: "agent", index: 0 })
       entry_index = double("entry_index", search: [])
       if manifest
-        double("Textus::Protocol::Handlers::Context", cursor_store:, entry_index:, manifest:)
+        double("Textus::Protocol::Handlers::QueryContext", cursor_store:, entry_index:, manifest:)
       else
-        double("Textus::Protocol::Handlers::Context", cursor_store:, entry_index:)
+        double("Textus::Protocol::Handlers::QueryContext", cursor_store:, entry_index:)
       end
     end
   end

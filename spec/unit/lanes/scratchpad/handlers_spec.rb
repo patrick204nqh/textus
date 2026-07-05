@@ -1,7 +1,7 @@
 RSpec.describe Textus::Lanes::Scratchpad::Handlers do
   describe ".session_open" do
     it "creates session entry" do
-      ctx = instance_double("Textus::Protocol::Handlers::Context")
+      ctx = instance_double("Textus::Protocol::Handlers::CommandContext")
       manifest = double("Manifest")
       data = double("ManifestData")
       mentry = double("Mentry")
@@ -20,7 +20,7 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
 
   describe ".session_close" do
     it "seals an active session" do
-      ctx = instance_double("Textus::Protocol::Handlers::Context")
+      ctx = instance_double("Textus::Protocol::Handlers::CommandContext")
       manifest = double("Manifest")
       data = double("ManifestData")
       mentry = double("Mentry")
@@ -37,7 +37,7 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
     end
 
     it "returns error for missing session" do
-      ctx = instance_double("Textus::Protocol::Handlers::Context")
+      ctx = instance_double("Textus::Protocol::Handlers::CommandContext")
       allow(ctx).to receive(:read).and_return(nil)
 
       expect { described_class.session_close(session_id: "missing", ctx:, call: nil) }

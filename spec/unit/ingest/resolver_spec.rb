@@ -25,7 +25,7 @@ RSpec.describe Textus::Lanes::Ingest::Resolver do
       }
 
       call = instance_double(Call, role: "automation", correlation_id: "abc")
-      ctx = Textus::Protocol::Handlers::Context.new(container, store_engine: store_engine, call:)
+      ctx = Textus::Protocol::Handlers::CommandContext.new(store_engine, container, call:)
 
       described_class.supersede("raw.2026.06.01.old", "raw.2026.07.03.new", ctx:, call:)
 
@@ -47,7 +47,7 @@ RSpec.describe Textus::Lanes::Ingest::Resolver do
       allow(store_engine).to receive(:put)
 
       call = instance_double(Call, role: "automation", correlation_id: "abc")
-      ctx = Textus::Protocol::Handlers::Context.new(container, store_engine: store_engine, call:)
+      ctx = Textus::Protocol::Handlers::CommandContext.new(store_engine, container, call:)
 
       described_class.supersede("raw.2026.06.01.old", "raw.2026.07.03.new", ctx:, call:)
 

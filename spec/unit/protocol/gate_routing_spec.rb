@@ -22,7 +22,7 @@ RSpec.describe Textus::Protocol::Gate do
       allow(Textus::Protocol::VerbRegistry).to receive(:for).with(:ingest).and_return(lane_spec(lane: :ingest))
 
       expect(handler).to receive(:ingest) do |**kwargs|
-        expect(kwargs[:ctx]).to be_a(Textus::Protocol::Handlers::Context)
+        expect(kwargs[:ctx]).to be_a(Textus::Protocol::Handlers::CommandContext)
         expect(kwargs[:ctx].store_engine).to eq(store_engine)
         expect(kwargs[:call]).to be_a(Textus::Value::Call)
       end

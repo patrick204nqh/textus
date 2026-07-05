@@ -26,12 +26,19 @@ module Textus
         @container  = container
         @call       = call
         @publisher  = Publisher.new(container: container, call: call)
-        @context_builder = ContextBuilder.new(container, call)
         @step_executor   = StepExecutor.new
       end
 
       def run(key)
-        ctx  = @context_builder.build(key)
+        res = @container.manifest.resolver.resolve(key)
+        ctx = Context.new(
+          key: key,
+          entry: res.entry,
+          config: {}.freeze,
+          lane: res.entry.lane.to_s,
+          container: @container,
+          call: @call,
+        )
         data = @step_executor.execute(@definition.steps, ctx)
         @publisher.publish(key, data, ctx, @definition) if data
         data
