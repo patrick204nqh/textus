@@ -4,9 +4,9 @@ RSpec::Core::RakeTask.new(:spec)
 
 task default: :spec
 
-namespace :codebase_memory do
-  CBM_CACHE_DIR = File.join(__dir__, ".cache", "codebase-memory")
+CBM_CACHE_DIR = File.join(__dir__, ".cache", "codebase-memory")
 
+namespace :codebase_memory do
   desc "Start codebase-memory-mcp graph visualization UI at http://localhost:9749"
   task :ui do
     mkdir_p CBM_CACHE_DIR
