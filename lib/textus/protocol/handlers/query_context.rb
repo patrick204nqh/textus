@@ -17,6 +17,17 @@ module Textus
         def exists?(key:)    = @store_engine.exists?(key:)
         def mentry_for(key:) = @store_engine.mentry_for(key:)
 
+        # Narrow file queries (avoid raw file_system access)
+        def file_exists?(key)
+          path = @store_engine.resolve(key:).path
+          @store_engine.file_system.exists?(path)
+        end
+
+        def etag_for(key)
+          path = @store_engine.resolve(key:).path
+          @store_engine.file_system.etag(path) if @store_engine.file_system.exists?(path)
+        end
+
         # Container metadata (read-only)
         def manifest     = @container.manifest
         def schemas      = @container.schemas
