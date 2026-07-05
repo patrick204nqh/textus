@@ -12,13 +12,14 @@ module Textus
 
     class Runner
       Context = Data.define(:key, :entry, :config, :lane, :container, :call) do
-        def manifest    = container.manifest
-        def layout      = container.layout
-        def schemas     = container.schemas
-        def file_system = container.store.file_system
-        def read(key)   = Textus::Protocol::StoreEngine.new(file_system:, manifest:, layout:, store: container.store, schemas:).read(key:)
-        def repo_root   = File.dirname(container.root)
-        def store_root  = container.root
+        def store_engine = container.store_engine
+        def manifest     = container.manifest
+        def layout       = container.layout
+        def file_system  = container.store.file_system
+        def schemas      = container.schemas
+        def read(key)    = store_engine.read(key:)
+        def repo_root    = File.dirname(container.root)
+        def store_root   = container.root
       end
 
       def initialize(definition, container:, call:)

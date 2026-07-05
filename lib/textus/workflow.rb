@@ -12,7 +12,7 @@ module Textus
 
     class NotFound < Textus::Error
       def initialize(key)
-        super(:workflow_not_found, "no workflow matches key '#{key}'; add a .textus/workflows/*.rb file with match: '#{key}'")
+        super(:workflow_not_found, "no workflow matches key '#{key}'; add a .textus/workflows/*.rb file with on: '#{key}'")
       end
     end
   end
