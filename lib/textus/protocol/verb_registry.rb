@@ -31,27 +31,8 @@ module Textus
       VERB_DOMAIN = ENTRY_VERBS.to_h { |v| [v, :entry] }
                                .merge(OPS_VERBS.to_h { |v| [v, :ops] }).freeze
 
-      require_relative "verb_registry/verbs/get"
-      require_relative "verb_registry/verbs/put"
-      require_relative "verb_registry/verbs/list"
-      require_relative "verb_registry/verbs/key_delete"
-      require_relative "verb_registry/verbs/key_mv"
-      require_relative "verb_registry/verbs/ingest"
-      require_relative "verb_registry/verbs/where"
-      require_relative "verb_registry/verbs/uid"
-      require_relative "verb_registry/verbs/blame"
-      require_relative "verb_registry/verbs/audit"
-      require_relative "verb_registry/verbs/deps"
-      require_relative "verb_registry/verbs/rdeps"
-      require_relative "verb_registry/verbs/graph"
-      require_relative "verb_registry/verbs/pulse"
-      require_relative "verb_registry/verbs/schema_show"
-      require_relative "verb_registry/verbs/schema_list"
-      require_relative "verb_registry/verbs/boot"
-      require_relative "verb_registry/verbs/data_mv"
-      require_relative "verb_registry/verbs/key_mv_prefix"
-      require_relative "verb_registry/verbs/key_delete_prefix"
-      require_relative "verb_registry/verbs/drain"
+      require_relative "verb_registry/core_verbs"
+      CoreVerbs.each_value { |spec| register(spec) }
 
       require_relative "../lanes/knowledge/verbs"
       require_relative "../lanes/scratchpad/verbs"
