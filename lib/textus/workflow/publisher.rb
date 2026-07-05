@@ -28,19 +28,19 @@ module Textus
       def write_to_key(target_key, data, ctx) # rubocop:disable Lint/UnusedMethodArgument
         res = @container.manifest.resolver.resolve(target_key)
         normalized = Textus::Protocol::Format.data_to_payload(data, res.entry.format)
-        @store_engine.put(target_key, meta: normalized[:meta], body: normalized[:body], content: normalized[:content], call: @call)
+        @store_engine.put(key: target_key, meta: normalized[:meta], body: normalized[:body], content: normalized[:content], call: @call)
       end
 
       def notify_key(target_key, ctx) # rubocop:disable Lint/UnusedMethodArgument
-        @store_engine.put(target_key, meta: {}, body: nil, content: {}, call: @call)
+        @store_engine.put(key: target_key, meta: {}, body: nil, content: {}, call: @call)
       end
 
       def write_and_pctx(key, data, ctx)
         normalized = Textus::Protocol::Format.data_to_payload(data, ctx.entry.format)
-        @store_engine.put(key, meta: normalized[:meta], body: normalized[:body], content: normalized[:content], call: @call)
+        @store_engine.put(key:, meta: normalized[:meta], body: normalized[:body], content: normalized[:content], call: @call)
         Textus::Protocol::Manifest::Entry::Base::PublishContext.new(
           container: @container,
-          reader: @store_engine.method(:read),
+          reader: ->(key:) { @store_engine.read(key:) },
         )
       end
 

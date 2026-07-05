@@ -9,9 +9,9 @@ module Textus
         @workflow_registry = workflow_registry
       end
 
-      def read(key)
-        mentry = mentry_for(key)
-        path = @manifest.resolver.resolve(key).path
+      def read(key:)
+        mentry = mentry_for(key:)
+        path = resolve(key:).path
         return nil unless path && @file_system.exists?(path)
 
         raw = @file_system.read(path)
@@ -23,8 +23,8 @@ module Textus
           etag: Value::Etag.for_file(path))
       end
 
-      def exists?(key)
-        path = @manifest.resolver.resolve(key).path
+      def exists?(key:)
+        path = resolve(key:).path
         path && @file_system.exists?(path)
       end
 
@@ -39,13 +39,13 @@ module Textus
         end
       end
 
-      def resolve(key)   = @manifest.resolver.resolve(key)
-      def mentry_for(key)= resolve(key).entry
+      def resolve(key:)   = @manifest.resolver.resolve(key)
+      def mentry_for(key:)= resolve(key:).entry
       def manifest       = @manifest
       def layout         = @layout
 
-      def put(key, meta:, body:, content:, if_etag: nil, call:)
-        mentry = mentry_for(key)
+      def put(key:, meta:, body:, content:, if_etag: nil, call:)
+        mentry = mentry_for(key:)
         payload = Value::Payload.new(meta: meta || {}, body:, content:)
         PutPipeline.call(key, mentry:, payload:, call:,
           file_system: @file_system, manifest: @manifest, store: @store,
@@ -53,7 +53,7 @@ module Textus
           workflow_registry: @workflow_registry)
       end
 
-      def delete(key, if_etag: nil, call:)
+      def delete(key:, if_etag: nil, call:)
         DeletePipeline.call(key, call:,
           file_system: @file_system, manifest: @manifest, store: @store,
           layout: @layout, if_etag:)

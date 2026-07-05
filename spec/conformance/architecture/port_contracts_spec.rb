@@ -3,6 +3,8 @@ RSpec.describe "Port contract conformance" do
   PORT_INTERFACES = {
     Textus::Infra::Port::Publisher::Interface => [Textus::Infra::Port::Publisher],
     Textus::Infra::Port::Clock::Interface => [Textus::Infra::Port::Clock],
+    Textus::Infra::Store::Interface => [Textus::Infra::Store],
+    Textus::Infra::FileSystem::Interface => [Textus::Infra::FileSystem],
   }.freeze
 
   PORT_INTERFACES.each do |interface_mod, implementations|
@@ -23,6 +25,8 @@ RSpec.describe "Port contract conformance" do
     when /AuditLog/ then klass.new(Dir.tmpdir)
     when /Publisher/ then klass.new
     when /Clock/ then klass.new
+    when /Store/ then klass.new(database: double("db", connection: nil), file_system: nil)
+    when /FileSystem/ then klass.new
     else klass.new
     end
   end

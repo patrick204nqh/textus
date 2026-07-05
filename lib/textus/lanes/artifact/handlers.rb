@@ -2,22 +2,24 @@ module Textus
   module Lanes
     module Artifact
       module Handlers
-        def self.get(store, key)
+        module_function
+
+        def get(key:, store:, ctx:, call:)
           store.get(key:)
         end
 
-        def self.list(store, prefix: nil)
+        def list(store:, ctx:, call:, prefix: nil)
           store.list(prefix: prefix || "artifact")
         end
 
-        def self.status(store)
+        def status(store:, ctx:, call:)
           store.list(prefix: "artifact").map do |row|
             cache = Cache.new(store)
             { key: row[:key], stale: cache.stale?(row[:key]) }
           end
         end
 
-        def self.refresh(store, key)
+        def refresh(key:, store:, ctx:, call:)
           cache = Cache.new(store)
           cache.expire(key)
         end

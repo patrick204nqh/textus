@@ -21,7 +21,7 @@ module Textus
               return nil if targets.empty?
 
               data_path = pctx.manifest.resolver.resolve(entry.key).path
-              envelope  = pctx.reader.call(entry.key)
+              envelope  = pctx.reader.call(key: entry.key)
               content = nil # parsed lazily; the data's `content` (always _meta-free)
 
               targets.each do |t|

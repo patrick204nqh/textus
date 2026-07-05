@@ -25,7 +25,7 @@ module Textus
           return [] unless rows&.any?
 
           rows.map do |row|
-            env = store.read(row["key"])
+            env = store.read(key: row["key"])
             meta = env&.meta || {}
             {
               "key" => row["key"],

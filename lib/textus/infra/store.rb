@@ -1,6 +1,19 @@
 module Textus
   module Infra
     class Store
+      module Interface
+        def audit_log = raise NotImplementedError
+        def entry_index = raise NotImplementedError
+        def link_store = raise NotImplementedError
+        def cursor_store = raise NotImplementedError
+        def workflow_queue = raise NotImplementedError
+        def file_store = raise NotImplementedError
+        def file_system = raise NotImplementedError
+        def transaction(&) = raise NotImplementedError
+      end
+
+      include Interface
+
       def initialize(database:, file_system:)
         @db = database.connection
         @file_system = file_system

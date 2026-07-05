@@ -95,14 +95,14 @@ module Textus
         private
 
         def key_in_lane?(key, lane_name, store)
-          mentry = store.mentry_for(key)
+          mentry = store.mentry_for(key:)
           mentry && mentry.lane == lane_name
         rescue Textus::Error
           false
         end
 
         def resolve_blame_path(key, store)
-          res = store.resolve(key)
+          res = store.resolve(key:)
           res.path || Textus::Protocol::Key::Path.resolve(store.manifest.data, res.entry)
         rescue Textus::Error
           nil
@@ -145,7 +145,7 @@ module Textus
         end
 
         def pulse_index_etag(store)
-          path = store.resolve("artifacts.system.index").path
+          path = store.resolve(key: "artifacts.system.index").path
           File.exist?(path) ? store.file_system.etag(path) : nil
         rescue Textus::Error
           nil

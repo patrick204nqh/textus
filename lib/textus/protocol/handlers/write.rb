@@ -6,12 +6,12 @@ module Textus
         extend self
 
         def put(key:, store:, ctx:, call:, meta: nil, body: nil, content: nil, if_etag: nil)
-          env = store.put(key, meta: meta || {}, body:, content:, if_etag:, call:)
-          { "uid" => env.uid, "etag" => env.etag }
+          env = store.put(key:, meta: meta || {}, body:, content:, if_etag:, call:)
+          { "protocol" => Textus::PROTOCOL, "ok" => true, "key" => key, "uid" => env.uid, "etag" => env.etag }
         end
 
         def delete(key:, store:, ctx:, call:, if_etag: nil)
-          store.delete(key, if_etag:, call:)
+          store.delete(key:, if_etag:, call:)
           { "protocol" => Textus::PROTOCOL, "ok" => true, "key" => key, "deleted" => true }
         end
         alias key_delete delete
@@ -21,18 +21,18 @@ module Textus
           Textus::Protocol::Manifest::Data.validate_key!(new_key)
           raise Textus::UsageError.new("old and new keys are identical") if old_key == new_key
 
-          old_res = store.resolve(old_key)
-          new_res = store.resolve(new_key)
+          old_res = store.resolve(key: old_key)
+          new_res = store.resolve(key: new_key)
 
-          raise Textus::UnknownKey.new(old_key) unless store.exists?(old_key)
-          raise Textus::UsageError.new("target '#{new_key}' already exists") if store.exists?(new_key)
+          raise Textus::UnknownKey.new(old_key) unless store.exists?(key: old_key)
+          raise Textus::UsageError.new("target '#{new_key}' already exists") if store.exists?(key: new_key)
           unless old_res.entry.lane == new_res.entry.lane
             raise Textus::UsageError.new("cross-zone moves forbidden (#{old_res.entry.lane} → #{new_res.entry.lane})")
           end
 
-          pre_env = store.read(old_key)
+          pre_env = store.read(key: old_key)
           unless pre_env.uid
-            store.put(old_key, meta: pre_env.meta, body: pre_env.body, content: pre_env.content, call:)
+            store.put(key: old_key, meta: pre_env.meta, body: pre_env.body, content: pre_env.content, call:)
           end
 
           if dry_run

@@ -35,7 +35,7 @@ RSpec.describe Textus::Protocol::Gate do
         surfaces: %i[cli mcp], category: :read
       )
       allow(Textus::Protocol::VerbRegistry).to receive(:for).with(:get).and_return(get_spec)
-      allow(store_engine).to receive(:read).with("test").and_return(nil)
+      allow(store_engine).to receive(:read).with(key: "test").and_return(nil)
       allow(resolver).to receive(:suggestions_for).with("test").and_return([])
 
       expect { gate.dispatch(:human, :get, { key: "test" }) }

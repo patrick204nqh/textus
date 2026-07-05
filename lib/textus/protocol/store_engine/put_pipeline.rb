@@ -11,7 +11,7 @@ module Textus
 
         module ReadExisting
           def self.call(ctx, deps)
-            existing_env = deps.reader.read(ctx.key)
+            existing_env = deps.reader.read(key: ctx.key)
             ctx.with(existing_env:)
           end
         end

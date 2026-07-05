@@ -24,7 +24,7 @@ module Textus
               )
               pctx = Textus::Protocol::Manifest::Entry::Base::PublishContext.new(
                 container: ctx.container, call: ctx.call,
-                reader: es.method(:read)
+                reader: ->(key:) { es.read(key:) }
               )
               entry.publish_via(pctx)
             end

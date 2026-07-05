@@ -14,11 +14,11 @@ RSpec.describe Textus::Lanes::Ingest::Resolver do
       entry = double("entry", entry: instance_double(Mentry))
 
       allow(manifest.resolver).to receive(:resolve).with("raw.2026.06.01.old").and_return(entry)
-      allow(store_engine).to receive(:read).with("raw.2026.06.01.old").and_return(
+      allow(store_engine).to receive(:read).with(key: "raw.2026.06.01.old").and_return(
         instance_double(Envelope, content: { "ingested_at" => "2026-06-01T00:00:00Z", "ingest_count" => 3, "source" => { "kind" => "url" } }),
       )
       payloads = []
-      allow(store_engine).to receive(:put) { |*args| payloads << args[1]; nil }
+      allow(store_engine).to receive(:put) { |**kwargs| payloads << kwargs; nil }
 
       call = instance_double(Call, role: "automation", correlation_id: "abc")
       ctx = Textus::Protocol::Handlers::Context.new(container, call:)
@@ -39,7 +39,7 @@ RSpec.describe Textus::Lanes::Ingest::Resolver do
       entry = double("entry", entry: instance_double(Mentry))
 
       allow(manifest.resolver).to receive(:resolve).with("raw.2026.06.01.old").and_return(entry)
-      allow(store_engine).to receive(:read).with("raw.2026.06.01.old").and_return(nil)
+      allow(store_engine).to receive(:read).with(key: "raw.2026.06.01.old").and_return(nil)
       allow(store_engine).to receive(:put)
 
       call = instance_double(Call, role: "automation", correlation_id: "abc")

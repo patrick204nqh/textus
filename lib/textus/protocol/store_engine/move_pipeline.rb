@@ -78,14 +78,14 @@ module Textus
 
         module ReadEnvelope
           def self.call(ctx, deps)
-            envelope = deps.reader.read(ctx.to_key)
+            envelope = deps.reader.read(key: ctx.to_key)
             ctx.with(envelope:)
           end
         end
 
         module AppendMoveAudit
           def self.call(ctx, deps)
-            deps.audit_log.append_audit(
+            deps.audit_log.append(
               role: deps.call.role, verb: "key_mv", key: ctx.to_key,
               etag_before: ctx.etag_before, etag_after: ctx.etag_after,
               correlation_id: deps.call.correlation_id

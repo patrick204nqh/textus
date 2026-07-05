@@ -39,7 +39,7 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
       allow(mentry).to receive(:key).and_return("scratchpad.sessions")
       allow(ctx).to receive(:manifest).and_return(manifest)
       env = instance_double("Envelope", body: JSON.generate("session_id" => "abc", "status" => "active"))
-      allow(store).to receive(:read).with("scratchpad.sessions.abc.session").and_return(env)
+      allow(store).to receive(:read).with(key: "scratchpad.sessions.abc.session").and_return(env)
       allow(store).to receive(:put)
 
       result = described_class.session_close(session_id: "abc", ctx:, store:, call: nil)

@@ -25,8 +25,9 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
       )
 
       expect(store_engine).to have_received(:put).with(
-        "scratchpad.proposals.decisions.feature-x",
-        hash_including(meta: { "proposal" => { "target_key" => "knowledge.foo" } }, body: "some body", call:),
+        hash_including(key: "scratchpad.proposals.decisions.feature-x",
+                       meta: { "proposal" => { "target_key" => "knowledge.foo" } },
+                       body: "some body", call:),
       )
       expect(result).to eq({ "key" => "scratchpad.proposals.decisions.feature-x", "uid" => "abc" })
     end
@@ -44,7 +45,7 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
       pending_env = instance_double(Envelope,
                                     meta: { "proposal" => { "target_key" => "knowledge.foo", "action" => "put" } },
                                     body: "proposed content")
-      allow(store_engine).to receive(:read).with("scratchpad.proposals.test").and_return(pending_env)
+      allow(store_engine).to receive(:read).with(key: "scratchpad.proposals.test").and_return(pending_env)
 
       entry = double("entry", entry: instance_double(Mentry))
       allow(manifest.resolver).to receive(:resolve).with("knowledge.foo").and_return(entry)
@@ -53,8 +54,8 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
 
       result = described_class.accept(pending_key: "scratchpad.proposals.test", dry_run: false, ctx:, call:, store: store_engine)
 
-      expect(store_engine).to have_received(:put).with("knowledge.foo", anything)
-      expect(store_engine).to have_received(:delete).with("scratchpad.proposals.test", anything)
+      expect(store_engine).to have_received(:put).with(hash_including(key: "knowledge.foo"))
+      expect(store_engine).to have_received(:delete).with(hash_including(key: "scratchpad.proposals.test"))
       expect(result["accepted"]).to eq("scratchpad.proposals.test")
     end
 
@@ -69,8 +70,8 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
       pending_env = instance_double(Envelope,
                                     meta: { "proposal" => { "target_key" => "knowledge.foo", "action" => "put" } },
                                     body: "new content")
-      allow(store_engine).to receive(:read).with("scratchpad.proposals.test").and_return(pending_env)
-      allow(store_engine).to receive(:read).with("knowledge.foo").and_return(
+      allow(store_engine).to receive(:read).with(key: "scratchpad.proposals.test").and_return(pending_env)
+      allow(store_engine).to receive(:read).with(key: "knowledge.foo").and_return(
         instance_double(Envelope, body: "old content", meta: { "_meta" => {} }),
       )
       allow(Textus::Protocol::Diff).to receive_messages(body: { "type" => "diff" }, meta: {}, summary: { "changes" => 1 })
@@ -106,12 +107,12 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
       ctx = Textus::Protocol::Handlers::Context.new(container, call:)
 
       env = instance_double(Envelope, meta: { "proposal" => { "target_key" => "knowledge.foo" } })
-      allow(store_engine).to receive(:read).with("scratchpad.proposals.test").and_return(env)
+      allow(store_engine).to receive(:read).with(key: "scratchpad.proposals.test").and_return(env)
       allow(store_engine).to receive(:delete)
 
       result = described_class.reject(pending_key: "scratchpad.proposals.test", reason: "not needed", ctx:, call:, store: store_engine)
 
-      expect(store_engine).to have_received(:delete).with("scratchpad.proposals.test", hash_including(call:))
+      expect(store_engine).to have_received(:delete).with(hash_including(key: "scratchpad.proposals.test", call:))
       expect(result["rejected"]).to eq("scratchpad.proposals.test")
       expect(result["reason"]).to eq("not needed")
     end
@@ -145,10 +146,10 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
       env = instance_double(Envelope,
                             meta: { "proposal" => { "target_key" => "knowledge.foo" }, "_meta" => { "schema" => "v2" } },
                             body: "new body")
-      allow(store_engine).to receive(:read).with("scratchpad.proposals.test").and_return(env)
+      allow(store_engine).to receive(:read).with(key: "scratchpad.proposals.test").and_return(env)
 
       target_env = instance_double(Envelope, body: "old body", meta: { "_meta" => {} })
-      allow(store_engine).to receive(:read).with("knowledge.foo").and_return(target_env)
+      allow(store_engine).to receive(:read).with(key: "knowledge.foo").and_return(target_env)
 
       entry = double("entry", key: "knowledge.foo", schema_ref: "v1")
       allow(manifest_data).to receive(:entries).and_return([entry])

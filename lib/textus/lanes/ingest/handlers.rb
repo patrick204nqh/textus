@@ -29,7 +29,7 @@ module Textus
           duplicate_key = Dedup.find(lookup, content_hash, url:)
 
           if duplicate_key && duplicate_key != key
-            old_content = store.read(duplicate_key)&.content || {}
+            old_content = store.read(key: duplicate_key)&.content || {}
             Resolver.supersede(duplicate_key, key, store:, ctx:, call:)
 
             EntryTypes::Asset.move(old_content["asset"], lane, ctx.layout) if (kind == "asset") && old_content["asset"]
@@ -42,7 +42,7 @@ module Textus
             structured["ingest_count"] = 1
           end
 
-          env = store.put(key, meta: {}, body: nil, content: structured, call:)
+          env = store.put(key:, meta: {}, body: nil, content: structured, call:)
 
           IndexRebuilder.rebuild!(ctx.container.store.db, ctx.manifest.resolver)
 

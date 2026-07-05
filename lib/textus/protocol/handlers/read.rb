@@ -6,7 +6,7 @@ module Textus
         extend self
 
         def get(key:, store:, ctx:, call:)
-          env = store.read(key)
+          env = store.read(key:)
           unless env
             suggestions = ctx.manifest.resolver.suggestions_for(key)
             raise Textus::UnknownKey.new(key, suggestions:)
@@ -20,12 +20,12 @@ module Textus
         end
 
         def where(key:, store:, ctx:, call:)
-          res = store.resolve(key)
+          res = store.resolve(key:)
           { "protocol" => Textus::PROTOCOL, "key" => key, "lane" => res.entry.lane, "path" => res.path }
         end
 
         def uid(key:, store:, ctx:, call:)
-          env = store.read(key)
+          env = store.read(key:)
           raise Textus::UnknownKey.new(key) unless env
 
           env.uid
@@ -56,7 +56,7 @@ module Textus
         end
 
         def schema_show(key:, store:, ctx:, call:)
-          mentry = store.mentry_for(key)
+          mentry = store.mentry_for(key:)
           schema = ctx.schemas.fetch_or_nil(mentry.schema)
           { "protocol" => Textus::PROTOCOL, "key" => key,
             "schema_ref" => mentry.schema, "schema" => schema&.to_h }
@@ -80,12 +80,12 @@ module Textus
 
           key = src["key"]
           stored_etag = src["etag"]
-          res = store.resolve(key)
+          res = store.resolve(key:)
           path = res.path
           current_etag = store.file_system.exists?(path) ? store.file_system.etag(path) : nil
           suspended = stored_etag && current_etag ? stored_etag != current_etag : false
           result = src.merge("suspended" => suspended)
-          child_env = store.read(key)
+          child_env = store.read(key:)
           if child_env
             child_expanded = expand_sources(child_env, store, depth: depth + 1)
             child_sources = Array(child_expanded.sources)
@@ -95,7 +95,7 @@ module Textus
         end
 
         def key_in_lane?(key, lane_name, store)
-          mentry = store.mentry_for(key)
+          mentry = store.mentry_for(key:)
           mentry && mentry.lane == lane_name
         rescue Textus::Error
           false

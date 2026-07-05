@@ -34,8 +34,7 @@ RSpec.describe Textus::Lanes::Ingest::Handlers do
       )
 
       expect(store_engine).to have_received(:put).with(
-        "raw.2026.07.03.url-test",
-        hash_including(meta: {}, body: nil, call:),
+        hash_including(key: "raw.2026.07.03.url-test", meta: {}, body: nil, call:),
       )
       expect(Textus::Lanes::Ingest::IndexRebuilder).to have_received(:rebuild!)
     end
@@ -67,7 +66,7 @@ RSpec.describe Textus::Lanes::Ingest::Handlers do
       allow(Time).to receive(:now).and_return(Time.new(2026, 7, 3, 12, 0, 0, "UTC"))
 
       payloads = []
-      allow(store_engine).to receive(:put) { |*args| payloads << args[1]; instance_double(Envelope, uid: "uid456", etag: "etag789") }
+      allow(store_engine).to receive(:put) { |**kwargs| payloads << kwargs; instance_double(Envelope, uid: "uid456", etag: "etag789") }
 
       described_class.ingest(
         kind: "url", slug: "test-link", url: "https://example.com",

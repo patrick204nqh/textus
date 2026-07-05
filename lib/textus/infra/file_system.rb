@@ -3,6 +3,20 @@ require "fileutils"
 module Textus
   module Infra
     class FileSystem
+      module Interface
+        def read(path) = raise NotImplementedError
+        def write(path, bytes) = raise NotImplementedError
+        def delete(path) = raise NotImplementedError
+        def exists?(path) = raise NotImplementedError
+        def mkdir_p(path) = raise NotImplementedError
+        def mv(from, to) = raise NotImplementedError
+        def copy(source, target) = raise NotImplementedError
+        def glob(pattern) = raise NotImplementedError
+        def etag(path) = raise NotImplementedError
+      end
+
+      include Interface
+
       def read(path) = File.binread(path)
 
       def write(path, bytes)
