@@ -36,13 +36,6 @@ module Textus
         def self.extensions = [".md"]
         def self.nested_glob = "**/*.md"
 
-        def self.serialize_for_put(meta:, body:, content:, path:)
-          _ = path
-          _ = content
-          bytes = serialize(meta: meta || {}, body: body.to_s)
-          [bytes, meta, body.to_s, nil]
-        end
-
         def self.validate_path_extension(path, _nested)
           ext = File.extname(path)
           return if ["", ".md"].include?(ext)

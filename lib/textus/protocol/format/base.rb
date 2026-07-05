@@ -67,11 +67,10 @@ module Textus
         def self.validate_raw_entry!(_parsed, _lane); end
 
         def self.serialize_for_put(meta:, body:, content:, path:)
-          _ = meta
-          _ = body
-          _ = content
           _ = path
-          raise NotImplementedError.new("#{name}.serialize_for_put not implemented")
+          _ = content
+          bytes = serialize(meta: meta || {}, body: body.to_s)
+          [bytes, meta, body.to_s, nil]
         end
       end
     end

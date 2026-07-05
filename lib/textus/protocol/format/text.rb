@@ -21,13 +21,6 @@ module Textus
         def self.nested_glob = "**/*.txt"
         def self.enforce_name_match!(_path, _meta); end
 
-        def self.serialize_for_put(meta:, body:, content:, path:)
-          _ = path
-          _ = content
-          bytes = serialize(meta: meta || {}, body: body.to_s)
-          [bytes, meta, body.to_s, nil]
-        end
-
         def self.rewrite_name(_path, _basename) # rubocop:disable Naming/PredicateMethod
           false
         end
