@@ -79,6 +79,8 @@ module Textus
         end
 
         def check(name, naming: nil, scope: nil, &block)
+          merge = method(:merge_issues)
+
           if naming
             raise ArgumentError.new("check :#{name} requires a scope: for naming checks") unless scope
 
@@ -95,16 +97,7 @@ module Textus
                   code: "check.#{name}",
                   fix: "rename to match #{naming.inspect}",
                 )
-                existing_issues = Array(data&.dig("content", "issues"))
-                issues = existing_issues + new_issues
-
-                {
-                  "content" => {
-                    "ok" => issues.empty?,
-                    "issues" => issues,
-                    "count" => issues.size,
-                  },
-                }
+                merge.call(data, new_issues)
               end,
               timeout: nil,
             )
@@ -112,17 +105,7 @@ module Textus
             @steps << Step.new(
               name: :"check_#{name}",
               callable: lambda do |data, ctx|
-                issues = block.call(ctx) || []
-                existing_issues = Array(data&.dig("content", "issues"))
-                all = existing_issues + issues
-
-                {
-                  "content" => {
-                    "ok" => all.empty?,
-                    "issues" => all,
-                    "count" => all.size,
-                  },
-                }
+                merge.call(data, block.call(ctx) || [])
               end,
               timeout: nil,
             )
@@ -195,6 +178,12 @@ module Textus
         end
 
         private
+
+        def merge_issues(data, new_issues)
+          existing = Array(data&.dig("content", "issues"))
+          all = existing + new_issues
+          { "content" => { "ok" => all.empty?, "issues" => all, "count" => all.size } }
+        end
 
         def match_pattern?(pattern, key)
           if pattern.end_with?(".**")
