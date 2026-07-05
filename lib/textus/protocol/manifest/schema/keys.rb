@@ -8,7 +8,7 @@ module Textus
           ROOT_KEYS  = %w[version roles owner lanes entries data audit worker].freeze
           LANE_KEYS  = %w[name kind owner desc].freeze
           ENTRY_KEYS = %w[
-            key lane kind schema owner nested format naming tracked
+            key schema format naming tracked
           ].freeze
           AUDIT_KEYS = %w[max_size keep].freeze
           # Syntactic shape of an `owner:` subject token (the `patrick` in

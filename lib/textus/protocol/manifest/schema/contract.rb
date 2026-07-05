@@ -25,11 +25,8 @@ module Textus
           optional(:entries).value(:array).each do
             hash do
               required(:key).value(:string)
-              required(:lane).value(:string)
               optional(:format).value(:string)
               optional(:schema).maybe(:string)
-              optional(:kind).value(:string)
-              optional(:nested).value(:bool)
               optional(:tracked).value(:bool)
               optional(:naming).value(:string)
             end
