@@ -51,12 +51,18 @@ module Textus
       end
 
       def delete(key:, call:, if_etag: nil)
-        deps = build_deps(reader: nil, call:)
+        deps = Pipeline::DeleteDeps.new(
+          file_system: @file_system, manifest: @manifest, store: @store,
+          layout: @layout, event_emitter: @event_emitter, call:,
+        )
         DeletePipeline.call(key, if_etag:, deps:)
       end
 
       def move(from_key:, to_key:, call:, if_etag: nil, dry_run: false)
-        deps = build_deps(reader: self, call:)
+        deps = Pipeline::MoveDeps.new(
+          file_system: @file_system, manifest: @manifest, store: @store,
+          layout: @layout, event_emitter: @event_emitter, reader: self, call:,
+        )
         MovePipeline.call(from_key:, to_key:, if_etag:, dry_run:, deps:)
       end
 

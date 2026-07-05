@@ -21,8 +21,20 @@ module Textus
           def file_store   = store.file_store
         end
 
+        DeleteDeps = Data.define(:file_system, :manifest, :store, :call, :layout, :event_emitter) do
+          def audit_log    = store.audit_log
+          def entry_index  = store.entry_index
+          def workflow_queue = store.workflow_queue
+        end
+
         DeleteContext = Data.define(:key, :if_etag, :path, :etag_before) do
           include ContextWith
+        end
+
+        MoveDeps = Data.define(:file_system, :manifest, :store, :call, :reader, :layout, :event_emitter) do
+          def audit_log    = store.audit_log
+          def entry_index  = store.entry_index
+          def workflow_queue = store.workflow_queue
         end
 
         MoveContext = Data.define(:from_key, :to_key, :if_etag,
