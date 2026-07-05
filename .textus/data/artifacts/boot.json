@@ -98,6 +98,10 @@
       "uid",
       "blame",
       "audit",
+      "deps",
+      "rdeps",
+      "graph",
+      "pulse",
       "schema_show",
       "boot",
       "loop",
@@ -114,9 +118,7 @@
       "key_delete_prefix",
       "session_open",
       "session_close",
-      "propose",
-      "accept",
-      "reject"
+      "propose"
     ],
     "writable_lanes": [
       "scratchpad",

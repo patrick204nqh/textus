@@ -14,66 +14,10 @@
     {
       "code": "manifest.missing_file",
       "severity": "info",
-      "subject": "artifacts.render.conventions",
-      "message": "declared entry has no file on disk at /Users/patrick/Development/sandbox/textus/.textus/data/artifacts/render/conventions.json",
-      "fix": "create the entry with 'textus put artifacts.render.conventions --stdin --as=<role>'"
-    },
-    {
-      "code": "manifest.missing_file",
-      "severity": "info",
-      "subject": "artifacts.render.testing",
-      "message": "declared entry has no file on disk at /Users/patrick/Development/sandbox/textus/.textus/data/artifacts/render/testing.json",
-      "fix": "create the entry with 'textus put artifacts.render.testing --stdin --as=<role>'"
-    },
-    {
-      "code": "manifest.missing_file",
-      "severity": "info",
-      "subject": "artifacts.render.engineering-skills",
-      "message": "declared entry has no file on disk at /Users/patrick/Development/sandbox/textus/.textus/data/artifacts/render/engineering-skills.json",
-      "fix": "create the entry with 'textus put artifacts.render.engineering-skills --stdin --as=<role>'"
-    },
-    {
-      "code": "manifest.missing_file",
-      "severity": "info",
-      "subject": "artifacts.render.contributor-conventions",
-      "message": "declared entry has no file on disk at /Users/patrick/Development/sandbox/textus/.textus/data/artifacts/render/contributor-conventions.json",
-      "fix": "create the entry with 'textus put artifacts.render.contributor-conventions --stdin --as=<role>'"
-    },
-    {
-      "code": "manifest.missing_file",
-      "severity": "info",
-      "subject": "artifacts.render.drain-scheduling",
-      "message": "declared entry has no file on disk at /Users/patrick/Development/sandbox/textus/.textus/data/artifacts/render/drain-scheduling.json",
-      "fix": "create the entry with 'textus put artifacts.render.drain-scheduling --stdin --as=<role>'"
-    },
-    {
-      "code": "manifest.missing_file",
-      "severity": "info",
-      "subject": "artifacts.render.migrations",
-      "message": "declared entry has no file on disk at /Users/patrick/Development/sandbox/textus/.textus/data/artifacts/render/migrations.json",
-      "fix": "create the entry with 'textus put artifacts.render.migrations --stdin --as=<role>'"
-    },
-    {
-      "code": "manifest.missing_file",
-      "severity": "info",
-      "subject": "artifacts.render.code-of-conduct",
-      "message": "declared entry has no file on disk at /Users/patrick/Development/sandbox/textus/.textus/data/artifacts/render/code-of-conduct.json",
-      "fix": "create the entry with 'textus put artifacts.render.code-of-conduct --stdin --as=<role>'"
-    },
-    {
-      "code": "manifest.missing_file",
-      "severity": "info",
-      "subject": "artifacts.render.security",
-      "message": "declared entry has no file on disk at /Users/patrick/Development/sandbox/textus/.textus/data/artifacts/render/security.json",
-      "fix": "create the entry with 'textus put artifacts.render.security --stdin --as=<role>'"
-    },
-    {
-      "code": "manifest.missing_file",
-      "severity": "info",
       "subject": "artifacts.system.index",
       "message": "declared entry has no file on disk at /Users/patrick/Development/sandbox/textus/.textus/data/artifacts/system/index.json",
       "fix": "create the entry with 'textus put artifacts.system.index --stdin --as=<role>'"
     }
   ],
-  "count": 10
+  "count": 2
 }

@@ -16,6 +16,10 @@ module Textus
           Textus::Protocol::Boot.build(container: proxy)
         end
 
+        def schema_list(ctx:, call:)
+          Textus::Protocol::Boot.build_schemas(ctx.schemas)
+        end
+
         def audit(ctx:, call:, key: nil, lane: nil, role: nil, verb: nil, since: nil, seq_since: nil, correlation_id: nil, limit: nil)
           Ops::AuditFilter.new.call(
             ctx:,

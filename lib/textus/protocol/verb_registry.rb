@@ -24,6 +24,7 @@ module Textus
       ENTRY_VERBS = %i[
         get put list key_delete key_mv propose accept reject
         audit blame where uid deps rdeps graph diff ingest loop
+        session_open session_close
       ].freeze
 
       OPS_VERBS = %i[
@@ -193,6 +194,13 @@ module Textus
         :schema_show, "Return the schema (field shape) for an entry's family.",
         [ArgSpec.arg(name: :key, required: true, positional: true,
                      description: "any key in the family whose schema you want")],
+        %i[cli mcp], :read
+      )
+
+      # ── schema_list ──────────────────────────────────────
+      register VerbSpec.new(
+        :schema_list, "List all registered schemas with their fields.",
+        [],
         %i[cli mcp], :read
       )
 

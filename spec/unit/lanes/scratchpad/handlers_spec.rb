@@ -1,15 +1,7 @@
 RSpec.describe Textus::Lanes::Scratchpad::Handlers do
   describe ".session_open" do
-    it "creates session entry and workspace directories" do
+    it "creates session entry" do
       ctx = instance_double("Textus::Protocol::Handlers::Context")
-      layout = instance_double("Layout")
-      allow(ctx).to receive(:layout).and_return(layout)
-      allow(layout).to receive(:lane_path).with("scratchpad").and_return("/tmp/textus/data/scratchpad")
-
-      expect(FileUtils).to receive(:mkdir_p).with("/tmp/textus/data/scratchpad/sessions/test-uuid-123/scripts")
-      expect(FileUtils).to receive(:mkdir_p).with("/tmp/textus/data/scratchpad/sessions/test-uuid-123/notes")
-      expect(FileUtils).to receive(:mkdir_p).with("/tmp/textus/data/scratchpad/sessions/test-uuid-123/output")
-
       manifest = double("Manifest")
       data = double("ManifestData")
       mentry = double("Mentry")

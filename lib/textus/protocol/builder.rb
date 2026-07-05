@@ -10,7 +10,6 @@ module Textus
 
         store       = Infra::Store.new(database:, file_system:)
         workflows   = Workflow::Registry.load_all(root)
-        workflows.push(Textus::Workflow::Instances::Materialize)
         workflow_registry = Workflow::Registry.new(workflows)
 
         event_emitter = Textus::Workflow::EventEmitter.new(

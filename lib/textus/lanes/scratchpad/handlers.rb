@@ -12,13 +12,10 @@ module Textus
           uuid = SecureRandom.uuid
           key = "scratchpad.sessions.#{uuid}.session"
 
-          base = File.join(ctx.layout.lane_path("scratchpad"), "sessions", uuid)
-          %w[scripts notes output].each { |d| FileUtils.mkdir_p(File.join(base, d)) }
-
           content = { "session_id" => uuid, "created_at" => Time.now.utc.iso8601, "status" => "active" }
           ctx.put(key:, meta: {}, body: JSON.generate(content), content: nil, call:)
 
-          { "session_id" => uuid, "status" => "active", "workspace" => base }
+          { "session_id" => uuid, "status" => "active" }
         end
 
         def parent_mentry(ctx)
@@ -54,7 +51,8 @@ module Textus
 
           case action
           when "put"
-            ctx.put(key: target, meta: env.meta["_meta"] || {}, body: env.body, content: nil, call:)
+            target_meta = env.meta.to_h.reject { |k, _| k == "proposal" }
+            ctx.put(key: target, meta: target_meta, body: env.body, content: env.content, call:)
           when "delete"
             ctx.delete(key: target, call:)
           else

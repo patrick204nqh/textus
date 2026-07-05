@@ -88,6 +88,7 @@ RSpec.describe "Textus::Surface::CLI verb return-value contract" do
       "open" => Textus::Surface::CLI::Verb::GenSessionOpen,
     )
     expect(Textus::Surface::CLI::Group::Schema.subcommands).to eq(
+      "list" => Textus::Surface::CLI::Verb::GenSchemaList,
       "show" => Textus::Surface::CLI::Verb::GenSchemaShow,
     )
   end

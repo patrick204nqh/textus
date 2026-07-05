@@ -8,6 +8,7 @@ module Textus
         "json" => -> { Protocol::Format::Json },
         "yaml" => -> { Protocol::Format::Yaml },
         "text" => -> { Protocol::Format::Text },
+        "script" => -> { Protocol::Format::Script },
       }.freeze
 
       @registry = nil
@@ -26,6 +27,13 @@ module Textus
         ".yaml" => "yaml",
         ".yml" => "yaml",
         ".txt" => "text",
+        ".rb" => "script",
+        ".py" => "script",
+        ".sh" => "script",
+        ".js" => "script",
+        ".pl" => "script",
+        ".rs" => "script",
+        ".exs" => "script",
       }.freeze
 
       def self.for(format)

@@ -2,6 +2,27 @@ module Textus
   module Protocol
     class StoreEngine
       module PutPipeline
+        module ValidateSchema
+          def self.call(ctx, deps)
+            schema_name = ctx.mentry.schema
+            return ctx unless schema_name && deps.respond_to?(:schemas) && deps.schemas
+
+            schema = deps.schemas.fetch_or_nil(schema_name)
+            return ctx unless schema
+
+            case ctx.mentry.lane
+            when "scratchpad"
+              begin
+                schema.validate!(ctx.payload.meta || {})
+              rescue Textus::SchemaViolation
+              end
+            else
+              schema.validate!(ctx.payload.meta || {})
+            end
+            ctx
+          end
+        end
+
         module ReadExisting
           def self.call(ctx, deps)
             return ctx.with(existing_env: nil) unless ctx.path && deps.file_system.exists?(ctx.path)
@@ -123,7 +144,7 @@ module Textus
         end
 
         STEPS = [
-          ValidateInput,
+          ValidateInput, ValidateSchema,
           ReadExisting, InjectMeta, Serialize,
           CheckEtag, WriteBytes, BuildEnvelope, AppendAudit, EmitWorkflowEvent, IndexEntry
         ].freeze

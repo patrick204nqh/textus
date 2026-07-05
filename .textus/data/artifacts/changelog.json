@@ -1,12 +1,961 @@
 {
   "_meta": {
-    "uid": "75eac2c3390f9682"
+    "generated_at": "2026-07-05T05:03:59Z",
+    "uid": "60e228765192c063"
   },
   "entries": [
     {
       "tag": "Unreleased",
       "date": null,
       "commits": [
+        {
+          "subject": "refactor(workflow): extract shared Consumer and decouple event emission from pipeline",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "feat: wire TTL scheduler + refactor Workflow module ownership",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "style: fix rubocop safe autocorrects and update Lint/UnusedMethodArgument excludes for refactored handlers",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "fix: deps/rdeps/graph category  -> read (sed artifact from ac02cb77c)",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "refactor: pull serialize_for_put up to Format::Base",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "docs: update ADR-0133 to Accepted",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "docs: update ADR-0133 to Accepted, add session handoff",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "refactor: extract shared ContextWith module for pipeline context objects",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "refactor: extract handler response hash builder into Concern",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "refactor: bundle StoreEngine dependencies into WriteDeps",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "refactor: simplify store_engine pipelines — remove dead code, extract shared helpers",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "refactor: extract domain logic from handlers and MCP server into testable service objects",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "refactor: eliminate double-resolve, push move orchestration into pipeline, remove dead code",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "refactor(store-engine): Standardize StoreEngine method signatures to all-keyword args",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "refactor: consolidate config workflows, fix renderer trigger, add pipeline",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "refactor: remove redundant lane/kind/nested/owner from manifest schema",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "refactor: strip path/publish/source from manifest, remove dead code",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "refactor: move system verb routing from Gate override hash to VerbSpec#system?",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "refactor: StoreEngine + Handlers::Read/Write/System split",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "fix: skip tracked:false entries in doctor manifest check, fix schema ref",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "fix: correct doctor schema parsing, commit generated artifacts",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "refactor: consolidate lane/role docs workflows, fix nested schema loading",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "refactor: split HandlerContext into ReadOps/WriteOps/System capability interfaces",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "test: add unit tests for Diff module (body, meta, schema, summary)",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "refactor: remove dead publish code, inline Mode+None into publish.rb, inline VAR_RE into tree.rb",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "refactor: fold StepScope and Context into Runner as inner classes",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "refactor: inline Workflow::Loader into Registry",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "refactor: inline Workflow::Pattern into DSL::Definition",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "feat: workflow DSL redesign — on/save/notify, priority routing, doctor consolidation",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "feat: track ingested_at, ingest_count, duplicated_at in raw lane ingest flow",
+          "date": "2026-07-05"
+        },
+        {
+          "subject": "chore: regenerate boot artifact and orientation docs after dogfood flow changes",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "chore: remove stale boot cache",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "fix: update orientation template and boot.rb for procedures and feedback criteria",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "refactor: move propose/accept/reject handlers from proposal lane to scratchpad lane",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "chore: remove proposals lane from V4::LANES",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "chore: regenerate artifacts after dogfood flow changes",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "fix: materialize workflow — use container.workflow_registry",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "feat: add shape validation for execution sub-families",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "feat: add procedure entries — doctor, session, deploy",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "refactor: move execution entries to runbook/ subdirectory",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "feat: add execution schemas — runbook, checklist, procedure",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "feat: add feedback criteria entries — protocol-gap, repetitive-task, intent-drift",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "refactor: feedback node becomes criteria — move solid-audit to judgment.engineering",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "refactor: update orientation template — remove propose recipe",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "refactor: clean up scratchpad — replace notes/scripts with proposals",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "refactor: remove proposals lane (folded into scratchpad)",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "feat: surface session_open/session_close in agent boot catalog",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "docs: dogfood flow implementation plan",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "docs: dogfood flow design — session lifecycle, feedback criteria, execution zone",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "fix: dogfood audit — orientation keys, doctor cascade, session lifecycle",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "refactor: remove legacy store files, aliases, and dual code paths",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "refactor: reorganize infra/store with Base, split concerns, standardize API",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "docs: lock store naming conventions into knowledge loop",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "refactor: consolidate drain/watch around shared Async::Queue",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "refactor: consolidate dual paths and fix silent error swallowing",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "feat: add code-pattern entries to knowledge loop (0011-0014)",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "refactor: remove dead parameters from handlers, Data.define, and pipeline",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "fix: replace role-based event suppression with self-loop detection via Engine::IN_FLIGHT",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "fix: prevent infinite event loop — skip workflow event emission for automation-role writes",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "fix: update etag spec for layout-object API, remove naming-check debug output",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "refactor: merge overlapping doctor checks (sentinels+orphaned, schema+unowned, manifest+templates+schemas)",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "refactor: extract build_lanes/build_roles helpers, simplify 5 workflows",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "refactor: collapse 8 static-template workflows into 1 generic render workflow",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "fix: optimize naming-check to only scan naming-constrained entries directly",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "fix: use resolver.enumerate instead of Dir.children in naming-check (respects ignore patterns)",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "fix: reconnect event pipeline, move EventEmitter, add workflow_spec verb, remove published/schema verbs",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "fix: reorder knowledge loop keys and restore execution schema",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "feat: add boot_refresh produce workflow, fix guard clause",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "fix: renumber duplicate ADRs 0117/0120/0121/0125 → 0131-0134, fill stub reference docs",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "chore: remove stale hand-authored doc not produced by any workflow",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "fix: remove dead doctor CLI declaration, fix pattern-crossrefs and Workflow::Context#read",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "fix: update .textus dogfood workflows for store API and clean stale artifacts",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "style: fix 133 rubocop offenses (trailing whitespace, alignment, hash alignment, etc.)",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "refactor: migrate flat-file stores to Infra::Store with SQLite-backed sub-stores",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "refactor: remove dead code (Doctor, Retention, TraceBuffer, SequelAdapter, 3 error classes, spec redirects)",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "refactor: fix drain container crash, remove thread-local registry, delete ScopedContext",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "refactor: collapse Container structs, unify Publisher, remove EventStore Interface",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "refactor: unify result shape, remove views, deepen VerbSpec",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "refactor: replace error hashes with exceptions in handlers and gate",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "fix: drop stale contract check, add new verbs to CLI catalog and snapshot",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "refactor: move Container/Builder/WritePipeline/Retention from infra/store/ to protocol/",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "cleanup: remove dead VERB_TO_CONTRACT, Binder.command, Value::Result wrap, move human helpers to lanes/, delete agent/ and human/ dirs",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "refactor: remove Value::Result wrapping from Gate dispatch",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "cleanup: remove dead Binder.command method and Pending data class",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "cleanup: remove dead VERB_TO_CONTRACT lookup table",
+          "date": "2026-07-04"
+        },
+        {
+          "subject": "fix(scratchpad): use body for session storage, fix call forwarding",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "feat(lanes): add Knowledge/Scratchpad handlers, remove old Human/Agent stubs",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "refactor: move lane namespaces under Textus::Lanes:: (Ingest, Proposal, Artifact)",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "refactor: move Gate::Builtin to Protocol::Handlers, add HandlerContext, update handlers to use ctx",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "feat(protocol): add HandlerContext — restricted container view for handlers",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "fix: add spec_helper constant stubs for Manifest/Envelope/Call/Entry/Mentry/Container",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "cleanup: remove unused value types (Command, Trace)",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "feat(protocol): add Session class with method_missing, replace Store in CLI/MCP surfaces",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "feat(protocol): add Session class, replace Store facade in CLI and MCP surfaces",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "refactor: move store classes into protocol/ (event_store, entry_store, cursor, freshness, trace_buffer)",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "cleanup: move binder+contracts from dispatch/ to protocol/, remove empty dispatch/ dir",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "cleanup: remove use_cases/ and dispatch/ middleware/pipeline after migration",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "refactor(gate): route un-laned verbs to Gate::Builtin, remove pipeline path",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "feat(protocol): add Gate::Builtin with 20 internal handler methods",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "feat(proposal): add Proposal::Handlers with propose/accept/reject/diff",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "refactor(human): move proposal handlers to Proposal lane (was Human lane)",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "cleanup: remove migrated proposal use cases (propose/accept/reject/diff)",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "feat(protocol): wire propose/accept/reject/diff verbs to Human lane",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "feat(human): add Handlers.diff for proposal diff preview",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "feat(human): add Handlers.reject for proposal rejection",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "feat(human): add Handlers.accept for proposal acceptance with dry-run",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "feat(human): add Handlers.propose for proposal creation",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "cleanup: remove migrated UseCases::Ops::IngestEntry",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "feat(protocol): wire ingest verb to Ingest lane via VerbSpec lane: field",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "feat(ingest): rebuild Handlers with real ingest orchestration",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "feat(ingest): rebuild Resolver with real supersede logic",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "feat(ingest): add EntryTypes sub-modules for link/asset/text content builders",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "feat(ingest): add IndexRebuilder for event store index rebuild",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "feat(ingest): add Dedup for content hash and URL duplicate detection",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "feat(ingest): add KeyBuilder for key derivation and content hashing",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "feat(protocol): Gate dispatches directly to lane handlers when VerbSpec has lane",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "feat(protocol): add Lane.handler_for to resolve lane name to handler module",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "feat(protocol): add lane: field to VerbSpec",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "feat(infra): add Store::Index::Lookup and Store::Index::Builder classes",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "Implement Protocol::Manifest and related schema components",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "Add core infrastructure for Textus event processing and storage",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "Refactor Textus to use Protocol namespace",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "refactor: remove dead code, fix Gate authorization, drop audit_events table",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "chore: remove accidentally committed backup files",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "phase(cleanup): remove orphaned SqliteAdapter — Phase 5",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "phase(surface): update Watcher to use Protocol::Async and Infra::Locks — Phase 4",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "phase(lanes): add scoped Workflow::ScopedContext — Phase 3 complete",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "feat(human): create Textus::Human with LOOP Runner, Freeform, and handlers",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "feat(agent): create Textus::Agent with Session, Workspace, Runner, Evidence, and handlers",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "feat(artifact): create Textus::Artifact with cache, lifecycle, and handlers",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "feat(ingest): create Textus::Ingest with resolver, entry types, and handlers",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "phase(protocol): add Gate, Async, wire into Builder — Phase 2 complete",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "feat(protocol): add Protocol::Manifest alias for Textus::Manifest",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "phase(protocol): move Index, Links, Audit, Envelope to Protocol:: namespace with forwarding facades",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "phase(protocol): move Layout, Key, Schema to Protocol:: namespace with forwarding facades",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "feat(protocol): move Format strategies to Protocol::Format with forwarding facades",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "chore: ignore headroom backup file",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "feat(infra): wire Infra::FileStore, Infra::Database, Infra::Clock in Store::Builder",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "feat(infra): extract Infra::Locks with BuildLock and WatcherLock",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "feat(infra): extract Infra::Clock with now method",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "feat(infra): extract Infra::Database with table setup, FTS5, and transaction support",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "feat(infra): extract Infra::FileStore with 17 methods matching current FileSystem interface",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "refactor: hard-cut legacy workflow step syntax",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "fix: add lsp defaults to opencode workflow config",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "fix: restore workflow artifact generation and docs publish",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "fix: harden publish/parser and resolve lint regressions",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "docs: mark ADR-0125 container/double-emission notes superseded",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "refactor: group port by concern (storage vs concurrency)",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "refactor: rename store/jobs and fold materialize into workflow/instances",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "fix: protect .textus/data canon from direct agent writes",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "fix: remove stale jobs CLI help text",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "refactor: extract MCP contract-drift annotation from Server#dispatch",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "refactor: fold entry indexing into the synchronous write path",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "fix: wire Consumer and EventEmitter callers to EventStore",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "refactor: Produce::EventEmitter depends on EventStore",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "fix: Events::Consumer retry path delegates to EventStore and RetryPolicy",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "refactor: trim Store::EventStore to only own the events table",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "fix: add Store::EntryIndex and correct entries FTS indexing/search",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "refactor: extract Events::RetryPolicy as its own decision object",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "fix: rename db -> database in consumer.rb; move ADR 0127 to .textus via textus put; add ADR 0129 DependencyAdapter gate",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "style: fix rubocop enable directives in write_pipeline and event_store",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "fix: missing keyword database in converge_now drain call",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "docs: add ADR 0127 — interface consolidation decisions",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "chore: remove legacy code — Entry::Reader/Writer refs, dead LinkEdgeStore spec",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "fix: drain_store call recursion, boot protocol key, backward compat methods",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "fix: use respond_to? in HandlerResolver, fix BootStore Infrastructure ref",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "style: fix remaining rubocop offenses",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "fix: Boot.CLI_VERBS uses Catalog.build",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "style: fix all rubocop offenses",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "refactor: route ports through FileSystem, split Boot",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "feat: add Events middleware, convert all use cases to classes",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "fix: add trace_buffer/reader/writer accessors to Container, update specs",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "refactor: create Store::LinkGraph, rewire Builder to Container",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "refactor: create Store::EntryStore, retire Entry::Reader + Entry::Writer",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "feat: add Store::Container with grouped components",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "refactor: split Port::Store into Port::Database + Port::EventStore",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "refactor: create Port::FileSystem + Store::FileSystem, retire Storage/",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "refactor: split WriteStep into write_pipeline/ directory",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "refactor: extract VerbSpec into verb_registry/verb_spec.rb",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "refactor: extract ArgSpec into verb_registry/arg_spec.rb",
+          "date": "2026-07-03"
+        },
+        {
+          "subject": "fix: skip publish in Runner when data is nil, remove publish from system workflows that manage their own output; fix pulse_entries, LinkEdgeStore, CLI verbs catalog, specs for architecture changes; all 1014 tests pass",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "feat: implement new event system with Sequel-backed events table, Workflow DSL handles, Registry, EventEmitter, Consumer, Materialize/Index workflows, rewire Builder/Infrastructure/Watcher/Drain/LinkEdgeStore",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor: remove Event::Bus, Event module, CascadeSubscriber, Store::Jobs namespace",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor: remove write-time schema validation from WriteStep and Writer",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor: remove rule system from manifest, data.rb, contracts, verb registry, CLI, auth, publisher, ttl evaluator, retention sweep",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor: remove enqueue verb",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor: remove doctor verb and module",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "feat: add sequel gem and SequelAdapter dependency adapter",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor: move knowledge sections under knowledge.loop.* — clean separation of loop vs reference data",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor: streamline conformance fixture — drop project-specific entries, align with repo shape",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor(init): use consolidated entries for project-agnostic scaffold",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor: align init and fixture entry names with .textus/manifest.yaml",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor: add naming/schema governance to repo manifest entries",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor: complete manifest entry simplification — align init, fixtures, helpers to repo shape",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor(test-support): match repo entry shape; remove migrate_legacy_manifest",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor: simplify repo manifest entries; fix resolve_format for explicit path override",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor(init): simplify DEFAULT_MANIFEST and AGENT_ENTRIES — match repo entry shape",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor: delete IgnoreMatcher; remove ignore system from Resolver, SubtreeMirror, Tree, schema, validators",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor(nested): remove ignore/ignored? — no longer read from manifest",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor(base): remove ignore/ignored? stubs; make schema/naming optional",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor(parser): stop reading schema/naming/ignore/publish/source from manifest; infer kind/format from disk",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "docs: design doc for manifest entry simplification",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "feat: protocol textus/4 — manifest data: shape, roles/lanes hardcoded",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor(manifest): drop owner from envelope and where output",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor(manifest): Entry::Parser infers kind from lane+disk shape, adds naming:, drops owner:/format:",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor(manifest): Data.parse reads data: grouped-by-lane, rejects stale roles:/lanes:/owner:",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor(manifest): repoint write-gating predicates to Protocol::V4::LANES writers",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor(manifest): Domain::Lane and Policy read writers from Protocol::V4::LANES directly",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "feat(manifest): add Textus::Protocol::V4 fixed lane/naming table",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "test: relax build-lock drain soft-miss assertion",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "chore: satisfy pre-push rubocop naming rules",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "chore: clean up lint warnings in workflow and jobs code",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor(doctor): batch-port remaining class checks to workflows",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor(doctor): port PublishTreeIndexOverlap check to a workflow",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor(doctor): port OrphanedPublishTargets check to a workflow",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor(doctor): port SchemaViolations check to a workflow",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor(doctor): port UnownedSchemaFields check to a workflow",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor(doctor): port AuditLog check to a workflow",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor(doctor): port Sentinels check to a workflow",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor(doctor): port IllegalKeys check to a workflow",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor(doctor): port SchemaParseError check to a workflow",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor(doctor): port ProtocolVersion check to a workflow",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor(loop): renumber scratchpad.notes to NNNN-topic-slug.md, scaffold sessions/scripts",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "feat(workflow): add shape() DSL primitive, check_naming helper, loop-shape workflow",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "feat(loop): add loop summary to boot orientation output",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "feat(loop): add Loop node table to explanation concepts template",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor(loop): realign task 6/7 identity and readme extraction",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor(loop): fold knowledge.readme fragments into intent",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor(loop): fold knowledge.project into intent section",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor(loop): retire knowledge.architecture into loop sections",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "feat(loop): add knowledge.feedback zone",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor(loop): split knowledge.patterns into judgment.engineering/.agent-behavior",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor(loop): split knowledge.rules/specs into constraint.repo/.protocol",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor(verbs): standardize verb-registry surfaces, naming, jobs split, error typing",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "refactor(architecture): deepen v2 — flatten jobs ceremony, extract publisher/validator/stepscope, delete facade",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "feat(architecture): integrate container's writer and reader into use cases and workflow runner",
+          "date": "2026-07-02"
+        },
+        {
+          "subject": "docs(architecture): sync docs to phase 3 refactor — Infrastructure container, workflow DSL surface, no Registry/Collector/Publisher",
+          "date": "2026-07-02"
+        },
         {
           "subject": "refactor(architecture): deepen phase 3 — Writer port, single Infrastructure, manifest→workflow boundary",
           "date": "2026-07-02"
