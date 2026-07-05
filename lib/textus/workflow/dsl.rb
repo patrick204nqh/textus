@@ -63,12 +63,12 @@ module Textus
         end
 
         # ── Steps ──
-        def step(name, callable = nil, timeout: nil, &block)
-          @steps << build_step(name, callable, timeout:, &block)
+        def step(name, callable = nil, timeout: nil, &)
+          @steps << build_step(name, callable, timeout:, &)
         end
 
-        def check(name, naming: nil, scope: nil, &block)
-          callable = build_check(name, naming:, scope:, &block)
+        def check(name, naming: nil, scope: nil, &)
+          callable = build_check(name, naming:, scope:, &)
           @steps << Step.new(name: :"check_#{name}", callable: callable, timeout: nil)
         end
 

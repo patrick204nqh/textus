@@ -13,7 +13,7 @@ module Textus
           store_engine = StoreEngine.new(
             file_system: infra.file_system, manifest: domain.manifest,
             layout: infra.layout, store: infra.store,
-            event_emitter:, schemas: domain.schemas,
+            event_emitter:, schemas: domain.schemas
           )
 
           ttl_evaluator = Freshness::TtlEvaluator.new(
@@ -28,7 +28,7 @@ module Textus
             workflows: domain.workflows,
             workflow_registry: domain.workflow_registry,
             store_engine: store_engine,
-            root:, ttl_evaluator:,
+            root:, ttl_evaluator:
           )
 
           gate = Gate.new(

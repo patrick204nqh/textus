@@ -21,7 +21,7 @@ module Textus
         end
 
         def build_check(name, naming: nil, scope: nil, &block)
-          merge = ->(data, new_issues) {
+          merge = lambda { |data, new_issues|
             existing = Array(data&.dig("content", "issues"))
             all = existing + new_issues
             { "content" => { "ok" => all.empty?, "issues" => all, "count" => all.size } }
@@ -30,13 +30,13 @@ module Textus
           if naming
             raise ArgumentError.new("check :#{name} requires a scope: for naming checks") unless scope
 
-            ->(data, ctx) {
+            lambda { |data, ctx|
               entries = ctx.container.manifest.resolver.enumerate.select do |row|
                 match_pattern?(scope, row[:key].to_s)
               end
               new_issues = check_naming(
                 entries, pattern: naming, code: "check.#{name}",
-                fix: "rename to match #{naming.inspect}",
+                         fix: "rename to match #{naming.inspect}"
               )
               merge.call(data, new_issues)
             }

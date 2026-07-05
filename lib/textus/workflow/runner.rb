@@ -26,7 +26,7 @@ module Textus
         @container  = container
         @call       = call
         @publisher  = Publisher.new(container: container, call: call)
-        @step_executor   = StepExecutor.new
+        @step_executor = StepExecutor.new
       end
 
       def run(key)

@@ -38,37 +38,6 @@ module Textus
 
         private
 
-        def self.shared_prefix_segments(left, right)
-          asegs = left.split(".")
-          bsegs = right.split(".")
-          n = [asegs.length, bsegs.length].min
-          i = 0
-          i += 1 while i < n && asegs[i] == bsegs[i]
-          i
-        end
-
-        def self.levenshtein(left, right)
-          return nil if left.length > MAX_DISTANCE_LEN || right.length > MAX_DISTANCE_LEN
-          return right.length if left.empty?
-          return left.length if right.empty?
-
-          prev = (0..right.length).to_a
-          curr = Array.new(right.length + 1, 0)
-          (1..left.length).each do |i|
-            curr[0] = i
-            (1..right.length).each do |j|
-              cost = left[i - 1] == right[j - 1] ? 0 : 1
-              curr[j] = [
-                curr[j - 1] + 1,
-                prev[j] + 1,
-                prev[j - 1] + cost,
-              ].min
-            end
-            prev, curr = curr, prev
-          end
-          prev[right.length]
-        end
-
         def suggest(requested, candidates, limit: 5)
           return [] if requested.nil? || requested.empty?
 
@@ -145,6 +114,40 @@ module Textus
 
         def nested_glob(format)
           Textus::Protocol::Format.for(format).nested_glob
+        end
+        class << self
+          private
+
+          def shared_prefix_segments(left, right)
+            asegs = left.split(".")
+            bsegs = right.split(".")
+            n = [asegs.length, bsegs.length].min
+            i = 0
+            i += 1 while i < n && asegs[i] == bsegs[i]
+            i
+          end
+
+          def levenshtein(left, right)
+            return nil if left.length > MAX_DISTANCE_LEN || right.length > MAX_DISTANCE_LEN
+            return right.length if left.empty?
+            return left.length if right.empty?
+
+            prev = (0..right.length).to_a
+            curr = Array.new(right.length + 1, 0)
+            (1..left.length).each do |i|
+              curr[0] = i
+              (1..right.length).each do |j|
+                cost = left[i - 1] == right[j - 1] ? 0 : 1
+                curr[j] = [
+                  curr[j - 1] + 1,
+                  prev[j] + 1,
+                  prev[j - 1] + cost,
+                ].min
+              end
+              prev, curr = curr, prev
+            end
+            prev[right.length]
+          end
         end
       end
     end

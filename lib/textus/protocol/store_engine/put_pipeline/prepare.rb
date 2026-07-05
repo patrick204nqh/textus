@@ -9,8 +9,6 @@ module Textus
             serialize(ctx, deps)
           end
 
-          private
-
           def self.read_existing(ctx, deps)
             return ctx.with(existing_env: nil) unless ctx.path && deps.file_system.exists?(ctx.path)
 
@@ -46,7 +44,7 @@ module Textus
             nil
           end
 
-          def self.serialize(ctx, deps)
+          def self.serialize(ctx, _deps)
             bytes, eff_meta, eff_body, eff_content =
               Textus::Protocol::Format.for(ctx.mentry.format).serialize_for_put(
                 meta: ctx.meta, body: ctx.payload.body,

@@ -8,9 +8,7 @@ module Textus
             validate_schema(ctx, deps)
           end
 
-          private
-
-          def self.validate_input(ctx, deps)
+          def self.validate_input(ctx, _deps)
             fmt = Textus::Protocol::Format.for(ctx.mentry.format)
             fmt.enforce_name_match!(ctx.path, ctx.payload.meta)
             fmt.validate_raw_entry!(
@@ -31,7 +29,7 @@ module Textus
             when "scratchpad"
               begin
                 schema.validate!(ctx.payload.meta || {})
-              rescue Textus::SchemaViolation
+              rescue Textus::SchemaViolation # rubocop:disable Lint/SuppressedException
               end
             else
               schema.validate!(ctx.payload.meta || {})

@@ -9,8 +9,6 @@ module Textus
             emit_workflow_event(ctx, deps)
           end
 
-          private
-
           def self.append_audit(ctx, deps)
             deps.audit_log.append(
               role: deps.call.role, verb: "put", key: ctx.key,

@@ -9,8 +9,6 @@ module Textus
             build_envelope(ctx, deps)
           end
 
-          private
-
           def self.check_etag(ctx, deps)
             Pipeline.check_etag(ctx, deps)
           end
@@ -20,7 +18,7 @@ module Textus
             ctx
           end
 
-          def self.build_envelope(ctx, deps)
+          def self.build_envelope(ctx, _deps)
             envelope = Textus::Protocol::Envelope.build(
               key: ctx.key, mentry: ctx.mentry, path: ctx.path,
               meta: ctx.eff_meta, body: ctx.eff_body,
