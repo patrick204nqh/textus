@@ -1,0 +1,142 @@
+#!/usr/bin/env bash
+# bin/smoke — simulate an agent session end-to-end against .textus
+#
+# Usage:  bin/smoke
+#
+# Runs: session_open → read boot → get/list a few keys → propose → session_close → drain
+# Logs highlights to bin/smoke.log (untracked).
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+LOG="$ROOT/bin/smoke.log"
+TEXTUS="bundle exec exe/textus"
+
+export TEXTUS_ROOT="$ROOT"
+
+pass=0
+fail=0
+
+ok()   { pass=$((pass+1)); echo "  ✓ $1"; }
+fail() { fail=$((fail+1)); echo "  ✗ $1"; }
+
+log()  { echo "[$(date +%H:%M:%S)] $*" >> "$LOG"; }
+
+# ── header ──────────────────────────────────────────────────────────────────
+cat > "$LOG" <<<"smoke $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+echo "" >> "$LOG"
+echo "---" >> "$LOG"
+
+echo "bin/smoke — simulate agent session"
+echo
+
+# ── 1. session_open ──────────────────────────────────────────────────────────
+echo "  1. session_open"
+SESSION_OUT=$($TEXTUS session_open --as=agent 2>&1)
+SESSION_ID=$(echo "$SESSION_OUT" | ruby -rjson -e 'puts JSON.parse(STDIN.read)["session_id"] rescue nil' 2>/dev/null || true)
+
+if [ -n "$SESSION_ID" ]; then
+  ok "session_open → $SESSION_ID"
+  log "session_open: $SESSION_ID"
+else
+  fail "session_open"
+  log "session_open FAILED: $SESSION_OUT"
+fi
+
+# ── 2. boot ──────────────────────────────────────────────────────────────────
+echo "  2. boot"
+BOOT_OUT=$($TEXTUS boot 2>&1)
+PROTOCOL=$(echo "$BOOT_OUT" | ruby -rjson -e 'puts JSON.parse(STDIN.read)["protocol"] rescue "?"' 2>/dev/null || true)
+if [ "$PROTOCOL" = "textus/4" ]; then
+  ok "boot → protocol $PROTOCOL"
+  log "boot: protocol=$PROTOCOL"
+else
+  fail "boot"
+  log "boot FAILED: $BOOT_OUT"
+fi
+
+# ── 3. get a few key knowledge entries ────────────────────────────────────────
+echo "  3. read knowledge entries"
+
+TARGETS=(
+  knowledge.loop.intent.0001-north-star
+  knowledge.loop.constraint.protocol.0014-data-flow
+  knowledge.loop.judgment.engineering.0009-conventions
+)
+
+for key in "${TARGETS[@]}"; do
+  OUT=$($TEXTUS get "$key" 2>&1)
+  ETAG=$(echo "$OUT" | ruby -rjson -e 'puts JSON.parse(STDIN.read)["etag"] rescue "?"' 2>/dev/null || true)
+  if [ -n "$ETAG" ] && [ "$ETAG" != "?" ]; then
+    ok "get $key"
+    log "get $key: etag=${ETAG:0:16}…"
+  else
+    fail "get $key"
+    log "get $key FAILED"
+  fi
+done
+
+# ── 4. list ──────────────────────────────────────────────────────────────────
+echo "  4. list"
+LIST_OUT=$($TEXTUS list --prefix=knowledge.loop.execution 2>&1)
+COUNT=$(echo "$LIST_OUT" | ruby -rjson -e 'puts JSON.parse(STDIN.read).length rescue "0"' 2>/dev/null || true)
+if [ "$COUNT" -gt 0 ] 2>/dev/null; then
+  ok "list knowledge.loop.execution → $COUNT entries"
+  log "list knowledge.loop.execution: $COUNT entries"
+else
+  fail "list knowledge.loop.execution"
+  log "list knowledge.loop.execution: got $COUNT"
+fi
+
+# ── 5. propose ───────────────────────────────────────────────────────────────
+echo "  5. propose"
+PROPOSE_OUT=$($TEXTUS propose scratchpad.sessions."$SESSION_ID".smoke --stdin --as=agent 2>&1 <<'ENDJSON'
+{"_meta":{"name":"smoke-test","proposal":{"target_key":"scratchpad.sessions.SESSION_ID.smoke","action":"put"}},"body":"Smoke test entry — safe to delete.\n"}
+ENDJSON
+)
+# replace placeholder with real session id
+PROPOSE_OUT=$(echo "$PROPOSE_OUT" | sed "s/SESSION_ID/$SESSION_ID/g")
+PROPOSAL_KEY=$(echo "$PROPOSE_OUT" | ruby -rjson -e 'h=JSON.parse(STDIN.read); puts h["key"] rescue nil' 2>/dev/null || true)
+if [ -n "$PROPOSAL_KEY" ]; then
+  ok "propose → $PROPOSAL_KEY"
+  log "propose: $PROPOSAL_KEY"
+else
+  fail "propose"
+  log "propose FAILED: $PROPOSE_OUT"
+fi
+
+# ── 6. session_close ─────────────────────────────────────────────────────────
+echo "  6. session_close"
+CLOSE_OUT=$($TEXTUS session_close "$SESSION_ID" --as=agent --nodes_checked=intent,constraint.repo,constraint.protocol,judgment.engineering,judgment.agent-behavior,evidence,execution,feedback 2>&1)
+STATUS=$(echo "$CLOSE_OUT" | ruby -rjson -e 'puts JSON.parse(STDIN.read)["status"] rescue "?"' 2>/dev/null || true)
+if [ "$STATUS" = "closed" ]; then
+  ok "session_close → $STATUS"
+  log "session_close: $STATUS"
+else
+  fail "session_close"
+  log "session_close FAILED: $CLOSE_OUT"
+fi
+
+# ── 7. drain ─────────────────────────────────────────────────────────────────
+echo "  7. drain"
+DRAIN_OUT=$($TEXTUS drain --as=automation 2>&1)
+if echo "$DRAIN_OUT" | ruby -rjson -e 'h=JSON.parse(STDIN.read); exit(h["ok"] ? 0 : 1)' 2>/dev/null; then
+  ok "drain"
+  log "drain: ok"
+else
+  fail "drain"
+  log "drain FAILED"
+fi
+
+# ── summary ──────────────────────────────────────────────────────────────────
+echo
+echo "── Summary ──────────────────────────────────"
+echo "  pass: $pass  fail: $fail"
+echo "  log:  $LOG"
+
+{
+  echo ""
+  echo "result: ${pass}passed / ${fail}failed"
+  echo "---"
+} >> "$LOG"
+
+exit $(( fail > 0 ? 1 : 0 ))
