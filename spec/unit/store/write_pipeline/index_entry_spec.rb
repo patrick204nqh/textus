@@ -3,13 +3,17 @@ require "spec_helper"
 # rubocop:disable RSpec/VerifiedDoubles
 RSpec.describe "WritePipeline indexing" do
   let(:entry_index) { instance_double(Textus::Infra::Store::EntryIndex) }
+  let(:audit_log) { instance_double(Textus::Infra::Store::AuditLog) }
+  let(:call) { instance_double(Textus::Value::Call, role: "automation", correlation_id: "abc") }
 
-  describe Textus::Protocol::StoreEngine::PutPipeline::IndexEntry do
+  describe Textus::Protocol::StoreEngine::PutPipeline::Emit do
     it "records the written entry in the index" do
       ctx = double("ctx", key: "knowledge.a", mentry: double(schema: "runbook", lane: "knowledge", format: "markdown"), eff_content: nil,
-                          eff_body: "hello")
-      deps = double("deps", entry_index:)
+                          eff_body: "hello", envelope: double(etag: "abc"), etag_before: nil)
+      deps = double("deps", entry_index:, audit_log:, call:)
       allow(entry_index).to receive(:record)
+      allow(audit_log).to receive(:append)
+      allow(Textus::Protocol::StoreEngine::Pipeline).to receive(:emit_event)
 
       described_class.call(ctx, deps)
 
@@ -21,9 +25,11 @@ RSpec.describe "WritePipeline indexing" do
 
     it "indexes serialized content (not body) when the entry is content-based (json/yaml)" do
       ctx = double("ctx", key: "artifacts.b", mentry: double(schema: nil, lane: "artifacts", format: "json"), eff_content: { "x" => 1 },
-                          eff_body: nil)
-      deps = double("deps", entry_index:)
+                          eff_body: nil, envelope: double(etag: "def"), etag_before: nil)
+      deps = double("deps", entry_index:, audit_log:, call:)
       allow(entry_index).to receive(:record)
+      allow(audit_log).to receive(:append)
+      allow(Textus::Protocol::StoreEngine::Pipeline).to receive(:emit_event)
 
       described_class.call(ctx, deps)
 
