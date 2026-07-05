@@ -4,10 +4,19 @@ module Textus
       module Handlers
         module_function
 
+        LOOP_NODE_KEYS = {
+          "intent" => "knowledge.loop.intent",
+          "constraint.repo" => "knowledge.loop.constraint.repo",
+          "constraint.protocol" => "knowledge.loop.constraint.protocol",
+          "judgment.engineering" => "knowledge.loop.judgment.engineering",
+          "judgment.agent-behavior" => "knowledge.loop.judgment.agent-behavior",
+          "evidence" => "knowledge.loop.evidence",
+          "execution" => "knowledge.loop.execution.runbook",
+          "feedback" => "knowledge.loop.feedback",
+        }.freeze
+
         def loop(ctx:, call:)
-          nodes = ctx.manifest.data.entries
-                     .select { |e| e.key.start_with?("knowledge.loop.") && e.key.count(".") == 2 }
-                     .map { |e| { "name" => e.key.split(".").last, "key" => e.key } }
+          nodes = LOOP_NODE_KEYS.map { |name, key| { "name" => name, "key" => key } }
           role = call&.role || "agent"
           runner = Runner.new(ctx.manifest, cursor_store: ctx.cursor_store)
           feedback = recent_feedback(ctx)

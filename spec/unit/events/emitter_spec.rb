@@ -1,30 +1,32 @@
-RSpec.describe Textus::Protocol::Events::Emitter do
-  subject(:emitter) { described_class.new(workflow_queue:, workflow_registry:) }
+RSpec.describe Textus::Workflow::Queue do
+  subject(:queue) { described_class.new(workflow_queue, registry:, container:, call:) }
 
   let(:workflow_queue) { instance_double(Textus::Infra::Store::WorkflowQueue) }
-  let(:workflow_registry) { instance_double(Textus::Workflow::Registry) }
+  let(:registry) { instance_double(Textus::Workflow::Registry) }
   let(:materialize) { instance_double(Textus::Workflow::DSL::Definition, type: "materialize", max_attempts: 3) }
+  let(:container) { instance_double(Textus::Protocol::Container) }
+  let(:call) { instance_double(Textus::Value::Call) }
 
-  describe "#emit" do
+  describe "#enqueue" do
     before { allow(workflow_queue).to receive(:push) }
 
     it "emits one event per workflow registered for the event type" do
-      allow(workflow_registry).to receive(:workflows_for).with("entry.written").and_return([materialize])
+      allow(registry).to receive(:workflows_for).with("entry.written").and_return([materialize])
 
-      count = emitter.emit(event_type: "entry.written", key: "knowledge.a", lane: "knowledge", payload: { "x" => 1 })
+      count = queue.enqueue(event_type: "entry.written", key: "knowledge.a", lane: "knowledge")
 
       expect(workflow_queue).to have_received(:push).with(
         event_type: "entry.written", workflow_type: "materialize",
-        key: "knowledge.a", lane: "knowledge", payload: { "x" => 1 },
+        key: "knowledge.a", lane: "knowledge", payload: nil,
         max_attempts: 3
       )
       expect(count).to eq(1)
     end
 
     it "returns 0 and emits nothing when no workflow handles the event type" do
-      allow(workflow_registry).to receive(:workflows_for).with("entry.written").and_return([])
+      allow(registry).to receive(:workflows_for).with("entry.written").and_return([])
 
-      expect(emitter.emit(event_type: "entry.written", key: "knowledge.a")).to eq(0)
+      expect(queue.enqueue(event_type: "entry.written", key: "knowledge.a", lane: "knowledge")).to eq(0)
       expect(workflow_queue).not_to have_received(:push)
     end
   end

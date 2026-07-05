@@ -6,6 +6,7 @@ require "uri"
 
 Textus.workflow "agentskills" do
   on "artifacts.feeds.skills"
+  every "1h"
 
   step :fetch do |_, _ctx|
     base = "https://agentskills.io"
@@ -24,5 +25,6 @@ Textus.workflow "agentskills" do
 
     { "content" => { "skills" => skills, "count" => skills.size } }
   end
+  save to: "artifacts.feeds.skills"
   publish to: "docs/reference/skills.md", template: "feeds/skills.erb"
 end

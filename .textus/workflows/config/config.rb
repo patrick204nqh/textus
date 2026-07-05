@@ -1,7 +1,7 @@
 # Consolidates 4 config-generation workflows (contributing, mcp, opencode, plugin).
 # Reads project identity from knowledge; builds all configs from shared data.
 Textus.workflow "config" do
-  on "knowledge.loop.**"
+  on "knowledge.loop.**", "artifacts.config"
   priority 2
 
   step :build do |_, ctx|
@@ -26,6 +26,22 @@ Textus.workflow "config" do
         "ruby-lsp" => { "command" => %w[bundle exec ruby-lsp], "extensions" => %w[rb erb builder rake ru] },
       },
       "mcp" => { "textus" => { "type" => "local", "command" => %w[bundle exec exe/textus mcp serve], "enabled" => true } },
+      "permission" => {
+        "edit" => {
+          "*" => "allow",
+          ".textus/data/knowledge/**" => "deny",
+          ".textus/data/artifacts/**" => "deny",
+          "docs/**" => "deny",
+          "README.md" => "deny",
+          "CONTRIBUTING.md" => "deny",
+          "SECURITY.md" => "deny",
+          "CLAUDE.md" => "deny",
+          "AGENTS.md" => "deny",
+          "CHANGELOG.md" => "deny",
+          "CODE_OF_CONDUCT.md" => "deny",
+          ".mcp.json" => "deny",
+        },
+      },
       "instructions" => ["AGENTS.md"],
       "name" => project["name"] || "textus",
       "description" => "Durable, multi-writer repo memory. Auto-orients each session with `textus boot`.",
@@ -37,6 +53,7 @@ Textus.workflow "config" do
     } }
   end
 
+  save to: "artifacts.config"
   publish to: "CONTRIBUTING.md", template: "docs/meta/contributing.erb"
   publish to: ".mcp.json", template: "config/mcp.json.erb"
   publish to: "opencode.json", template: "config/opencode.json.erb"

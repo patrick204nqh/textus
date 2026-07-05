@@ -59,17 +59,24 @@ module Textus
             acc << ln if writers.include?(agent_role)
           end
 
+          author_writers = manifest.policy.writers_for("knowledge")
+          agent_has_author = agent_role && author_writers.include?(agent_role)
+          write_verbs = if agent_role
+                          mcp_verbs = Textus::Protocol::VerbRegistry.registered.select { |s| s.write? && s.mcp? }
+                          unless agent_has_author
+                            forbidden = %i[accept reject].to_set.freeze
+                            mcp_verbs = mcp_verbs.reject { |s| forbidden.include?(s.verb) }
+                          end
+                          mcp_verbs.map { |s| s.verb.to_s }
+                        else
+                          []
+                        end
+
           {
             "lanes" => lanes_for(manifest),
             "agent_quickstart" => {
               "read_verbs" => Textus::Protocol::VerbRegistry.registered.select { |s| s.read? && s.mcp? }.map { |s| s.verb.to_s },
-              "write_verbs" => if agent_role
-                                 Textus::Protocol::VerbRegistry.registered.select do |s|
-                                   s.write? && s.mcp?
-                                 end.map { |s| s.verb.to_s }
-                               else
-                                 []
-                               end,
+              "write_verbs" => write_verbs,
               "writable_lanes" => writable_lanes,
               "propose_lane" => manifest.policy.propose_lane_for(agent_role),
             },

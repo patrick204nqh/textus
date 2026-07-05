@@ -2,7 +2,7 @@ module Textus
   module Protocol
     module Async
       class Queue
-        def initialize(workflow_queue, retry_policy: Events::RetryPolicy.new)
+        def initialize(workflow_queue, retry_policy: Workflow::RetryPolicy.new)
           @workflow_queue = workflow_queue
           @retry_policy = retry_policy
         end

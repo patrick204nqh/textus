@@ -124,13 +124,12 @@ module TextusSpecHelpers
       end
     end
 
-    consumer = Textus::Protocol::Events::Consumer.new
-    consumer.drain(
-      workflow_queue:,
+    Textus::Workflow::Queue.new(
+      workflow_queue,
       registry: registry,
       container: store.container,
       call: Textus::Value::Call.build(role: role, correlation_id: SecureRandom.uuid),
-    )
+    ).drain
   end
 
   def with_missing_workflows(store)

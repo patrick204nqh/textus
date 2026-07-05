@@ -15,5 +15,16 @@ RSpec.describe "textus/4 conformance — Fixture B: role gate on write" do
         expect(env["details"]["lane"]).to eq("artifacts")
       end
     end
+
+    it "raises WriteForbidden when an agent tries to write a knowledge entry" do
+      expect do
+        store.with_role("agent").put(key: "knowledge.notes.test",
+                                     meta: { "name" => "test" }, body: "n/a")
+      end.to raise_error(Textus::WriteForbidden) do |err|
+        env = err.to_envelope
+        expect(env["code"]).to eq("write_forbidden")
+        expect(env["details"]["lane"]).to eq("knowledge")
+      end
+    end
   end
 end

@@ -42,4 +42,5 @@ data:
     - { key: artifacts.design.invariants, format: json }
     - { key: artifacts.doctor, format: json }
     - { key: artifacts.system.index, format: json }
+    - { key: artifacts.config, format: json }
     - { key: artifacts.feeds.skills, format: json }

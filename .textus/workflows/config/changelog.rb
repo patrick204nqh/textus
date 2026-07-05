@@ -1,6 +1,7 @@
 # rubocop:disable Metrics/BlockLength
 Textus.workflow "changelog" do
   on "artifacts.changelog"
+  every "30m"
 
   step :build do |_, _|
     # skip: merge commits, and housekeeping drain commits that would otherwise
@@ -36,6 +37,7 @@ Textus.workflow "changelog" do
 
     { "content" => { "entries" => entries } }
   end
+  save to: "artifacts.changelog"
   publish to: "CHANGELOG.md", template: "docs/meta/changelog.erb"
 end
 # rubocop:enable Metrics/BlockLength

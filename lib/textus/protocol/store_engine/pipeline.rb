@@ -50,13 +50,12 @@ module Textus
           return ctx unless deps.workflow_registry
           return ctx if deps.store.workflow_queue.pending?(event_type:, key: pending_key)
 
-          emitter = Textus::Protocol::Events::Emitter.new(
-            workflow_queue: deps.store.workflow_queue,
-            workflow_registry: deps.workflow_registry,
-          )
-          kwargs = { event_type:, key: emit_key }
-          kwargs[:lane] = emit_lane if emit_lane
-          emitter.emit(**kwargs)
+          Textus::Workflow::Queue.new(
+            deps.store.workflow_queue,
+            registry: deps.workflow_registry,
+            container: deps,
+            call: deps.call,
+          ).enqueue(event_type:, key: emit_key, lane: emit_lane || "artifacts")
           ctx
         rescue StandardError => e
           warn "textus: emit_workflow_event(#{event_type}, #{emit_key}) failed: #{e.message}"

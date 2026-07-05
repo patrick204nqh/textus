@@ -8,9 +8,9 @@ module Textus
       class Definition
         include Textus::Workflow::Helpers
 
-        attr_reader :name, :steps, :on_patterns, :save_key, :notify_keys,
+        attr_reader :name, :steps, :on_patterns, :save_to, :notify_keys,
                     :publish_block, :publish_targets,
-                    :handled_events, :workflow_type
+                    :handled_events, :workflow_type, :ttl, :priority, :max_attempts
 
         def self.register(defn)
           @definitions ||= []
@@ -29,7 +29,7 @@ module Textus
           @name                = name
           @steps               = []
           @on_patterns         = []
-          @save_key            = nil
+          @save_to             = nil
           @notify_keys         = []
           @publish_block       = nil
           @publish_targets     = []
@@ -151,7 +151,7 @@ module Textus
         end
 
         def save(to:)
-          @save_key = to
+          @save_to = to
         end
 
         def notify(key)
@@ -166,14 +166,19 @@ module Textus
         end
 
         # ── Lifecycle ──
-        def ttl(duration_string)
-          @ttl = Textus::Value::Duration.seconds(duration_string)
+        def every(cadence = :__no_arg__)
+          return @ttl if cadence == :__no_arg__
+
+          @ttl = Textus::Value::Duration.seconds(cadence)
         end
 
-        def on_expire(action)
-          actions = %i[drop archive]
+        alias_method :ttl, :every
+
+        def on_expire(action = :__no_arg__)
+          return @on_expire if action == :__no_arg__
+
           sym = action.to_s.to_sym
-          raise ArgumentError.new("on_expire must be one of #{actions.join("|")}, got #{action.inspect}") unless actions.include?(sym)
+          raise ArgumentError.new("on_expire must be one of drop|archive, got #{action.inspect}") unless %i[drop archive].include?(sym)
 
           @on_expire = sym
         end

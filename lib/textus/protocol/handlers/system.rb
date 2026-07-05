@@ -40,7 +40,7 @@ module Textus
           wf = registry.for(name)
           {
             "name" => wf.name, "type" => wf.workflow_type,
-            "match_patterns" => wf.match_pattern ? [wf.match_pattern] : [],
+            "match_patterns" => wf.on_patterns || [],
             "handles_events" => wf.handled_events,
             "steps" => wf.steps.map { |s| { "name" => s.name.to_s, "type" => step_type(s) } },
             "publish_targets" => wf.publish_targets.map do |t|
@@ -51,7 +51,6 @@ module Textus
             end,
             "priority" => wf.priority,
             "max_attempts" => wf.max_attempts,
-            "depends_on" => wf.depends_on_patterns,
             "ttl" => wf.ttl ? wf.ttl.to_s : nil,
             "on_expire" => wf.on_expire
           }
@@ -59,9 +58,13 @@ module Textus
 
         def drain(ctx:, call:)
           registry = ctx.workflow_registry || Textus::Workflow::Registry.new(ctx.workflows)
-          result = Textus::Protocol::Events::Consumer.new.drain(
-            workflow_queue: ctx.workflow_queue, registry:, container: ctx.container, call:,
-          )
+          result = Textus::Workflow::Engine.new(
+            registry:,
+            workflow_queue: ctx.workflow_queue,
+            container: ctx.container,
+            call:,
+            reader: ->(key:) { ctx.read(key:) },
+          ).run
           response(ok: result[:failed].zero?,
                    completed: result[:completed], failed: result[:failed])
         end
@@ -70,7 +73,6 @@ module Textus
 
         def step_type(step)
           case step
-          when Textus::Workflow::DSL::ValidateStep then "validate"
           when Textus::Workflow::DSL::Parallel then "parallel"
           else "step"
           end

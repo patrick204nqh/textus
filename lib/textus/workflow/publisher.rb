@@ -16,7 +16,7 @@ module Textus
       def publish(key, data, ctx, definition)
         definition.publish_targets.each { |t| publish_one(key, data, ctx, target: t) }
 
-        write_to_key(definition.save_key, data, ctx) if definition.save_key
+        write_to_key(definition.save_to, data, ctx) if definition.save_to
 
         definition.notify_keys.each { |nk| notify_key(nk, ctx) }
 
@@ -28,7 +28,8 @@ module Textus
       def write_to_key(target_key, data, ctx) # rubocop:disable Lint/UnusedMethodArgument
         res = @container.manifest.resolver.resolve(target_key)
         normalized = Textus::Protocol::Format.data_to_payload(data, res.entry.format)
-        @store_engine.put(key: target_key, meta: normalized[:meta], body: normalized[:body], content: normalized[:content], call: @call)
+        meta = stamped_meta(normalized[:meta])
+        @store_engine.put(key: target_key, meta:, body: normalized[:body], content: normalized[:content], call: @call)
       end
 
       def notify_key(target_key, ctx) # rubocop:disable Lint/UnusedMethodArgument
@@ -37,7 +38,8 @@ module Textus
 
       def write_and_pctx(key, data, ctx)
         normalized = Textus::Protocol::Format.data_to_payload(data, ctx.entry.format)
-        @store_engine.put(key:, meta: normalized[:meta], body: normalized[:body], content: normalized[:content], call: @call)
+        meta = stamped_meta(normalized[:meta])
+        @store_engine.put(key:, meta:, body: normalized[:body], content: normalized[:content], call: @call)
         Textus::Protocol::Manifest::Entry::Base::PublishContext.new(
           container: @container,
           reader: ->(key:) { @store_engine.read(key:) },
@@ -52,6 +54,11 @@ module Textus
         pub_target = Textus::Protocol::Manifest::Policy::PublishTarget.new(attrs)
         entry = ctx.entry.with_publish_targets([pub_target])
         entry.publish_via(pctx)
+      end
+
+      def stamped_meta(meta)
+        now = Time.now.utc.iso8601
+        (meta || {}).merge("generated_at" => now)
       end
     end
   end

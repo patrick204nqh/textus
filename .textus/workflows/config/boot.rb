@@ -56,8 +56,15 @@ Textus.workflow "boot" do
     end
     propose_lane = manifest.policy.propose_lane_for(agent_role)
     read_verbs = Textus::Protocol::VerbRegistry.registered.select { |s| s.read? && s.mcp? }.map { |s| s.verb.to_s }
+    author_writers = manifest.policy.writers_for("knowledge")
+    agent_has_author = agent_role && author_writers.include?(agent_role)
     write_verbs = if agent_role
-                    Textus::Protocol::VerbRegistry.registered.select { |s| s.write? && s.mcp? }.map { |s| s.verb.to_s }
+                    mcp_verbs = Textus::Protocol::VerbRegistry.registered.select { |s| s.write? && s.mcp? }
+                    unless agent_has_author
+                      forbidden = %i[accept reject].to_set.freeze
+                      mcp_verbs = mcp_verbs.reject { |s| forbidden.include?(s.verb) }
+                    end
+                    mcp_verbs.map { |s| s.verb.to_s }
                   else
                     []
                   end

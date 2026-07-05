@@ -15,6 +15,8 @@ module Textus
         Workflow::DSL::Definition.definitions
       end
 
+      attr_reader :definitions
+
       def initialize(workflow_definitions)
         @definitions = workflow_definitions
         @by_event = {}
