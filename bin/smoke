@@ -117,9 +117,19 @@ proposal = JSON.generate({
 assert("propose", "propose", "smoke-test-#{sid}", "--stdin", "--as=agent",
        stdin: proposal, key: %w[key])
 
-script = JSON.generate({ _meta: { name: "check" }, body: "echo 'agent script'\n" })
-assert("write script", "put", "scratchpad.sessions.#{sid}.scripts.check", "--stdin", "--as=agent",
-       stdin: script, key: %w[etag])
+SCRIPTS = {
+  "check" => { body: "echo 'agent bash script'\n" },
+  "task" => { body: "puts 'agent ruby script'\n" },
+  "query" => { body: "print('agent python script')\n" },
+  "report" => { body: "console.log('agent js script')\n" },
+}.freeze
+
+SCRIPTS.each do |name, s|
+  payload = JSON.generate({ _meta: { name: name }, body: s[:body] })
+  assert("write sessions.#{sid}.scripts.#{name}", "put",
+         "scratchpad.sessions.#{sid}.scripts.#{name}", "--stdin", "--as=agent",
+         stdin: payload, key: %w[etag])
+end
 
 # ── OUTPUT: seal, publish, verify ───────────────────────────────────────────
 puts "[OUTPUT] seal"
