@@ -8,7 +8,7 @@ module Textus
       CONCURRENCY_ADAPTER = Textus::Infra::Adapters::ConcurrencyAdapter.new
 
       class StepScope
-        include Textus::Workflow::Helpers
+        include Textus::Workflow::StepHelpers
 
         def initialize(data, ctx)
           @data = data

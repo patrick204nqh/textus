@@ -62,15 +62,23 @@ module Textus
 
         def drain(ctx:, call:)
           registry = ctx.workflow_registry || Textus::Workflow::Registry.new(ctx.workflows)
-          result = Textus::Workflow::Engine.new(
-            registry:,
-            workflow_queue: ctx.workflow_queue,
-            container: ctx.container,
-            call:,
-            reader: ->(key:) { ctx.read(key:) },
-          ).run
-          response(ok: result[:failed].zero?,
-                   completed: result[:completed], failed: result[:failed])
+          reader = ->(key:) { ctx.read(key:) }
+
+          Textus::Workflow::Scheduler.new(
+            registry:, workflow_queue: ctx.workflow_queue, reader:
+          ).seed_expired
+
+          consumer = Textus::Workflow::Consumer.new(registry:, container: ctx.container, call:)
+          completed = 0
+          failed = 0
+          loop do
+            row = ctx.workflow_queue.pop
+            break unless row
+            result = consumer.consume(row, ctx.workflow_queue)
+            result[:state] == "done" ? completed += 1 : failed += 1
+          end
+
+          response(ok: failed.zero?, completed:, failed:)
         end
 
         private

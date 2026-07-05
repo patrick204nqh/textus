@@ -6,7 +6,6 @@ module Textus
       PublishTarget = Data.define(:to, :template, :tree, :inject_boot)
 
       class Definition
-        include Textus::Workflow::Helpers
         include StepBuilder
         include PatternMatcher
         include Lifecycle

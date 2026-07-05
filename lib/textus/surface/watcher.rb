@@ -10,13 +10,18 @@ module Textus
 
       def tick
         call = Textus::Value::Call.build(role: Textus::Value::Role::AUTOMATION, correlation_id: SecureRandom.uuid)
-        queue = Textus::Workflow::Queue.new(
-          @container.store.workflow_queue,
-          registry: @registry, container: @container, call:,
-        )
+
+        Textus::Workflow::Scheduler.new(
+          registry: @registry,
+          workflow_queue: @container.store.workflow_queue,
+          reader: ->(key:) { @container.store_engine.read(key:) },
+        ).seed_expired
+
+        consumer = Textus::Workflow::Consumer.new(registry: @registry, container: @container, call:)
         loop do
-          row = queue.consume_one
+          row = @container.store.workflow_queue.pop
           break unless row
+          consumer.consume(row, @container.store.workflow_queue)
         end
       end
 

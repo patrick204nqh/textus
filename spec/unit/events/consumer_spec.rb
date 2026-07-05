@@ -1,12 +1,11 @@
-RSpec.describe Textus::Workflow::Queue do
-  subject(:queue) { described_class.new(workflow_queue, registry:, container:, call:) }
+RSpec.describe Textus::Workflow::Consumer do
+  subject(:consumer) { described_class.new(registry:, container:, call:) }
 
-  let(:workflow_queue) { instance_double(Textus::Infra::Store::WorkflowQueue) }
   let(:registry) { instance_double(Textus::Workflow::Registry) }
   let(:container) { instance_double(Textus::Protocol::Container) }
   let(:call) { instance_double(Textus::Value::Call) }
   let(:workflow) { instance_double(Textus::Workflow::DSL::Definition, type: "materialize") }
-
+  let(:workflow_queue) { instance_double(Textus::Infra::Store::WorkflowQueue) }
   let(:pending_row) { { id: 1, key: "knowledge.a", workflow_type: "materialize", retry_count: 0, max_attempts: 3 } }
   let(:terminal_row) { { id: 2, key: "knowledge.b", workflow_type: "materialize", retry_count: 3, max_attempts: 3 } }
 
@@ -14,50 +13,41 @@ RSpec.describe Textus::Workflow::Queue do
     allow(registry).to receive(:for).with("materialize").and_return(workflow)
   end
 
-  describe "#drain" do
-    it "loops until pop returns nil, tallying completed and failed" do
-      call_count = 0
-      allow(Textus::Workflow::Runner).to receive(:new) do
-        call_count += 1
-        runner = instance_double(Textus::Workflow::Runner)
-        if call_count == 1
-          allow(runner).to receive(:run)
-        else
-          allow(runner).to receive(:run).and_raise(StandardError.new("boom"))
-        end
-        runner
-      end
-
-      rows = [pending_row, terminal_row, nil]
-      allow(workflow_queue).to receive(:pop).and_return(*rows)
+  describe "#consume" do
+    it "runs the workflow and marks complete on success" do
       allow(workflow_queue).to receive(:mark_processing)
       allow(workflow_queue).to receive(:complete)
-      allow(workflow_queue).to receive(:fail)
-
-      result = queue.drain
-
-      expect(result).to eq(completed: 1, failed: 1)
-    end
-  end
-
-  describe "#consume_one" do
-    it "returns nil when there is no pending event" do
-      allow(workflow_queue).to receive(:pop).and_return(nil)
-
-      expect(queue.consume_one).to be_nil
-    end
-
-    it "runs and returns the result state" do
       allow(Textus::Workflow::Runner).to receive(:new).and_return(
         instance_double(Textus::Workflow::Runner, run: nil),
       )
-      allow(workflow_queue).to receive(:pop).and_return(pending_row)
-      allow(workflow_queue).to receive(:mark_processing)
-      allow(workflow_queue).to receive(:complete)
 
-      result = queue.consume_one
+      result = consumer.consume(pending_row, workflow_queue)
 
+      expect(workflow_queue).to have_received(:mark_processing).with(1)
+      expect(workflow_queue).to have_received(:complete).with(1)
       expect(result[:state]).to eq("done")
+    end
+
+    it "fails when max_attempts reached" do
+      allow(workflow_queue).to receive(:mark_processing)
+      allow(workflow_queue).to receive(:fail)
+      allow(Textus::Workflow::Runner).to receive(:new).and_raise(StandardError.new("boom"))
+
+      result = consumer.consume(terminal_row, workflow_queue)
+
+      expect(workflow_queue).to have_received(:fail).with(2, retry_count: 4, error: "boom")
+      expect(result[:state]).to eq("failed")
+    end
+
+    it "reschedules with backoff when retries remain" do
+      allow(workflow_queue).to receive(:mark_processing)
+      allow(workflow_queue).to receive(:reschedule)
+      allow(Textus::Workflow::Runner).to receive(:new).and_raise(StandardError.new("boom"))
+
+      result = consumer.consume(pending_row, workflow_queue)
+
+      expect(workflow_queue).to have_received(:reschedule).with(1, retry_count: 1, delay: 10, error: "boom")
+      expect(result[:state]).to eq("retrying")
     end
   end
 end

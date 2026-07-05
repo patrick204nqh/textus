@@ -1,11 +1,12 @@
 module Textus
   module Workflow
     class Consumer
+      BACKOFF_DELAYS = [10, 30, 60].freeze
+
       def initialize(registry:, container:, call:)
         @registry = registry
         @container = container
         @call = call
-        @retry_policy = RetryPolicy.new
       end
 
       def consume(row, workflow_queue)
@@ -23,13 +24,13 @@ module Textus
       def handle_failure(row, workflow_queue, error)
         retry_count = (row[:retry_count] || 0) + 1
         max_attempts = row[:max_attempts] || 3
-        decision = @retry_policy.decide(retry_count:, max_attempts:)
 
-        if decision.terminal?
+        if retry_count >= max_attempts
           workflow_queue.fail(row[:id], retry_count:, error: error.message)
           row.merge(state: "failed", error: error.message)
         else
-          workflow_queue.reschedule(row[:id], retry_count:, delay: decision.delay, error: error.message)
+          index = [retry_count - 1, BACKOFF_DELAYS.length - 1].min
+          workflow_queue.reschedule(row[:id], retry_count:, delay: BACKOFF_DELAYS[index], error: error.message)
           row.merge(state: "retrying")
         end
       end
