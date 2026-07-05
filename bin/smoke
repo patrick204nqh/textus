@@ -52,8 +52,8 @@ def assert(label, cmd, *flags, key: nil, **)
   data = parse_json(out)
   val  = key ? data&.dig(*key) : ok
   if val
-    puts val.is_a?(String) ? val : "\u2713"
-    @results << ["PASS", label, val.to_s]
+    puts "\u2713"
+    @results << ["PASS", label]
   else
     puts "FAIL"
     @results << ["FAIL", label, out]
@@ -125,8 +125,11 @@ DIRS.each { |d| FileUtils.mkdir_p(File.join(STORE, d)) }
 
 # ── INPUT: orient the agent ─────────────────────────────────────────────────
 puts "[INPUT] orient"
-assert("session open", "session", "open", "--as=agent", key: %w[session_id])
-sid = @results.last[2]
+out, = run("session", "open", "--as=agent")
+data = parse_json(out)
+sid  = data&.dig("session_id") || "?"
+puts "  session open … #{sid == "?" ? "FAIL" : "✓"}"
+@results << (sid == "?" ? ["FAIL", "session open", out] : ["PASS", "session open"])
 
 assert("boot", "boot", key: %w[protocol])
 
@@ -157,7 +160,7 @@ SCRIPTS = {
 
 SCRIPTS.each do |name, s|
   payload = JSON.generate({ _meta: { name: name }, body: s[:body] })
-  assert("write sessions.#{sid}.scripts.#{name}", "put",
+  assert("write scripts/#{name}", "put",
          "scratchpad.sessions.#{sid}.scripts.#{name}", "--stdin", "--as=agent",
          stdin: payload, key: %w[etag])
 end
@@ -171,10 +174,7 @@ assert("session close", "session", "close", "--session-id=#{sid}", "--as=agent",
 
 assert("drain", "drain", "--as=automation", key: %w[ok])
 
-out, = run("audit", "--limit=5")
-rows = (parse_json(out) || {})["rows"] || []
 assert("audit", "audit", "--limit=5")
-@results[-1][2] = "#{rows.size} entries" if rows.size.positive?
 
 File.open(MARKER, "a") { |f| f.puts sid }
 
@@ -183,13 +183,12 @@ puts "\n── summary ──"
 pass = @results.count { |r| r[0] == "PASS" }
 fail = @results.count { |r| r[0] == "FAIL" }
 
-@results.each do |status, msg, detail|
+@results.each do |status, msg, _detail|
   sym = status == "PASS" ? "\u2713" : "\u2717"
-  puts "  #{sym} #{msg}  (#{detail})" if detail
-  puts "  #{sym} #{msg}" unless detail
+  puts "  #{sym} #{msg}"
 end
 
-puts "\n  pass: #{pass}  fail: #{fail}"
+puts "  pass: #{pass}  fail: #{fail}"
 puts "  log:  #{LOG}"
 
 File.open(LOG, "a") { |f| f.puts "result: #{pass} passed / #{fail} failed\n---\n" }
