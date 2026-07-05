@@ -1,12 +1,13 @@
 module Textus
   module Protocol
     class StoreEngine
-      def initialize(file_system:, manifest:, layout:, store:, workflow_registry: nil)
+      def initialize(file_system:, manifest:, layout:, store:, event_emitter: nil, schemas: nil)
         @file_system = file_system
         @manifest = manifest
         @layout = layout
         @store = store
-        @workflow_registry = workflow_registry
+        @event_emitter = event_emitter
+        @schemas = schemas
       end
 
       def read(key:)
@@ -64,7 +65,7 @@ module Textus
       def build_deps(reader:, call:)
         Pipeline::WriteDeps.new(
           file_system: @file_system, manifest: @manifest, store: @store,
-          layout: @layout, workflow_registry: @workflow_registry, reader:, call:
+          layout: @layout, event_emitter: @event_emitter, schemas: @schemas, reader:, call:
         )
       end
     end

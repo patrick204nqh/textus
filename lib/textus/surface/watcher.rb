@@ -5,14 +5,17 @@ module Textus
     class Watcher
       def initialize(container:)
         @container = container
-        @queue = Protocol::Async::Queue.new(container.store.workflow_queue)
         @registry = Textus::Workflow::Registry.new(container.workflows)
       end
 
       def tick
         call = Textus::Value::Call.build(role: Textus::Value::Role::AUTOMATION, correlation_id: SecureRandom.uuid)
+        queue = Textus::Workflow::Queue.new(
+          @container.store.workflow_queue,
+          registry: @registry, container: @container, call:,
+        )
         loop do
-          row = @queue.consume_one(registry: @registry, container: @container, call:)
+          row = queue.consume_one
           break unless row
         end
       end

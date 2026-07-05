@@ -13,8 +13,13 @@ module Textus
         workflows.push(Textus::Workflow::Instances::Materialize)
         workflow_registry = Workflow::Registry.new(workflows)
 
+        event_emitter = Textus::Workflow::EventEmitter.new(
+          store.workflow_queue,
+          registry: workflow_registry,
+        )
+
         store_engine = StoreEngine.new(
-          file_system:, manifest:, layout:, store:, workflow_registry:,
+          file_system:, manifest:, layout:, store:, event_emitter:, schemas:,
         )
 
         ttl_evaluator = Protocol::Freshness::TtlEvaluator.new(

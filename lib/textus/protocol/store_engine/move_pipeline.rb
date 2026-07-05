@@ -150,7 +150,7 @@ module Textus
 
         module EmitWorkflowEvent
           def self.call(ctx, deps)
-            return ctx unless deps.workflow_registry
+            return ctx unless deps.event_emitter
             return ctx if deps.store.workflow_queue.pending?(event_type: "entry.moved", key: ctx.from_key)
             return ctx if deps.store.workflow_queue.pending?(event_type: "entry.moved", key: ctx.to_key)
 

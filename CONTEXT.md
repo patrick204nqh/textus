@@ -59,3 +59,11 @@ _Avoid_: Cursor file, checkpoint file, seq file
 **Loop State**:
 The current knowledge pipeline phase (intent, constraint, judgment, evidence, execution, feedback) returned in `pulse` output as an advisory label. Not a state machine — agents read it to decide what to work on.
 _Avoid_: Loop driver, pipeline state, workflow phase
+
+**Workflow Consumer**:
+The module that executes a single workflow event row and handles its lifecycle (success completion, retry with backoff, dead-letter failure). Shared between the drain loop and the watcher to avoid duplicate retry logic.
+_Avoid_: Job runner, event handler
+
+**Workflow EventEmitter**:
+The module that observes store mutations and dispatches workflow events to the Workflow Queue. Replaces in-pipeline event emission so the store engine does not need to know about the workflow registry.
+_Avoid_: Event hook, pipeline step, workflow enqueuer

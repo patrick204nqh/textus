@@ -3,10 +3,8 @@ module Textus
     class Queue
       def initialize(workflow_queue, registry:, container:, call:)
         @workflow_queue = workflow_queue
+        @consumer = Consumer.new(registry:, container:, call:)
         @registry = registry
-        @container = container
-        @call = call
-        @retry_policy = RetryPolicy.new
       end
 
       def enqueue(event_type:, key:, lane:, payload: nil)
@@ -23,6 +21,13 @@ module Textus
         workflows.size
       end
 
+      def consume_one
+        row = @workflow_queue.pop
+        return nil unless row
+
+        @consumer.consume(row, @workflow_queue)
+      end
+
       def drain
         completed = 0
         failed = 0
@@ -31,35 +36,15 @@ module Textus
           row = @workflow_queue.pop
           break unless row
 
-          @workflow_queue.mark_processing(row[:id])
-          execute(row)
-          @workflow_queue.complete(row[:id])
-          completed += 1
-        rescue StandardError => e
-          handle_failure(row, e)
-          failed += 1
+          result = @consumer.consume(row, @workflow_queue)
+          if result[:state] == "done"
+            completed += 1
+          else
+            failed += 1
+          end
         end
 
         { completed:, failed: }
-      end
-
-      private
-
-      def execute(row)
-        workflow = @registry.for(row[:workflow_type])
-        Runner.new(workflow, container: @container, call: @call).run(row[:key])
-      end
-
-      def handle_failure(row, error)
-        retry_count = (row[:retry_count] || 0) + 1
-        max_attempts = row[:max_attempts] || 3
-        decision = @retry_policy.decide(retry_count:, max_attempts:)
-
-        if decision.terminal?
-          @workflow_queue.fail(row[:id], retry_count:, error: error.message)
-        else
-          @workflow_queue.reschedule(row[:id], retry_count:, delay: decision.delay, error: error.message)
-        end
       end
     end
   end

@@ -15,7 +15,7 @@ module Textus
           include ContextWith
         end
 
-        WriteDeps = Data.define(:file_system, :manifest, :store, :call, :reader, :layout, :workflow_registry) do
+        WriteDeps = Data.define(:file_system, :manifest, :store, :call, :reader, :layout, :event_emitter, :schemas) do
           def audit_log    = store.audit_log
           def entry_index  = store.entry_index
           def file_store   = store.file_store
@@ -47,15 +47,10 @@ module Textus
         end
 
         def emit_event(ctx, deps, event_type:, pending_key:, emit_key:, emit_lane: nil)
-          return ctx unless deps.workflow_registry
+          return ctx unless deps.event_emitter
           return ctx if deps.store.workflow_queue.pending?(event_type:, key: pending_key)
 
-          Textus::Workflow::Queue.new(
-            deps.store.workflow_queue,
-            registry: deps.workflow_registry,
-            container: deps,
-            call: deps.call,
-          ).enqueue(event_type:, key: emit_key, lane: emit_lane || "artifacts")
+          deps.event_emitter.emit(event_type:, key: emit_key, lane: emit_lane || "artifacts")
           ctx
         rescue StandardError => e
           warn "textus: emit_workflow_event(#{event_type}, #{emit_key}) failed: #{e.message}"

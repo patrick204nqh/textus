@@ -9,7 +9,7 @@ module Textus
           manifest: container.manifest,
           layout: container.layout,
           store: container.store,
-          workflow_registry: container.workflow_registry,
+          schemas: container.schemas,
         )
       end
 
