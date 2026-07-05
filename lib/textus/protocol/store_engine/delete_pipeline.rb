@@ -4,17 +4,13 @@ module Textus
       module DeletePipeline
         module ResolvePath
           def self.call(ctx, deps)
-            path = deps.manifest.resolver.resolve(ctx.key).path
-            ctx.with(path:)
+            ctx.with(path: Pipeline.resolve_path(ctx.key, deps))
           end
         end
 
         module CheckEtag
           def self.call(ctx, deps)
-            etag_before = deps.file_system.exists?(ctx.path) ? deps.file_system.etag(ctx.path) : nil
-            raise Textus::EtagMismatch.new(ctx.key, ctx.if_etag, etag_before) if ctx.if_etag && (etag_before != ctx.if_etag)
-
-            ctx.with(etag_before:)
+            Pipeline.check_etag(ctx, deps)
           end
         end
 
