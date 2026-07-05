@@ -4,15 +4,14 @@ module Textus
       attr_accessor :gate
       attr_reader :store, :layout, :manifest, :schemas, :workflows, :workflow_registry, :root, :ttl_evaluator, :store_engine
 
-      def initialize(store:, layout:, manifest:, schemas:,
-                     workflows:, workflow_registry: nil,
+      def initialize(store:, layout:, manifest:, schemas:, workflows:,
                      root: nil, gate: nil, ttl_evaluator: nil, store_engine: nil)
         @store = store
         @layout = layout
         @manifest = manifest
         @schemas = schemas
         @workflows = workflows
-        @workflow_registry = workflow_registry
+        @workflow_registry = workflows ? Textus::Workflow::Registry.new(workflows) : nil
         @root = root
         @gate = gate
         @ttl_evaluator = ttl_evaluator

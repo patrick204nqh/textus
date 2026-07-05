@@ -1,7 +1,7 @@
 require "spec_helper"
 
-RSpec.describe Textus::Workflow::Helpers do
-  let(:helper_object) { Class.new { include Textus::Workflow::Helpers }.new }
+RSpec.describe Textus::Workflow::StepHelpers do
+  let(:helper_object) { Class.new { include Textus::Workflow::StepHelpers }.new }
 
   describe "#check_naming" do
     let(:matching_entry) { double(key: "knowledge.intent.0001-north-star") }

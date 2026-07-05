@@ -12,6 +12,9 @@ Textus.workflow "config" do
     boot_hook = { "type" => "command", "command" => "textus boot" }
     session_start = %w[startup clear compact].map { |m| { "matcher" => m, "hooks" => [boot_hook] } }
 
+    cbm_cache_dir = File.join(ctx.repo_root, ".cache", "codebase-memory")
+    cbm_env = { "CBM_CACHE_DIR" => cbm_cache_dir }
+
     { "content" => {
       "project_name" => project["name"].to_s,
       "mcpServers" => {
@@ -19,7 +22,10 @@ Textus.workflow "config" do
           "command" => "bundle", "args" => %w[exec exe/textus --root .textus mcp serve],
         },
         "codebase-memory" => {
-          "command" => "codebase-memory-mcp", "args" => [],
+          "command" => "codebase-memory-mcp", "args" => [], "env" => cbm_env,
+        },
+        "codegraph" => {
+          "command" => "codegraph", "args" => %w[serve --mcp],
         },
       },
       "lsp" => {
@@ -30,7 +36,8 @@ Textus.workflow "config" do
       },
       "mcp" => {
         "textus" => { "type" => "local", "command" => %w[bundle exec exe/textus mcp serve], "enabled" => true },
-        "codebase-memory" => { "type" => "local", "command" => ["codebase-memory-mcp"], "enabled" => true },
+        "codebase-memory" => { "type" => "local", "command" => ["codebase-memory-mcp"], "env" => cbm_env, "enabled" => true },
+        "codegraph" => { "type" => "local", "command" => %w[codegraph serve --mcp], "enabled" => true },
       },
       "permission" => {
         "edit" => {

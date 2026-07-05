@@ -30,118 +30,118 @@ Live status of every architecture decision, derived from each file's `**Status:*
 | [0119](architecture/decisions/0119-architecture-deepening-phase-2.md) | architecture deepening phase 2 | 2026-06-22 | Proposed |
 | [0118](architecture/decisions/0118-sources-first-class-envelope-field.md) | sources first class envelope field | 2026-06-20 | Proposed |
 | [0117](architecture/decisions/0117-textus-4-protocol-version-bump.md) | textus 4 protocol version bump |  |  |
-| [0116](architecture/decisions/0116-raw-lane-and-ingest-verb.md) | raw lane and ingest verb |  |  |
-| [0115](architecture/decisions/0115-role-trust-model.md) | role trust model |  |  |
-| [0114](architecture/decisions/0114-foundation-refactor.md) | Foundation refactor: lanes, dispatch, core, surfaces |  |  |
-| [0113](architecture/decisions/0113-proposal-block-meta-key.md) | the proposal block speaks `_meta`, not `frontmatter` |  |  |
-| [0112](architecture/decisions/0112-produced-authority-reference.md) | the authority model is a produced reference doc |  |  |
-| [0111](architecture/decisions/0111-rename-reconcile-capability-to-converge.md) | rename the `reconcile` capability/lane token to `converge`; drop the dead `:reconcile_failed` event |  |  |
-| [0110](architecture/decisions/0110-job-queue-and-drain-serve.md) | job queue execution model; `reconcile` → `drain`/`serve`; async-only materialize |  |  |
-| [0109](architecture/decisions/0109-board-exact-schema-ports.md) | board-exact schema split + single port shape |  |  |
-| [0108](architecture/decisions/0108-port-shape-convention.md) | two port shapes, named and documented (not converted) |  |  |
-| [0107](architecture/decisions/0107-split-manifest-schema.md) | split `manifest/schema.rb`: data vs validation walk |  |  |
-| [0106](architecture/decisions/0106-executable-layering-invariant.md) | the layering is executable, not just intended |  |  |
-| [0105](architecture/decisions/0105-verb-routing-contract-bijection.md) | the verb token has one home: route ⟺ contract |  |  |
-| [0104](architecture/decisions/0104-root-docs-canon-and-cleanup.md) | finish the root-doc canon move (CONTRIBUTING + SECURITY), clean up the drift |  |  |
-| [0103](architecture/decisions/0103-root-readme-is-canon.md) | the root README is canon, published out |  |  |
-| [0102](architecture/decisions/0102-produced-event-catalog.md) | produce the event catalog from the registry |  |  |
-| [0101](architecture/decisions/0101-interface-fossils.md) | interface-layer fossils |  |  |
-| [0100](architecture/decisions/0100-produce-topology.md) | `produce/` topology + de-fossilized names |  |  |
-| [0099](architecture/decisions/0099-one-freshness-evaluator.md) | one `Freshness` evaluator |  |  |
-| [0098](architecture/decisions/0098-docs-ssot-cleanup.md) | Docs SSoT/DRY/SOLID cleanup: produce vs guard, single-sourced status |  |  |
-| [0097](architecture/decisions/0097-produced-reference-docs.md) | Reference docs become produced (projected/introspected, published out) |  |  |
-| [0096](architecture/decisions/0096-conformance-tier-boundary.md) | Does the conformance tier earn a distinct category? |  |  |
-| [0095](architecture/decisions/0095-collapse-produced-kind.md) | collapse `derived`/`intake` into one `produced` kind |  |  |
-| [0094](architecture/decisions/0094-source-data-publish-render.md) | `source` produces data; one publish path renders |  |  |
-| [0093](architecture/decisions/0093-source-retention-over-one-reconcile-engine.md) | `source` + `retention` over one reconcile engine |  |  |
-| [0092](architecture/decisions/0092-spec-suite-churn-resistance.md) | Finish ADR 0080's cleanup: couple conformance to contract, not fixture spelling |  |  |
-| [0091](architecture/decisions/0091-fold-machine-zone.md) | One `machine` zone-kind; entry-kind is the single discriminator |  |  |
-| [0090](architecture/decisions/0090-fold-automation-capability-and-upkeep.md) | Automation is one capability + one `upkeep` policy |  |  |
-| [0089](architecture/decisions/0089-ingest-is-system-pushed.md) | Ingest is system-pushed: remove `get`'s read-through and `put --fetch` |  |  |
-| [0088](architecture/decisions/0088-rename-quarantine-capability-fetch-to-ingest.md) | Rename the quarantine capability `fetch` → `ingest`; name the verb/capability split |  |  |
-| [0087](architecture/decisions/0087-fold-build-into-reconcile.md) | Fold `build` into a single `reconcile` pass; materialization becomes system-pushed |  |  |
-| [0086](architecture/decisions/0086-textus-owns-agent-integration-config.md) | textus owns agent-integration config: consolidate the plugin manifest, fold MCP + hook into it, keep `init` as the no-plugin fallback |  |  |
-| [0085](architecture/decisions/0085-two-observability-verbs-remove-freshness.md) | Two observability verbs on orthogonal axes; remove the public `freshness` verb |  |  |
-| [0084](architecture/decisions/0084-boot-injected-at-session-start.md) | `boot` is delivered at session start via a SessionStart hook; textus ships the hook as a plugin |  |  |
-| [0083](architecture/decisions/0083-contract-guard-writes-only-boot-self-heals.md) | The contract-drift guard applies to writes only; `boot` and reads bypass it |  |  |
-| [0082](architecture/decisions/0082-normalize-key-verb-names.md) | Normalize the key-verb family stem (`key_mv`/`key_delete`) and remove the `migrate` orchestrator |  |  |
-| [0081](architecture/decisions/0081-docs-become-canon-published-out.md) | Docs become canon, published out to `docs/` |  |  |
-| [0080](architecture/decisions/0080-spec-suite-three-category-split.md) | Spec suite: a three-category physical split (unit / integration / conformance) over the lib mirror |  |  |
-| [0079](architecture/decisions/0079-unify-lifecycle-policy.md) | Unify staleness + retention into one `lifecycle` policy; collapse the upkeep verbs; lazy by default |  |  |
-| [0078](architecture/decisions/0078-tend-composite-upkeep-pass.md) | `tend`: a composite upkeep pass so the cleanup lifecycle can run unattended |  |  |
-| [0077](architecture/decisions/0077-init-with-agent-profile.md) | `init --with-agent`: an opt-in profile that wires a fresh store to an agent |  |  |
-| [0076](architecture/decisions/0076-build-gates-by-capability-actor-surface-to-mcp.md) | `build` runs as the build actor, not the caller — surface it to MCP |  |  |
-| [0075](architecture/decisions/0075-session-opened-connect-event.md) | `session_opened`: a connect-time hook event carrying the resolved role |  |  |
-| [0074](architecture/decisions/0074-contract-etag-drift-guard.md) | The drift guard fingerprints the whole contract, not just the manifest |  |  |
-| [0073](architecture/decisions/0073-surfaces-declare-external-projections.md) | `surfaces` declares external projections; Ruby is the implicit base |  |  |
-| [0072](architecture/decisions/0072-accept-reject-gate-by-capability.md) | `accept`/`reject` gate by capability, not by transport — surface them to MCP |  |  |
-| [0071](architecture/decisions/0071-dry-run-is-opt-in.md) | `dry_run` is an opt-in preview, not a default — verbs apply by default on every surface |  |  |
-| [0070](architecture/decisions/0070-content-addressed-build-artifacts.md) | Built artifacts are content-addressed: no `generated_at` in the tracked output |  |  |
-| [0069](architecture/decisions/0069-single-path-lifecycle.md) | Single-path lifecycle: views self-shape, one normalizer home, validation is unconditional |  |  |
-| [0068](architecture/decisions/0068-declarative-facets-dissolve-escape-hatches.md) | Declarative `source:`/`coerce:`/`cli_stdin`/`around:`/`cli_default:` dissolve the acquisition & wrapper escape hatches |  |  |
-| [0067](architecture/decisions/0067-per-surface-views.md) | Per-surface `view`s replace `response`/`cli_response` and the arity hack |  |  |
-| [0066](architecture/decisions/0066-one-binder-required-is-a-surface-policy.md) | One argument binder; `required:` is a surface policy, not a contract invariant |  |  |
-| [0065](architecture/decisions/0065-finish-cli-response-shrink-escape-hatches.md) | Finish the `cli_response` projection: shrink the output-only escape hatches |  |  |
-| [0064](architecture/decisions/0064-derive-command-name-and-guard-dispatcher-key.md) | Derive the CLI command name; guard the dispatcher key against the contract verb |  |  |
-| [0063](architecture/decisions/0063-cli-is-a-projection-of-the-contract.md) | The CLI is a projection of the contract: close the last derive-or-guard gap |  |  |
-| [0062](architecture/decisions/0062-one-get-read-through.md) | One `get`: unify the public read verb on read-through; keep `Read::GetEntry` as the internal pure primitive |  |  |
-| [0061](architecture/decisions/0061-build-publish-vocabulary.md) | Reconcile the `build`/`publish` vocabulary: the verb is `build`, `publish` is the output-destination noun |  |  |
-| [0060](architecture/decisions/0060-agent-safety-graph-reads-and-default-dry-run.md) | Close the agent safety asymmetry: graph-reads on MCP + default-dry-run on bulk-destructive verbs |  |  |
-| [0059](architecture/decisions/0059-one-rule-verb-two-depths.md) | One rule verb, two depths: merge `rules` + `policy_explain` into `rule_explain` |  |  |
-| [0058](architecture/decisions/0058-one-verb-name-across-surfaces.md) | One verb name across surfaces: align the MCP tool, the CLI command, and the use-case method |  |  |
-| [0057](architecture/decisions/0057-agent-legible-mcp-contracts.md) | Agent-legible MCP contracts: arg descriptions, `_meta` wire parity, derived `write_verbs` |  |  |
-| [0056](architecture/decisions/0056-boot-quickstart-speaks-the-mcp-catalog.md) | `boot`'s agent surface speaks the MCP catalog, not a CLI dialect |  |  |
-| [0054](architecture/decisions/0054-entry-level-desc.md) | Entry-level `desc`: the manifest as a navigable index |  |  |
-| [0053](architecture/decisions/0053-remove-index-filename.md) | Remove `index_filename`: nested entries enumerate files |  |  |
-| [0052](architecture/decisions/0052-typed-publish-block.md) | Fold `publish_to`/`publish_tree` into one typed `publish:` block |  |  |
-| [0051](architecture/decisions/0051-remove-publish-each.md) | Remove `publish_each`: collapse publish to two modes |  |  |
-| [0050](architecture/decisions/0050-native-authoring-and-content-identical-adoption.md) | Own multi-file artifacts by native in-store authoring; migrate by content-identical adoption |  |  |
-| [0049](architecture/decisions/0049-publish-modes-as-sum-type.md) | Publish modes as a resolved sum type + one shared subtree mirror |  |  |
-| [0048](architecture/decisions/0048-fetch-subsystem-three-concerns.md) | Fetch subsystem: separate intake invocation, deadline/async policy, and lifecycle events |  |  |
-| [0047](architecture/decisions/0047-publish-tree-keyless-subtree-mirror.md) | `publish_tree`: a key-less subtree mirror for a derived-index leaf |  |  |
-| [0046](architecture/decisions/0046-publish-leaf-subtrees.md) | `publish_each` publishes a leaf's whole subtree; siblings are opaque attachments, never keys |  |  |
-| [0045](architecture/decisions/0045-close-role-name-set.md) | Close the role-name set to {human, agent, automation}; keep capabilities open |  |  |
-| [0044](architecture/decisions/0044-system-actors-resolved-by-capability.md) | System-initiated actors are resolved by capability, never by a hardcoded role name |  |  |
-| [0043](architecture/decisions/0043-feed-ergonomics-without-breaking-core-purity.md) | Feed ergonomics without breaking core purity: an intake cookbook, and environment as a `feeds.machine` snapshot |  |  |
-| [0042](architecture/decisions/0042-native-ignore-patterns-for-entry-enumeration.md) | Native ignore patterns for entry enumeration (one shared filter seam, evaluated above legality) |  |  |
-| [0041](architecture/decisions/0041-dogfood-textus-in-its-own-repo.md) | Dogfood textus in its own repo: a self-development store + MCP wiring |  |  |
-| [0040](architecture/decisions/0040-mcp-connection-role-and-two-channels.md) | The MCP connection acts as `agent`; human authority is a separate channel |  |  |
-| [0039](architecture/decisions/0039-mcp-catalog-derive-or-guard.md) | The MCP catalog derives from one declared verb contract; no unguarded hand-maintained mirror |  |  |
-| [0038](architecture/decisions/0038-runtime-artifacts-under-run-and-layout.md) | Runtime artifacts live under `.run/`; one `Layout` owns the map |  |  |
-| [0037](architecture/decisions/0037-boot-pulse-derive-or-guard.md) | Boot/pulse: derive-or-guard, no unguarded hand-maintained mirror |  |  |
-| [0036](architecture/decisions/0036-transports-as-pure-framings.md) | Transports are pure framings: one verb vocabulary, one session, lifted to core |  |  |
-| [0035](architecture/decisions/0035-proposal-target-zone-constraint.md) | Constrain a proposal's target zone; keep the accept/reject anchor-gate explicit |  |  |
-| [0034](architecture/decisions/0034-unify-lane-vocabulary.md) | Unify the zone-kind/capability bijection into a single Lane table |  |  |
-| [0033](architecture/decisions/0033-complete-primitives-and-vocabulary.md) | Complete the primitive set (`workspace` + `keep`) and clarify the vocabulary |  |  |
-| [0032](architecture/decisions/0032-drop-read-policy.md) | Drop `read_policy`: textus gates writes, not reads |  |  |
-| [0031](architecture/decisions/0031-unified-guard.md) | The unified Guard: one explainable authorization path for every transition |  |  |
-| [0030](architecture/decisions/0030-capability-based-roles.md) | Capability-based roles: role = name + composable verbs |  |  |
-| [0029](architecture/decisions/0029-concept-vocabulary.md) | Concept vocabulary: coordination space → lanes → zones |  |  |
-| [0028](architecture/decisions/0028-coordination-planes.md) | Coordination space: closed topology, closed transitions, open policy |  |  |
-| [0027](architecture/decisions/0027-hook-signature-and-mcp-policy.md) | Hook-registry convergence and MCP transport de-leak |  |  |
-| [0026](architecture/decisions/0026-use-case-construction-seams.md) | Use-case construction seams (named constructors, one dispatch path, transport-side fetch helper) |  |  |
-| [0025](architecture/decisions/0025-boot-doctor-as-verbs-and-etag-via-port.md) | Boot/Doctor as dispatched verbs + manifest etag via FileStore port |  |  |
-| [0024](architecture/decisions/0024-domain-purity-ports.md) | Domain purity via FileStat/Clock ports |  |  |
-| [0023](architecture/decisions/0023-uniform-use-case-shape.md) | Uniform use-case shape |  |  |
-| [0022](architecture/decisions/0022-container-call-dispatcher.md) | Container + Call + Dispatcher |  |  |
-| [0021](architecture/decisions/0021-session-and-module-use-cases.md) | Session + module-function use-cases |  |  |
-| [0020](architecture/decisions/0020-capability-records.md) | Replace Ports with ReadCaps, WriteCaps, HookCaps |  |  |
-| [0019](architecture/decisions/0019-hooks-bus-split.md) | Split Hooks::Bus into EventBus and RpcRegistry |  |  |
-| [0018](architecture/decisions/0018-manifest-carving.md) | Carve Manifest into Data, Resolver, Policy, Rules |  |  |
-| [0017](architecture/decisions/0017-envelope-io-split.md) | Split EnvelopeIO into Reader and Writer |  |  |
-| [0016](architecture/decisions/0016-application-ports-value.md) | Application Ports value object |  |  |
-| [0015](architecture/decisions/0015-agent-gate-mcp.md) | Agent gate (MCP-shaped surface) |  |  |
-| [0014](architecture/decisions/0014-explicit-dependencies.md) | Explicit Dependencies |  |  |
-| [0013](architecture/decisions/0013-port-extraction-store-as-root.md) | Port extraction: Store as composition root |  |  |
-| [0012](architecture/decisions/0012-explicit-hook-registration.md) | Explicit hook registration |  |  |
-| [0011](architecture/decisions/0011-authorize-bang-in-context.md) | Authorize-bang in Context |  |  |
-| [0010](architecture/decisions/0010-flat-operations-api.md) | Flat Operations API |  |  |
-| [0009](architecture/decisions/0009-audit-subscriber-split.md) | AuditSubscriber split from Hooks::Dispatcher |  |  |
-| [0008](architecture/decisions/0008-freshness-and-resolution-types.md) | Freshness and Resolution value objects |  |  |
-| [0007](architecture/decisions/0007-envelope-data-class.md) | Envelope as Data.define + Build/Publish split |  |  |
-| [0006](architecture/decisions/0006-format-strategy-extraction.md) | Format-strategy extraction (Phase 2 of facade cleanup) |  |  |
-| [0005](architecture/decisions/0005-store-facade-final-removal.md) | Store facade final removal (Phase 1 completion) |  |  |
-| [0004](architecture/decisions/0004-operations-rename-and-store-facade-removal.md) | Operations rename + Store facade removal (v0.12.2) |  |  |
-| [0003](architecture/decisions/0003-legacy-sweep.md) | Legacy Sweep (v0.12.0) |  |  |
-| [0002](architecture/decisions/0002-textus-3-vocabulary-redesign.md) | textus/3 Vocabulary Redesign |  |  |
-| [0001](architecture/decisions/0001-skill-bundle-deferral.md) | Defer first-class skill-bundle support |  |  |
+| [0116](architecture/archive/0116-raw-lane-and-ingest-verb.md) | raw lane and ingest verb |  |  |
+| [0115](architecture/archive/0115-role-trust-model.md) | role trust model |  |  |
+| [0114](architecture/archive/0114-foundation-refactor.md) | Foundation refactor: lanes, dispatch, core, surfaces |  |  |
+| [0113](architecture/archive/0113-proposal-block-meta-key.md) | the proposal block speaks `_meta`, not `frontmatter` |  |  |
+| [0112](architecture/archive/0112-produced-authority-reference.md) | the authority model is a produced reference doc |  |  |
+| [0111](architecture/archive/0111-rename-reconcile-capability-to-converge.md) | rename the `reconcile` capability/lane token to `converge`; drop the dead `:reconcile_failed` event |  |  |
+| [0110](architecture/archive/0110-job-queue-and-drain-serve.md) | job queue execution model; `reconcile` → `drain`/`serve`; async-only materialize |  |  |
+| [0109](architecture/archive/0109-board-exact-schema-ports.md) | board-exact schema split + single port shape |  |  |
+| [0108](architecture/archive/0108-port-shape-convention.md) | two port shapes, named and documented (not converted) |  |  |
+| [0107](architecture/archive/0107-split-manifest-schema.md) | split `manifest/schema.rb`: data vs validation walk |  |  |
+| [0106](architecture/archive/0106-executable-layering-invariant.md) | the layering is executable, not just intended |  |  |
+| [0105](architecture/archive/0105-verb-routing-contract-bijection.md) | the verb token has one home: route ⟺ contract |  |  |
+| [0104](architecture/archive/0104-root-docs-canon-and-cleanup.md) | finish the root-doc canon move (CONTRIBUTING + SECURITY), clean up the drift |  |  |
+| [0103](architecture/archive/0103-root-readme-is-canon.md) | the root README is canon, published out |  |  |
+| [0102](architecture/archive/0102-produced-event-catalog.md) | produce the event catalog from the registry |  |  |
+| [0101](architecture/archive/0101-interface-fossils.md) | interface-layer fossils |  |  |
+| [0100](architecture/archive/0100-produce-topology.md) | `produce/` topology + de-fossilized names |  |  |
+| [0099](architecture/archive/0099-one-freshness-evaluator.md) | one `Freshness` evaluator |  |  |
+| [0098](architecture/archive/0098-docs-ssot-cleanup.md) | Docs SSoT/DRY/SOLID cleanup: produce vs guard, single-sourced status |  |  |
+| [0097](architecture/archive/0097-produced-reference-docs.md) | Reference docs become produced (projected/introspected, published out) |  |  |
+| [0096](architecture/archive/0096-conformance-tier-boundary.md) | Does the conformance tier earn a distinct category? |  |  |
+| [0095](architecture/archive/0095-collapse-produced-kind.md) | collapse `derived`/`intake` into one `produced` kind |  |  |
+| [0094](architecture/archive/0094-source-data-publish-render.md) | `source` produces data; one publish path renders |  |  |
+| [0093](architecture/archive/0093-source-retention-over-one-reconcile-engine.md) | `source` + `retention` over one reconcile engine |  |  |
+| [0092](architecture/archive/0092-spec-suite-churn-resistance.md) | Finish ADR 0080's cleanup: couple conformance to contract, not fixture spelling |  |  |
+| [0091](architecture/archive/0091-fold-machine-zone.md) | One `machine` zone-kind; entry-kind is the single discriminator |  |  |
+| [0090](architecture/archive/0090-fold-automation-capability-and-upkeep.md) | Automation is one capability + one `upkeep` policy |  |  |
+| [0089](architecture/archive/0089-ingest-is-system-pushed.md) | Ingest is system-pushed: remove `get`'s read-through and `put --fetch` |  |  |
+| [0088](architecture/archive/0088-rename-quarantine-capability-fetch-to-ingest.md) | Rename the quarantine capability `fetch` → `ingest`; name the verb/capability split |  |  |
+| [0087](architecture/archive/0087-fold-build-into-reconcile.md) | Fold `build` into a single `reconcile` pass; materialization becomes system-pushed |  |  |
+| [0086](architecture/archive/0086-textus-owns-agent-integration-config.md) | textus owns agent-integration config: consolidate the plugin manifest, fold MCP + hook into it, keep `init` as the no-plugin fallback |  |  |
+| [0085](architecture/archive/0085-two-observability-verbs-remove-freshness.md) | Two observability verbs on orthogonal axes; remove the public `freshness` verb |  |  |
+| [0084](architecture/archive/0084-boot-injected-at-session-start.md) | `boot` is delivered at session start via a SessionStart hook; textus ships the hook as a plugin |  |  |
+| [0083](architecture/archive/0083-contract-guard-writes-only-boot-self-heals.md) | The contract-drift guard applies to writes only; `boot` and reads bypass it |  |  |
+| [0082](architecture/archive/0082-normalize-key-verb-names.md) | Normalize the key-verb family stem (`key_mv`/`key_delete`) and remove the `migrate` orchestrator |  |  |
+| [0081](architecture/archive/0081-docs-become-canon-published-out.md) | Docs become canon, published out to `docs/` |  |  |
+| [0080](architecture/archive/0080-spec-suite-three-category-split.md) | Spec suite: a three-category physical split (unit / integration / conformance) over the lib mirror |  |  |
+| [0079](architecture/archive/0079-unify-lifecycle-policy.md) | Unify staleness + retention into one `lifecycle` policy; collapse the upkeep verbs; lazy by default |  |  |
+| [0078](architecture/archive/0078-tend-composite-upkeep-pass.md) | `tend`: a composite upkeep pass so the cleanup lifecycle can run unattended |  |  |
+| [0077](architecture/archive/0077-init-with-agent-profile.md) | `init --with-agent`: an opt-in profile that wires a fresh store to an agent |  |  |
+| [0076](architecture/archive/0076-build-gates-by-capability-actor-surface-to-mcp.md) | `build` runs as the build actor, not the caller — surface it to MCP |  |  |
+| [0075](architecture/archive/0075-session-opened-connect-event.md) | `session_opened`: a connect-time hook event carrying the resolved role |  |  |
+| [0074](architecture/archive/0074-contract-etag-drift-guard.md) | The drift guard fingerprints the whole contract, not just the manifest |  |  |
+| [0073](architecture/archive/0073-surfaces-declare-external-projections.md) | `surfaces` declares external projections; Ruby is the implicit base |  |  |
+| [0072](architecture/archive/0072-accept-reject-gate-by-capability.md) | `accept`/`reject` gate by capability, not by transport — surface them to MCP |  |  |
+| [0071](architecture/archive/0071-dry-run-is-opt-in.md) | `dry_run` is an opt-in preview, not a default — verbs apply by default on every surface |  |  |
+| [0070](architecture/archive/0070-content-addressed-build-artifacts.md) | Built artifacts are content-addressed: no `generated_at` in the tracked output |  |  |
+| [0069](architecture/archive/0069-single-path-lifecycle.md) | Single-path lifecycle: views self-shape, one normalizer home, validation is unconditional |  |  |
+| [0068](architecture/archive/0068-declarative-facets-dissolve-escape-hatches.md) | Declarative `source:`/`coerce:`/`cli_stdin`/`around:`/`cli_default:` dissolve the acquisition & wrapper escape hatches |  |  |
+| [0067](architecture/archive/0067-per-surface-views.md) | Per-surface `view`s replace `response`/`cli_response` and the arity hack |  |  |
+| [0066](architecture/archive/0066-one-binder-required-is-a-surface-policy.md) | One argument binder; `required:` is a surface policy, not a contract invariant |  |  |
+| [0065](architecture/archive/0065-finish-cli-response-shrink-escape-hatches.md) | Finish the `cli_response` projection: shrink the output-only escape hatches |  |  |
+| [0064](architecture/archive/0064-derive-command-name-and-guard-dispatcher-key.md) | Derive the CLI command name; guard the dispatcher key against the contract verb |  |  |
+| [0063](architecture/archive/0063-cli-is-a-projection-of-the-contract.md) | The CLI is a projection of the contract: close the last derive-or-guard gap |  |  |
+| [0062](architecture/archive/0062-one-get-read-through.md) | One `get`: unify the public read verb on read-through; keep `Read::GetEntry` as the internal pure primitive |  |  |
+| [0061](architecture/archive/0061-build-publish-vocabulary.md) | Reconcile the `build`/`publish` vocabulary: the verb is `build`, `publish` is the output-destination noun |  |  |
+| [0060](architecture/archive/0060-agent-safety-graph-reads-and-default-dry-run.md) | Close the agent safety asymmetry: graph-reads on MCP + default-dry-run on bulk-destructive verbs |  |  |
+| [0059](architecture/archive/0059-one-rule-verb-two-depths.md) | One rule verb, two depths: merge `rules` + `policy_explain` into `rule_explain` |  |  |
+| [0058](architecture/archive/0058-one-verb-name-across-surfaces.md) | One verb name across surfaces: align the MCP tool, the CLI command, and the use-case method |  |  |
+| [0057](architecture/archive/0057-agent-legible-mcp-contracts.md) | Agent-legible MCP contracts: arg descriptions, `_meta` wire parity, derived `write_verbs` |  |  |
+| [0056](architecture/archive/0056-boot-quickstart-speaks-the-mcp-catalog.md) | `boot`'s agent surface speaks the MCP catalog, not a CLI dialect |  |  |
+| [0054](architecture/archive/0054-entry-level-desc.md) | Entry-level `desc`: the manifest as a navigable index |  |  |
+| [0053](architecture/archive/0053-remove-index-filename.md) | Remove `index_filename`: nested entries enumerate files |  |  |
+| [0052](architecture/archive/0052-typed-publish-block.md) | Fold `publish_to`/`publish_tree` into one typed `publish:` block |  |  |
+| [0051](architecture/archive/0051-remove-publish-each.md) | Remove `publish_each`: collapse publish to two modes |  |  |
+| [0050](architecture/archive/0050-native-authoring-and-content-identical-adoption.md) | Own multi-file artifacts by native in-store authoring; migrate by content-identical adoption |  |  |
+| [0049](architecture/archive/0049-publish-modes-as-sum-type.md) | Publish modes as a resolved sum type + one shared subtree mirror |  |  |
+| [0048](architecture/archive/0048-fetch-subsystem-three-concerns.md) | Fetch subsystem: separate intake invocation, deadline/async policy, and lifecycle events |  |  |
+| [0047](architecture/archive/0047-publish-tree-keyless-subtree-mirror.md) | `publish_tree`: a key-less subtree mirror for a derived-index leaf |  |  |
+| [0046](architecture/archive/0046-publish-leaf-subtrees.md) | `publish_each` publishes a leaf's whole subtree; siblings are opaque attachments, never keys |  |  |
+| [0045](architecture/archive/0045-close-role-name-set.md) | Close the role-name set to {human, agent, automation}; keep capabilities open |  |  |
+| [0044](architecture/archive/0044-system-actors-resolved-by-capability.md) | System-initiated actors are resolved by capability, never by a hardcoded role name |  |  |
+| [0043](architecture/archive/0043-feed-ergonomics-without-breaking-core-purity.md) | Feed ergonomics without breaking core purity: an intake cookbook, and environment as a `feeds.machine` snapshot |  |  |
+| [0042](architecture/archive/0042-native-ignore-patterns-for-entry-enumeration.md) | Native ignore patterns for entry enumeration (one shared filter seam, evaluated above legality) |  |  |
+| [0041](architecture/archive/0041-dogfood-textus-in-its-own-repo.md) | Dogfood textus in its own repo: a self-development store + MCP wiring |  |  |
+| [0040](architecture/archive/0040-mcp-connection-role-and-two-channels.md) | The MCP connection acts as `agent`; human authority is a separate channel |  |  |
+| [0039](architecture/archive/0039-mcp-catalog-derive-or-guard.md) | The MCP catalog derives from one declared verb contract; no unguarded hand-maintained mirror |  |  |
+| [0038](architecture/archive/0038-runtime-artifacts-under-run-and-layout.md) | Runtime artifacts live under `.run/`; one `Layout` owns the map |  |  |
+| [0037](architecture/archive/0037-boot-pulse-derive-or-guard.md) | Boot/pulse: derive-or-guard, no unguarded hand-maintained mirror |  |  |
+| [0036](architecture/archive/0036-transports-as-pure-framings.md) | Transports are pure framings: one verb vocabulary, one session, lifted to core |  |  |
+| [0035](architecture/archive/0035-proposal-target-zone-constraint.md) | Constrain a proposal's target zone; keep the accept/reject anchor-gate explicit |  |  |
+| [0034](architecture/archive/0034-unify-lane-vocabulary.md) | Unify the zone-kind/capability bijection into a single Lane table |  |  |
+| [0033](architecture/archive/0033-complete-primitives-and-vocabulary.md) | Complete the primitive set (`workspace` + `keep`) and clarify the vocabulary |  |  |
+| [0032](architecture/archive/0032-drop-read-policy.md) | Drop `read_policy`: textus gates writes, not reads |  |  |
+| [0031](architecture/archive/0031-unified-guard.md) | The unified Guard: one explainable authorization path for every transition |  |  |
+| [0030](architecture/archive/0030-capability-based-roles.md) | Capability-based roles: role = name + composable verbs |  |  |
+| [0029](architecture/archive/0029-concept-vocabulary.md) | Concept vocabulary: coordination space → lanes → zones |  |  |
+| [0028](architecture/archive/0028-coordination-planes.md) | Coordination space: closed topology, closed transitions, open policy |  |  |
+| [0027](architecture/archive/0027-hook-signature-and-mcp-policy.md) | Hook-registry convergence and MCP transport de-leak |  |  |
+| [0026](architecture/archive/0026-use-case-construction-seams.md) | Use-case construction seams (named constructors, one dispatch path, transport-side fetch helper) |  |  |
+| [0025](architecture/archive/0025-boot-doctor-as-verbs-and-etag-via-port.md) | Boot/Doctor as dispatched verbs + manifest etag via FileStore port |  |  |
+| [0024](architecture/archive/0024-domain-purity-ports.md) | Domain purity via FileStat/Clock ports |  |  |
+| [0023](architecture/archive/0023-uniform-use-case-shape.md) | Uniform use-case shape |  |  |
+| [0022](architecture/archive/0022-container-call-dispatcher.md) | Container + Call + Dispatcher |  |  |
+| [0021](architecture/archive/0021-session-and-module-use-cases.md) | Session + module-function use-cases |  |  |
+| [0020](architecture/archive/0020-capability-records.md) | Replace Ports with ReadCaps, WriteCaps, HookCaps |  |  |
+| [0019](architecture/archive/0019-hooks-bus-split.md) | Split Hooks::Bus into EventBus and RpcRegistry |  |  |
+| [0018](architecture/archive/0018-manifest-carving.md) | Carve Manifest into Data, Resolver, Policy, Rules |  |  |
+| [0017](architecture/archive/0017-envelope-io-split.md) | Split EnvelopeIO into Reader and Writer |  |  |
+| [0016](architecture/archive/0016-application-ports-value.md) | Application Ports value object |  |  |
+| [0015](architecture/archive/0015-agent-gate-mcp.md) | Agent gate (MCP-shaped surface) |  |  |
+| [0014](architecture/archive/0014-explicit-dependencies.md) | Explicit Dependencies |  |  |
+| [0013](architecture/archive/0013-port-extraction-store-as-root.md) | Port extraction: Store as composition root |  |  |
+| [0012](architecture/archive/0012-explicit-hook-registration.md) | Explicit hook registration |  |  |
+| [0011](architecture/archive/0011-authorize-bang-in-context.md) | Authorize-bang in Context |  |  |
+| [0010](architecture/archive/0010-flat-operations-api.md) | Flat Operations API |  |  |
+| [0009](architecture/archive/0009-audit-subscriber-split.md) | AuditSubscriber split from Hooks::Dispatcher |  |  |
+| [0008](architecture/archive/0008-freshness-and-resolution-types.md) | Freshness and Resolution value objects |  |  |
+| [0007](architecture/archive/0007-envelope-data-class.md) | Envelope as Data.define + Build/Publish split |  |  |
+| [0006](architecture/archive/0006-format-strategy-extraction.md) | Format-strategy extraction (Phase 2 of facade cleanup) |  |  |
+| [0005](architecture/archive/0005-store-facade-final-removal.md) | Store facade final removal (Phase 1 completion) |  |  |
+| [0004](architecture/archive/0004-operations-rename-and-store-facade-removal.md) | Operations rename + Store facade removal (v0.12.2) |  |  |
+| [0003](architecture/archive/0003-legacy-sweep.md) | Legacy Sweep (v0.12.0) |  |  |
+| [0002](architecture/archive/0002-textus-3-vocabulary-redesign.md) | textus/3 Vocabulary Redesign |  |  |
+| [0001](architecture/archive/0001-skill-bundle-deferral.md) | Defer first-class skill-bundle support |  |  |

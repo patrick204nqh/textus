@@ -21,7 +21,7 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
 
       result = described_class.propose(
         key: "decisions.feature-x", meta: { "proposal" => { "target_key" => "knowledge.foo" } },
-        body: "some body", content: nil, ctx:, call:
+        data: "some body", ctx:, call:
       )
 
       expect(store_engine).to have_received(:put).with(

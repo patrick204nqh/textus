@@ -38,7 +38,7 @@ RSpec.describe "MCP agent workflow — end-to-end" do
     put_result = dispatch(human_server, :put, {
                             key: "knowledge.intent.0002-test-intent",
                             _meta: { name: "0002-test-intent" },
-                            body: "# Test intent\n\nBody content.\n",
+                            data: "# Test intent\n\nBody content.\n",
                           })
     expect(put_result["ok"]).to be true
     expect(put_result["uid"]).to be_a(String)
@@ -54,7 +54,7 @@ RSpec.describe "MCP agent workflow — end-to-end" do
                                 _meta: {
                                   proposal: { target_key: "knowledge.intent.0002-test-intent", action: "put" },
                                 },
-                                body: "# Test intent (updated)\n\nUpdated body.\n",
+                                data: "# Test intent (updated)\n\nUpdated body.\n",
                               })
     pending_key = propose_result["key"]
 
@@ -86,7 +86,7 @@ RSpec.describe "MCP agent workflow — end-to-end" do
                                 _meta: {
                                   proposal: { target_key: "knowledge.contacts.reject-person", action: "put" },
                                 },
-                                body: "Name: Test\nRelationship: peer\nOrg: Acme\n",
+                                data: "Name: Test\nRelationship: peer\nOrg: Acme\n",
                               })
     pending_key = propose_result["key"]
 

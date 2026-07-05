@@ -29,7 +29,8 @@ module Textus
           ctx.manifest.data.entries.find { |e| e.key == SESSION_PARENT_KEY }
         end
 
-        def propose(key:, ctx:, call:, meta: nil, body: nil, content: nil)
+        def propose(key:, ctx:, call:, meta: nil, data: nil)
+          body, content = data.is_a?(Hash) ? [nil, data] : [data, nil]
           full_key = "#{PROPOSALS_PARENT_KEY}.#{key}"
           env = ctx.put(key: full_key, meta: meta || {}, body:, content:, call:)
           env.to_h_for_wire

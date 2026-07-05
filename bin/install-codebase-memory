@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Installs codebase-memory-mcp with UI support from GitHub releases.
+# Uses the official upstream install.sh with --ui flag.
+set -euo pipefail
+
+echo "==> Installing codebase-memory-mcp (UI variant)..."
+
+INSTALL_SCRIPT="https://raw.githubusercontent.com/DeusData/codebase-memory-mcp/main/install.sh"
+
+if command -v curl &>/dev/null; then
+  curl -fsSL "$INSTALL_SCRIPT" | bash -s -- --ui --skip-config
+elif command -v wget &>/dev/null; then
+  wget -qO- "$INSTALL_SCRIPT" | bash -s -- --ui --skip-config
+else
+  echo "error: curl or wget required" >&2
+  exit 1
+fi
+
+echo ""
+echo "==> Done. codebase-memory-mcp installed with UI support."
+echo "    Run 'codebase-memory-mcp install' to configure agent integrations."

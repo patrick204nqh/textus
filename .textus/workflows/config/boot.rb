@@ -29,7 +29,7 @@ Textus.workflow "boot" do
     # entry families under .textus/data/knowledge/loop/. If a new loop node
     # is added to the manifest it must appear here too.
     loop_nodes = %w[intent constraint.repo constraint.protocol judgment.engineering
-                    judgment.agent-behavior evidence execution feedback]
+                    judgment.agent-behavior evidence execution adoption]
     agent_behavior_excerpt = fetch.call("knowledge.loop.judgment.agent-behavior.0001-loop-behavior")&.body.to_s
     loop_summary = {
       "nodes" => loop_nodes,
@@ -100,7 +100,24 @@ Textus.workflow "boot" do
         "roles" => manifest.data.role_caps.keys,
         "ref" => "SPEC.md §5",
       },
+      "discipline" => "When edit/write tools are blocked for a path, use `textus propose` to suggest changes for human review. Never use shell scripts (sed, python, rm) to bypass permission gates — that breaks the audit trail and bypasses role gates.",
     }
+
+    meta_glossary = {
+      "knowledge.loop.adoption" => { "node" => "target loop node", "confidence" => "high|medium|low",
+                                      "signal" => "observation type", "summary" => "brief description" },
+      "scratchpad.proposals"    => { "proposal" => "{ target_key, action }" },
+      "raw"                     => { "source" => "{ kind, url, path, label }" },
+    }.freeze
+
+    blueprints = manifest.data.entries.map do |entry|
+      prefix = entry.key
+      bp = { "key_prefix" => prefix, "format" => entry.format.to_s, "naming" => entry.naming.to_s }
+      bp["schema"] = entry.schema.to_s if entry.schema
+      meta = meta_glossary[prefix]
+      bp["meta"] = meta if meta
+      bp
+    end
 
     {
       "content" => {
@@ -113,6 +130,13 @@ Textus.workflow "boot" do
         "runbooks" => runbooks.map { |r| { "name" => r["name"], "description" => r["description"], "schema" => r["schema"] } },
         "loop" => loop_summary,
         "lanes" => lanes,
+        "workflow_tips" => [
+          { "when" => "write an entry", "then" => "`data` param: String for body, Hash for content" },
+          { "when" => "edit a protected path", "then" => "`textus propose key=my-change data=...` — human reviews" },
+          { "when" => "explore recent changes", "then" => "`textus pulse` then `textus get <changed_key>`" },
+          { "when" => "find related entries", "then" => "`textus graph key=<key> depth=2`" },
+        ],
+        "entry_blueprints" => blueprints,
         "agent_quickstart" => agent_quickstart,
         "agent_protocol" => agent_protocol,
       },

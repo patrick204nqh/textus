@@ -22,7 +22,7 @@ data:
     - key: knowledge.loop.execution.procedure
       naming: sequential
       schema: execution/procedure
-    - key: knowledge.loop.feedback
+    - key: knowledge.loop.adoption
       naming: sequential
     - key: knowledge.reference
   scratchpad:

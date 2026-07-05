@@ -57,35 +57,56 @@ module Textus
         warnings.map { |w| "unknown field: #{w}" }
       end
 
+      TYPE_VALIDATORS = {
+        "string" => :validate_string,
+        "number" => :validate_number,
+        "boolean" => :validate_boolean,
+        "enum" => :validate_enum,
+        "array" => :validate_array,
+        "object" => :validate_object,
+      }.freeze
+
       private
 
       def check_type!(field, value, spec)
         type = spec["type"]
-        case type
-        when "string"
-          bad!(field, "expected string") unless value.is_a?(String)
-          if (max = spec["max"]) && value.bytesize > max
-            bad!(field, "exceeds max #{max}")
-          end
-        when "number"
-          bad!(field, "expected number") unless value.is_a?(Numeric)
-        when "boolean"
-          bad!(field, "expected boolean") unless [true, false].include?(value)
-        when "enum"
-          values = Array(spec["values"])
-          bad!(field, "not in enum #{values.inspect}") unless values.include?(value)
-        when "array"
-          bad!(field, "expected array") unless value.is_a?(Array)
-          if (items = spec["items"])
-            value.each_with_index { |v, i| check_type!("#{field}[#{i}]", v, items) }
-          end
-        when "object"
-          bad!(field, "expected object") unless value.is_a?(Hash)
-          if (sub = spec["fields"])
-            sub.each { |fk, fspec| check_type!("#{field}.#{fk}", value[fk], fspec) if value.key?(fk) }
-          end
-        when nil
-        end
+        return unless type
+
+        send(TYPE_VALIDATORS[type], field, value, spec)
+      end
+
+      def validate_string(field, value, spec)
+        bad!(field, "expected string") unless value.is_a?(String)
+        return unless (max = spec["max"]) && value.bytesize > max
+
+        bad!(field, "exceeds max #{max}")
+      end
+
+      def validate_number(field, value, _spec)
+        bad!(field, "expected number") unless value.is_a?(Numeric)
+      end
+
+      def validate_boolean(field, value, _spec)
+        bad!(field, "expected boolean") unless [true, false].include?(value)
+      end
+
+      def validate_enum(field, value, spec)
+        values = Array(spec["values"])
+        bad!(field, "not in enum #{values.inspect}") unless values.include?(value)
+      end
+
+      def validate_array(field, value, spec)
+        bad!(field, "expected array") unless value.is_a?(Array)
+        return unless (items = spec["items"])
+
+        value.each_with_index { |v, i| check_type!("#{field}[#{i}]", v, items) }
+      end
+
+      def validate_object(field, value, spec)
+        bad!(field, "expected object") unless value.is_a?(Hash)
+        return unless (sub = spec["fields"])
+
+        sub.each { |fk, fspec| check_type!("#{field}.#{fk}", value[fk], fspec) if value.key?(fk) }
       end
 
       def bad!(field, reason)

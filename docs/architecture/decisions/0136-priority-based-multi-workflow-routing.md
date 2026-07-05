@@ -3,7 +3,7 @@
 **Date:** 2026-07-05
 **Status:** Accepted
 **Supersedes:** The boot_refresh workflow pattern (explicit inline `Runner` call to trigger downstream workflows)
-**Refines:** [ADR 0087](./0087-fold-build-into-reconcile.md) (materialization is system-pushed; this ADR adds multi-workflow routing via priority), [ADR 0124](./0124-workflow-parallel-steps.md) (parallel steps kept; sequential chaining shifts from inline Runner to priority ordering)
+**Refines:** [ADR 0087](../archive/0087-fold-build-into-reconcile.md) (materialization is system-pushed; this ADR adds multi-workflow routing via priority), [ADR 0124](./0124-workflow-parallel-steps.md) (parallel steps kept; sequential chaining shifts from inline Runner to priority ordering)
 
 > **One sentence:** The `Materialize` workflow could only match one workflow per key (using `find`), forcing workflows that needed to run in sequence (boot_refresh → doctor checks → boot) to use inline `Runner.new(...).run(...)` calls — a leaky bypass that circumvented the event system and created dead code (`Produce::Engine.converge` never existed); this ADR changes Materialize to iterate all matching workflows sorted by `priority`, eliminates the boot_refresh workflow entirely, and makes the doctor workflow the sole knowledge-change handler that triggers boot via `notify`.
 

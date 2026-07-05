@@ -12,7 +12,7 @@ RSpec.describe Textus::Lanes::Knowledge::Handlers do
       expect(result["loop"].map { |n| n["name"] }).to eq(%w[
                                                            intent constraint.repo constraint.protocol
                                                            judgment.engineering judgment.agent-behavior
-                                                           evidence execution feedback
+                                                           evidence execution adoption
                                                          ])
     end
 
@@ -27,7 +27,7 @@ RSpec.describe Textus::Lanes::Knowledge::Handlers do
                                                           "knowledge.loop.judgment.agent-behavior",
                                                           "knowledge.loop.evidence",
                                                           "knowledge.loop.execution.runbook",
-                                                          "knowledge.loop.feedback",
+                                                          "knowledge.loop.adoption",
                                                         ])
     end
 

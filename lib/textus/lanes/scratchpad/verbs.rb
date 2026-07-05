@@ -33,10 +33,8 @@ Textus::Protocol::VerbRegistry.register(
                                                        description: "key relative to propose_lane, e.g. 'decisions.feature-x'"),
            Textus::Protocol::VerbRegistry::ArgSpec.arg(name: :meta, type: Hash, wire_name: :_meta,
                                                        description: "frontmatter. Include a 'proposal:' block naming the target_key"),
-           Textus::Protocol::VerbRegistry::ArgSpec.arg(name: :body,
-                                                       description: "markdown/text payload for markdown-format entries"),
-           Textus::Protocol::VerbRegistry::ArgSpec.arg(name: :content, type: Hash,
-                                                       description: "structured payload for json/yaml-format entries")],
+           Textus::Protocol::VerbRegistry::ArgSpec.arg(name: :data,
+                                                       description: "unified payload — String (body) or Hash (content)")],
     surfaces: %i[cli mcp], category: :write,
     lane: :scratchpad
   ),

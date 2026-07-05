@@ -3,15 +3,19 @@ module Textus
     module Handlers
       module Ops
         class AuditFilter
-          def call(ctx:, key: nil, lane: nil, role: nil, verb: nil, since: nil, seq_since: nil, correlation_id: nil, limit: nil)
-            if seq_since
+          FILTER_KEYS = %i[key lane role verb since seq_since correlation_id limit].freeze
+
+          def call(ctx:, filters: {})
+            seq = filters[:seq_since]
+            if seq
               min = ctx.audit_log.min_available
-              raise Textus::CursorExpired.new(requested: seq_since, min_available: min) if min && seq_since < min - 1
+              raise Textus::CursorExpired.new(requested: seq, min_available: min) if min && seq < min - 1
             end
 
-            rows = ctx.audit_log.list(seq_since:, key:, role:, verb:, correlation_id:, limit:).select do |row|
-              next false if lane && !key_in_lane?(row["key"], lane, ctx)
-              next false if since && row["ts"] && Time.parse(row["ts"]) < since
+            rows = ctx.audit_log.list(seq_since: filters[:seq_since], key: filters[:key], role: filters[:role], verb: filters[:verb],
+                                      correlation_id: filters[:correlation_id], limit: filters[:limit]).select do |row|
+              next false if filters[:lane] && !key_in_lane?(row["key"], filters[:lane], ctx)
+              next false if filters[:since] && row["ts"] && Time.parse(row["ts"]) < filters[:since]
 
               true
             end

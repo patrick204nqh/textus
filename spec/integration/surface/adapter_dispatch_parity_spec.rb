@@ -6,7 +6,7 @@ RSpec.describe "surface adapter dispatch parity" do
   let(:store) { minimal_store(root) }
 
   it "CLI and MCP produce same protocol for boot" do
-    store.put(key: "knowledge.foo", _meta: {}, body: "parity")
+    store.put(key: "knowledge.foo", _meta: {}, data: "parity")
 
     cli_out = StringIO.new
     Textus::Surface::CLI.run(["boot", "--output=json"],
@@ -21,7 +21,7 @@ RSpec.describe "surface adapter dispatch parity" do
   end
 
   it "CLI and MCP both can get a stored value" do
-    store.put(key: "knowledge.foo", _meta: {}, body: "parity")
+    store.put(key: "knowledge.foo", _meta: {}, data: "parity")
 
     cli_out = StringIO.new
     Textus::Surface::CLI.run(["get", "knowledge.foo", "--output=json"],
