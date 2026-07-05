@@ -7,13 +7,8 @@ RSpec.describe Textus::Protocol::Handlers::QueryContext do
   let(:store) { instance_double("Textus::Infra::Store") }
 
   before do
-    allow(container).to receive(:manifest).and_return(double)
-    allow(container).to receive(:schemas).and_return(double)
-    allow(container).to receive(:layout).and_return(double)
-    allow(container).to receive(:store).and_return(store)
-    allow(store).to receive(:link_store).and_return(double)
-    allow(store).to receive(:entry_index).and_return(double)
-    allow(store).to receive(:cursor_store).and_return(double)
+    allow(container).to receive_messages(manifest: double, schemas: double, layout: double, store: store)
+    allow(store).to receive_messages(link_store: double, entry_index: double, cursor_store: double)
   end
 
   it "exposes call" do

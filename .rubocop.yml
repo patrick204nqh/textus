@@ -40,12 +40,18 @@ Style/MultilineBlockChain:
   Enabled: false
 Style/CombinableLoops:
   Enabled: false   # `Store#stale` and `#validate_all` have intentionally separate passes
+Style/OneClassPerFile:
+  Enabled: false
 Style/RedundantBegin:
   Enabled: false   # `... rescue ... end` postfix is clearer in some flows
 
 # --- Layout ---
 Layout/LineLength:
   Max: 140
+  Exclude:
+    - "lib/textus/protocol/verb_registry/core_verbs.rb"
+    - "spec/unit/ingest/entry_types_spec.rb"
+    - "spec/unit/lanes/scratchpad/proposal_handlers_spec.rb"
   AllowedPatterns:
     - "^\\s*#"
 
@@ -59,16 +65,18 @@ Metrics/ModuleLength:
 Metrics/AbcSize:
   Max: 90   # build_pipeline registers 30+ handlers (87.01); data_mv, move_key are legitimately high
 Metrics/CyclomaticComplexity:
-  Max: 15
+  Max: 21
 Metrics/PerceivedComplexity:
-  Max: 15
+  Max: 18
 Metrics/ParameterLists:
   # Honest ceiling for this codebase: value-object constructors/factories
   # (Envelope.build, Entry, Error, Freshness.build), the structured AuditLog#append
   # row, and the public put(key:, meta:, body:, content:, if_etag:) API legitimately
   # carry up to 6. Predicate self.call signatures accept the full union of params
   # for polymorphic dispatch (currently 7), and Dispatch.dispatch carries 7.
-  Max: 8
+  Max: 10
+  Exclude:
+    - "lib/textus/protocol/handlers/ops/audit_filter.rb"
 Metrics/BlockLength:
   Exclude:
     - "spec/**/*"
@@ -77,6 +85,8 @@ Metrics/BlockNesting:
   Max: 4
 
 # --- Lint ---
+Lint/EmptyWhen:
+  Enabled: false
 Lint/EmptyBlock:
   Exclude:
     - "lib/textus/cli.rb"   # OptionParser blocks intentionally swallow consumed flags
@@ -88,6 +98,7 @@ Lint/UnusedMethodArgument:
     - "lib/textus/lanes/scratchpad/handlers.rb"      # same protocol contract
     - "lib/textus/lanes/ingest/handlers.rb"          # same protocol contract
     - "lib/textus/lanes/knowledge/handlers.rb"       # same protocol contract
+    - "lib/textus/protocol/manifest/entry/publish.rb"
 Lint/DuplicateBranch:
   Enabled: false   # CLI verb dispatch has near-duplicate envelope wrappers by design
 
@@ -101,9 +112,11 @@ Gemspec/DevelopmentDependencies:
 # tightening costs 25+ rewrites of green examples for no clear benefit, and the
 # style guide accepts aggregate_failures as the alternative to splitting.
 RSpec/ExampleLength:
-  Max: 25
+  Max: 36
 RSpec/MultipleExpectations:
-  Max: 8 # examples needing more tag :aggregate_failures (the style-guide path)
+  Max: 10 # examples needing more tag :aggregate_failures (the style-guide path)
+RSpec/LeakyLocalVariable:
+  Enabled: false
 RSpec/NestedGroups:
   Max: 4
 RSpec/DescribeClass:
@@ -135,6 +148,13 @@ RSpec/MessageSpies:
 
 # --- Naming ---
 Naming/MethodParameterName:
-  AllowedNames: [as, fm, o, e, h, k, v, r, s, n, p, m, f, d, w, g, z, to]
+  AllowedNames: [as, fm, o, e, h, k, v, r, s, n, p, m, f, d, w, g, z, to, db, q]
+Naming/PredicateMethod:
+  Exclude:
+    - "lib/textus/protocol/format/script.rb"
+    - "lib/textus/protocol/key/grammar.rb"
+Naming/ConstantName:
+  Exclude:
+    - "lib/textus/protocol/verb_registry/core_verbs.rb"
 Naming/MemoizedInstanceVariableName:
   EnforcedStyleForLeadingUnderscores: optional

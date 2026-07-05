@@ -4,11 +4,9 @@ module Textus
       attr_accessor :gate
       attr_reader :store, :layout, :manifest, :schemas, :workflows, :workflow_registry, :root, :ttl_evaluator, :store_engine
 
-      # rubocop:disable Metrics/ParameterLists
       def initialize(store:, layout:, manifest:, schemas:,
                      workflows:, workflow_registry: nil,
                      root: nil, gate: nil, ttl_evaluator: nil, store_engine: nil)
-        # rubocop:enable Metrics/ParameterLists
         @store = store
         @layout = layout
         @manifest = manifest

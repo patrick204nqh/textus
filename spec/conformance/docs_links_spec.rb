@@ -21,12 +21,12 @@ RSpec.describe "documentation links" do
                   .gsub(/^[ \t]*```.*?^[ \t]*```/m, "") # fenced code blocks
                   .gsub(/`[^`\n]*`/, "")                # inline code spans (single line)
     targets = content.scan(/\]\(([^)]+)\)/).flatten
-    rel = Pathname.new(file).relative_path_from(DOCS_REPO_ROOT).to_s # rubocop:disable RSpec/LeakyLocalVariable
+    rel = Pathname.new(file).relative_path_from(DOCS_REPO_ROOT).to_s
 
     targets.each do |target|
       next if target.start_with?("http://", "https://", "mailto:", "#")
 
-      path_part = target.split("#").first # rubocop:disable RSpec/LeakyLocalVariable
+      path_part = target.split("#").first
       next if path_part.nil? || path_part.empty?
 
       it "#{rel}: link resolves -> #{target}" do
