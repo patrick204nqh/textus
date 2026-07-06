@@ -9,10 +9,12 @@ module Textus
         SESSION_PARENT_KEY = "scratchpad.sessions"
 
         def session_open(ctx:, call:)
-          uuid = SecureRandom.uuid
-          key = "scratchpad.sessions.#{uuid}.session"
+          today = Time.now.utc.strftime("%Y-%m-%d")
+          slug = SecureRandom.uuid[0..7]
+          session_id = "#{today}-#{slug}"
+          key = "scratchpad.sessions.#{session_id}.session"
 
-          content = { "session_id" => uuid, "created_at" => Time.now.utc.iso8601, "status" => "active" }
+          content = { "session_id" => session_id, "created_at" => Time.now.utc.iso8601, "status" => "active" }
           ctx.put(key:, meta: {}, body: JSON.generate(content), content: nil, call:)
 
           boot = begin
@@ -20,7 +22,7 @@ module Textus
           rescue StandardError
             nil
           end
-          result = { "session_id" => uuid, "status" => "active" }
+          result = { "session_id" => session_id, "status" => "active" }
           result["boot"] = boot if boot
           result
         end

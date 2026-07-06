@@ -1,6 +1,6 @@
 RSpec.describe Textus::Lanes::Scratchpad::Handlers do
   describe ".session_open" do
-    it "creates session entry" do
+    it "creates session entry with dated key" do
       ctx = instance_double("Textus::Protocol::Handlers::CommandContext")
       manifest = double("Manifest")
       data = double("ManifestData")
@@ -10,10 +10,11 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
       allow(mentry).to receive(:key).and_return("scratchpad.sessions")
       allow(ctx).to receive_messages(manifest: manifest, container: nil)
       allow(ctx).to receive(:put)
-      allow(SecureRandom).to receive(:uuid).and_return("test-uuid-123")
+      allow(SecureRandom).to receive(:uuid).and_return("test-uuid-1234")
+      allow(Time).to receive(:now).and_return(Time.new(2026, 7, 6, 12, 0, 0, "UTC"))
 
       result = described_class.session_open(ctx:, call: nil)
-      expect(result["session_id"]).to eq("test-uuid-123")
+      expect(result["session_id"]).to eq("2026-07-06-test-uui")
       expect(result["status"]).to eq("active")
     end
   end
