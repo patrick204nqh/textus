@@ -37,6 +37,7 @@ RSpec.shared_context "textus/4 conformance fixture" do
           - key: scratchpad.notes
             tracked: false
           - key: scratchpad.sessions
+            naming: dated
             tracked: false
           - key: scratchpad.proposals
             tracked: false

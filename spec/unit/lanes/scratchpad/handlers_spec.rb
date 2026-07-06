@@ -10,11 +10,12 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
       allow(mentry).to receive(:key).and_return("scratchpad.sessions")
       allow(ctx).to receive_messages(manifest: manifest, container: nil)
       allow(ctx).to receive(:put)
-      allow(SecureRandom).to receive(:uuid).and_return("test-uuid-1234")
+      allow(SecureRandom).to receive(:hex).with(4).and_return("abcdef12")
+      allow_any_instance_of(Array).to receive(:sample).and_return("x")
       allow(Time).to receive(:now).and_return(Time.new(2026, 7, 6, 12, 0, 0, "UTC"))
 
       result = described_class.session_open(ctx:, call: nil)
-      expect(result["session_id"]).to eq("2026-07-06-test-uui")
+      expect(result["session_id"]).to eq("2026-07-06-xabcdef12")
       expect(result["status"]).to eq("active")
     end
   end

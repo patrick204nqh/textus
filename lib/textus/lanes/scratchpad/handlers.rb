@@ -10,7 +10,7 @@ module Textus
 
         def session_open(ctx:, call:)
           today = Time.now.utc.strftime("%Y-%m-%d")
-          slug = SecureRandom.uuid[0..7]
+          slug = "#{('a'..'z').to_a.sample}#{SecureRandom.hex(4)}"
           session_id = "#{today}-#{slug}"
           key = "scratchpad.sessions.#{session_id}"
 

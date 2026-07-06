@@ -6,7 +6,6 @@ require "uri"
 
 Textus.workflow "agentskills" do
   on "artifacts.feeds.skills"
-  every "1h"
 
   step :fetch do |_, _ctx|
     base = "https://agentskills.io"

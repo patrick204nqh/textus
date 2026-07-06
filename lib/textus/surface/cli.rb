@@ -157,6 +157,7 @@ module Textus
             textus watch
             textus key {delete,mv,mv-prefix,delete-prefix,uid}
             textus rule {explain,lint,list}
+            textus session {open,close}
             textus schema {show}
             textus data {mv}
             textus mcp {serve}

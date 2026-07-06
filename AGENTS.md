@@ -4,7 +4,7 @@ Every session follows **INPUT → LOOP → OUTPUT**. Execute these commands in o
 
 ## INPUT (session start — run these 3 commands)
 
-1. `textus session_open --as=agent`
+1. `textus session open --as=agent`
    → Returns `{session_id, status, boot}` — boot gives lanes, verbs, loop structure.
 
 2. `textus get knowledge.loop.constraint.protocol.0014-data-flow`
@@ -28,14 +28,14 @@ If you skip a node, record why in session notes.
 
 ## OUTPUT (session end — run these 3 commands)
 
-1. `textus session_close <id> --as=agent`
+1. `textus session close <id> --as=agent`
    → Pass `nodes_checked` listing which loop nodes you actually checked.
 
 2. `textus get scratchpad.sessions.<id>.feedback`
    → Read the auto-generated feedback. Compare against `knowledge.loop.feedback.*`.
 
 3. `textus drain --as=automation`
-   → Re-publish artifacts (updates AGENTS.md, docs, boot).
+   → Re-publish artifacts (updates published docs, boot).
 
 ---
 
@@ -63,8 +63,8 @@ A coordination space for humans, AI, and automation — durable, multi-writer re
 
 ## Session Lifecycle
 
-- **begin** — `session_open` creates a workspace.
-- **end** — `session_close <id>` seals the session with feedback.
+- **begin** — `textus session open` creates a workspace.
+- **end** — `textus session close <id>` seals the session with feedback.
 - **feedback → canon** — propose feedback to `knowledge.loop.feedback` to close the loop.
 
 ## Docs
