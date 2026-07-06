@@ -6,6 +6,7 @@ module Textus
           { "name" => "boot" },
           { "name" => "list" },
           { "name" => "loop" },
+          { "name" => "node", "summary" => "navigate the loop: 'node enter', 'node back', 'node exit', 'node switch'" },
           { "name" => "get" },
           { "name" => "ingest" },
           { "name" => "where" },

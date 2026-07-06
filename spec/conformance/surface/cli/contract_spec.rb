@@ -52,6 +52,7 @@ RSpec.describe "Textus::Surface::CLI verb return-value contract" do
       "list" => Textus::Surface::CLI::Verb::GenList,
       "loop" => Textus::Surface::CLI::Verb::GenLoop,
       "mcp" => Textus::Surface::CLI::Group::MCP,
+      "node" => Textus::Surface::CLI::Group::Node,
       "pulse" => Textus::Surface::CLI::Verb::GenPulse,
       "propose" => Textus::Surface::CLI::Verb::GenPropose,
       "put" => Textus::Surface::CLI::Verb::Put,
@@ -94,6 +95,12 @@ RSpec.describe "Textus::Surface::CLI verb return-value contract" do
     )
     expect(Textus::Surface::CLI::Group::Web.subcommands).to eq(
       "serve" => Textus::Surface::CLI::Verb::WebServe,
+    )
+    expect(Textus::Surface::CLI::Group::Node.subcommands).to eq(
+      "back" => Textus::Surface::CLI::Verb::NodeBack,
+      "enter" => Textus::Surface::CLI::Verb::NodeEnter,
+      "exit" => Textus::Surface::CLI::Verb::NodeExit,
+      "switch" => Textus::Surface::CLI::Verb::NodeSwitch,
     )
   end
 end

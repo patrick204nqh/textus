@@ -5,7 +5,7 @@ module Textus
     class Session
       extend Forwardable
 
-      attr_reader :context, :bridge
+      attr_reader :context, :bridge, :node_stack
 
       DOMAIN_VERBS = (VerbRegistry::ENTRY_VERBS + VerbRegistry::OPS_VERBS).to_set.freeze
 
@@ -26,12 +26,15 @@ module Textus
           contract_etag: Value::Etag.for_contract(bridge.layout),
           propose_lane: container.manifest.policy.propose_lane_for(role.to_s),
         )
-        new(bridge:, context:)
+        session = new(bridge:, context:)
+        session.enter_node([:intent])
+        session
       end
 
       def initialize(bridge:, context:)
         @bridge = bridge
         @context = context
+        @node_stack = []
       end
 
       def method_missing(name, *args, **kwargs)
@@ -79,7 +82,79 @@ module Textus
         )
       end
 
+      def current_node
+        @node_stack.reverse_each.find(&:current?) || @node_stack.last
+      end
+
+      def enter_node(path)
+        segments = path.map { |s| s.is_a?(String) && !s.match?(/\A[0-9]|-/) ? s.to_sym : s }
+        Loop::Transitions.validate!(current_node&.path, segments)
+
+        current = current_node
+        changing_node = current&.current? && current.node != segments.first
+        fire_node_exit(current) if changing_node
+
+        entry = Session::NodeEntry.new(path: segments)
+        @node_stack.push(entry)
+
+        fire_node_enter(entry) if changing_node || @node_stack.size == 1
+        entry
+      end
+
+      def exit_node
+        entry = current_node
+        raise Textus::UsageError.new("no node to exit") unless entry
+
+        to_remove = @node_stack.reverse_each.with_object([]) do |e, acc|
+          break acc if e.node != entry.node
+          acc << e
+        end
+
+        to_remove.each { |e| @node_stack.delete(e) }
+        fire_node_enter(current_node) if current_node
+        entry
+      end
+
+      def back_node
+        entry = current_node
+        raise Textus::UsageError.new("no node to step back from") unless entry
+
+        @node_stack.delete(entry)
+        fire_node_enter(current_node) if current_node&.current?
+        entry
+      end
+
+      def switch_node(path)
+        exit_node
+        enter_node(path)
+      end
+
+      def node_stack_summary
+        @node_stack.map do |e|
+          {
+            path: e.path.map(&:to_s),
+            entered_at: e.entered_at.iso8601,
+            exited_at: e.exited_at&.iso8601,
+            current: e.current?,
+            duration_s: e.duration,
+          }
+        end
+      end
+
       private
+
+      def fire_node_enter(entry)
+        bridge.dispatch(role.to_sym, :node_entered, { path: entry.path.map(&:to_s) }, call: context.call)
+      rescue StandardError
+        nil
+      end
+
+      def fire_node_exit(entry)
+        entry.exited_at = Time.now.utc
+        bridge.dispatch(role.to_sym, :node_exited, { path: entry.path.map(&:to_s) }, call: context.call)
+      rescue StandardError
+        nil
+      end
 
       def short_etag(etag) = etag.to_s.delete_prefix("sha256:")[0, 8]
     end
