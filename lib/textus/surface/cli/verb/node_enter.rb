@@ -10,7 +10,7 @@ module Textus
             path = positional
             raise UsageError.new("node enter requires a path (e.g. evidence)") if path.empty?
 
-            entry = store.enter_node(path)
+            entry = store.node_enter(path)
             emit({
               "action" => "entered",
               "path" => entry.path.map(&:to_s),

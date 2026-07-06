@@ -23,6 +23,10 @@ module Textus
         session_open session_close
       ].freeze
 
+      NODE_VERBS = %i[
+        node_enter node_exit node_back node_switch node_status
+      ].freeze
+
       OPS_VERBS = %i[
         boot drain pulse data_mv
         key_mv_prefix key_delete_prefix
@@ -37,6 +41,7 @@ module Textus
       require_relative "../lanes/knowledge/verbs"
       require_relative "../lanes/scratchpad/verbs"
       require_relative "../lanes/artifact/verbs"
+      require_relative "verb_registry/node_verbs"
     end
   end
 end

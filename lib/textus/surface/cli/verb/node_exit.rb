@@ -7,7 +7,7 @@ module Textus
           parent_group Group::Node
 
           def call(store)
-            entry = store.exit_node
+            entry = store.node_exit
             emit({
               "action" => "exited",
               "path" => entry.path.map(&:to_s),

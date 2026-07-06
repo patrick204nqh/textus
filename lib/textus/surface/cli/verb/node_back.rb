@@ -7,7 +7,7 @@ module Textus
           parent_group Group::Node
 
           def call(store)
-            entry = store.back_node
+            entry = store.node_back
             current = store.current_node
             emit({
               "action" => "back",

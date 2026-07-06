@@ -27,7 +27,8 @@ module Textus
           propose_lane: container.manifest.policy.propose_lane_for(role.to_s),
         )
         session = new(bridge:, context:)
-        session.enter_node([:intent])
+        first_node = session.loop_node_names.first
+        session.node_enter([first_node]) if first_node
         session
       end
 
@@ -86,9 +87,15 @@ module Textus
         @node_stack.reverse_each.find(&:current?) || @node_stack.last
       end
 
-      def enter_node(path)
+      def loop_node_names
+        manifest.data.entries
+          .select { |e| e.key.start_with?("knowledge.loop.") && e.key.count(".") == 2 }
+          .map { |e| e.key.split(".").last.to_sym }
+      end
+
+      def node_enter(path)
         segments = path.map { |s| s.is_a?(String) && !s.match?(/\A[0-9]|-/) ? s.to_sym : s }
-        Loop::Transitions.validate!(current_node&.path, segments)
+        Loop::Transitions.validate!(current_node&.path, segments, node_names: loop_node_names)
 
         current = current_node
         changing_node = current&.current? && current.node != segments.first
@@ -101,7 +108,7 @@ module Textus
         entry
       end
 
-      def exit_node
+      def node_exit
         entry = current_node
         raise Textus::UsageError.new("no node to exit") unless entry
 
@@ -115,7 +122,7 @@ module Textus
         entry
       end
 
-      def back_node
+      def node_back
         entry = current_node
         raise Textus::UsageError.new("no node to step back from") unless entry
 
@@ -124,9 +131,20 @@ module Textus
         entry
       end
 
-      def switch_node(path)
-        exit_node
-        enter_node(path)
+      def node_switch(path)
+        node_exit
+        node_enter(path)
+      end
+
+      def node_status
+        current = current_node
+        {
+          current_node: current&.node&.to_s,
+          current_topic: current&.topic&.to_s,
+          current_item: current&.item&.to_s,
+          stack: node_stack_summary,
+          available_nodes: loop_node_names.map(&:to_s),
+        }
       end
 
       def node_stack_summary

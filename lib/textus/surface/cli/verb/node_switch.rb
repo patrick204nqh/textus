@@ -10,7 +10,7 @@ module Textus
             path = positional
             raise UsageError.new("node switch requires a path (e.g. evidence)") if path.empty?
 
-            entry = store.switch_node(path)
+            entry = store.node_switch(path)
             emit({
               "action" => "switched",
               "path" => entry.path.map(&:to_s),

@@ -100,6 +100,7 @@ RSpec.describe "Textus::Surface::CLI verb return-value contract" do
       "back" => Textus::Surface::CLI::Verb::NodeBack,
       "enter" => Textus::Surface::CLI::Verb::NodeEnter,
       "exit" => Textus::Surface::CLI::Verb::NodeExit,
+      "status" => Textus::Surface::CLI::Verb::NodeStatus,
       "switch" => Textus::Surface::CLI::Verb::NodeSwitch,
     )
   end

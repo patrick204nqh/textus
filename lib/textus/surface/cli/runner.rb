@@ -127,7 +127,7 @@ module Textus
 
         # Contract verbs whose CLI is a plain `< Verb` command, not a projection at
         # all — composite reports assembled outside the contract.
-        NON_PROJECTED_CLI = %i[].freeze
+        NON_PROJECTED_CLI = %i[node_enter node_exit node_back node_switch node_status].freeze
 
         # The installer skips generation for either category.
         HAND_AUTHORED_VERBS = (BEHAVIORAL_HATCHES + NON_PROJECTED_CLI).freeze
