@@ -8,7 +8,7 @@ module Textus
         WORKER_DEFAULTS = { pool: 4, poll: 5, lease_ttl: 60, max_attempts: 3 }.freeze
 
         attr_reader :raw, :root, :entries, :declared_lane_kinds,
-                    :lane_descs,
+                    :lane_descs, :plugin_config,
                     :audit_config, :worker_config, :role_caps
 
         def self.validate_key!(key)
@@ -42,6 +42,7 @@ module Textus
           @audit_config = build_audit_config(raw)
           @worker_config = build_worker_config(raw)
           @role_caps = {}
+          @plugin_config = build_plugin_config(raw)
           @entries = build_entries(raw)
           validate_declared_keys!
           freeze
@@ -65,6 +66,11 @@ module Textus
             lease_ttl: w["lease_ttl"] || WORKER_DEFAULTS[:lease_ttl],
             max_attempts: w["max_attempts"] || WORKER_DEFAULTS[:max_attempts],
           }.freeze
+        end
+
+        def build_plugin_config(raw)
+          pc = raw["plugin"] || {}
+          { "publish_targets" => Array(pc["publish_targets"]) }.freeze
         end
 
         def build_entries(raw)

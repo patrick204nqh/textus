@@ -36,6 +36,10 @@ module Textus
         @by_type[workflow_type.to_s] or raise(UnknownWorkflow.new("Unknown workflow type: #{workflow_type}"))
       end
 
+      def workflows_for_key(key)
+        @definitions.select { |wf| wf.match?(key) }.sort_by(&:priority)
+      end
+
       def match_for_key(key)
         @definitions.find { |wf| wf.match?(key) }
       end

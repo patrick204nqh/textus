@@ -1,44 +1,21 @@
 {
+  "statusLine": {
+    "type": "command",
+    "command": "${CLAUDE_PROJECT_DIR}/.claude-plugin/claude/statusline.sh"
+  },
   "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": ".claude/hooks/protect-artifacts.sh"
-          }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": ".claude/hooks/protect-artifacts-bash.sh"
-          }
-        ]
-      }
-    ],
-    "SessionStart": [
-      {
-        "matcher": "startup",
-        "hooks": [
-          { "type": "command", "command": "bundle exec exe/textus boot" }
-        ]
-      },
-      {
-        "matcher": "clear",
-        "hooks": [
-          { "type": "command", "command": "bundle exec exe/textus boot" }
-        ]
-      },
-      {
-        "matcher": "compact",
-        "hooks": [
-          { "type": "command", "command": "bundle exec exe/textus boot" }
-        ]
-      }
-    ]
+    "PreToolUse": [{
+      "matcher": "Edit|Write",
+      "hooks": [{
+        "type": "command",
+        "command": "${CLAUDE_PROJECT_DIR}/.claude-plugin/claude/hooks/enforce.sh",
+        "timeout": 10
+      }]
+    }],
+    "SessionStart": [{
+      "type": "command",
+      "command": "${CLAUDE_PROJECT_DIR}/.claude-plugin/claude/hooks/session-start.sh",
+      "timeout": 10
+    }]
   }
 }

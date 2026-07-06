@@ -1,9 +1,15 @@
+---
+name: 0136-priority-based-multi-workflow-routing
+status: Accepted + Amended
+uid: 8056d24ac694e03c
+---
 # ADR 0136 — Priority-based multi-workflow routing replaces inline chaining and boot_refresh
 
 **Date:** 2026-07-05
-**Status:** Accepted
+**Status:** Accepted + Amended
 **Supersedes:** The boot_refresh workflow pattern (explicit inline `Runner` call to trigger downstream workflows)
 **Refines:** [ADR 0087](./0087-fold-build-into-reconcile.md) (materialization is system-pushed; this ADR adds multi-workflow routing via priority), [ADR 0124](./0124-workflow-parallel-steps.md) (parallel steps kept; sequential chaining shifts from inline Runner to priority ordering)
+**Amended by:** Architecture change 2026-07-06 — Materialize middleware removed; EventEmitter now dispatches by key pattern
 
 > **One sentence:** The `Materialize` workflow could only match one workflow per key (using `find`), forcing workflows that needed to run in sequence (boot_refresh → doctor checks → boot) to use inline `Runner.new(...).run(...)` calls — a leaky bypass that circumvented the event system and created dead code (`Produce::Engine.converge` never existed); this ADR changes Materialize to iterate all matching workflows sorted by `priority`, eliminates the boot_refresh workflow entirely, and makes the doctor workflow the sole knowledge-change handler that triggers boot via `notify`.
 
@@ -27,7 +33,7 @@ Additionally, **17 individual doctor workflow files** each matched their own `ar
 
 ## Decision
 
-### 1. Multi-workflow routing in Materialize
+### 1. Multi-workflow routing via priority
 
 `Registry` gains `workflows_for_key(key)` — replaces `find` with `select` + `sort_by(&:priority)`:
 
@@ -37,7 +43,7 @@ def workflows_for_key(key)
 end
 ```
 
-Materialize's converge step iterates all matching workflows in priority order instead of running just the first match:
+The converge step iterates all matching workflows in priority order instead of running just the first match:
 
 ```ruby
 workflows.each { |wf| Runner.new(wf, ...).run(key) }
@@ -47,7 +53,7 @@ This enables multiple workflows to respond to the same event, ordered by priorit
 
 ### 2. `match?` bug fixed
 
-Removed the `!@match_pattern.end_with?("**")` guard. `**` patterns now correctly match through Materialize's key routing. Any workflow using `on "prefix.**"` is triggered when any entry under that prefix is written.
+Removed the `!@match_pattern.end_with?("**")` guard. `**` patterns now correctly match through key routing. Any workflow using `on "prefix.**"` is triggered when any entry under that prefix is written.
 
 ### 3. Doctor consolidation → priority 20
 
@@ -64,7 +70,7 @@ The doctor workflow:
 ### 4. Boot_refresh eliminated
 
 `boot_refresh.rb` deleted. Its responsibilities split:
-- **Rebuild boot** — the doctor workflow's `notify "artifacts.boot"` triggers the boot workflow via the event system (Materialize → boot workflow matching `artifacts.boot`)
+- **Rebuild boot** — the doctor workflow's `notify "artifacts.boot"` triggers the boot workflow via the event system
 - **Run doctor checks** — the doctor workflow matches `knowledge.loop.**` directly
 
 No more inline Runner calls. No more dead `Engine.converge` references.
@@ -73,26 +79,20 @@ No more inline Runner calls. No more dead `Engine.converge` references.
 
 The boot workflow now reads from `artifacts.doctor` (written by the doctor workflow) to optionally include health data in the orientation output (CLAUDE.md/AGENTS.md).
 
-### Event chain
-
-```
-1. knowledge.loop.intent.0001 written
-2. Materialize → workflows_for_key → [doctor (p20)]
-3. Doctor runs checks, save to: artifacts.doctor, notify artifacts.boot
-4. write to artifacts.boot → Materialize → boot (matches artifacts.boot)
-5. Boot reads artifacts.doctor data, renders CLAUDE.md/AGENTS.md
-```
-
 ## Consequences
 
 - **25 workflow config files → 10.** The 17 individual doctor files, loop_shape.rb, naming_check.rb, manifest_files.rb, publish_tree_overlap.rb, and boot_refresh.rb are all gone.
 - **17 manifest entries → 1.** `artifacts.doctor.*` entries collapsed to `artifacts.doctor`.
 - **Dead code removed.** `Produce::Engine.converge` references in boot_refresh are gone. The `match?` bug is fixed. Three layers of indirection collapsed to one.
-- **Multi-workflow routing enabled.** Any workflow can declare priority to order against other workflows matching the same key. Default priority is 0 — the doctor uses 20.
-- **Boot_refresh was always dead.** It had never triggered via Materialize (`match?` excluded `**`). The `Engine.converge` calls invoked non-existent code. This change makes the reactive chain actually work for the first time.
+- **Multi-workflow routing enabled.** Any workflow can declare priority to order against other workflows matching the same key.
+- **Boot_refresh was always dead.** It had never triggered (`match?` excluded `**`). The `Engine.converge` calls invoked non-existent code. This change makes the reactive chain actually work for the first time.
 
 ## Alternatives considered
 
 - **Keep boot_refresh with inline Runner.** Rejected: the user identified this as redundant during review. The inline Runner bypasses the event system and creates tight coupling. The `notify` keyword is declarative and explicit.
-- **Wire `depends_on` instead of multi-workflow routing.** Rejected: `depends_on` was already declared but never implemented. Multi-workflow routing via priority is a smaller change (one method in Registry + one loop change in Materialize) and enables the same ordering without a new concept.
+- **Wire `depends_on` instead of multi-workflow routing.** Rejected: `depends_on` was already declared but never implemented. Multi-workflow routing via priority is a smaller change and enables the same ordering without a new concept.
 - **Keep individual doctor artifact keys.** Rejected: the hardcoded 16-key list in boot_refresh was the maintenance burden. One key (`artifacts.doctor`) plus priority routing is simpler.
+
+## Current status
+
+2026-07-06: The `Materialize` middleware workflow has been removed. The `EventEmitter` now dispatches by **both** event type (`handles`) and key pattern (`on`), calling `Registry#workflows_for_key(key)` directly at emit time and deduplicating against already-queued event-type matches. The conceptual decision — multi-workflow routing via priority, `workflows_for_key`, `match?` `**` fix — remains correct. Only the *implementation* changed: the dispatch moved from Materialize's converge loop (which no longer exists) into EventEmitter's `emit` method.

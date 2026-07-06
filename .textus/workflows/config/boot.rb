@@ -75,6 +75,16 @@ Textus.workflow "boot" do
       "propose_lane" => propose_lane,
     }
 
+    protected_lanes = manifest.data.declared_lane_kinds.keys.select do |name|
+      next false unless agent_role
+
+      !manifest.policy.writers_for(name).include?(agent_role)
+    end
+    plugin_config = {
+      "protected_lanes" => protected_lanes,
+      "publish_targets" => manifest.data.plugin_config["publish_targets"],
+    }
+
     # Agent protocol / recipes (was Boot.agent_protocol)
     queue = manifest.policy.queue_lane
     feeds = manifest.data.declared_lane_kinds.find { |_, k| k == :machine }&.first || "artifacts"
@@ -105,9 +115,9 @@ Textus.workflow "boot" do
 
     meta_glossary = {
       "knowledge.loop.adoption" => { "node" => "target loop node", "confidence" => "high|medium|low",
-                                      "signal" => "observation type", "summary" => "brief description" },
-      "scratchpad.proposals"    => { "proposal" => "{ target_key, action }" },
-      "raw"                     => { "source" => "{ kind, url, path, label }" },
+                                     "signal" => "observation type", "summary" => "brief description" },
+      "scratchpad.proposals" => { "proposal" => "{ target_key, action }" },
+      "raw" => { "source" => "{ kind, url, path, label }" },
     }.freeze
 
     blueprints = manifest.data.entries.map do |entry|
@@ -139,6 +149,7 @@ Textus.workflow "boot" do
         "entry_blueprints" => blueprints,
         "agent_quickstart" => agent_quickstart,
         "agent_protocol" => agent_protocol,
+        "plugin_config" => plugin_config,
       },
     }
   end

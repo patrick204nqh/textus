@@ -6,7 +6,10 @@ RSpec.describe Textus::Workflow::EventEmitter do
   let(:materialize) { instance_double(Textus::Workflow::DSL::Definition, type: "materialize", max_attempts: 3) }
 
   describe "#emit" do
-    before { allow(workflow_queue).to receive(:push) }
+    before do
+      allow(workflow_queue).to receive(:push)
+      allow(registry).to receive(:workflows_for_key).and_return([])
+    end
 
     it "emits one event per workflow registered for the event type" do
       allow(registry).to receive(:workflows_for).with("entry.written").and_return([materialize])
@@ -21,8 +24,9 @@ RSpec.describe Textus::Workflow::EventEmitter do
       expect(count).to eq(1)
     end
 
-    it "returns 0 and emits nothing when no workflow handles the event type" do
+    it "returns 0 and emits nothing when no workflow matches" do
       allow(registry).to receive(:workflows_for).with("entry.written").and_return([])
+      allow(registry).to receive(:workflows_for_key).with("knowledge.a").and_return([])
 
       expect(emitter.emit(event_type: "entry.written", key: "knowledge.a", lane: "knowledge")).to eq(0)
       expect(workflow_queue).not_to have_received(:push)

@@ -1,9 +1,24 @@
 {
   "_meta": {
+    "generated_at": "2026-07-06T12:13:32Z",
     "uid": "167c601f8e368720"
   },
   "ok": false,
   "issues": [
+    {
+      "code": "loop.naming",
+      "level": "warning",
+      "subject": "scratchpad.proposals.design",
+      "message": "design does not match the required naming pattern for scratchpad.proposals (sequential)",
+      "fix": "rename to match /\\A\\d{4}-[a-z0-9-]+\\.\\w+\\z/"
+    },
+    {
+      "code": "loop.naming",
+      "level": "warning",
+      "subject": "scratchpad.proposals.design.entry-constraint-enforcement",
+      "message": "entry-constraint-enforcement.md does not match the required naming pattern for scratchpad.proposals (sequential)",
+      "fix": "rename to match /\\A\\d{4}-[a-z0-9-]+\\.\\w+\\z/"
+    },
     {
       "code": "manifest.missing_file",
       "severity": "info",
@@ -17,7 +32,23 @@
       "subject": "artifacts.system.index",
       "message": "declared entry has no file on disk at /Users/patrick/Development/sandbox/textus/.textus/data/artifacts/system/index.json",
       "fix": "create the entry with 'textus put artifacts.system.index --stdin --as=<role>'"
+    },
+    {
+      "code": "key.illegal",
+      "level": "error",
+      "subject": "/Users/patrick/Development/sandbox/textus/.textus/data/scratchpad/proposals/.gitkeep",
+      "path": "/Users/patrick/Development/sandbox/textus/.textus/data/scratchpad/proposals/.gitkeep",
+      "message": "illegal key segment '.gitkeep' at /Users/patrick/Development/sandbox/textus/.textus/data/scratchpad/proposals/.gitkeep",
+      "fix": "rename the file/directory so each segment matches [a-z0-9][a-z0-9-]* (lowercase, digits, hyphens)"
+    },
+    {
+      "code": "key.illegal",
+      "level": "error",
+      "subject": "/Users/patrick/Development/sandbox/textus/.textus/data/scratchpad/sessions/.gitkeep",
+      "path": "/Users/patrick/Development/sandbox/textus/.textus/data/scratchpad/sessions/.gitkeep",
+      "message": "illegal key segment '.gitkeep' at /Users/patrick/Development/sandbox/textus/.textus/data/scratchpad/sessions/.gitkeep",
+      "fix": "rename the file/directory so each segment matches [a-z0-9][a-z0-9-]* (lowercase, digits, hyphens)"
     }
   ],
-  "count": 2
+  "count": 6
 }

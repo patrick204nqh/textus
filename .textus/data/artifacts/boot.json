@@ -1,59 +1,11 @@
 {
   "_meta": {
-    "generated_at": "2026-07-05T08:09:20Z",
+    "generated_at": "2026-07-06T12:14:00Z",
     "uid": "603316d35ea2de1b"
   },
-  "project": {
-    "name": "textus",
-    "description": "A coordination space for humans, AI, and automation \u2014 durable, multi-writer repo memory that survives the session, the model, and the vendor.",
-    "commands": "- **test**: `bundle exec rspec`\n- **lint**: `bundle exec rubocop`\n- **lint-fix**: `bundle exec rubocop -A`\n- **setup**: `bundle install`\n- **help**: `bundle exec exe/textus --help`\n- **drain**: `bundle exec exe/textus drain --as=automation`",
-    "has_commands": true
-  },
-  "runbooks": [
-    {
-      "name": "doctor",
-      "description": "Read and act on doctor workflow reports to keep the store healthy.",
-      "schema": "execution/procedure"
-    },
-    {
-      "name": "session",
-      "description": "Begin and end agent sessions, review feedback, propose changes to canon.",
-      "schema": "execution/procedure"
-    },
-    {
-      "name": "deploy",
-      "description": "Cut a textus release \u2014 bump version, update lockfile, tag, publish.",
-      "schema": "execution/procedure"
-    },
-    {
-      "name": "release",
-      "description": "Cut a textus release \u2014 bump the version, regenerate Gemfile.lock, then tag via PR.",
-      "schema": "execution/runbook"
-    },
-    {
-      "name": "adr",
-      "description": "Add an Architecture Decision Record for a load-bearing decision.",
-      "schema": "execution/runbook"
-    },
-    {
-      "name": "quickstart",
-      "description": "Four-command demo of the role-gated propose\u2192accept flow, plus full store walkthrough and protocol reference.",
-      "schema": "execution/runbook"
-    }
-  ],
-  "loop": {
-    "nodes": [
-      "intent",
-      "constraint.repo",
-      "constraint.protocol",
-      "judgment.engineering",
-      "judgment.agent-behavior",
-      "evidence",
-      "execution",
-      "adoption"
-    ],
-    "excerpt": "# Operating inside the Loop\n\nThis repo's `knowledge.*` zones are the Loop model, exhaustively: `intent`\n(why), `constraint.repo`/`constraint.protocol` (hard limits \u2014 engineering\nprinciples vs. wire contract), `judgment.engineering`/`judgment.agent-behavior`\n"
-  },
+  "project": {},
+  "runbooks": [],
+  "loop": {},
   "lanes": [
     {
       "name": "knowledge",
@@ -91,187 +43,24 @@
       "purpose": "ingested external source material (write-once)"
     }
   ],
-  "agent_quickstart": {
-    "read_verbs": [
-      "audit",
-      "blame",
-      "boot",
-      "deps",
-      "get",
-      "graph",
-      "list",
-      "pulse",
-      "rdeps",
-      "schema_list",
-      "schema_show",
-      "uid",
-      "where",
-      "loop",
-      "diff",
-      "workflow_spec"
+  "workflow_tips": [],
+  "entry_blueprints": [],
+  "agent_quickstart": {},
+  "plugin_config": {
+    "protected_lanes": [
+      "knowledge",
+      "artifacts"
     ],
-    "write_verbs": [
-      "data_mv",
-      "ingest",
-      "key_delete",
-      "key_delete_prefix",
-      "key_mv",
-      "key_mv_prefix",
-      "put",
-      "session_open",
-      "session_close",
-      "propose"
-    ],
-    "writable_lanes": [
-      "scratchpad",
-      "raw"
-    ],
-    "propose_lane": "scratchpad.proposals"
-  },
-  "agent_protocol": {
-    "version": "textus/4",
-    "recipes": {
-      "read": {
-        "purpose": "find and read an entry",
-        "steps": [
-          "list (lane:, prefix:, q:, schema:) \u2014 discover keys",
-          "get KEY \u2014 returns the entry envelope"
-        ]
-      },
-      "write": {
-        "purpose": "create or update an entry",
-        "steps": [
-          "schema KEY \u2014 learn field shape",
-          "assemble envelope: { _meta: {\u2026}, body: \"\u2026\" }",
-          "put KEY \u2014 persist it (role-gated)"
-        ]
-      },
-      "propose": {
-        "purpose": "agent suggests a change for human review",
-        "agent_steps": [
-          "propose KEY \u2014 writes to scratchpad.proposals lane"
-        ],
-        "human_steps": [
-          "accept scratchpad.proposals.KEY \u2014 promotes to target lane"
-        ]
-      },
-      "drain": {
-        "purpose": "keep machine lanes fresh",
-        "steps": [
-          "pulse \u2014 stale list names overdue entries",
-          "drain (lane: artifacts) \u2014 re-pull stale entries"
-        ]
-      }
-    },
-    "role_resolution": {
-      "summary": "role resolved: --as flag \u2192 TEXTUS_ROLE env \u2192 .textus/role file \u2192 transport default",
-      "roles": [],
-      "ref": "SPEC.md \u00a75"
-    },
-    "discipline": "When edit/write tools are blocked for a path, use `textus propose` to suggest changes for human review. Never use shell scripts (sed, python, rm) to bypass permission gates \u2014 that breaks the audit trail and bypasses role gates."
-  },
-  "workflow_tips": [
-    {
-      "when": "write an entry",
-      "then": "`data` param: String for body, Hash for content"
-    },
-    {
-      "when": "edit a protected path",
-      "then": "`textus propose key=my-change data=...` \u2014 human reviews"
-    },
-    {
-      "when": "explore recent changes",
-      "then": "`textus pulse` then `textus get <changed_key>`"
-    },
-    {
-      "when": "find related entries",
-      "then": "`textus graph key=<key> depth=2`"
-    }
-  ],
-  "entry_blueprints": [
-    {
-      "key_prefix": "knowledge.loop.adoption",
-      "format": "markdown",
-      "naming": "sequential",
-      "meta": {
-        "node": "target loop node",
-        "confidence": "high|medium|low",
-        "signal": "observation type",
-        "summary": "brief description"
-      }
-    },
-    {
-      "key_prefix": "knowledge.loop.evidence",
-      "format": "markdown",
-      "naming": "sequential"
-    },
-    {
-      "key_prefix": "knowledge.loop.intent",
-      "format": "markdown",
-      "naming": "sequential"
-    },
-    {
-      "key_prefix": "knowledge.loop.constraint.repo",
-      "format": "markdown",
-      "naming": "sequential"
-    },
-    {
-      "key_prefix": "knowledge.loop.constraint.protocol",
-      "format": "markdown",
-      "naming": "sequential"
-    },
-    {
-      "key_prefix": "knowledge.loop.judgment.engineering",
-      "format": "markdown",
-      "naming": "sequential"
-    },
-    {
-      "key_prefix": "knowledge.loop.judgment.agent-behavior",
-      "format": "markdown",
-      "naming": "sequential"
-    },
-    {
-      "key_prefix": "knowledge.loop.execution.runbook",
-      "format": "markdown",
-      "naming": "sequential",
-      "schema": "execution/runbook"
-    },
-    {
-      "key_prefix": "knowledge.loop.execution.procedure",
-      "format": "markdown",
-      "naming": "sequential",
-      "schema": "execution/procedure"
-    },
-    {
-      "key_prefix": "knowledge.loop.execution.checklist",
-      "format": "markdown",
-      "naming": "sequential",
-      "schema": "execution/checklist"
-    },
-    {
-      "key_prefix": "scratchpad.proposals",
-      "format": "markdown",
-      "naming": "sequential",
-      "meta": {
-        "proposal": "{ target_key, action }"
-      }
-    },
-    {
-      "key_prefix": "scratchpad.sessions",
-      "format": "markdown",
-      "naming": "dated"
-    },
-    {
-      "key_prefix": "scratchpad.issues",
-      "format": "markdown",
-      "naming": "sequential"
-    },
-    {
-      "key_prefix": "raw",
-      "format": "yaml",
-      "meta": {
-        "source": "{ kind, url, path, label }"
-      }
-    }
-  ]
+    "publish_targets": [
+      "docs/",
+      "README.md",
+      "AGENTS.md",
+      "CLAUDE.md",
+      "CHANGELOG.md",
+      "CODE_OF_CONDUCT.md",
+      "CONTRIBUTING.md",
+      "SECURITY.md",
+      ".mcp.json"
+    ]
+  }
 }

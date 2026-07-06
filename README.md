@@ -1,5 +1,4 @@
-<!-- Generated from knowledge.intent.readme-* fragments by the artifacts.docs.readme workflow. Edit the fragments under .textus/data/knowledge/intent/ and run `textus drain`. -->
-<!-- This is a fragment of the README. Edit here; the README is composed from fragments by a workflow. -->
+<!-- Generated from knowledge.intent.0004-pitch + knowledge.constraint.protocol.0015-idea + knowledge.execution.runbook.0003-quickstart by the artifacts.docs.readme workflow. Edit those entries and run `textus drain`. -->
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/branding/wordmark-dark.png">
@@ -20,7 +19,6 @@
 *textus* is Latin for "the fabric a text is woven from" — same root as *context*, from *con-texere*, "to weave together."
 
 
-<!-- This is a fragment of the README. Edit here; the README is composed from fragments by a workflow. -->
 ## The idea
 
 Three actors write to your repo today:
@@ -94,8 +92,10 @@ An agent that tries to write directly into `knowledge/` gets `write_forbidden`. 
 That's the load-bearing claim: **coordination is a protocol invariant, not a library convenience.**
 
 
-<!-- This is a fragment of the README. Edit here; the README is composed from fragments by a workflow. -->
+
 ## See it in four commands
+
+Pattern: `knowledge.loop.judgment.engineering.0007-bounded-use-cases` — quickstart composes role-gated actions into a single runnable flow.
 
 ```sh
 gem install textus
@@ -118,7 +118,7 @@ Try the gate the other way (`textus put knowledge.notes.X --as=agent`) and you g
 
 ## Try it
 
-- **Worked end-to-end store** — the role gate (propose → accept), drain/publish (`CLAUDE.md` / `AGENTS.md` generated from knowledge entries), schemas, ERB templates, and workflows: [`.textus/`](.textus/)
+- **Worked end-to-end store** — the role gate (propose -> accept), drain/publish (`CLAUDE.md` / `AGENTS.md` generated from knowledge entries), schemas, ERB templates, and workflows: [`.textus/`](.textus/)
 - **Wire textus into Claude Code via MCP** — 4 steps, ~5 minutes: [`docs/how-to/agents-mcp.md`](docs/how-to/agents-mcp.md)
 
 ## Protocol, not just a gem
@@ -181,7 +181,7 @@ lanes:
     indexes/raw.yaml     # raw lane content-hash/URL index — regenerable cache
 ```
 
-Manifest `path:` fields are relative to `.textus/data/`. So `knowledge.notes.org.jane` lives at `.textus/data/knowledge/notes/org/jane.md`.
+Manifest `path:` fields are relative to `.textus/data/`. So `knowledge.notes.org.jane` lives at `.textus/data/knowledge/loop/notes/org/jane.md`.
 
 Read and write:
 
@@ -203,18 +203,15 @@ For a worked store — knowledge entries, a staged proposal, schemas, ERB templa
 
 - **Per-entry formats & publish.** `format: markdown|json|yaml|text` per entry; a typed `publish:` block (`to:` for file fan-out, `tree:` for a whole-subtree mirror) byte-copies derived files to their consumer paths. (the wire protocol spec §5.2–5.3)
 - **Stable identity.** Auto-minted `uid:` survives writes and `textus key mv`; reorganising never breaks references.
-- **Capability × lane-kind gate.** Writes carry `--as=<role>`; a role may write a lane iff it holds the capability the lane's `kind:` requires (`canon`→`author`, `workspace`→`keep`, `machine`→`converge`, `queue`→`propose`). The wrong role gets `write_forbidden` naming the capability needed and the roles that hold it. (the wire protocol spec §5)
+- **Capability × lane-kind gate.** Writes carry `--as=<role>`; a role may write a lane iff it holds the capability the lane's `kind:` requires (`canon`->`author`, `workspace`->`keep`, `machine`->`converge`, `queue`->`propose`). The wrong role gets `write_forbidden` naming the capability needed and the roles that hold it. (the wire protocol spec §5)
 - **Agent loop.** `textus boot` orients a fresh session; `textus pulse --since=N` is the per-turn heartbeat (changed entries, pending proposals, index etag for catalog drift detection). ([docs/how-to/agents-mcp.md](docs/how-to/agents-mcp.md))
-- **Three surfaces, one dispatch.** CLI (auto-generated verbs), MCP (JSON-RPC via stdio), and Web (Sinatra + Puma, `POST /api/:verb`) all route through a shared `Dispatch.call` core. Add a new verb to the registry — all three surfaces get it automatically.
-- **Web API surface.** `textus web serve` starts a Puma server on port 9292. `POST /api/:verb` dispatches any verb with JSON body; `GET /api/status` returns protocol, lanes, and store root. Role via `X-Textus-Role` header (default: agent). A future GUI consumes the same contract as the CLI and MCP surfaces.
-- **Entry constraint enforcement.** Entries with `naming: sequential` or `schema:` in the manifest now enforce those constraints. Propose validates naming, accept validates naming + schema + format, and the write pipeline validates all three.
 - **MCP surface.** The official `mcp` Ruby SDK drives the stdio JSON-RPC server; protocol version auto-negotiated up to `2025-11-25`. Wire textus into Claude Code, Cursor, or any MCP host in one config block.
 - **`textus doctor`.** Health checks across schemas, workflow registrations, keys, sentinels, and the audit log.
 - **`raw` lane and `ingest` verb.** Write-once intake lane for external URL bookmarks, files, and binary assets. Three source kinds (`url`/`file`/`asset`); daily key derivation; scratchpad stub per ingest. See "Intake and ingest" section below.
 
 ## CLI and lanes
 
-Every command operates on one store, located in this order: `--root <path>` flag → **`TEXTUS_ROOT`** env → walk up from the working directory for a `.textus/` (the wire protocol spec §3.1). Write verbs require `--as=<role>`, resolved as: `--as` flag → **`TEXTUS_ROLE`** env → `.textus/role` file → default `human` (the wire protocol spec §5.1). Default roles: `human`, `agent`, `automation` (rename or add your own in the manifest's `roles:` block). All verbs accept `--output=json` and return the envelope defined in the wire protocol spec §8.
+Every command operates on one store, located in this order: `--root <path>` flag -> **`TEXTUS_ROOT`** env -> walk up from the working directory for a `.textus/` (the wire protocol spec §3.1). Write verbs require `--as=<role>`, resolved as: `--as` flag -> **`TEXTUS_ROLE`** env -> `.textus/role` file -> default `human` (the wire protocol spec §5.1). Default roles: `human`, `agent`, `automation` (rename or add your own in the manifest's `roles:` block). All verbs accept `--output=json` and return the envelope defined in the wire protocol spec §8.
 
 - Full verb table — read, write, health, scaffolding — is in the wire protocol spec §9.
 - Lane semantics and the capability × lane-kind mapping live in the wire protocol spec §5, with the reference in [`docs/reference/lanes.md`](docs/reference/lanes.md).
@@ -234,12 +231,12 @@ Templates live in `.textus/templates/` as ERB files (`.erb`). The template recei
 
 ## Workflows
 
-textus extends through **workflows** — a `Textus.workflow` block placed in `.textus/workflows/**/*.rb`. Each workflow matches a produced entry by key glob, then runs one or more named steps to acquire its data:
+textus extends through **workflows** — a `Textus.workflow` block placed in `.textus/workflows/**/*.rb`. Each workflow declares a trigger pattern with `on`, runs ordered steps, and optionally saves results to a store key or publishes to a file:
 
 ```ruby
 # .textus/workflows/docs/my_report.rb
 Textus.workflow "my_report" do
-  match "artifacts.my-report"
+  on "artifacts.my-report"
 
   step :build do |_, ctx|
     # read from knowledge, fetch external data, compute anything
@@ -248,10 +245,12 @@ Textus.workflow "my_report" do
               .map { |r| { "key" => r[:key], "title" => r[:entry].schema } }
     { "content" => { "entries" => rows } }
   end
+
+  save to: "artifacts.my-report"    # persist data and trigger publish targets
 end
 ```
 
-`drain` discovers all workflow files, matches them against produced entries, and runs the steps. The result is written back to the entry's data path; `publish:` then copies it to its consumer paths.
+`drain` discovers all workflow files, triggers each by its `on` pattern, runs the steps, and executes `save`/`publish` targets. `save to:` writes results back to a store key (which cascades to the entry's file publish targets); `publish to:` renders a template to a file directly.
 
 ## Intake and ingest
 
@@ -298,7 +297,7 @@ textus get artifacts.feeds.skills                  # a pure read; carries a fres
 
 Schemas (`.textus/schemas/<name>.yaml`) declare field shapes, per-field `maintained_by:` ownership, and an `evolution:` block (`added_in`, `deprecated_at`, `migrate_from`). Full contract in SPEC §5.8.
 
-See [`docs/how-to/agents-mcp.md`](docs/how-to/agents-mcp.md) for the agent boot → pulse loop.
+See [`docs/how-to/agents-mcp.md`](docs/how-to/agents-mcp.md) for the agent boot -> pulse loop.
 
 ## Examples
 
@@ -310,7 +309,7 @@ See [`docs/how-to/agents-mcp.md`](docs/how-to/agents-mcp.md) for the agent boot 
 bundle exec rspec
 ```
 
-Includes conformance fixtures A–I from SPEC §12.
+Includes conformance fixtures A-I from SPEC §12.
 
 ## Code quality
 
@@ -324,4 +323,5 @@ Lefthook hooks (`brew bundle install` then `lefthook install`) run rubocop on `p
 ## License
 
 [MIT](LICENSE)
+
 

@@ -1,0 +1,166 @@
+{
+  "_meta": {
+    "generated_at": "2026-07-06T13:06:02Z",
+    "uid": "39bccfc0e0576fb8"
+  },
+  "project_name": "textus",
+  "mcpServers": {
+    "textus": {
+      "command": "bundle",
+      "args": [
+        "exec",
+        "exe/textus",
+        "--root",
+        ".textus",
+        "mcp",
+        "serve"
+      ]
+    },
+    "codebase-memory": {
+      "command": "codebase-memory-mcp",
+      "args": [],
+      "env": {
+        "CBM_CACHE_DIR": "/Users/patrick/Development/sandbox/textus/.cache/codebase-memory"
+      }
+    },
+    "codegraph": {
+      "command": "codegraph",
+      "args": [
+        "serve",
+        "--mcp"
+      ]
+    }
+  },
+  "lsp": {
+    "yaml-ls": {
+      "command": [
+        "node_modules/.bin/yaml-language-server",
+        "--stdio"
+      ],
+      "extensions": [
+        "yml",
+        "yaml"
+      ]
+    },
+    "json-ls": {
+      "command": [
+        "node_modules/.bin/vscode-json-languageserver",
+        "--stdio"
+      ],
+      "extensions": [
+        "json"
+      ]
+    },
+    "marksman": {
+      "command": [
+        "marksman",
+        "serve"
+      ],
+      "extensions": [
+        "md"
+      ]
+    },
+    "ruby-lsp": {
+      "command": [
+        "bundle",
+        "exec",
+        "ruby-lsp"
+      ],
+      "extensions": [
+        "rb",
+        "erb",
+        "builder",
+        "rake",
+        "ru"
+      ]
+    }
+  },
+  "mcp": {
+    "textus": {
+      "type": "local",
+      "command": [
+        "bundle",
+        "exec",
+        "exe/textus",
+        "mcp",
+        "serve"
+      ],
+      "enabled": true
+    },
+    "codebase-memory": {
+      "type": "local",
+      "command": [
+        "codebase-memory-mcp"
+      ],
+      "env": {
+        "CBM_CACHE_DIR": "/Users/patrick/Development/sandbox/textus/.cache/codebase-memory"
+      },
+      "enabled": true
+    },
+    "codegraph": {
+      "type": "local",
+      "command": [
+        "codegraph",
+        "serve",
+        "--mcp"
+      ],
+      "enabled": true
+    }
+  },
+  "permission": {
+    "edit": {
+      "*": "allow",
+      ".textus/data/knowledge/**": "deny",
+      ".textus/data/artifacts/**": "deny",
+      "docs/**": "deny",
+      "README.md": "deny",
+      "CONTRIBUTING.md": "deny",
+      "SECURITY.md": "deny",
+      "CLAUDE.md": "deny",
+      "AGENTS.md": "deny",
+      "CHANGELOG.md": "deny",
+      "CODE_OF_CONDUCT.md": "deny",
+      ".mcp.json": "deny"
+    }
+  },
+  "instructions": [
+    "AGENTS.md"
+  ],
+  "name": "textus",
+  "description": "Durable, multi-writer repo memory. Auto-orients each session with `textus boot`.",
+  "version": "0.56.0",
+  "homepage": null,
+  "repository": null,
+  "license": "MIT",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "textus boot"
+          }
+        ]
+      },
+      {
+        "matcher": "clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "textus boot"
+          }
+        ]
+      },
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "textus boot"
+          }
+        ]
+      }
+    ]
+  }
+}

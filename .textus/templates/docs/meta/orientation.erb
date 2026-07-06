@@ -42,17 +42,17 @@ If you skip a node, record why in session notes.
 > **Context store:** `.textus/` (textus, protocol <%= boot["protocol"] %>).
 > **MCP:** `.mcp.json` wires the `textus` server.
 > **Write authority:** <% Array(boot["lanes"]).each do |z| -%><%= z["name"] %> (<%= Array(z["writers"]).join(", ") %>) <% end -%>
-> **Loop:** <%= Array(boot.dig("loop", "nodes")).join(" → ") %>
+> **Loop:** <%= Array(boot.dig("state", "loop", "nodes")).join(" → ") %>
 
-<%= project["description"] %>
+<%= boot.dig("project", "description") %>
 
-<% if project["has_commands"] -%>
+<% if boot.dig("project", "has_commands") -%>
 ## Developer Commands
-<%= project["commands"] %>
+<%= boot.dig("project", "commands") %>
 <% end -%>
 
 ## Runbooks
-<% runbooks.each do |rb| -%>
+<% Array(boot.dig("state", "runbooks")).each do |rb| -%>
 - **<%= rb["name"] %>** — <%= rb["description"] %>
 <% end -%>
 

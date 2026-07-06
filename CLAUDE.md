@@ -41,7 +41,7 @@ If you skip a node, record why in session notes.
 
 > **Context store:** `.textus/` (textus, protocol textus/4).
 > **MCP:** `.mcp.json` wires the `textus` server.
-> **Write authority:** knowledge (human) scratchpad (human, agent) artifacts (automation) raw (human, agent, automation) > **Loop:** intent → constraint.repo → constraint.protocol → judgment.engineering → judgment.agent-behavior → evidence → execution → feedback
+> **Write authority:** knowledge (human) scratchpad (human, agent) artifacts (automation) raw (human, agent, automation) > **Loop:** intent → constraint.repo → constraint.protocol → judgment.engineering → judgment.agent-behavior → evidence → execution → adoption
 
 A coordination space for humans, AI, and automation — durable, multi-writer repo memory that survives the session, the model, and the vendor.
 
@@ -69,7 +69,7 @@ A coordination space for humans, AI, and automation — durable, multi-writer re
 
 ## Docs
 
-Read the map with `textus get artifacts.docs.index`; decision log: `textus get artifacts.decisions.log`.
+Read the map with `textus get artifacts.docs.readme`; decision log: `textus get artifacts.decisions.log`.
 
 <!-- headroom:rtk-instructions -->
 # RTK (Rust Token Killer) - Token-Optimized Commands

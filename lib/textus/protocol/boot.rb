@@ -5,6 +5,13 @@ require_relative "boot/context"
 module Textus
   module Protocol
     module Boot
+      # boot answers 5 questions for the agent:
+      #   1. Where am I?       → contract (store_root, etag)
+      #   2. What can I do?     → agent (verbs, writable lanes, propose lane, tips)
+      #   3. What can't I do?   → plugin (protected_paths, protected_lanes, publish_targets)
+      #   4. What's here?       → project (identity), state (loop, runbooks, entry_blueprints)
+      #   5. How do I talk?     → agent.protocol (envelope_shape, roles, discipline)
+
       PROTOCOL_ID = PROTOCOL
       CURATED_CLI_VERBS = Catalog::CURATED_CLI_VERBS
 
@@ -13,16 +20,14 @@ module Textus
       end
 
       def self.build(container:)
-        manifest = container.manifest
         envelope = Context.build(
-          manifest:,
+          manifest: container.manifest,
           event_store: container.store.audit_log,
           file_system: container.store.file_system,
           layout: container.layout,
         )
         envelope.merge(
           "catalog" => Catalog.build,
-          "agent_protocol" => Protocol.build(manifest),
           "schemas" => build_schemas(container.schemas),
         )
       end
