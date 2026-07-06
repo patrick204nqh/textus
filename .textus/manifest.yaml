@@ -28,7 +28,6 @@ data:
   scratchpad:
     - key: scratchpad.proposals
       naming: sequential
-      tracked: false
     - key: scratchpad.sessions
       naming: dated
       tracked: false
