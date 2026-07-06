@@ -12,7 +12,7 @@ module Textus
           today = Time.now.utc.strftime("%Y-%m-%d")
           slug = SecureRandom.uuid[0..7]
           session_id = "#{today}-#{slug}"
-          key = "scratchpad.sessions.#{session_id}.session"
+          key = "scratchpad.sessions.#{session_id}"
 
           content = { "session_id" => session_id, "created_at" => Time.now.utc.iso8601, "status" => "active" }
           ctx.put(key:, meta: {}, body: JSON.generate(content), content: nil, call:)
@@ -138,15 +138,11 @@ module Textus
         end
 
         def session_close(session_id:, ctx:, call:, nodes_checked: nil)
-          key = "scratchpad.sessions.#{session_id}.session"
+          key = "scratchpad.sessions.#{session_id}"
           env = ctx.read(key:)
           raise Textus::UsageError.new("session not found: #{session_id}") unless env
 
           current = JSON.parse(env.body || "{}")
-          content = current.merge("status" => "sealed", "closed_at" => Time.now.utc.iso8601)
-          ctx.put(key:, meta: {}, body: JSON.generate(content), content: nil, call:)
-
-          feedback_key = "scratchpad.sessions.#{session_id}.feedback"
           duration = current["created_at"] ? "#{((Time.now.utc - Time.parse(current["created_at"])) / 60).round}m" : "unknown"
           feedback = {
             "node" => "feedback",
@@ -156,9 +152,11 @@ module Textus
                          "Created at #{current["created_at"]}, closed at #{Time.now.utc.iso8601}.",
           }
           feedback["nodes_checked"] = nodes_checked if nodes_checked
-          ctx.put(key: feedback_key, meta: {}, body: JSON.generate(feedback), content: nil, call:)
 
-          { "session_id" => session_id, "status" => "sealed", "feedback_key" => feedback_key }
+          content = current.merge("status" => "sealed", "closed_at" => Time.now.utc.iso8601, "feedback" => feedback)
+          ctx.put(key:, meta: {}, body: JSON.generate(content), content: nil, call:)
+
+          { "session_id" => session_id, "status" => "sealed", "feedback" => feedback }
         end
       end
     end

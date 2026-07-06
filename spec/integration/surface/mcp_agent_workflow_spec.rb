@@ -31,8 +31,8 @@ RSpec.describe "MCP agent workflow — end-to-end" do
     session_id = open_result["session_id"]
 
     # 2. get the session entry
-    get_session = dispatch(agent_server, :get, { key: "scratchpad.sessions.#{session_id}.session" })
-    expect(get_session["key"]).to eq("scratchpad.sessions.#{session_id}.session")
+    get_session = dispatch(agent_server, :get, { key: "scratchpad.sessions.#{session_id}" })
+    expect(get_session["key"]).to eq("scratchpad.sessions.#{session_id}")
 
     # 3. put a knowledge entry (human)
     put_result = dispatch(human_server, :put, {

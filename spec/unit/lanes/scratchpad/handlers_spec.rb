@@ -30,11 +30,12 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
       allow(mentry).to receive(:key).and_return("scratchpad.sessions")
       allow(ctx).to receive(:manifest).and_return(manifest)
       env = instance_double("Envelope", body: JSON.generate("session_id" => "abc", "status" => "active"))
-      allow(ctx).to receive(:read).with(key: "scratchpad.sessions.abc.session").and_return(env)
+      allow(ctx).to receive(:read).with(key: "scratchpad.sessions.abc").and_return(env)
       allow(ctx).to receive(:put)
 
       result = described_class.session_close(session_id: "abc", ctx:, call: nil)
       expect(result["status"]).to eq("sealed")
+      expect(result["feedback"]).to be_a(Hash)
     end
 
     it "returns error for missing session" do
