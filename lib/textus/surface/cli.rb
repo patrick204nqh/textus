@@ -65,7 +65,7 @@ module Textus
         when true, nil then 0
         when false then 1
         else
-          @stderr.puts("warning: verb returned non-Integer #{value.class}; treating as 0")
+          @stderr.puts("warning: action returned non-Integer #{value.class}; treating as 0")
           0
         end
       end

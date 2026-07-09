@@ -16,7 +16,7 @@ module Textus
       CURATED_CLI_VERBS = Catalog::CURATED_CLI_VERBS
 
       def self.contract_summaries
-        Textus::Protocol::VerbRegistry.registered.to_h { |s| [s.verb.to_s, s.summary] }
+        Textus::Protocol::ActionRegistry.registered.to_h { |s| [s.action.to_s, s.summary] }
       end
 
       def self.build(container:)

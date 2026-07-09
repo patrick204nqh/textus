@@ -2,9 +2,9 @@
 
 module Textus
   module Protocol
-    module VerbRegistry
-      CoreVerbs = {
-        audit: VerbSpec.new(
+    module ActionRegistry
+      CoreActions = {
+        audit: ActionSpec.new(
           :audit, "Query the audit log with optional filters.",
           [ArgSpec.arg(name: :key, description: "filter to rows for this key"),
            ArgSpec.arg(name: :lane, description: "filter to keys in this lane"),
@@ -17,19 +17,19 @@ module Textus
           %i[cli mcp], :read
         ),
 
-        blame: VerbSpec.new(
+        blame: ActionSpec.new(
           :blame, "Annotate audit rows with the git commit that introduced each file state.",
           [ArgSpec.arg(name: :key, required: true, positional: true, description: "entry key to blame"),
            ArgSpec.arg(name: :limit, type: Integer, description: "maximum number of audit rows to return")],
           %i[cli mcp], :read
         ),
 
-        boot: VerbSpec.new(
+        boot: ActionSpec.new(
           :boot, "Return the orientation contract: lanes, agent_quickstart, agent_protocol.",
           [], %i[cli mcp], :read
         ),
 
-        data_mv: VerbSpec.new(
+        data_mv: ActionSpec.new(
           :data_mv, "Rename a data lane — manifest + files. Refuses if destination exists.",
           [ArgSpec.arg(name: :from, required: true, positional: true, description: "current data lane name"),
            ArgSpec.arg(name: :to, required: true, positional: true, description: "new data lane name"),
@@ -38,32 +38,32 @@ module Textus
           %i[cli mcp], :write
         ),
 
-        deps: VerbSpec.new(
+        deps: ActionSpec.new(
           :deps, "List the keys a derived entry depends on.",
           [ArgSpec.arg(name: :key, required: true, positional: true, description: "dotted key of the derived entry whose source keys you want")],
           %i[cli mcp], :read
         ),
 
-        drain: VerbSpec.new(
+        drain: ActionSpec.new(
           :drain, "Seed materialize + sweep jobs then drain the queue to empty.",
           [], %i[cli mcp], :maintenance
         ),
 
-        get: VerbSpec.new(
+        get: ActionSpec.new(
           :get, "Read one entry — on-disk read with freshness verdict.",
           [ArgSpec.arg(name: :key, required: true, positional: true, description: "dotted entry key to read, e.g. 'knowledge.project'")],
           %i[cli mcp], :read
         ),
 
-        graph: VerbSpec.new(
+        graph: ActionSpec.new(
           :graph, "Query the link graph — neighbors (direct links) or reachable (transitive, with optional depth limit).",
           [ArgSpec.arg(name: :key, required: true, positional: true, description: "entry key to query"),
            ArgSpec.arg(name: :depth, type: Integer, description: "max traversal depth for reachable query (unlimited when omitted)")],
           %i[cli mcp], :read
         ),
 
-        ingest: VerbSpec.new(
-          verb: :ingest, summary: "Capture external source material into the raw lane. Write-once.",
+        ingest: ActionSpec.new(
+          action: :ingest, summary: "Capture external source material into the raw lane. Write-once.",
           args: [ArgSpec.arg(name: :kind, required: true, positional: true, description: "source kind: url | file | asset"),
                  ArgSpec.arg(name: :slug, required: true, description: "human slug for the key suffix (kebab-case)"),
                  ArgSpec.arg(name: :url, description: "remote URL (required when kind=url)"),
@@ -73,14 +73,14 @@ module Textus
           surfaces: %i[cli mcp], category: :write, lane: :ingest
         ),
 
-        key_delete: VerbSpec.new(
+        key_delete: ActionSpec.new(
           :key_delete, "Delete one entry by key. Returns {ok, key, deleted}.",
           [ArgSpec.arg(name: :key, required: true, positional: true, description: "dotted entry key to delete"),
            ArgSpec.arg(name: :if_etag, description: "optimistic-concurrency guard: etag you last read")],
           %i[cli mcp], :write
         ),
 
-        key_delete_under: VerbSpec.new(
+        key_delete_under: ActionSpec.new(
           :key_delete_under, "Delete all keys under a dotted prefix.",
           [ArgSpec.arg(name: :under, required: true, positional: true, description: "every leaf key under this dotted prefix is deleted"),
            ArgSpec.arg(name: :dry_run, type: :boolean, default: false,
@@ -88,7 +88,7 @@ module Textus
           %i[cli mcp], :write
         ),
 
-        key_mv: VerbSpec.new(
+        key_mv: ActionSpec.new(
           :key_mv, "Rename one entry (same zone + format). Refuses if target exists.",
           [ArgSpec.arg(name: :old_key, required: true, positional: true, description: "current dotted key"),
            ArgSpec.arg(name: :new_key, required: true, positional: true, description: "new dotted key (same zone and format)"),
@@ -96,7 +96,7 @@ module Textus
           %i[cli mcp], :write
         ),
 
-        key_mv_under: VerbSpec.new(
+        key_mv_under: ActionSpec.new(
           :key_mv_under, "Rename all keys from one dotted prefix to another.",
           [ArgSpec.arg(name: :from_under, required: true, positional: true, description: "dotted prefix whose leaf keys are renamed"),
            ArgSpec.arg(name: :to_under, required: true, positional: true, description: "dotted prefix the keys are renamed to"),
@@ -104,7 +104,7 @@ module Textus
           %i[cli mcp], :write
         ),
 
-        list: VerbSpec.new(
+        list: ActionSpec.new(
           :list, "List keys filtered by lane and/or dotted prefix.",
           [ArgSpec.arg(name: :under, description: "restrict to keys starting with this dotted prefix, e.g. 'knowledge.execution'"),
            ArgSpec.arg(name: :lane, description: "restrict to one lane by name (see `boot` lanes)"),
@@ -113,13 +113,13 @@ module Textus
           %i[cli mcp], :read
         ),
 
-        pulse: VerbSpec.new(
+        pulse: ActionSpec.new(
           :pulse, "Delta since cursor — changed entries, pending proposals, index freshness.",
           [ArgSpec.arg(name: :since, type: Integer, description: "audit seq to diff from; defaults to the session cursor")],
           %i[cli mcp], :read
         ),
 
-        put: VerbSpec.new(
+        put: ActionSpec.new(
           :put, "Create or update an entry. Schema-validated. Returns {uid, etag}.",
           [ArgSpec.arg(name: :key, required: true, positional: true, description: "dotted entry key, e.g. 'knowledge.project'; must resolve to a zone the role may write"),
            ArgSpec.arg(name: :meta, type: Hash, wire_name: :_meta,
@@ -130,37 +130,37 @@ module Textus
           %i[cli mcp], :write
         ),
 
-        rdeps: VerbSpec.new(
+        rdeps: ActionSpec.new(
           :rdeps, "List the derived entries that depend on a key (reverse deps).",
           [ArgSpec.arg(name: :key, required: true, positional: true, description: "dotted key whose dependents you want")],
           %i[cli mcp], :read
         ),
 
-        schema_list: VerbSpec.new(
+        schema_list: ActionSpec.new(
           :schema_list, "List all registered schemas with their fields.",
           [], %i[cli mcp], :read
         ),
 
-        schema_show: VerbSpec.new(
+        schema_show: ActionSpec.new(
           :schema_show, "Return the schema (field shape) for an entry's family.",
           [ArgSpec.arg(name: :key, required: true, positional: true, description: "any key in the family whose schema you want")],
           %i[cli mcp], :read
         ),
 
-        uid: VerbSpec.new(
+        uid: ActionSpec.new(
           :uid, "Return the stable UID of an entry without reading its body.",
           [ArgSpec.arg(name: :key, required: true, positional: true, description: "entry key")],
           %i[cli mcp], :read
         ),
 
-        where: VerbSpec.new(
+        where: ActionSpec.new(
           :where, "Resolve a key to its zone, owner, and path without reading the body.",
           [ArgSpec.arg(name: :key, required: true, positional: true, description: "dotted key to locate")],
           %i[cli mcp], :read
         ),
 
-        blueprint: VerbSpec.new(
-          verb: :blueprint,
+        blueprint: ActionSpec.new(
+          action: :blueprint,
           summary: "Show entry blueprint — naming pattern, schema fields, format rules, and scaffold template. Sub-verbs: show, validate, scaffold",
           args: [
             ArgSpec.arg(name: :sub_verb, required: true, positional: true,
@@ -168,7 +168,7 @@ module Textus
             ArgSpec.arg(name: :key, required: true, positional: true,
                         description: "entry key to inspect"),
             ArgSpec.arg(name: :data, type: String, required: false,
-                        description: "payload data for validate sub-verb"),
+                        description: "payload data for validate sub-action"),
           ],
           surfaces: %i[cli mcp],
           category: :read

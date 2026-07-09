@@ -140,25 +140,25 @@ module Textus
           { "nodes" => LOOP_NODES, "excerpt" => excerpt }
         end
 
-        # ── verb lists ──
+        # ── action lists ──
 
         def self.build_verb_lists(manifest, agent_role)
-          read_verbs = Textus::Protocol::VerbRegistry.registered.select { |s| s.read? && s.mcp? }.map { |s| s.verb.to_s }
+          read_actions = Textus::Protocol::ActionRegistry.registered.select { |s| s.read? && s.mcp? }.map { |s| s.action.to_s }
 
           author_writers = manifest.policy.writers_for("knowledge")
           agent_has_author = agent_role && author_writers.include?(agent_role)
-          write_verbs = if agent_role
-                          mcp_verbs = Textus::Protocol::VerbRegistry.registered.select { |s| s.write? && s.mcp? }
+          write_actions = if agent_role
+                          mcp_actions = Textus::Protocol::ActionRegistry.registered.select { |s| s.write? && s.mcp? }
                           unless agent_has_author
                             forbidden = %i[accept reject].to_set.freeze
-                            mcp_verbs = mcp_verbs.reject { |s| forbidden.include?(s.verb) }
+                            mcp_actions = mcp_actions.reject { |s| forbidden.include?(s.action) }
                           end
-                          mcp_verbs.map { |s| s.verb.to_s }
+                          mcp_actions.map { |s| s.action.to_s }
                         else
                           []
                         end
 
-          [read_verbs, write_verbs]
+          [read_actions, write_actions]
         end
 
         # ─── writable lanes ──

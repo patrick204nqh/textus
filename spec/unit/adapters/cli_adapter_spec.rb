@@ -4,7 +4,7 @@ RSpec.describe Textus::Adapters::CliAdapter do
   describe "#normalize" do
     it "extracts verb from first non-flag argument" do
       req = adapter.normalize(%w[get --key=test])
-      expect(req.verb).to eq(:get)
+      expect(req.action).to eq(:get)
     end
 
     it "extracts --as= role" do

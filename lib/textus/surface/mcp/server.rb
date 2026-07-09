@@ -41,19 +41,19 @@ module Textus
           end
         end
 
-        def dispatch(verb_name, args, _server_context)
+        def dispatch(action_name, args, _server_context)
           drifted = drift_detected?
-          response = GATE_ADAPTER.call(verb_name, params: args, gate: @gate, role: @store.role)
+          response = GATE_ADAPTER.call(action_name, params: args, gate: @gate, role: @store.role)
           raise response.error if response.error
 
           result = response.payload
           result = DriftAnnotation.apply(
-            result, verb_name:, drifted:, is_read: Catalog.read_verbs.include?(verb_name.to_s),
+            result, action_name:, drifted:, is_read: Catalog.read_actions.include?(action_name.to_s),
                     current_etag: short_etag(contract_etag_now),
                     previous_etag: short_etag(@store.contract_etag)
           )
 
-          post_dispatch!(verb_name)
+          post_dispatch!(action_name)
           ::MCP::Tool::Response.new([{ type: "text", text: JSON.dump(result) }])
         rescue Textus::CursorExpired => e
           raise_handler_error(e.message, Textus::CursorExpired::JSONRPC_CODE)
@@ -71,9 +71,9 @@ module Textus
           @store.contract_etag != contract_etag_now
         end
 
-        def post_dispatch!(verb_name)
-          @store = @cursor_manager.advance!(seq: @store.container.store.audit_log.latest[:seq]) if verb_name == :pulse
-          @store = @store.with_role(@store.role) if verb_name == :boot
+        def post_dispatch!(action_name)
+          @store = @cursor_manager.advance!(seq: @store.container.store.audit_log.latest[:seq]) if action_name == :pulse
+          @store = @store.with_role(@store.role) if action_name == :boot
         end
 
         def build_resources

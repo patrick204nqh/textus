@@ -2,7 +2,7 @@ module Textus
   module Adapters
     class McpAdapter
       def call(method, params: {}, gate:, role: nil, session_id: nil)
-        spec = Textus::Protocol::VerbRegistry.for(method.to_s.to_sym)
+        spec = Textus::Protocol::ActionRegistry.for(method.to_s.to_sym)
         str_params = deep_stringify_keys(params || {})
         bound = if spec
                   Textus::Protocol::Binder.inputs_from_wire(spec, str_params)
@@ -11,7 +11,7 @@ module Textus
                 end
 
         request = Request.new(
-          verb: method.to_s.to_sym,
+          action: method.to_s.to_sym,
           params: bound,
           role: role,
           session_id: session_id,
@@ -20,7 +20,7 @@ module Textus
       end
 
       def normalize(raw)
-        spec = Textus::Protocol::VerbRegistry.for(raw["method"].to_s.to_sym)
+        spec = Textus::Protocol::ActionRegistry.for(raw["method"].to_s.to_sym)
         str_params = deep_stringify_keys(raw["params"] || {})
         bound = if spec
                   Textus::Protocol::Binder.inputs_from_wire(spec, str_params)
@@ -29,7 +29,7 @@ module Textus
                 end
 
         Request.new(
-          verb: raw["method"].to_s.to_sym,
+          action: raw["method"].to_s.to_sym,
           params: bound,
           role: raw["role"],
           session_id: raw["session_id"],

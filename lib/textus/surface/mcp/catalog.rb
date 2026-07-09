@@ -7,7 +7,7 @@ module Textus
         module_function
 
         def specs
-          Textus::Protocol::VerbRegistry.registered.select(&:mcp?)
+          Textus::Protocol::ActionRegistry.registered.select(&:mcp?)
         end
 
         def build_tools(mcp_server)
@@ -15,29 +15,29 @@ module Textus
             schema = spec.input_schema
             schema = schema.reject { |k, v| k == :required && Array(v).empty? }
             MCP_ADAPTER.tool(
-              name: spec.verb.to_s,
+              name: spec.action.to_s,
               description: spec.summary,
               input_schema: schema,
             ) do |server_context:, **args|
-              mcp_server.dispatch(spec.verb, args, server_context)
+              mcp_server.dispatch(spec.action, args, server_context)
             end
           end
         end
 
         def names
-          specs.map(&:verb).map(&:to_s)
+          specs.map(&:action).map(&:to_s)
         end
 
-        def read_verbs
-          Textus::Protocol::VerbRegistry.registered
+        def read_actions
+          Textus::Protocol::ActionRegistry.registered
                                         .select { |s| s.read? && s.mcp? }
-                                        .map { |s| s.verb.to_s }
+                                        .map { |s| s.action.to_s }
         end
 
-        def write_verbs
-          Textus::Protocol::VerbRegistry.registered
+        def write_actions
+          Textus::Protocol::ActionRegistry.registered
                                         .select { |s| s.write? && s.mcp? }
-                                        .map { |s| s.verb.to_s }
+                                        .map { |s| s.action.to_s }
         end
 
       end

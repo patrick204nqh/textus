@@ -24,7 +24,7 @@ module Textus
         ].freeze
 
         def self.build
-          summaries = Textus::Protocol::VerbRegistry.registered.to_h { |s| [s.verb.to_s, s.summary] }
+          summaries = Textus::Protocol::ActionRegistry.registered.to_h { |s| [s.action.to_s, s.summary] }
           CURATED_CLI_VERBS.map do |entry|
             derived = summaries[entry["name"]]
             derived ? entry.merge("summary" => derived) : entry

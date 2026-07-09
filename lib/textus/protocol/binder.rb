@@ -6,7 +6,7 @@ module Textus
       def initialize(spec, missing)
         @spec = spec
         @missing = missing
-        super("missing_args", "#{spec.verb}: missing #{missing.map(&:wire).join(", ")}")
+        super("missing_args", "#{spec.action}: missing #{missing.map(&:wire).join(", ")}")
       end
     end
 

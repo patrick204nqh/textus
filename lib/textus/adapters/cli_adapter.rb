@@ -48,19 +48,19 @@ module Textus
         params = build_params(action, positionals, raw_flags, stdin)
 
         role = role_kv&.delete_prefix("--as=") || @default_role
-        Request.new(verb: action, params: params, role: role)
+        Request.new(action: action, params: params, role: role)
       end
 
       private
 
       def resolve_action(argv)
-        verb_registry = Textus::Protocol::VerbRegistry
+        action_registry = Textus::Protocol::ActionRegistry
 
         (1..argv.size).reverse_each do |n|
           candidate = argv.first(n).join(" ")
-          verb_registry.registered.each do |spec|
-            path = CLI_PATH_OVERRIDES[spec.verb] || spec.cli_path
-            return [spec.verb, argv.drop(n)] if path == candidate
+          action_registry.registered.each do |spec|
+            path = CLI_PATH_OVERRIDES[spec.action] || spec.cli_path
+            return [spec.action, argv.drop(n)] if path == candidate
           end
         end
 
@@ -68,7 +68,7 @@ module Textus
       end
 
       def build_params(action, positionals, flags, stdin)
-        spec = Textus::Protocol::VerbRegistry.for(action)
+        spec = Textus::Protocol::ActionRegistry.for(action)
         return { positionals: positionals } unless spec
 
         ordered = spec.args.select(&:positional).map(&:name)

@@ -75,7 +75,7 @@ module Textus
           when "scaffold"
             Protocol::Blueprint::Controller.scaffold(key, schemas: ctx.schemas, manifest: ctx.manifest)
           else
-            raise Textus::UsageError.new("unknown blueprint sub-verb: #{sub_verb.inspect} (use: show, validate, scaffold)")
+            raise Textus::UsageError.new("unknown blueprint sub-action: #{sub_verb.inspect} (use: show, validate, scaffold)")
           end
         end
       end

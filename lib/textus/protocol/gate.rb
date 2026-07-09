@@ -1,7 +1,7 @@
 module Textus
   module Protocol
     class Gate
-      AUTHOR_VERBS = %i[accept reject].to_set.freeze
+      AUTHOR_ACTIONS = %i[accept reject].to_set.freeze
 
       attr_writer :container
 
@@ -22,8 +22,8 @@ module Textus
       def dispatch(request, env: ENV, cwd: Dir.pwd)
         raise Textus::UsageError.new("Request expected") unless request.is_a?(Adapters::Request)
 
-        spec = VerbRegistry.for(request.verb)
-        raise Textus::UsageError.new("unknown verb: #{request.verb}") unless spec
+        spec = ActionRegistry.for(request.action)
+        raise Textus::UsageError.new("unknown action: #{request.action}") unless spec
 
         role = request.role || @default_role
         authorize!(role, request.params[:key], spec)
@@ -37,7 +37,7 @@ module Textus
         ctx = ctx_class.new(@store_engine, @container, call_obj)
 
         handler = spec.lane ? Lane.handler_for(spec.lane) : handler_group(spec)
-        result = handler.public_send(request.verb, **bound, ctx:, call: call_obj)
+        result = handler.public_send(request.action, **bound, ctx:, call: call_obj)
 
         persist_session(session, spec) if spec.write?
         Adapters::Response.new(payload: result, error: nil)
@@ -92,7 +92,7 @@ module Textus
       def authorize!(role, key, spec)
         return true unless spec&.write?
 
-        check_author_verb!(role, spec.verb)
+        check_author_action!(role, spec.action)
 
         lane_name = key&.split(".")&.first || spec.lane&.to_s
         return true unless lane_name && Textus::Protocol::V4::LANES[lane_name]
@@ -100,15 +100,15 @@ module Textus
         @container.manifest.policy.allowed!(role:, lane: lane_name, key:)
       end
 
-      def check_author_verb!(role, verb)
-        return unless AUTHOR_VERBS.include?(verb)
+      def check_author_action!(role, action)
+        return unless AUTHOR_ACTIONS.include?(action)
 
         author_writers = @container.manifest.policy.writers_for("knowledge")
         return if author_writers.map(&:to_sym).include?(role.to_sym)
 
         raise Textus::WriteForbidden.new(
-          verb, "scratchpad",
-          verb: verb.to_s, holders: author_writers
+          action, "scratchpad",
+          verb: action.to_s, holders: author_writers
         )
       end
     end

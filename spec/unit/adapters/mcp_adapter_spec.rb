@@ -4,7 +4,7 @@ RSpec.describe Textus::Adapters::McpAdapter do
   describe "#normalize" do
     it "extracts verb from method field" do
       req = adapter.normalize({ "method" => "get" })
-      expect(req.verb).to eq(:get)
+      expect(req.action).to eq(:get)
     end
 
     it "symbolizes params keys" do

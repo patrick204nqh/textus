@@ -17,12 +17,12 @@ module Textus
         JSON.generate(protocol: boot["protocol"], lanes: boot["lanes"]&.map { |l| l["name"] }, store_root: boot["store_root"])
       end
 
-      post "/api/:verb" do
+      post "/api/:action" do
         content_type :json
         adapter = Textus::Adapters::WebAdapter.new
         role = request.env["HTTP_X_TEXTUS_ROLE"] || "agent"
         body = JSON.parse(request.body.read) rescue {}
-        response = adapter.call(params[:verb], params: body, role: role, gate: settings.textus_gate)
+        response = adapter.call(params[:action], params: body, role: role, gate: settings.textus_gate)
 
         if response.success?
           JSON.generate(response.payload)

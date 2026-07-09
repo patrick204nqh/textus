@@ -1,6 +1,6 @@
 module Textus
   module Protocol
-    module VerbRegistry
+    module ActionRegistry
       ArgSpec = Data.define(
         :name, :type, :required, :positional,
         :description, :wire_name, :default, :source, :coerce, :cli_default

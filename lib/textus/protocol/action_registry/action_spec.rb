@@ -1,24 +1,24 @@
 module Textus
   module Protocol
-    module VerbRegistry
+    module ActionRegistry
       TYPE_MAP = {
         String => "string", Integer => "integer", Hash => "object",
         Array => "array", :boolean => "boolean"
       }.freeze
 
-      SYSTEM_VERBS = %i[boot audit blame pulse drain workflow_spec].to_set.freeze
+      SYSTEM_ACTIONS = %i[boot audit blame pulse drain workflow_spec].to_set.freeze
 
-      VerbSpec = Data.define(:verb, :summary, :args, :surfaces, :category) do
-        def initialize(verb:, summary:, args:, surfaces:, category:, lane: nil)
+      ActionSpec = Data.define(:action, :summary, :args, :surfaces, :category) do
+        def initialize(action:, summary:, args:, surfaces:, category:, lane: nil)
           @lane = lane
-          super(verb:, summary:, args:, surfaces:, category:)
+          super(action:, summary:, args:, surfaces:, category:)
         end
 
         def lane = @lane
-        def system? = SYSTEM_VERBS.include?(verb)
+        def system? = SYSTEM_ACTIONS.include?(action)
         def mcp? = surfaces.include?(:mcp)
         def cli? = surfaces.include?(:cli)
-        def cli_path = verb.to_s.tr("_", " ")
+        def cli_path = action.to_s.tr("_", " ")
         def cli_words = cli_path.split
         def cli_group = cli_words.size > 1 ? cli_words.first : nil
         def cli_leaf  = cli_words.last
@@ -29,7 +29,7 @@ module Textus
 
         def input_schema
           props = args.to_h do |a|
-            json_type = VerbRegistry::TYPE_MAP[a.type] || "string"
+            json_type = ActionRegistry::TYPE_MAP[a.type] || "string"
             h = { "type" => json_type }
             h["description"] = a.description if a.description
             [a.wire.to_s, h]

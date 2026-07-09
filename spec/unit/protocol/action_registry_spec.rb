@@ -1,7 +1,7 @@
-RSpec.describe Textus::Protocol::VerbRegistry::VerbSpec do
+RSpec.describe Textus::Protocol::ActionRegistry::ActionSpec do
   it "accepts lane: keyword" do
     spec = described_class.new(
-      verb: :ingest, summary: "desc", args: [],
+      action: :ingest, summary: "desc", args: [],
       surfaces: %i[cli mcp], category: :write,
       lane: :ingest
     )
@@ -10,7 +10,7 @@ RSpec.describe Textus::Protocol::VerbRegistry::VerbSpec do
 
   it "defaults lane to nil" do
     spec = described_class.new(
-      verb: :get, summary: "desc", args: [],
+      action: :get, summary: "desc", args: [],
       surfaces: %i[cli mcp], category: :read
     )
     expect(spec.lane).to be_nil
@@ -19,7 +19,7 @@ RSpec.describe Textus::Protocol::VerbRegistry::VerbSpec do
   it "raises on unknown keyword" do
     expect do
       described_class.new(
-        verb: :x, summary: "desc", args: [],
+        action: :x, summary: "desc", args: [],
         surfaces: [], category: :read,
         bad: 1
       )

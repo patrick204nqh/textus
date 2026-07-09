@@ -5,7 +5,7 @@ module Textus
     class Session
       attr_reader :role, :container, :gate, :node_stack
 
-      DOMAIN_VERBS = (VerbRegistry::ENTRY_VERBS + VerbRegistry::OPS_VERBS + VerbRegistry::NODE_VERBS).to_set.freeze
+      DOMAIN_ACTIONS = (ActionRegistry::ENTRY_ACTIONS + ActionRegistry::OPS_ACTIONS + ActionRegistry::NODE_ACTIONS).to_set.freeze
 
       def self.open(root, role: Value::Role::DEFAULT, correlation_id: nil, dry_run: false)
         root = File.expand_path(root)
@@ -27,11 +27,11 @@ module Textus
       end
 
       def method_missing(name, *args, **kwargs)
-        if DOMAIN_VERBS.include?(name)
+        if DOMAIN_ACTIONS.include?(name)
           raise ArgumentError.new("#{name} accepts keyword arguments only") unless args.empty?
 
           request = Adapters::Request.new(
-            verb: name, params: kwargs, role: @role,
+            action: name, params: kwargs, role: @role,
             session_id: @correlation_id, correlation_id: @correlation_id,
           )
           response = @gate.dispatch(request)
@@ -43,7 +43,7 @@ module Textus
       end
 
       def respond_to_missing?(name, include_private = false)
-        DOMAIN_VERBS.include?(name) || super
+        DOMAIN_ACTIONS.include?(name) || super
       end
 
       def with_correlation_id(cid)
@@ -173,7 +173,7 @@ module Textus
 
       def fire_node_enter(entry)
         request = Adapters::Request.new(
-          verb: :node_entered,
+          action: :node_entered,
           params: { path: entry.path.map(&:to_s) },
           role: @role,
         )
@@ -185,7 +185,7 @@ module Textus
       def fire_node_exit(entry)
         entry.exited_at = Time.now.utc
         request = Adapters::Request.new(
-          verb: :node_exited,
+          action: :node_exited,
           params: { path: entry.path.map(&:to_s) },
           role: @role,
         )
