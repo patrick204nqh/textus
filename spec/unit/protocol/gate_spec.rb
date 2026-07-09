@@ -88,7 +88,7 @@ RSpec.describe Textus::Protocol::Gate do
 
         req = Textus::Adapters::Request.new(verb: :list)
         result = gate.dispatch(req)
-        expect(result).to eq([])
+        expect(result).to match(hash_including("protocol" => "textus/4", "data" => []))
       end
     end
   end

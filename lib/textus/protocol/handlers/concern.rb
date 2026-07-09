@@ -7,7 +7,7 @@ module Textus
         end
 
         def response(**fields)
-          { "protocol" => Textus::PROTOCOL, **fields }
+          { "protocol" => Textus::PROTOCOL, **fields.transform_keys(&:to_s) }
         end
       end
     end

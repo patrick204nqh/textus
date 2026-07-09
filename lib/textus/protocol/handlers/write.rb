@@ -41,7 +41,7 @@ module Textus
 
         def key_delete_under(under:, ctx:, call:, dry_run: false)
           planner = Ops::BulkPlanner.new
-          plan = planner.plan_delete(prefix:, ctx:)
+          plan = planner.plan_delete(under:, ctx:)
           return plan.to_h if dry_run
 
           plan.steps.each { |s| delete(key: s["key"], ctx:, call:) }

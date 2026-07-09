@@ -27,9 +27,9 @@ RSpec.describe Textus::Adapters::CliAdapter do
       expect(req.role).to eq("agent")
     end
 
-    it "returns empty params" do
-      req = adapter.normalize(%w[list])
-      expect(req.params).to eq({})
+    it "captures positional args as params" do
+      req = adapter.normalize(%w[get knowledge.intent.0001-north-star])
+      expect(req.params).to eq({ positionals: ["knowledge.intent.0001-north-star"] })
     end
   end
 end

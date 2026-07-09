@@ -73,7 +73,7 @@ RSpec.describe "MCP agent workflow — end-to-end" do
 
     # 9. list
     list_result = dispatch(agent_server, :list, { under: "knowledge.intent" })
-    expect(list_result.map { |e| e["key"] }).to include("knowledge.intent.0002-test-intent")
+    expect(list_result["data"].map { |e| e["key"] }).to include("knowledge.intent.0002-test-intent")
 
     # 10. pulse
     pulse_result = dispatch(agent_server, :pulse, {})

@@ -17,7 +17,7 @@ module Textus
         end
 
         def list(ctx:, call:, under: nil, lane: nil, q: nil, schema: nil)
-          ctx.list(under:, lane:, q:, schema:)
+          response(data: ctx.list(under:, lane:, q:, schema:))
         end
 
         def where(key:, ctx:, call:)
@@ -29,13 +29,13 @@ module Textus
           env = ctx.read(key:)
           raise Textus::UnknownKey.new(key) unless env
 
-          env.uid
+          response(uid: env.uid)
         end
 
         def deps(key:, ctx:, call:)
           entry = ctx.manifest.data.entries.find { |e| e.key == key }
           deps_list = entry&.external? ? Array(entry.source&.sources).compact : []
-          { "key" => key, "deps" => deps_list.uniq }
+          response(key:, deps: deps_list.uniq)
         end
 
         def rdeps(key:, ctx:, call:)
@@ -46,14 +46,14 @@ module Textus
             acc << entry.key if sources.any? { |s| s == key || key.start_with?("#{s}.") }
           end
           link_rdeps = ctx.link_store.links_to(key)
-          { "key" => key, "rdeps" => (source_rdeps + link_rdeps).uniq.sort }
+          response(key:, rdeps: (source_rdeps + link_rdeps).uniq.sort)
         end
 
         def graph(key:, ctx:, call:, depth: nil)
           from = ctx.link_store.links_from(key)
           to   = ctx.link_store.links_to(key)
-          { "key" => key, "neighbors" => (from + to).uniq.sort,
-            "reachable" => ctx.link_store.reachable(from: key, depth:).sort }
+          response(key:, neighbors: (from + to).uniq.sort,
+                   reachable: ctx.link_store.reachable(from: key, depth:).sort)
         end
 
         def schema_show(key:, ctx:, call:)
