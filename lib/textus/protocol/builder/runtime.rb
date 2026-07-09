@@ -2,7 +2,7 @@ module Textus
   module Protocol
     class Builder
       class Runtime
-        Components = Data.define(:store_engine, :gate, :ttl_evaluator, :container)
+        Components = Data.define(:store_engine, :gate, :ttl_evaluator, :container, :session_store)
 
         def call(infra:, domain:, root:)
           event_emitter = Textus::Workflow::EventEmitter.new(
@@ -22,23 +22,28 @@ module Textus
             clock: Infra::Clock.new,
           )
 
+          session_store = SessionStore.new(infra.database.connection)
+
+          gate = Gate.new(
+            store_engine:,
+            container: nil,
+            session_store:,
+          )
+
           container = Container.new(
             store: infra.store, layout: infra.layout,
             manifest: domain.manifest, schemas: domain.schemas,
             workflows: domain.workflows,
-            store_engine: store_engine,
-            root:, ttl_evaluator:
-          )
-
-          gate = Gate.new(
-            manifest: domain.manifest,
-            resolver: domain.manifest.resolver,
-            container:,
             store_engine:,
+            root:, ttl_evaluator:,
+            gate:, session_store:
           )
 
+          gate.container = container
           container.gate = gate
-          Components.new(store_engine:, gate:, ttl_evaluator:, container:)
+          container.session_store = session_store
+
+          Components.new(store_engine:, gate:, ttl_evaluator:, container:, session_store:)
         end
       end
     end

@@ -18,8 +18,8 @@ module Textus
           Verdict.build(stale: stale, reason: stale ? "ttl exceeded" : nil, fetching: false)
         end
 
-        def stale_keys(prefix: nil, lane: nil)
-          @manifest.data.entries.select { |m| due?(m, prefix: prefix, lane: lane) }.map(&:key)
+        def stale_keys(under: nil, lane: nil)
+          @manifest.data.entries.select { |m| due?(m, under: prefix, lane: lane) }.map(&:key)
         end
 
         private
@@ -37,7 +37,7 @@ module Textus
           Textus::Protocol::V4::LANES.dig(lane, :retention_ttl)
         end
 
-        def due?(mentry, prefix:, lane:)
+        def due?(mentry, under:, lane:)
           return false if lane && mentry.lane != lane
           return false if prefix && !mentry.key.start_with?(prefix)
 

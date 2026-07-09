@@ -149,8 +149,8 @@ module Textus
         STDIN_VERBS = %i[propose].freeze
         CLI_PATHS = {
           uid: "key uid",
-          key_mv_prefix: "key mv-prefix",
-          key_delete_prefix: "key delete-prefix",
+          key_mv_under: "key mv-under",
+          key_delete_under: "key delete-under",
         }.freeze
 
         def install_for(spec)

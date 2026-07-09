@@ -8,12 +8,12 @@ module Textus
           store.get(key:)
         end
 
-        def list(store:, ctx:, call:, prefix: nil)
-          store.list(prefix: prefix || "artifact")
+        def list(store:, ctx:, call:, under: nil)
+          store.list(under: prefix || "artifact")
         end
 
         def status(store:, ctx:, call:)
-          store.list(prefix: "artifact").map do |row|
+          store.list(under: "artifact").map do |row|
             cache = Cache.new(store)
             { key: row[:key], stale: cache.stale?(row[:key]) }
           end

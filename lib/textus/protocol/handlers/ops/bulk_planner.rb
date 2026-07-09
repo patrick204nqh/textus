@@ -9,25 +9,25 @@ module Textus
             end
           end
 
-          def plan_mv(from_prefix:, to_prefix:, ctx:)
-            raise Textus::UsageError.new("from_prefix and to_prefix required") unless from_prefix && to_prefix
+          def plan_mv(from_under:, to_under:, ctx:)
+            raise Textus::UsageError.new("from_under and to_under required") unless from_under && to_under
 
-            leaves = ctx.list(prefix: from_prefix)
-            raise Textus::UsageError.new("from_prefix is a leaf — use mv") if leaves.any? { |r| r["key"] == from_prefix }
+            leaves = ctx.list(under: from_under)
+            raise Textus::UsageError.new("from_under is a leaf — use mv") if leaves.any? { |r| r["key"] == from_under }
 
-            warnings = leaves.empty? ? ["no keys under #{from_prefix}"] : []
+            warnings = leaves.empty? ? ["no keys under #{from_under}"] : []
             steps = leaves.map do |row|
-              tail = row["key"].delete_prefix("#{from_prefix}.")
-              { "op" => "mv", "from" => row["key"], "to" => "#{to_prefix}.#{tail}" }
+              tail = row["key"].delete_prefix("#{from_under}.")
+              { "op" => "mv", "from" => row["key"], "to" => "#{to_under}.#{tail}" }
             end
             Plan.new(steps:, warnings:)
           end
 
-          def plan_delete(prefix:, ctx:)
-            raise Textus::UsageError.new("prefix required") unless prefix && !prefix.empty?
+          def plan_delete(under:, ctx:)
+            raise Textus::UsageError.new("under required") unless under && !under.empty?
 
-            leaves = ctx.list(prefix:)
-            warnings = leaves.empty? ? ["no keys under #{prefix}"] : []
+            leaves = ctx.list(under:)
+            warnings = leaves.empty? ? ["no keys under #{under}"] : []
             steps = leaves.map { |row| { "op" => "delete", "key" => row["key"] } }
             Plan.new(steps:, warnings:)
           end

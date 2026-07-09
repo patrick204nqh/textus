@@ -104,7 +104,7 @@ module Textus
         end
 
         def self.read_entry_family_meta(manifest, file_system, prefix)
-          manifest.resolver.enumerate(prefix: prefix, include_keyless: true)
+          manifest.resolver.enumerate(under: prefix, include_keyless: true)
                   .reject { |row| row[:key] == prefix }
                   .sort_by { |row| row[:key] }
                   .filter_map { |row| read_entry_meta(manifest, file_system, row[:key]) }

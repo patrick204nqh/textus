@@ -30,7 +30,7 @@ module Textus
         end
 
         def recent_feedback(ctx)
-          rows = ctx.entry_index&.search(schema: "loop-feedback", lane: "knowledge", query: nil, prefix: nil)
+          rows = ctx.entry_index&.search(schema: "loop-feedback", lane: "knowledge", query: nil, under: nil)
           return [] unless rows&.any?
 
           rows.map do |row|

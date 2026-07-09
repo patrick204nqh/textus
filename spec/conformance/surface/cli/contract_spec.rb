@@ -77,9 +77,9 @@ RSpec.describe "Textus::Surface::CLI verb return-value contract" do
   it "group subcommand tables are auto-derived from parent_group" do
     expect(Textus::Surface::CLI::Group::Key.subcommands).to eq(
       "delete" => Textus::Surface::CLI::Verb::GenKeyDelete,
-      "delete-prefix" => Textus::Surface::CLI::Verb::GenKeyDeletePrefix,
+      "delete-under" => Textus::Surface::CLI::Verb::GenKeyDeleteUnder,
       "mv" => Textus::Surface::CLI::Verb::GenKeyMv,
-      "mv-prefix" => Textus::Surface::CLI::Verb::GenKeyMvPrefix,
+      "mv-under" => Textus::Surface::CLI::Verb::GenKeyMvUnder,
       "uid" => Textus::Surface::CLI::Verb::GenUid,
     )
     expect(Textus::Surface::CLI::Group::Data.subcommands).to eq(

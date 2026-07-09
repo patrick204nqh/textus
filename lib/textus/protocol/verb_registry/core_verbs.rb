@@ -80,9 +80,9 @@ module Textus
           %i[cli mcp], :write
         ),
 
-        key_delete_prefix: VerbSpec.new(
-          :key_delete_prefix, "Bulk-delete every leaf key under prefix.",
-          [ArgSpec.arg(name: :prefix, required: true, positional: true, description: "every leaf key under this dotted prefix is deleted"),
+        key_delete_under: VerbSpec.new(
+          :key_delete_under, "Delete all keys under a dotted prefix.",
+          [ArgSpec.arg(name: :under, required: true, positional: true, description: "every leaf key under this dotted prefix is deleted"),
            ArgSpec.arg(name: :dry_run, type: :boolean, default: false,
                        description: "when true, returns keys that would be deleted without deleting")],
           %i[cli mcp], :write
@@ -96,17 +96,17 @@ module Textus
           %i[cli mcp], :write
         ),
 
-        key_mv_prefix: VerbSpec.new(
-          :key_mv_prefix, "Bulk-rename every leaf key under from_prefix to to_prefix.",
-          [ArgSpec.arg(name: :from_prefix, required: true, positional: true, description: "dotted prefix whose leaf keys are renamed"),
-           ArgSpec.arg(name: :to_prefix, required: true, positional: true, description: "dotted prefix the keys are renamed to"),
+        key_mv_under: VerbSpec.new(
+          :key_mv_under, "Rename all keys from one dotted prefix to another.",
+          [ArgSpec.arg(name: :from_under, required: true, positional: true, description: "dotted prefix whose leaf keys are renamed"),
+           ArgSpec.arg(name: :to_under, required: true, positional: true, description: "dotted prefix the keys are renamed to"),
            ArgSpec.arg(name: :dry_run, type: :boolean, default: false, description: "when true, returns planned moves without applying")],
           %i[cli mcp], :write
         ),
 
         list: VerbSpec.new(
-          :list, "List keys filtered by lane and/or prefix.",
-          [ArgSpec.arg(name: :prefix, description: "restrict to keys starting with this dotted prefix, e.g. 'knowledge.execution'"),
+          :list, "List keys filtered by lane and/or dotted prefix.",
+          [ArgSpec.arg(name: :under, description: "restrict to keys starting with this dotted prefix, e.g. 'knowledge.execution'"),
            ArgSpec.arg(name: :lane, description: "restrict to one lane by name (see `boot` lanes)"),
            ArgSpec.arg(name: :q, description: "full-text search query over entry content (FTS5)"),
            ArgSpec.arg(name: :schema, description: "filter to entries whose schema matches this name")],

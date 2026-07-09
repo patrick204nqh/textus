@@ -25,6 +25,11 @@ RSpec.describe Textus::Protocol::Builder::Runtime do # rubocop:disable RSpec/Mul
     allow(file_system).to receive(:respond_to?).with(:exists?).and_return(true)
     allow(file_system).to receive(:respond_to?).with(:mtime).and_return(true)
     allow(file_system).to receive(:respond_to?).with(:read).and_return(true)
+
+    db_double = instance_double(Sequel::Database)
+    allow(database).to receive(:connection).and_return(db_double)
+    allow(db_double).to receive(:[]).with(:sessions).and_return(double("dataset", insert: nil,
+      where: double("where", first: nil, update: nil, delete: 0)))
   end
 
   it "builds a StoreEngine" do

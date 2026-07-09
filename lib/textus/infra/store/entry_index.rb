@@ -13,7 +13,7 @@ module Textus
           table(:entries).where(key:).delete
         end
 
-        def search(query: nil, schema: nil, lane: nil, prefix: nil)
+        def search(query: nil, schema: nil, lane: nil, under: nil)
           dataset = table(:entries).select(:key, :lane, :format, :schema, :content, :indexed_at)
           if query
             match_query = query.to_s.gsub("-", " ")
@@ -22,7 +22,7 @@ module Textus
           end
           dataset = dataset.where(schema:) if schema
           dataset = dataset.where(lane:) if lane
-          dataset = dataset.where(Sequel.like(:key, "#{prefix}%")) if prefix
+          dataset = dataset.where(Sequel.like(:key, "#{under}%")) if under
           results(dataset.all)
         end
       end

@@ -16,8 +16,8 @@ module Textus
           Ops::SourceExpander.new.call(env, ctx:, depth: 0).to_h_for_wire
         end
 
-        def list(ctx:, call:, prefix: nil, lane: nil, q: nil, schema: nil)
-          ctx.list(prefix:, lane:, q:, schema:)
+        def list(ctx:, call:, under: nil, lane: nil, q: nil, schema: nil)
+          ctx.list(under:, lane:, q:, schema:)
         end
 
         def where(key:, ctx:, call:)

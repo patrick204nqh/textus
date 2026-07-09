@@ -30,16 +30,16 @@ module Textus
           base.merge("uid" => mctx.envelope.uid, "envelope" => mctx.envelope.to_h_for_wire)
         end
 
-        def key_mv_prefix(from_prefix:, to_prefix:, ctx:, call:, dry_run: false)
+        def key_mv_under(from_under:, to_under:, ctx:, call:, dry_run: false)
           planner = Ops::BulkPlanner.new
-          plan = planner.plan_mv(from_prefix:, to_prefix:, ctx:)
+          plan = planner.plan_mv(from_under:, to_under:, ctx:)
           return plan.to_h if dry_run
 
           plan.steps.each { |s| move(old_key: s["from"], new_key: s["to"], ctx:, call:) }
           plan.to_h
         end
 
-        def key_delete_prefix(prefix:, ctx:, call:, dry_run: false)
+        def key_delete_under(under:, ctx:, call:, dry_run: false)
           planner = Ops::BulkPlanner.new
           plan = planner.plan_delete(prefix:, ctx:)
           return plan.to_h if dry_run

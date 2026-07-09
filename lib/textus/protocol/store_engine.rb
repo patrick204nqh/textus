@@ -29,12 +29,12 @@ module Textus
         path && @file_system.exists?(path)
       end
 
-      def list(prefix: nil, lane: nil, q: nil, schema: nil)
+      def list(under: nil, lane: nil, q: nil, schema: nil)
         if @store.entry_index && (q || schema)
-          rows = @store.entry_index.search(query: q, schema:, lane:, prefix:)
+          rows = @store.entry_index.search(query: q, schema:, lane:, under:)
           (rows || []).map { |r| { "key" => r["key"], "lane" => r["lane"] } }
         else
-          rows = @manifest.resolver.enumerate(prefix:)
+          rows = @manifest.resolver.enumerate(under:)
           rows = rows.select { |r| r[:manifest_entry].lane == lane } if lane
           rows.map { |r| { "key" => r[:key], "lane" => r[:manifest_entry].lane } }
         end

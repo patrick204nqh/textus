@@ -29,7 +29,7 @@ module Textus
 
       OPS_VERBS = %i[
         boot drain pulse data_mv
-        key_mv_prefix key_delete_prefix
+        key_mv_under key_delete_under
       ].freeze
 
       VERB_DOMAIN = ENTRY_VERBS.to_h { |v| [v, :entry] }

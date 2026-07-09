@@ -26,8 +26,8 @@ RSpec.describe Textus::Protocol::Handlers::QueryContext do
   end
 
   it "delegates list to store_engine" do
-    expect(store_engine).to receive(:list).with(prefix: "test")
-    ctx.list(prefix: "test")
+    expect(store_engine).to receive(:list).with(under: "test")
+    ctx.list(under: "test")
   end
 
   it "delegates exists? to store_engine" do

@@ -28,11 +28,11 @@ module Textus
           []
         end
 
-        def enumerate(prefix: nil, include_keyless: false)
+        def enumerate(under: nil, include_keyless: false)
           out = @data.entries.flat_map do |entry|
             nested_entry?(entry) ? enumerate_nested(entry, include_keyless: include_keyless) : enumerate_leaf(entry)
           end
-          out.select! { |row| row[:key] == prefix || row[:key].start_with?("#{prefix}.") } if prefix
+          out.select! { |row| row[:key] == under || row[:key].start_with?("#{under}.") } if under
           out.sort_by { |row| row[:key] }
         end
 

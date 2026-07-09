@@ -86,6 +86,16 @@ module Textus
           DateTime :updated_at, null: false, default: Sequel::CURRENT_TIMESTAMP
         end
 
+        @db.create_table?(:sessions) do
+          String :id, primary_key: true
+          String :role, null: false
+          String :surface_id
+          Integer :cursor_seq
+          String :contract_etag
+          DateTime :expires_at
+          DateTime :created_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+        end
+
         create_entries_fts
       end
 
