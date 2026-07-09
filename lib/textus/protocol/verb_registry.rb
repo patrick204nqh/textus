@@ -19,7 +19,7 @@ module Textus
 
       ENTRY_VERBS = %i[
         get put list key_delete key_mv propose accept reject
-        audit blame where uid deps rdeps graph diff ingest loop
+        audit blame blueprint where uid deps rdeps graph diff ingest loop
         session_open session_close
       ].freeze
 

@@ -19,6 +19,7 @@ module Textus
           { "name" => "session", "summary" => "session lifecycle: session_open, session_close" },
           { "name" => "audit" },
           { "name" => "blame" },
+          { "name" => "blueprint" },
           { "name" => "pulse" },
         ].freeze
 

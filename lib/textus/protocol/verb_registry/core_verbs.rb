@@ -158,6 +158,21 @@ module Textus
           [ArgSpec.arg(name: :key, required: true, positional: true, description: "dotted key to locate")],
           %i[cli mcp], :read
         ),
+
+        blueprint: VerbSpec.new(
+          verb: :blueprint,
+          summary: "Show entry blueprint — naming pattern, schema fields, format rules, and scaffold template. Sub-verbs: show, validate, scaffold",
+          args: [
+            ArgSpec.arg(name: :sub_verb, required: true, positional: true,
+                        description: "operation: show, validate, or scaffold"),
+            ArgSpec.arg(name: :key, required: true, positional: true,
+                        description: "entry key to inspect"),
+            ArgSpec.arg(name: :data, type: String, required: false,
+                        description: "payload data for validate sub-verb"),
+          ],
+          surfaces: %i[cli mcp],
+          category: :read
+        ),
       }.freeze
     end
   end

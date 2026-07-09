@@ -61,6 +61,22 @@ module Textus
           schema = ctx.schemas.fetch_or_nil(mentry.schema)
           response(key:, schema_ref: mentry.schema, schema: schema&.to_h)
         end
+
+        def blueprint(sub_verb:, key:, data: nil, ctx:, call:)
+          _ = call
+          case sub_verb
+          when "show"
+            Protocol::Blueprint::Controller.show(key, ctx.container)
+          when "validate"
+            payload = Textus::Value::Payload.new(meta: {}, body: data.to_s, content: nil)
+            errors = Protocol::Blueprint::Controller.validate(key, payload, ctx.container)
+            errors.empty? ? { valid: true } : { valid: false, errors: errors }
+          when "scaffold"
+            Protocol::Blueprint::Controller.scaffold(key, ctx.container)
+          else
+            raise Textus::UsageError.new("unknown blueprint sub-verb: #{sub_verb.inspect} (use: show, validate, scaffold)")
+          end
+        end
       end
     end
   end
