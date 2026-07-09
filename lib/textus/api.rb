@@ -99,8 +99,8 @@ module Textus
 
     def loop_node_names
       @store.manifest.data.entries
-        .select { |e| e.key.start_with?("knowledge.loop.") && e.key.count(".") == 2 }
-        .map { |e| e.key.split(".").last.to_sym }
+        .select { |e| e.key.start_with?("knowledge.loop.") && e.key != "knowledge.loop" }
+        .map { |e| e.key.delete_prefix("knowledge.loop.").tr(".", "-").to_sym }
     end
   end
 end
