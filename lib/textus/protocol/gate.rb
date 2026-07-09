@@ -40,7 +40,9 @@ module Textus
         result = handler.public_send(request.verb, **bound, ctx:, call: call_obj)
 
         persist_session(session, spec) if spec.write?
-        result
+        Adapters::Response.new(payload: result, error: nil)
+      rescue Textus::Error => e
+        Adapters::Response.new(payload: nil, error: e)
       end
 
       private

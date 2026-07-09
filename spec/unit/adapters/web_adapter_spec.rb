@@ -1,20 +1,6 @@
 RSpec.describe Textus::Adapters::WebAdapter do
   subject(:adapter) { described_class.new }
 
-  describe "#match?" do
-    it "matches hash with verb key" do
-      expect(adapter.match?({ "verb" => "get" })).to be true
-    end
-
-    it "rejects hash without verb key" do
-      expect(adapter.match?({ "method" => "get" })).to be false
-    end
-
-    it "rejects arrays" do
-      expect(adapter.match?([])).to be false
-    end
-  end
-
   describe "#normalize" do
     it "extracts verb and removes it from params" do
       req = adapter.normalize({ "verb" => "get", "key" => "test" })

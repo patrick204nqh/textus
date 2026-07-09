@@ -1,8 +1,14 @@
 module Textus
   module Adapters
     class WebAdapter
-      def match?(raw)
-        raw.is_a?(Hash) && raw.key?("verb")
+      def call(verb, params: {}, role: nil, gate:, session_id: nil)
+        request = Request.new(
+          verb: verb.to_s.to_sym,
+          params: params.transform_keys(&:to_sym),
+          role: role,
+          session_id: session_id,
+        )
+        gate.dispatch(request)
       end
 
       def normalize(raw)

@@ -9,12 +9,12 @@ RSpec.describe "surface adapter dispatch parity" do
     store.put(key: "knowledge.foo", _meta: {}, data: "parity")
 
     cli_out = StringIO.new
-    Textus::Surface::CLI.run(["boot", "--output=json"],
-                             stdin: StringIO.new(""), stdout: cli_out, stderr: StringIO.new,
-                             cwd: tmp)
+    Textus::Surface::CLI.run(["boot"], stdin: StringIO.new(""), stdout: cli_out, stderr: StringIO.new, cwd: tmp)
     cli = JSON.parse(cli_out.string)
 
-    mcp = Textus::Surface::Dispatch.call(store, :boot, {})
+    mcp_adapter = Textus::Adapters::McpAdapter.new
+    mcp_response = mcp_adapter.call("boot", gate: store.gate, role: "agent")
+    mcp = mcp_response.payload
 
     expect(cli["protocol"]).to eq("textus/4")
     expect(mcp["protocol"]).to eq("textus/4")
@@ -24,13 +24,12 @@ RSpec.describe "surface adapter dispatch parity" do
     store.put(key: "knowledge.foo", _meta: {}, data: "parity")
 
     cli_out = StringIO.new
-    Textus::Surface::CLI.run(["get", "knowledge.foo", "--output=json"],
-                             stdin: StringIO.new(""), stdout: cli_out, stderr: StringIO.new,
-                             cwd: tmp)
+    Textus::Surface::CLI.run(["get", "knowledge.foo"], stdin: StringIO.new(""), stdout: cli_out, stderr: StringIO.new, cwd: tmp)
     cli_body = JSON.parse(cli_out.string)["body"]
 
-    mcp = Textus::Surface::Dispatch.call(store, :get, { "key" => "knowledge.foo" })
-    mcp_body = mcp["body"]
+    mcp_adapter = Textus::Adapters::McpAdapter.new
+    mcp_response = mcp_adapter.call("get", params: { "key" => "knowledge.foo" }, gate: store.gate, role: "agent")
+    mcp_body = mcp_response.payload["body"]
 
     expect(cli_body).to eq(mcp_body)
   end

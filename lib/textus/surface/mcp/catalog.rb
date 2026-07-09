@@ -40,18 +40,6 @@ module Textus
                                         .map { |s| s.verb.to_s }
         end
 
-        def call(name, store:, args:)
-          spec = Textus::Protocol::VerbRegistry.for(name.to_sym)
-          raise ToolError.new("unknown tool: #{name}") unless spec&.mcp?
-
-          Textus::Surface::Dispatch.call(store, name.to_sym, args)
-        rescue Textus::Protocol::MissingArgs => e
-          raise ToolError.new("#{name}: missing #{e.missing.map { |a| a.wire.to_s }.join(", ")}")
-        rescue Textus::ContractDrift, Textus::CursorExpired
-          raise
-        rescue Textus::Error => e
-          raise ToolError.new("#{name}: #{e.message}")
-        end
       end
     end
   end

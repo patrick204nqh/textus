@@ -1,20 +1,6 @@
 RSpec.describe Textus::Adapters::McpAdapter do
   subject(:adapter) { described_class.new }
 
-  describe "#match?" do
-    it "matches hash with method key" do
-      expect(adapter.match?({ "method" => "get" })).to be true
-    end
-
-    it "rejects hash without method key" do
-      expect(adapter.match?({ "verb" => "get" })).to be false
-    end
-
-    it "rejects arrays" do
-      expect(adapter.match?([])).to be false
-    end
-  end
-
   describe "#normalize" do
     it "extracts verb from method field" do
       req = adapter.normalize({ "method" => "get" })

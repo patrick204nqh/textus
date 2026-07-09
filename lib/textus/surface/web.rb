@@ -4,7 +4,7 @@ require "json"
 module Textus
   module Surface
     class Web < Sinatra::Base
-      set :textus_session, nil
+      set :textus_gate, nil
       set :port, 9292
       set :bind, "0.0.0.0"
       set :server, "puma"
@@ -19,16 +19,16 @@ module Textus
 
       post "/api/:verb" do
         content_type :json
-        session = settings.textus_session.with_role(request.env["HTTP_X_TEXTUS_ROLE"] || "agent")
-        body = begin
-          JSON.parse(request.body.read)
-        rescue StandardError
-          {}
+        adapter = Textus::Adapters::WebAdapter.new
+        role = request.env["HTTP_X_TEXTUS_ROLE"] || "agent"
+        body = JSON.parse(request.body.read) rescue {}
+        response = adapter.call(params[:verb], params: body, role: role, gate: settings.textus_gate)
+
+        if response.success?
+          JSON.generate(response.payload)
+        else
+          halt status_for(response.error), JSON.generate(error: response.error.message, code: response.error.code.to_s)
         end
-        result = Textus::Surface::Dispatch.call(session, params[:verb], body)
-        JSON.generate(result)
-      rescue Textus::Error => e
-        halt status_for(e), JSON.generate(error: e.message, code: e.code.to_s)
       end
 
       not_found do

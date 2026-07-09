@@ -25,15 +25,17 @@ RSpec.describe Textus::Protocol::Gate do
       allow(Textus::Value::Etag).to receive(:for_contract).and_return("sha256:stub")
     end
 
-    it "raises on non-Request input" do
-      expect { gate.dispatch("bad") }
-        .to raise_error(Textus::UsageError, /Request expected/)
+    it "returns error Response on non-Request input" do
+      result = gate.dispatch("bad")
+      expect(result).not_to be_success
+      expect(result.error.message).to match(/Request expected/)
     end
 
-    it "raises on unknown verb" do
+    it "returns error Response on unknown verb" do
       req = Textus::Adapters::Request.new(verb: :unknown)
-      expect { gate.dispatch(req) }
-        .to raise_error(Textus::UsageError, /unknown verb/)
+      result = gate.dispatch(req)
+      expect(result).not_to be_success
+      expect(result.error.message).to match(/unknown verb/)
     end
 
     it "dispatches to lane handler for lane verbs" do
@@ -48,7 +50,9 @@ RSpec.describe Textus::Protocol::Gate do
 
       req = Textus::Adapters::Request.new(verb: :ingest, params: { kind: "url", slug: "test" })
       result = gate.dispatch(req)
-      expect(result).to eq({ ok: true })
+      expect(result).to be_a(Textus::Adapters::Response)
+      expect(result).to be_success
+      expect(result.payload).to eq({ ok: true })
     end
 
     context "with session_store" do
@@ -61,7 +65,8 @@ RSpec.describe Textus::Protocol::Gate do
         allow(session_store).to receive(:create).and_return({ id: "s1", role: "agent", cursor_seq: 0 })
 
         req = Textus::Adapters::Request.new(verb: :get, params: { key: "test" })
-        expect { gate.dispatch(req) }.to raise_error(Textus::UnknownKey)
+        result = gate.dispatch(req)
+        expect(result.error).to be_a(Textus::UnknownKey)
       end
 
       it "resumes existing session when session_id provided" do
@@ -74,7 +79,8 @@ RSpec.describe Textus::Protocol::Gate do
         )
 
         req = Textus::Adapters::Request.new(verb: :get, params: { key: "test" }, session_id: "existing-id")
-        expect { gate.dispatch(req) }.to raise_error(Textus::UnknownKey)
+        result = gate.dispatch(req)
+        expect(result.error).to be_a(Textus::UnknownKey)
       end
     end
 
@@ -88,7 +94,9 @@ RSpec.describe Textus::Protocol::Gate do
 
         req = Textus::Adapters::Request.new(verb: :list)
         result = gate.dispatch(req)
-        expect(result).to match(hash_including("protocol" => "textus/4", "data" => []))
+        expect(result).to be_a(Textus::Adapters::Response)
+        expect(result).to be_success
+        expect(result.payload).to match(hash_including("protocol" => "textus/4", "data" => []))
       end
     end
   end

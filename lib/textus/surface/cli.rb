@@ -4,23 +4,6 @@ require "optparse"
 module Textus
   module Surface
     class CLI
-      # Auto-derived verb table. Every CLI::Verb (or Group) subclass that
-      # declares `command_name "X"` and has no `parent_group` is a top-level
-      # verb. Sorted alphabetically for stable help output. Adding a new
-      # verb requires only a new file declaring its `command_name`.
-      #
-      # `k.name` gates out anonymous (Class.new) subclasses: real verbs are always
-      # named constants (generated Gen* or hand-authored classes), so this is a
-      # no-op in production but keeps throwaway test fixtures from leaking into the
-      # registry (and tripping the reconciliation guards order-dependently).
-      def self.verbs
-        Runner.install!
-        Verb.descendants
-            .select { |k| k.name && k.command_name && k.parent_group.nil? }
-            .sort_by(&:command_name)
-            .to_h { |k| [k.command_name, k] }
-      end
-
       def self.run(argv, stdin: $stdin, stdout: $stdout, stderr: $stderr, cwd: Dir.pwd)
         new(stdin: stdin, stdout: stdout, stderr: stderr, cwd: cwd).run(argv)
       end
@@ -34,18 +17,7 @@ module Textus
       end
 
       def run(argv)
-        # `--root` is a global, position-agnostic option: pull it out of argv
-        # wherever it appears so it works uniformly before OR after any verb or
-        # group (e.g. both `textus --root=X hook list` and
-        # `textus hook list --root=X`). Without this, `order!` below only sees
-        # options before the first verb token, so a trailing `--root` reached the
-        # verb's own parser and raised InvalidOption (#161 F5). TEXTUS_ROOT already
-        # works everywhere via Session, so this brings the flag to parity.
         @root_arg = extract_root!(argv)
-
-        # Define --version/--help ourselves so OptionParser doesn't intercept them
-        # with its built-in handlers (which print "version unknown" and a bare usage
-        # line, then exit before we ever reach the verb dispatch below).
         show_version = false
         show_help = false
         OptionParser.new do |o|
@@ -56,19 +28,19 @@ module Textus
         return @stdout.puts(VERSION) || 0 if show_version
         return print_help || 0 if show_help
 
-        verb = argv.shift
-        raise UsageError.new("missing verb") if verb.nil?
-
-        klass = self.class.verbs[verb] or raise UsageError.new("unknown verb: #{verb}")
-        coerce_exit_code(dispatch(klass, argv))
+        adapter = Adapters::CliAdapter.new
+        exit_code = adapter.call(argv,
+          gate: store.gate,
+          store_resolver: -> { store },
+          stdin: @stdin, stdout: @stdout, stderr: @stderr, cwd: @cwd,
+        )
+        coerce_exit_code(exit_code)
       rescue Textus::Error => e
         emit_error(e)
       end
 
       private
 
-      # Remove the first `--root=PATH` or `--root PATH` token from argv (anywhere)
-      # and return its value, or nil if absent. Mutates argv in place.
       def extract_root!(argv)
         i = argv.index { |a| a == "--root" || a.start_with?("--root=") }
         return nil unless i
@@ -122,12 +94,6 @@ module Textus
 
           dir = parent
         end
-      end
-
-      def dispatch(klass, argv)
-        v = klass.new(stdin: @stdin, stdout: @stdout, stderr: @stderr, cwd: @cwd)
-        v.parse(argv)
-        v.call(klass.needs_store? ? store : nil)
       end
 
       def emit_error(err)

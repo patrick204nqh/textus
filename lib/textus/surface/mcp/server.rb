@@ -6,9 +6,11 @@ module Textus
       class Server
         CHECKPOINT_INTERVAL = 30
         MCP_ADAPTER = Textus::Surface::MCP::Adapters::McpAdapter.new
+        GATE_ADAPTER = Textus::Adapters::McpAdapter.new
 
         def initialize(store:, role: Textus::Value::Role::DEFAULT, stdin: $stdin, stdout: $stdout)
           @store  = store.with_role(role)
+          @gate   = @store.gate
           @stdin  = stdin
           @stdout = stdout
           @shutdown = false
@@ -40,10 +42,11 @@ module Textus
         end
 
         def dispatch(verb_name, args, _server_context)
-          str_args = deep_stringify_keys(args)
           drifted = drift_detected?
+          response = GATE_ADAPTER.call(verb_name, params: args, gate: @gate, role: @store.role)
+          raise response.error if response.error
 
-          result = Catalog.call(verb_name.to_s, store: @store, args: str_args)
+          result = response.payload
           result = DriftAnnotation.apply(
             result, verb_name:, drifted:, is_read: Catalog.read_verbs.include?(verb_name.to_s),
                     current_etag: short_etag(contract_etag_now),
@@ -56,6 +59,8 @@ module Textus
           raise_handler_error(e.message, Textus::CursorExpired::JSONRPC_CODE)
         rescue Textus::Surface::MCP::ToolError => e
           raise_handler_error(e.message, ToolError::JSONRPC_CODE)
+        rescue Textus::Error => e
+          raise_handler_error(e.message, -32_603)
         rescue StandardError => e
           raise_handler_error("internal: #{e.message}", -32_603)
         end
@@ -95,14 +100,6 @@ module Textus
         def contract_etag_now = Textus::Value::Etag.for_contract(@store.layout)
 
         def short_etag(etag) = etag.to_s.delete_prefix("sha256:")[0, 8]
-
-        def deep_stringify_keys(obj)
-          case obj
-          when Hash  then obj.transform_keys(&:to_s).transform_values { |v| deep_stringify_keys(v) }
-          when Array then obj.map { |v| deep_stringify_keys(v) }
-          else obj
-          end
-        end
 
         def mime_for_format(format)
           case format.to_s

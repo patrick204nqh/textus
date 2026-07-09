@@ -34,7 +34,9 @@ module Textus
             verb: name, params: kwargs, role: @role,
             session_id: @correlation_id, correlation_id: @correlation_id,
           )
-          @gate.dispatch(request)
+          response = @gate.dispatch(request)
+          raise response.error if response.error
+          response.payload
         else
           super
         end
