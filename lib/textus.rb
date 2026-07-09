@@ -24,6 +24,7 @@ loader.inflector.inflect(
   "mcp" => "MCP",
   "mcp_serve" => "MCPServe",
   "dsl" => "DSL",
+  "api" => "API",
 )
 loader.ignore(File.expand_path("textus/errors.rb", __dir__))
 loader.ignore(File.expand_path("textus/surface/mcp/errors.rb", __dir__))
