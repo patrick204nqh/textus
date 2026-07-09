@@ -17,7 +17,6 @@ module Textus
           agent_role = manifest.policy.proposer_role
 
           lanes_list      = lanes_for(manifest)
-          blueprints      = build_blueprints(manifest)
           project         = build_project(manifest, file_system)
           runbooks        = build_runbooks(manifest, file_system)
           loop_data       = build_loop(manifest, file_system)
@@ -37,7 +36,7 @@ module Textus
             "project" => project,
             "state" => {
               "latest_seq" => latest_seq,
-              "entry_blueprints" => blueprints,
+              "blueprint_verb" => "blueprint show <key>",
               "runbooks" => runbooks,
               "loop" => loop_data,
             },
@@ -139,25 +138,6 @@ module Textus
           body = read_entry_body(manifest, file_system, "knowledge.loop.judgment.agent-behavior.0001-loop-behavior")
           excerpt = body ? body.lines.first(5).join : ""
           { "nodes" => LOOP_NODES, "excerpt" => excerpt }
-        end
-
-        # ── blueprints ──
-
-        META_GLOSSARY = {
-          "knowledge.loop.adoption" => { "node" => "target loop node", "confidence" => "high|medium|low",
-                                         "signal" => "observation type", "summary" => "brief description" },
-          "scratchpad.proposals" => { "proposal" => "{ target_key, action }" },
-          "raw" => { "source" => "{ kind, url, path, label }" },
-        }.freeze
-
-        def self.build_blueprints(manifest)
-          manifest.data.entries.map do |entry|
-            bp = { "key_prefix" => entry.key, "format" => entry.format.to_s, "naming" => entry.naming.to_s }
-            bp["schema"] = entry.schema.to_s if entry.schema
-            meta = META_GLOSSARY[entry.key]
-            bp["meta"] = meta if meta
-            bp
-          end
         end
 
         # ── verb lists ──
