@@ -156,6 +156,7 @@ module Textus
         store = store_resolver.call.with_role(role)
         Textus::Surface::Web.set :textus_session, store
         Textus::Surface::Web.set :textus_gate, store.gate
+        Textus::Surface::Web.set :textus_store, store
         Textus::Surface::Web.set :port, port
         Textus::Surface::Web.run!
         0

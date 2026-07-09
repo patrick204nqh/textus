@@ -1,24 +1,21 @@
 RSpec.describe Textus::Adapters::WebAdapter do
-  subject(:adapter) { described_class.new }
+  subject(:adapter) { described_class.new(api: api_double) }
+  let(:api_double) { instance_double(Textus::API) }
+  let(:session) { instance_double(Textus::API::Session, id: "s-1", role: "agent") }
 
-  describe "#normalize" do
-    it "extracts verb and removes it from params" do
-      req = adapter.normalize({ "action" => "get", "key" => "test" })
-      expect(req.action).to eq(:get)
-      expect(req.params).to eq({ key: "test" })
-    end
+  it "delegates action to API with params and session" do
+    expect(api_double).to receive(:get).with(key: "test", session:)
+    adapter.call(:get, params: { key: "test" }, session:)
+  end
 
-    it "symbolizes remaining params" do
-      req = adapter.normalize({ "action" => "list", "under" => "knowledge" })
-      expect(req.params).to eq({ under: "knowledge" })
-    end
+  it "delegates put to API with data" do
+    expect(api_double).to receive(:put).with(key: "x", data: "body", meta: {}, session:)
+    adapter.call(:put, params: { key: "x", data: "body", meta: {} }, session:)
+  end
 
-    it "passes role and session_id through" do
-      req = adapter.normalize({
-        "action" => "put", "key" => "x", "role" => "human", "session_id" => "s-1"
-      })
-      expect(req.role).to eq("human")
-      expect(req.session_id).to eq("s-1")
-    end
+  it "returns API response" do
+    allow(api_double).to receive(:get).and_return({ "body" => "result" })
+    result = adapter.call(:get, params: { key: "test" }, session:)
+    expect(result).to eq({ "body" => "result" })
   end
 end
