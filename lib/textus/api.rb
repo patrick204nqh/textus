@@ -80,8 +80,16 @@ module Textus
     private
 
     def dispatch(action, session:, **params)
+      spec = Textus::Protocol::ActionRegistry.for(action)
+      bound = if spec
+                str = params.transform_keys(&:to_s)
+                Textus::Protocol::Binder.inputs_from_wire(spec, str)
+              else
+                params
+              end
+
       request = Adapters::Request.new(
-        action:, params:, role: session.role,
+        action:, params: bound, role: session.role,
         session_id: session.id, correlation_id: session.correlation_id,
       )
       response = @gate.dispatch(request)
