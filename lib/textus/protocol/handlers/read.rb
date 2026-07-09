@@ -66,13 +66,14 @@ module Textus
           _ = call
           case sub_verb
           when "show"
-            Protocol::Blueprint::Controller.show(key, ctx.container)
+            Protocol::Blueprint::Controller.show(key, schemas: ctx.schemas, manifest: ctx.manifest)
           when "validate"
             payload = Textus::Value::Payload.new(meta: {}, body: data.to_s, content: nil)
-            errors = Protocol::Blueprint::Controller.validate(key, payload, ctx.container)
+            errors = Protocol::Blueprint::Controller.validate(key, payload,
+                                                              schemas: ctx.schemas, manifest: ctx.manifest)
             errors.empty? ? { valid: true } : { valid: false, errors: errors }
           when "scaffold"
-            Protocol::Blueprint::Controller.scaffold(key, ctx.container)
+            Protocol::Blueprint::Controller.scaffold(key, schemas: ctx.schemas, manifest: ctx.manifest)
           else
             raise Textus::UsageError.new("unknown blueprint sub-verb: #{sub_verb.inspect} (use: show, validate, scaffold)")
           end

@@ -4,14 +4,14 @@ module Textus
       module Controller
         module_function
 
-        def show(key, container)
-          mentry = resolve_entry(key, container)
-          Compiler.compile(mentry, schemas: container.schemas)
+        def show(key, schemas:, manifest:)
+          mentry = resolve_entry(key, manifest)
+          Compiler.compile(mentry, schemas:)
         end
 
-        def validate(key, payload, container)
-          mentry = resolve_entry(key, container)
-          blueprint = Compiler.compile(mentry, schemas: container.schemas)
+        def validate(key, payload, schemas:, manifest:)
+          mentry = resolve_entry(key, manifest)
+          blueprint = Compiler.compile(mentry, schemas:)
           errors = []
 
           last_seg = key.split(".").last
@@ -40,8 +40,22 @@ module Textus
           errors
         end
 
-        def scaffold(key, container)
-          blueprint = show(key, container)
+        def validate_naming(key, schemas:, manifest:)
+          mentry = resolve_entry(key, manifest)
+          blueprint = Compiler.compile(mentry, schemas:)
+          last_seg = key.split(".").last
+          if blueprint.naming
+            pattern = Regexp.new(blueprint.naming[:pattern])
+            unless last_seg.match?(pattern)
+              return ["naming violation: '#{last_seg}' must match #{blueprint.naming[:alias]} pattern " \
+                      "(e.g. #{blueprint.naming[:example]})"]
+            end
+          end
+          []
+        end
+
+        def scaffold(key, schemas:, manifest:)
+          blueprint = show(key, schemas:, manifest:)
           last_seg = blueprint.template[:key].split(".").last
           {
             key: blueprint.template[:key],
@@ -49,8 +63,8 @@ module Textus
           }
         end
 
-        def resolve_entry(key, container)
-          container.manifest.resolver.resolve(key).entry
+        def resolve_entry(key, manifest)
+          manifest.resolver.resolve(key).entry
         end
       end
     end

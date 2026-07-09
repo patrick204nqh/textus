@@ -8,7 +8,7 @@ module Textus
           format = fmt || mentry.format
 
           validate_input(key, payload, format, mentry, path)
-          validate_schema(payload, mentry, deps)
+          validate_schema(key, payload, mentry, deps)
 
           existing_env = read_existing(key, mentry, path, format, deps)
           meta, content = inject_meta(payload, existing_env, format, deps)
@@ -32,7 +32,6 @@ module Textus
         end
 
         def validate_input(key, payload, format, mentry, path)
-          EntryConstraint.validate_naming!(key, mentry)
           fmt = Format.for(format)
           fmt.enforce_name_match!(path, payload.meta)
           fmt.validate_raw_entry!(
@@ -41,8 +40,13 @@ module Textus
           )
         end
 
-        def validate_schema(payload, mentry, deps)
-          EntryConstraint.validate_schema!(payload, mentry, schemas: deps.schemas)
+        def validate_schema(key, payload, mentry, deps)
+          blueprint_errors = Protocol::Blueprint::Controller.validate(
+            key, payload, schemas: deps.schemas, manifest: deps.manifest
+          )
+          unless blueprint_errors.empty?
+            raise Textus::UsageError.new(blueprint_errors.join("; "))
+          end
         end
 
         def read_existing(key, mentry, path, format, deps)

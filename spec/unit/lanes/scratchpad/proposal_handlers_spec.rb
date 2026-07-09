@@ -16,7 +16,7 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
       call = instance_double(Call, role: "human", correlation_id: "abc")
       ctx = Textus::Protocol::Handlers::CommandContext.new(store_engine, container, call:)
 
-      target_mentry = instance_double(Mentry, naming: nil, schema: nil, format: "markdown", lane: "knowledge")
+      target_mentry = instance_double(Mentry, naming: nil, schema: nil, format: "markdown", lane: "knowledge", key: "knowledge.foo")
       target_path = "/tmp/foo.md"
       target_resolution = instance_double(Textus::Protocol::Manifest::Resolver::Resolution, entry: target_mentry, path: target_path)
       allow(manifest.resolver).to receive(:resolve).with("knowledge.foo").and_return(target_resolution)
@@ -58,7 +58,7 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
                                     content: nil)
       allow(store_engine).to receive(:read).with(key: "scratchpad.proposals.test").and_return(pending_env)
 
-      target_mentry = instance_double(Mentry, naming: nil, schema: nil, format: "markdown", lane: "knowledge")
+      target_mentry = instance_double(Mentry, naming: nil, schema: nil, format: "markdown", lane: "knowledge", key: "knowledge.foo")
       target_resolution = instance_double(Textus::Protocol::Manifest::Resolver::Resolution, entry: target_mentry, path: "/tmp/foo.md")
       allow(manifest.resolver).to receive(:resolve).with("knowledge.foo").and_return(target_resolution)
       allow(store_engine).to receive(:put)
@@ -87,7 +87,7 @@ RSpec.describe Textus::Lanes::Scratchpad::Handlers do
                                     content: { "data" => 1 })
       allow(store_engine).to receive(:read).with(key: "scratchpad.proposals.test").and_return(pending_env)
 
-      target_mentry = instance_double(Mentry, naming: nil, schema: nil, format: "markdown", lane: "knowledge")
+      target_mentry = instance_double(Mentry, naming: nil, schema: nil, format: "markdown", lane: "knowledge", key: "knowledge.foo")
       target_resolution = instance_double(Textus::Protocol::Manifest::Resolver::Resolution, entry: target_mentry, path: "/tmp/foo.md")
       allow(manifest.resolver).to receive(:resolve).with("knowledge.foo").and_return(target_resolution)
       allow(store_engine).to receive(:put)

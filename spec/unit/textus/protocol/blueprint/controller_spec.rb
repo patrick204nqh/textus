@@ -1,5 +1,4 @@
 RSpec.describe Textus::Protocol::Blueprint::Controller do
-  let(:container) { instance_double(Textus::Protocol::Container) }
   let(:manifest) { instance_double(Textus::Protocol::Manifest) }
   let(:resolver) { instance_double(Textus::Protocol::Manifest::Resolver) }
   let(:schemas) { instance_double(Textus::Protocol::Schema::Registry) }
@@ -13,8 +12,6 @@ RSpec.describe Textus::Protocol::Blueprint::Controller do
   let(:child_key) { "knowledge.loop.intent.0003-identity" }
 
   before do
-    allow(container).to receive(:manifest).and_return(manifest)
-    allow(container).to receive(:schemas).and_return(schemas)
     allow(manifest).to receive(:resolver).and_return(resolver)
     allow(resolver).to receive(:resolve).with(child_key).and_return(
       instance_double(Textus::Protocol::Manifest::Resolver::Resolution, entry: mentry)
@@ -26,7 +23,7 @@ RSpec.describe Textus::Protocol::Blueprint::Controller do
 
   describe ".show" do
     it "returns a Blueprint for the key" do
-      result = described_class.show("knowledge.loop.intent", container)
+      result = described_class.show("knowledge.loop.intent", schemas:, manifest:)
       expect(result).to be_a(Textus::Protocol::Blueprint)
       expect(result.key).to eq("knowledge.loop.intent")
     end
@@ -39,7 +36,7 @@ RSpec.describe Textus::Protocol::Blueprint::Controller do
     end
 
     it "returns empty array for child key matching naming pattern" do
-      result = described_class.validate(child_key, payload, container)
+      result = described_class.validate(child_key, payload, schemas:, manifest:)
       expect(result).to eq([])
     end
 
@@ -53,7 +50,7 @@ RSpec.describe Textus::Protocol::Blueprint::Controller do
       end
 
       it "returns naming error" do
-        result = described_class.validate(bad_child_key, payload, container)
+        result = described_class.validate(bad_child_key, payload, schemas:, manifest:)
         expect(result).not_to be_empty
         expect(result.first).to include("naming violation")
       end
@@ -62,7 +59,7 @@ RSpec.describe Textus::Protocol::Blueprint::Controller do
 
   describe ".scaffold" do
     it "returns a hash with key and body" do
-      result = described_class.scaffold("knowledge.loop.intent", container)
+      result = described_class.scaffold("knowledge.loop.intent", schemas:, manifest:)
       expect(result).to have_key(:key)
       expect(result).to have_key(:body)
     end

@@ -34,10 +34,13 @@ module Textus
         def propose(key:, ctx:, call:, meta: nil, data: nil)
           body, content = data.is_a?(Hash) ? [nil, data] : [data, nil]
 
-          target_key = meta&.dig("proposal", "target_key")
-          if target_key
-            resolution = ctx.manifest.resolver.resolve(target_key)
-            Textus::Protocol::EntryConstraint.validate_naming!(target_key, resolution.entry)
+          if (target_key = meta&.dig("proposal", "target_key"))
+            errors = Textus::Protocol::Blueprint::Controller.validate_naming(
+              target_key, schemas: ctx.schemas, manifest: ctx.manifest
+            )
+            unless errors.empty?
+              raise Textus::UsageError.new(errors.join("; "))
+            end
           end
 
           full_key = "#{PROPOSALS_PARENT_KEY}.#{key}"
@@ -80,9 +83,12 @@ module Textus
 
             # Re-validate constraints at promotion time
             payload = Textus::Value::Payload.new(meta: target_meta, body: env.body, content: env.content)
-            Textus::Protocol::EntryConstraint.validate_naming!(target, resolution.entry)
-            Textus::Protocol::EntryConstraint.validate_schema!(payload, resolution.entry, schemas: ctx.schemas)
-            Textus::Protocol::EntryConstraint.validate_format!(payload, resolution.entry)
+            errors = Textus::Protocol::Blueprint::Controller.validate(
+              target, payload, schemas: ctx.schemas, manifest: ctx.manifest
+            )
+            unless errors.empty?
+              raise Textus::UsageError.new(errors.join("; "))
+            end
 
             ctx.put(key: target, meta: target_meta, body: env.body, content: env.content, call:)
           when "delete"
