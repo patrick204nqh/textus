@@ -92,9 +92,15 @@ module Textus
           String :surface_id
           Integer :cursor_seq
           String :contract_etag
+          String :status, default: "active"
+          String :correlation_id
+          String :payload, text: true
           DateTime :expires_at
           DateTime :created_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+          DateTime :updated_at, null: false, default: Sequel::CURRENT_TIMESTAMP
         end
+
+        migrate_sessions_table
 
         create_entries_fts
       end
@@ -130,6 +136,20 @@ module Textus
           END
         SQL
       rescue StandardError
+        nil
+      end
+
+      def migrate_sessions_table
+        existing = @db.schema(:sessions).map(&:first)
+        return if existing.include?(:status) && existing.include?(:correlation_id) && existing.include?(:payload) && existing.include?(:updated_at)
+
+        @db.alter_table(:sessions) do
+          add_column :status, String, default: "active" unless existing.include?(:status)
+          add_column :correlation_id, String unless existing.include?(:correlation_id)
+          add_column :payload, String, text: true unless existing.include?(:payload)
+          add_column :updated_at, DateTime, default: Sequel::CURRENT_TIMESTAMP unless existing.include?(:updated_at)
+        end
+      rescue Sequel::Error
         nil
       end
     end
