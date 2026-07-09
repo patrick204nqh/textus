@@ -69,11 +69,11 @@ module Textus
     def session_close(session_id:, session:, **opts) = dispatch(:session_close, session:, session_id:, **opts)
     def diff(pending_key:, session:)  = dispatch(:diff, session:, pending_key:)
 
-    def boot
+    def boot(**)
       Protocol::Boot.build(container: @store.container)
     end
 
-    def cursor
+    def cursor(**)
       @store.store.audit_log.latest[:seq]
     end
 

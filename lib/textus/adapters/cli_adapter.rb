@@ -11,11 +11,12 @@ module Textus
 
       STDIN_ACTIONS = %i[propose put].to_set.freeze
 
-      def initialize(default_role: Textus::Value::Role::DEFAULT)
+      def initialize(api:, default_role: Textus::Value::Role::DEFAULT)
+        @api = api
         @default_role = default_role
       end
 
-      def call(argv, gate:, store_resolver:, stdin: $stdin, stdout: $stdout, stderr: $stderr, cwd: Dir.pwd)
+      def call(argv, store_resolver: nil, stdin: $stdin, stdout: $stdout, stderr: $stderr, cwd: Dir.pwd)
         args = argv.dup
 
         if args.first == "init"
@@ -35,8 +36,20 @@ module Textus
         end
 
         request = normalize(args, stdin, cwd)
-        response = gate.dispatch(request, cwd: cwd)
-        format_response(response, stdout, stderr)
+        unless @api.respond_to?(request.action)
+          err = Textus::UsageError.new("unknown command: #{request.action}")
+          return format_response(Adapters::Response.new(payload: nil, error: err), stdout, stderr)
+        end
+
+        session = @api.open_session(role: request.role)
+        begin
+          response = @api.send(request.action, **request.params, session:)
+          format_response(Adapters::Response.new(payload: response, error: nil), stdout, stderr)
+        rescue Textus::Error => e
+          format_response(Adapters::Response.new(payload: nil, error: e), stdout, stderr)
+        ensure
+          @api.close_session(session)
+        end
       end
 
       def normalize(raw, stdin = $stdin, cwd = Dir.pwd)

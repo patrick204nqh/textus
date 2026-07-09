@@ -1,5 +1,6 @@
 RSpec.describe Textus::Adapters::CliAdapter do
-  subject(:adapter) { described_class.new }
+  subject(:adapter) { described_class.new(api: api_double) }
+  let(:api_double) { instance_double(Textus::API, open_session: nil, close_session: nil) }
 
   describe "#normalize" do
     it "extracts verb from first non-flag argument" do

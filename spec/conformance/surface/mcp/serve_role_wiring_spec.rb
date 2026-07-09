@@ -14,10 +14,10 @@ RSpec.describe "MCP serve role wiring (ADR 0040)" do
     allow(ENV).to receive(:[]).and_call_original
     allow(ENV).to receive(:[]).with("TEXTUS_ROLE").and_return(nil)
 
-    adapter = Textus::Adapters::CliAdapter.new
+    api = Textus::API.new(gate: store.gate, store:)
+    adapter = Textus::Adapters::CliAdapter.new(api:)
     adapter.call(
       ["mcp", "serve", *argv],
-      gate: store.gate,
       store_resolver: -> { store },
       stdin: StringIO.new(""), stdout: StringIO.new, stderr: StringIO.new,
       cwd: Dir.pwd,

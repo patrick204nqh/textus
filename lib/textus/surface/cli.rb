@@ -28,9 +28,9 @@ module Textus
         return @stdout.puts(VERSION) || 0 if show_version
         return print_help || 0 if show_help
 
-        adapter = Adapters::CliAdapter.new
+        api = Textus::API.new(gate: store.gate, store:)
+        adapter = Adapters::CliAdapter.new(api:)
         exit_code = adapter.call(argv,
-          gate: store.gate,
           store_resolver: -> { store },
           stdin: @stdin, stdout: @stdout, stderr: @stderr, cwd: @cwd,
         )
