@@ -21,11 +21,11 @@ module Textus
       post "/api/:action" do
         content_type :json
         api = Textus::API.new(gate: settings.textus_gate, store: settings.textus_store)
+        adapter = Textus::Adapters::WebAdapter.new(api:)
         role = request.env["HTTP_X_TEXTUS_ROLE"] || "agent"
         session_id = request.env["HTTP_X_TEXTUS_SESSION_ID"]
         body = JSON.parse(request.body.read) rescue {}
-        session = session_id ? api.resume_session(id: session_id) : api.open_session(role:)
-        result = api.send(params[:action], **body, session:)
+        result = adapter.call(params[:action], params: body, role:, session_id:)
         JSON.generate(result)
       rescue Textus::Error => e
         halt status_for(e), JSON.generate(error: e.message, code: e.code.to_s)

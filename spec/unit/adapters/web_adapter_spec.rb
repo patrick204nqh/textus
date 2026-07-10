@@ -1,21 +1,26 @@
 RSpec.describe Textus::Adapters::WebAdapter do
-  subject(:adapter) { described_class.new(api: api_double) }
-  let(:api_double) { instance_double(Textus::API) }
+  subject(:adapter) { described_class.new(api:) }
+  let(:api) { instance_double(Textus::API) }
   let(:session) { instance_double(Textus::API::Session, id: "s-1", role: "agent") }
 
-  it "delegates action to API with params and session" do
-    expect(api_double).to receive(:get).with(key: "test", session:)
-    adapter.call(:get, params: { key: "test" }, session:)
+  before do
+    allow(api).to receive(:open_session).with(role: "agent").and_return(session)
   end
 
-  it "delegates put to API with data" do
-    expect(api_double).to receive(:put).with(key: "x", data: "body", meta: {}, session:)
-    adapter.call(:put, params: { key: "x", data: "body", meta: {} }, session:)
+  it "opens session and delegates action to API with params" do
+    expect(api).to receive(:get).with(key: "test", session:)
+    adapter.call(:get, params: { key: "test" })
+  end
+
+  it "resumes session when session_id is given" do
+    expect(api).to receive(:resume_session).with(id: "s-1").and_return(session)
+    expect(api).to receive(:put).with(key: "x", data: "body", meta: {}, session:)
+    adapter.call(:put, params: { key: "x", data: "body", meta: {} }, session_id: "s-1")
   end
 
   it "returns API response" do
-    allow(api_double).to receive(:get).and_return({ "body" => "result" })
-    result = adapter.call(:get, params: { key: "test" }, session:)
+    allow(api).to receive(:get).with(key: "test", session:).and_return({ "body" => "result" })
+    result = adapter.call(:get, params: { key: "test" })
     expect(result).to eq({ "body" => "result" })
   end
 end
