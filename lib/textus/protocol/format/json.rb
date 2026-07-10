@@ -72,8 +72,7 @@ module Textus
           raise UsageError.new("json format requires '.json' path (got #{ext.inspect})")
         end
 
-        def self.data_to_payload(data)
-          data = data.transform_keys(&:to_s) if data.is_a?(Hash)
+        def self.format_payload(data)
           { meta: data["_meta"] || {}, body: nil, content: data["content"] || data }
         end
       end

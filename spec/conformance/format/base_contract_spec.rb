@@ -9,9 +9,17 @@ RSpec.describe "Protocol::Format::Base contract" do
         expect(klass).to respond_to(:extensions)
       end
 
-      it "does not inherit data_to_payload from Base" do
-        expect(Textus::Protocol::Format::Base).not_to respond_to(:data_to_payload)
+      it "provides data_to_payload (inherited or overridden)" do
+        expect(klass).to respond_to(:data_to_payload)
+      end
+
+      it "provides format_payload (default from Base or custom)" do
+        expect(klass).to respond_to(:format_payload)
       end
     end
+  end
+
+  it "Base provides the template method" do
+    expect(Textus::Protocol::Format::Base).to respond_to(:data_to_payload)
   end
 end
