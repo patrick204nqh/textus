@@ -26,7 +26,7 @@ module Textus
         if DOMAIN_ACTIONS.include?(name)
           raise ArgumentError.new("#{name} accepts keyword arguments only") unless args.empty?
 
-          request = Adapters::Request.new(
+          request = Protocol::Message::Request.new(
             action: name, params: kwargs, role: @role,
             session_id: @correlation_id, correlation_id: @correlation_id,
           )

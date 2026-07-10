@@ -1,4 +1,4 @@
-RSpec.describe Textus::Adapters::Request do
+RSpec.describe Textus::Protocol::Message::Request do
   it "creates with verb only" do
     r = described_class.new(action: :get)
     expect(r.action).to eq(:get)

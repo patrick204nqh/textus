@@ -20,7 +20,7 @@ module Textus
       end
 
       def dispatch(request, env: ENV, cwd: Dir.pwd)
-        raise Textus::UsageError.new("Request expected") unless request.is_a?(Adapters::Request)
+        raise Textus::UsageError.new("Request expected") unless request.is_a?(Protocol::Message::Request)
 
         spec = ActionRegistry.for(request.action)
         raise Textus::UsageError.new("unknown action: #{request.action}") unless spec
@@ -40,9 +40,9 @@ module Textus
         result = handler.public_send(request.action, **bound, ctx:, call: call_obj)
 
         persist_session(session, spec) if spec.write?
-        Adapters::Response.new(payload: result, error: nil)
+        Protocol::Message::Response.new(payload: result, error: nil)
       rescue Textus::Error => e
-        Adapters::Response.new(payload: nil, error: e)
+        Protocol::Message::Response.new(payload: nil, error: e)
       end
 
       private

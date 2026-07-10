@@ -32,7 +32,7 @@ RSpec.describe Textus::Protocol::Gate do
     end
 
     it "returns error Response on unknown action" do
-      req = Textus::Adapters::Request.new(action: :unknown)
+      req = Textus::Protocol::Message::Request.new(action: :unknown)
       result = gate.dispatch(req)
       expect(result).not_to be_success
       expect(result.error.message).to match(/unknown action/)
@@ -48,9 +48,9 @@ RSpec.describe Textus::Protocol::Gate do
       handler = class_double("Handlers", ingest: { ok: true })
       allow(Textus::Protocol::Lane).to receive(:handler_for).with(:ingest).and_return(handler)
 
-      req = Textus::Adapters::Request.new(action: :ingest, params: { kind: "url", slug: "test" })
+      req = Textus::Protocol::Message::Request.new(action: :ingest, params: { kind: "url", slug: "test" })
       result = gate.dispatch(req)
-      expect(result).to be_a(Textus::Adapters::Response)
+      expect(result).to be_a(Textus::Protocol::Message::Response)
       expect(result).to be_success
       expect(result.payload).to eq({ ok: true })
     end
@@ -64,7 +64,7 @@ RSpec.describe Textus::Protocol::Gate do
         allow(store_engine).to receive(:read).with(key: "test") { raise Textus::UnknownKey.new("test") }
         allow(session_store).to receive(:create).and_return({ id: "s1", role: "agent", cursor_seq: 0 })
 
-        req = Textus::Adapters::Request.new(action: :get, params: { key: "test" })
+        req = Textus::Protocol::Message::Request.new(action: :get, params: { key: "test" })
         result = gate.dispatch(req)
         expect(result.error).to be_a(Textus::UnknownKey)
       end
@@ -78,7 +78,7 @@ RSpec.describe Textus::Protocol::Gate do
           { id: "existing-id", role: "agent", cursor_seq: 5 }
         )
 
-        req = Textus::Adapters::Request.new(action: :get, params: { key: "test" }, session_id: "existing-id")
+        req = Textus::Protocol::Message::Request.new(action: :get, params: { key: "test" }, session_id: "existing-id")
         result = gate.dispatch(req)
         expect(result.error).to be_a(Textus::UnknownKey)
       end
@@ -92,9 +92,9 @@ RSpec.describe Textus::Protocol::Gate do
         allow(Textus::Protocol::ActionRegistry).to receive(:for).with(:list).and_return(spec)
         allow(store_engine).to receive(:list).and_return([])
 
-        req = Textus::Adapters::Request.new(action: :list)
+        req = Textus::Protocol::Message::Request.new(action: :list)
         result = gate.dispatch(req)
-        expect(result).to be_a(Textus::Adapters::Response)
+        expect(result).to be_a(Textus::Protocol::Message::Response)
         expect(result).to be_success
         expect(result.payload).to match(hash_including("protocol" => "textus/4", "data" => []))
       end

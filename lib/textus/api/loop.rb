@@ -104,7 +104,7 @@ module Textus
       def fire_node_enter(entry)
         return unless @gate
 
-        request = Adapters::Request.new(
+        request = Protocol::Message::Request.new(
           action: :node_entered, params: { path: entry.path.map(&:to_s) },
           role: @session.role, session_id: @session.id,
         )
@@ -117,7 +117,7 @@ module Textus
         return unless @gate
 
         entry.exited_at = Time.now.utc
-        request = Adapters::Request.new(
+        request = Protocol::Message::Request.new(
           action: :node_exited, params: { path: entry.path.map(&:to_s) },
           role: @session.role, session_id: @session.id,
         )

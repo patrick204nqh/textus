@@ -38,15 +38,15 @@ module Textus
         request = normalize(args, stdin, cwd)
         unless @api.respond_to?(request.action)
           err = Textus::UsageError.new("unknown command: #{request.action}")
-          return format_response(Adapters::Response.new(payload: nil, error: err), stdout, stderr)
+          return format_response(Protocol::Message::Response.new(payload: nil, error: err), stdout, stderr)
         end
 
         session = @api.open_session(role: request.role)
         begin
           response = @api.send(request.action, **request.params, session:)
-          format_response(Adapters::Response.new(payload: response, error: nil), stdout, stderr)
+          format_response(Protocol::Message::Response.new(payload: response, error: nil), stdout, stderr)
         rescue Textus::Error => e
-          format_response(Adapters::Response.new(payload: nil, error: e), stdout, stderr)
+          format_response(Protocol::Message::Response.new(payload: nil, error: e), stdout, stderr)
         ensure
           @api.close_session(session)
         end
@@ -61,7 +61,7 @@ module Textus
         params = build_params(action, positionals, raw_flags, stdin)
 
         role = role_kv&.delete_prefix("--as=") || @default_role
-        Request.new(action: action, params: params, role: role)
+        Protocol::Message::Request.new(action: action, params: params, role: role)
       end
 
       private

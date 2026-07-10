@@ -88,7 +88,7 @@ module Textus
                 params
               end
 
-      request = Adapters::Request.new(
+      request = Protocol::Message::Request.new(
         action:, params: bound, role: session.role,
         session_id: session.id, correlation_id: session.correlation_id,
       )
