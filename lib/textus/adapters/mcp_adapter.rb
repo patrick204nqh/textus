@@ -1,39 +1,19 @@
 module Textus
   module Adapters
     class McpAdapter
-      def call(method, params: {}, gate:, role: nil, session_id: nil)
-        spec = Textus::Protocol::ActionRegistry.for(method.to_s.to_sym)
-        str_params = deep_stringify_keys(params || {})
-        bound = if spec
-                  Textus::Protocol::Binder.inputs_from_wire(spec, str_params)
-                else
-                  str_params.transform_keys(&:to_sym)
-                end
-
-        request = Request.new(
-          action: method.to_s.to_sym,
-          params: bound,
-          role: role,
-          session_id: session_id,
-        )
-        gate.dispatch(request)
+      def initialize(api:)
+        @api = api
+        @session_id = nil
       end
 
-      def normalize(raw)
-        spec = Textus::Protocol::ActionRegistry.for(raw["method"].to_s.to_sym)
-        str_params = deep_stringify_keys(raw["params"] || {})
-        bound = if spec
-                  Textus::Protocol::Binder.inputs_from_wire(spec, str_params)
-                else
-                  str_params.transform_keys(&:to_sym)
-                end
+      def call(action, params: {}, role: "agent", session_id: nil)
+        @session_id = session_id || @session_id
 
-        Request.new(
-          action: raw["method"].to_s.to_sym,
-          params: bound,
-          role: raw["role"],
-          session_id: raw["session_id"],
-        )
+        session = @session_id ? @api.resume_session(id: @session_id) : @api.open_session(role:)
+        @session_id ||= session.id
+
+        str_params = deep_stringify_keys(params)
+        @api.send(action, **str_params.transform_keys(&:to_sym), session:)
       end
 
       private

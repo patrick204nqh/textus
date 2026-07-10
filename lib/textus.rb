@@ -2,18 +2,6 @@ require "zeitwerk"
 require_relative "textus/version"
 require_relative "textus/errors"
 
-# Declare the MCP namespace before Zeitwerk encounters surface/mcp/errors.rb,
-# which is pre-required below because its filename (errors.rb) does not match
-# its constant name (ToolError) and cannot be managed by Zeitwerk.
-module Textus
-  module Surface
-    module MCP
-    end
-  end
-end
-
-require_relative "textus/surface/mcp/errors"
-
 require "sinatra/base"
 
 loader = Zeitwerk::Loader.for_gem
@@ -27,7 +15,6 @@ loader.inflector.inflect(
   "api" => "API",
 )
 loader.ignore(File.expand_path("textus/errors.rb", __dir__))
-loader.ignore(File.expand_path("textus/surface/mcp/errors.rb", __dir__))
 loader.ignore(File.expand_path("textus/init/templates", __dir__))
 loader.ignore(File.expand_path("textus/protocol/init/templates", __dir__))
 loader.ignore(File.expand_path("textus/protocol/action_registry/verbs", __dir__))

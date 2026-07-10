@@ -2,8 +2,6 @@ module Textus
   module Surface
     module MCP
       module Catalog
-        MCP_ADAPTER = Textus::Surface::MCP::Adapters::McpAdapter.new
-
         module_function
 
         def specs
@@ -14,7 +12,7 @@ module Textus
           specs.map do |spec|
             schema = spec.input_schema
             schema = schema.reject { |k, v| k == :required && Array(v).empty? }
-            MCP_ADAPTER.tool(
+            ::MCP::Tool.define(
               name: spec.action.to_s,
               description: spec.summary,
               input_schema: schema,

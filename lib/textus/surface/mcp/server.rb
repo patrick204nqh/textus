@@ -5,13 +5,12 @@ module Textus
     module MCP
       class Server
         CHECKPOINT_INTERVAL = 30
-        MCP_ADAPTER = Textus::Surface::MCP::Adapters::McpAdapter.new
 
         def initialize(store:, role: Textus::Value::Role::DEFAULT, stdin: $stdin, stdout: $stdout)
           @store  = store.with_role(role)
           @gate   = @store.gate
           @api    = Textus::API.new(gate: @gate, store: @store)
-          @session_id = nil
+          @mcp_adapter = Textus::Adapters::McpAdapter.new(api: @api)
           @stdin  = stdin
           @stdout = stdout
           @shutdown = false
@@ -19,7 +18,7 @@ module Textus
 
           @store = @cursor_manager.resume! || @store
 
-          @sdk = MCP_ADAPTER.server(
+          @sdk = ::MCP::Server.new(
             name: "textus",
             version: Textus::VERSION,
             tools: Catalog.build_tools(self),
@@ -43,13 +42,14 @@ module Textus
         end
 
         def dispatch(action_name, args, _server_context)
-          sid = args.delete("session_id") || @session_id
-          session = sid ? @api.resume_session(id: sid) : @api.open_session(role: @store.role)
-          @session_id ||= session.id
+          result = @mcp_adapter.call(
+            action_name,
+            params: args,
+            role: @store.role,
+            session_id: args.delete("session_id"),
+          )
 
           drifted = drift_detected?
-          str_args = deep_stringify_keys(args)
-          result = @api.send(action_name, **str_args.transform_keys(&:to_sym), session:)
           result = DriftAnnotation.apply(
             result, action_name:, drifted:, is_read: Catalog.read_actions.include?(action_name.to_s),
                     current_etag: short_etag(contract_etag_now),
@@ -61,7 +61,7 @@ module Textus
         rescue Textus::CursorExpired => e
           raise_handler_error(e.message, Textus::CursorExpired::JSONRPC_CODE)
         rescue Textus::Surface::MCP::ToolError => e
-          raise_handler_error(e.message, ToolError::JSONRPC_CODE)
+          raise_handler_error(e.message, -32_000)
         rescue Textus::Error => e
           raise_handler_error(e.message, -32_603)
         rescue StandardError => e
@@ -98,14 +98,6 @@ module Textus
           raise_handler_error("resource read failed: #{e.message}", -32_603)
         rescue StandardError => e
           raise_handler_error("internal: #{e.message}", -32_603)
-        end
-
-        def deep_stringify_keys(obj)
-          case obj
-          when Hash  then obj.transform_keys(&:to_s).transform_values { |v| deep_stringify_keys(v) }
-          when Array then obj.map { |v| deep_stringify_keys(v) }
-          else obj
-          end
         end
 
         def contract_etag_now = Textus::Value::Etag.for_contract(@store.layout)

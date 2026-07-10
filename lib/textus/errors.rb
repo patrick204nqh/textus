@@ -174,24 +174,7 @@ module Textus
     end
   end
 
-  class FlagRenamed < Error
-    def initialize(old_flag, new_flag)
-      super(
-        "flag_renamed",
-        "#{old_flag} was renamed in textus/4 — use #{new_flag}",
-        details: { "old" => old_flag, "new" => new_flag },
-        hint: "Use #{new_flag} instead.",
-        exit_code: 2,
-      )
-    end
-  end
-
-  class ActionError < Error
-    def initialize(code, message, details: {})
-      super(code, message, details: details, exit_code: 1)
-    end
-  end
-
+  
   class CursorExpired < Error
     JSONRPC_CODE = -32_002
 
