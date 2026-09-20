@@ -26,7 +26,7 @@ Gem::Specification.new do |s|
   s.add_dependency "csv", ">= 3.0"
   s.add_dependency "dry-schema", "~> 1.13"
   s.add_dependency "dry-struct", "~> 1.6"
-  s.add_dependency "mcp", "~> 0.20"
+  s.add_dependency "mcp", ">= 0.20", "< 2.0"
   s.add_dependency "psych", ">= 5.0"
   s.add_dependency "rexml", ">= 3.2"
   s.add_dependency "sequel", "~> 5.0"
